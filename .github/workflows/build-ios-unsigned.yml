@@ -42,6 +42,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Patch expo-modules-jsi for Xcode 26
+        run: bash scripts/patch-expo-modules-jsi-xcode26.sh
+
       - name: Install Expo CLI
         run: npm install -g @expo/cli@latest
 
@@ -59,6 +62,16 @@ jobs:
             echo "::warning::pod install --repo-update falhou; a tentar pod install simples..."
             pod install
           }
+
+      - name: Pre-build ExpoModulesJSI xcframework (device)
+        env:
+          PODS_ROOT: ${{ github.workspace }}/ios/Pods
+          PLATFORM_NAME: iphoneos
+          REACT_NATIVE_PATH: ${{ github.workspace }}/node_modules/react-native
+        run: |
+          set -euo pipefail
+          bash node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh
+          test -d node_modules/expo-modules-jsi/apple/Products/ExpoModulesJSI.xcframework
 
       - name: Resolve Xcode workspace and scheme
         id: xcode
