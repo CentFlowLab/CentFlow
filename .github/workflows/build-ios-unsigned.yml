@@ -6,6 +6,15 @@ name: Build iOS unsigned IPA
 
 on:
   workflow_dispatch:
+    inputs:
+      mock_auth:
+        description: 'Modo mock (login/registo sem backend — recomendado para testar no telemóvel)'
+        type: boolean
+        default: true
+      api_url:
+        description: 'URL da API (só usado se mock_auth=false)'
+        type: string
+        default: 'https://api.centflow.app'
 
 concurrency:
   group: ios-unsigned-${{ github.ref }}
@@ -15,8 +24,8 @@ env:
   CI: true
   EXPO_NO_TELEMETRY: 1
   RCT_NO_LAUNCH_PACKAGER: 1
-  EXPO_PUBLIC_API_URL: https://api.centflow.app
-  EXPO_PUBLIC_MOCK_AUTH: "false"
+  EXPO_PUBLIC_API_URL: ${{ inputs.api_url || 'https://api.centflow.app' }}
+  EXPO_PUBLIC_MOCK_AUTH: ${{ inputs.mock_auth != false && 'true' || 'false' }}
 
 jobs:
   build-ipa:

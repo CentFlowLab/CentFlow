@@ -20,13 +20,21 @@ type ErrorBody = {
 function isNetworkFailure(error: unknown): boolean {
   if (error instanceof ApiError && error.status === 0) return true;
   if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
     return (
       error.message === 'Failed to fetch' ||
       error.message === 'NETWORK_ERROR' ||
-      error.message.includes('Network request failed')
+      error.message.includes('Network request failed') ||
+      msg.includes('fetch failed') ||
+      msg.includes('hostname could not be found') ||
+      msg.includes('network request failed')
     );
   }
   return false;
+}
+
+function isPlaceholderApiUrl(): boolean {
+  return API_BASE_URL.includes('api.centflow.app');
 }
 
 export function getAuthErrorMessage(error: unknown): string {
@@ -37,6 +45,13 @@ export function getAuthErrorMessage(error: unknown): string {
       return (
         'Não foi possível ligar à API. No telemóvel, localhost não funciona — ' +
         'usa o IP do teu PC na mesma Wi‑Fi (ex: http://192.168.1.72:3000) no ficheiro .env.'
+      );
+    }
+
+    if (isPlaceholderApiUrl()) {
+      return (
+        'O servidor da API ainda não está disponível (api.centflow.app). ' +
+        'Para testar no telemóvel, gera um IPA com EXPO_PUBLIC_MOCK_AUTH=true no GitHub Actions.'
       );
     }
 
