@@ -1,0 +1,26 @@
+---
+description: Manter HANDOFF.md sincronizado após alterações ao projeto CentFlow
+alwaysApply: true
+---
+
+# Handoff Sync — CentFlow
+
+O ficheiro `HANDOFF.md` na raiz do projeto é **auto-gerado** e serve de briefing para outros agents (Grok, etc.).
+
+## Regras obrigatórias
+
+1. **Nunca editar `HANDOFF.md` manualmente** — é sobrescrito pelo gerador.
+2. **Sempre que terminares uma tarefa**, antes de responder ao utilizador:
+   - Atualiza `scripts/handoff.config.json` se a fase, itens concluídos ou pendências mudaram.
+   - Corre `npm run handoff` na pasta `centflow/`.
+   - Não consideres a tarefa concluída sem este passo.
+3. Para atualizar fases, itens concluídos ou pendências, edita `scripts/handoff.config.json` e corre `npm run handoff`.
+4. O hook Cursor em `.cursor/hooks.json` pode regenerar após edições, mas **não substitui** o passo manual do agent no fim de cada tarefa.
+
+## O que o handoff inclui (gerado automaticamente)
+
+- Stack e versões do `package.json`
+- Património líquido calculado dos mocks atuais
+- Árvore de ficheiros do projeto
+- Estado das 5 abas
+- Fases concluídas / pendentes (de `handoff.config.json`)

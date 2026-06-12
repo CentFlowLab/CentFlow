@@ -1,0 +1,141 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
+
+import { colors, radius, spacing } from '@/lib/theme';
+
+import { Text } from './Text';
+
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+
+type ButtonProps = Omit<PressableProps, 'style' | 'children'> & {
+  label: string;
+  variant?: ButtonVariant;
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  icon?: React.ReactNode;
+  fullWidth?: boolean;
+  style?: StyleProp<ViewStyle>;
+};
+
+const variantStyles: Record<
+  ButtonVariant,
+  { bg: string; text: string; border?: string }
+> = {
+  primary: { bg: colors.primary, text: colors.textInverse },
+  secondary: {
+    bg: colors.surfaceElevated,
+    text: colors.text,
+    border: colors.borderStrong,
+  },
+  ghost: { bg: 'transparent', text: colors.primary },
+  danger: { bg: colors.dangerMuted, text: colors.danger },
+};
+
+export function Button({
+  label,
+  variant = 'primary',
+  size = 'md',
+  loading = false,
+  icon,
+  fullWidth = false,
+  disabled,
+  style,
+  ...props
+}: ButtonProps) {
+  const isDisabled = disabled || loading;
+  const variantStyle = variantStyles[variant];
+  const height = size === 'sm' ? 40 : size === 'lg' ? 52 : 46;
+
+  const content = (
+    <View style={[styles.content, { height }]}>
+      {loading ? (
+        <ActivityIndicator
+          color={variant === 'primary' ? colors.textInverse : colors.primary}
+          size="small"
+        />
+      ) : (
+        <>
+          {icon}
+          <Text
+            variant="bodyMedium"
+            color={variantStyle.text}
+            style={styles.label}>
+            {label}
+          </Text>
+        </>
+      )}
+    </View>
+  );
+
+  if (variant === 'primary') {
+    return (
+      <Pressable
+        disabled={isDisabled}
+        style={({ pressed }) => [
+          styles.base,
+          fullWidth && styles.fullWidth,
+          { opacity: isDisabled ? 0.5 : pressed ? 0.9 : 1 },
+          style,
+        ]}
+        {...props}>
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.gradient, { borderRadius: radius.md }]}>
+          {content}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Pressable
+      disabled={isDisabled}
+      style={({ pressed }) => [
+        styles.base,
+        fullWidth && styles.fullWidth,
+        {
+          backgroundColor: variantStyle.bg,
+          borderColor: variantStyle.border,
+          borderWidth: variantStyle.border ? 1 : 0,
+          borderRadius: radius.md,
+          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
+        },
+        style,
+      ]}
+      {...props}>
+      {content}
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  base: {
+    overflow: 'hidden',
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  gradient: {
+    overflow: 'hidden',
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+  },
+  label: {
+    fontWeight: '600',
+  },
+});

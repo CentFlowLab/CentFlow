@@ -1,0 +1,86 @@
+import { StyleSheet, View } from 'react-native';
+
+import { colors, radius, spacing } from '@/lib/theme';
+
+import { Button } from './Button';
+import { Text } from './Text';
+
+type EmptyStateProps = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+};
+
+export function EmptyState({
+  icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+}: EmptyStateProps) {
+  return (
+    <View style={styles.container}>
+      <View style={styles.iconWrapper}>{icon}</View>
+      <Text variant="h2" align="center" style={styles.title}>
+        {title}
+      </Text>
+      <Text variant="body" color="textSecondary" align="center" style={styles.description}>
+        {description}
+      </Text>
+      {(actionLabel || secondaryActionLabel) && (
+        <View style={styles.actions}>
+          {actionLabel && onAction && (
+            <Button label={actionLabel} onPress={onAction} fullWidth />
+          )}
+          {secondaryActionLabel && onSecondaryAction && (
+            <Button
+              label={secondaryActionLabel}
+              variant="ghost"
+              onPress={onSecondaryAction}
+              fullWidth
+            />
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing['3xl'],
+    paddingVertical: spacing['4xl'],
+    gap: spacing.md,
+  },
+  iconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  title: {
+    maxWidth: 280,
+  },
+  description: {
+    maxWidth: 300,
+    lineHeight: 22,
+  },
+  actions: {
+    width: '100%',
+    maxWidth: 280,
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+});

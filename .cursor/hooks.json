@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "node .cursor/hooks/update-handoff.mjs",
+        "matcher": "Write|TabWrite"
+      }
+    ],
+    "stop": [
+      {
+        "command": "node .cursor/hooks/update-handoff.mjs"
+      }
+    ]
+  }
+}
