@@ -3,64 +3,13 @@
 # =============================================================================
 # Gera um .ipa SEM assinatura para instalar via LiveContainer no iPhone.
 #
-# Pré-requisitos no repositório:
-#   - package-lock.json commitado (npm ci)
-#   - app.json com plugins expo-router, expo-secure-store, expo-image-picker
-#   - (Recomendado) ios.bundleIdentifier fixo em app.json
-#   - (Opcional dev-client) expo-dev-client em dependencies + plugin em app.json
-#
-# Variáveis EXPO_PUBLIC_*: define em GitHub → Settings → Secrets → Actions
-#   ou em .env commitado / env: abaixo.
-#
-# TROUBLESHOOTING COMUM
-# ---------------------
-# 1) pod install falha (SDWebImage, Reanimated, etc.)
-#    → Confirma macos-latest; o step já tenta --repo-update e fallback.
-#    → Local: cd ios && pod deintegrate && pod install --repo-update
-#
-# 2) Scheme não encontrado no xcodebuild
-#    → Após prebuild local, corre: xcodebuild -list -workspace ios/*.xcworkspace
-#    → O nome do scheme costuma ser "CentFlow" (expo.name), não "centflow" (package.json).
-#    → Este workflow tenta package.json primeiro e faz fallback para schemes reais.
-#
-# 3) expo-router / rotas em branco no Release
-#    → Garante que "expo-router" está em app.json → plugins.
-#    → main em package.json: "expo-router/entry"
-#    → Não uses EXPO_NO_BUNDLE=1; o xcodebuild Release embute o bundle JS.
-#
-# 4) expo-secure-store / Keychain no simulador vs dispositivo
-#    → LiveContainer corre em dispositivo real; secure-store funciona com entitlements
-#      gerados pelo prebuild (mesmo unsigned).
-#
-# 5) expo-image-picker / permissões câmara
-#    → Plugin já configurado em app.json; após prebuild verifica Info.plist:
-#      NSCameraUsageDescription, NSPhotoLibraryUsageDescription.
-#
-# 6) expo-dev-client: app abre mas não liga ao Metro
-#    → Dev client precisa de servidor: npx expo start --dev-client
-#    → Para IPA standalone (sem Metro), NÃO uses expo-dev-client no prebuild.
-#    → Comenta o step "Install expo-dev-client" e remove o plugin de app.json.
-#
-# 7) Build falha por falta de .env / API URL
-#    → Define EXPO_PUBLIC_API_URL nos secrets ou cria .env antes do prebuild.
-#
-# 8) CODE_SIGN / provisioning errors
-#    → Este workflow desactiva assinatura; se ainda falhar, abre ios/*.xcodeproj
-#      e confirma "Signing & Capabilities" → "Automatically manage signing" OFF.
-#
-# COMANDOS LOCAIS ANTES DO PUSH (recomendado)
-# --------------------------------------------
-#   cd centflow
-#   node -v          # preferir Node 20
-#   npm ci
-#   npx expo doctor
-#   npx expo prebuild --platform ios --clean
-#   cd ios && pod install --repo-update && cd ..
-#   xcodebuild -list -workspace ios/*.xcworkspace
-#   # Teste archive local (macOS apenas):
-#   xcodebuild -workspace ios/*.xcworkspace -scheme CentFlow -configuration Release \
-#     -destination 'generic/platform=iOS' -archivePath /tmp/CentFlow.xcarchive \
-#     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="-" archive
+# TROUBLESHOOTING (exit code 65)
+# ------------------------------
+# 1) Code signing em Pods → scripts/ci-ios-unsigned-prep.sh desactiva signing
+# 2) NODE_BINARY em falta → .xcode.env.local criado no prep script
+# 3) expo-dev-client sem plugin → REMOVIDO deste workflow (build standalone)
+# 4) Reanimated → babel.config.js com plugin obrigatório
+# 5) Ver xcodebuild.log no artifact "xcodebuild-logs" se o build falhar
 # =============================================================================
 
 name: Build iOS unsigned IPA
@@ -68,16 +17,13 @@ name: Build iOS unsigned IPA
 on:
   workflow_dispatch:
 
-# Cancela runs antigos do mesmo workflow se disparares outro manualmente
 concurrency:
   group: ios-unsigned-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  # Expo SDK 56 — evita prompts interactivos em CI
   CI: true
   EXPO_NO_TELEMETRY: 1
-  # Ajusta se a API em produção for diferente (ou usa GitHub Secrets)
   EXPO_PUBLIC_API_URL: https://api.centflow.app
   EXPO_PUBLIC_MOCK_AUTH: "false"
 
@@ -92,15 +38,9 @@ jobs:
         shell: bash
 
     steps:
-      # -----------------------------------------------------------------------
-      # 1. Checkout
-      # -----------------------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -----------------------------------------------------------------------
-      # 2. Node 20 + cache npm
-      # -----------------------------------------------------------------------
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -108,32 +48,18 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      # -----------------------------------------------------------------------
-      # 3. Dependências JS (lockfile deve estar commitado)
-      # -----------------------------------------------------------------------
       - name: Install npm dependencies
         run: npm ci
 
-      # -----------------------------------------------------------------------
-      # 4. Expo CLI global + expo-dev-client (native dev client modules)
-      #    NOTA: para IPA standalone sem Metro, comenta este step.
-      # -----------------------------------------------------------------------
-      - name: Install Expo CLI and expo-dev-client
-        run: |
-          npm install -g @expo/cli@latest
-          npx expo install expo-dev-client
+      - name: Install Expo CLI
+        run: npm install -g @expo/cli@latest
 
-      # -----------------------------------------------------------------------
-      # 5. Prebuild iOS — gera pasta ios/ a partir de app.json + plugins
-      #    --clean evita lixo de prebuilds anteriores
-      #    --no-install: CocoaPods corre no step seguinte (mais controlável em CI)
-      # -----------------------------------------------------------------------
       - name: Expo prebuild (iOS)
         run: npx expo prebuild --platform ios --clean --no-install
 
-      # -----------------------------------------------------------------------
-      # 6. CocoaPods — com repo-update e fallback
-      # -----------------------------------------------------------------------
+      - name: Prepare iOS project for unsigned CI build
+        run: bash scripts/ci-ios-unsigned-prep.sh
+
       - name: Install CocoaPods dependencies
         working-directory: ios
         run: |
@@ -143,11 +69,6 @@ jobs:
             pod install
           }
 
-      # -----------------------------------------------------------------------
-      # 7. Nome da app (package.json, sanitizado) + detecção real do scheme Xcode
-      #    Expo SDK 56 costuma criar scheme "CentFlow" a partir de expo.name,
-      #    enquanto package.json.name é "centflow" — por isso há fallback.
-      # -----------------------------------------------------------------------
       - name: Resolve Xcode workspace and scheme
         id: xcode
         run: |
@@ -155,11 +76,10 @@ jobs:
 
           WORKSPACE=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
           if [ -z "${WORKSPACE}" ]; then
-            echo "::error::Nenhum .xcworkspace encontrado em ios/. O prebuild falhou?"
+            echo "::error::Nenhum .xcworkspace encontrado em ios/."
             exit 1
           fi
 
-          # Nome seguro a partir de package.json (substitui caracteres inválidos)
           PKG_SCHEME=$(node -e "
             const name = require('./package.json').name || 'app';
             const safe = name
@@ -168,48 +88,28 @@ jobs:
             process.stdout.write(safe);
           ")
 
-          echo "Scheme sanitizado (package.json): ${PKG_SCHEME}"
-
           SCHEMES_JSON=$(xcodebuild -list -json -workspace "${WORKSPACE}")
           SCHEMES=$(echo "${SCHEMES_JSON}" | node -e "
             const data = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-            const list = data.workspace?.schemes || [];
-            process.stdout.write(list.join('\n'));
+            process.stdout.write((data.workspace?.schemes || []).join('\n'));
           ")
 
-          echo "Schemes disponíveis:"
-          echo "${SCHEMES}"
-
-          pick_scheme() {
-            local wanted="$1"
-            echo "${SCHEMES}" | while IFS= read -r s; do
-              if [ "${s}" = "${wanted}" ]; then
-                echo "${s}"
-                return 0
-              fi
-            done
-          }
+          echo "Schemes: ${SCHEMES}"
 
           SCHEME=""
-          # 1) match exacto package.json
           if echo "${SCHEMES}" | grep -qx "${PKG_SCHEME}"; then
             SCHEME="${PKG_SCHEME}"
           fi
-          # 2) match case-insensitive (centflow → CentFlow)
           if [ -z "${SCHEME}" ]; then
             SCHEME=$(echo "${SCHEMES}" | grep -i "${PKG_SCHEME}" | head -n 1 || true)
           fi
-          # 3) match expo.name de app.json
           if [ -z "${SCHEME}" ]; then
             EXPO_NAME=$(node -e "process.stdout.write(require('./app.json').expo.name || '')")
-            SAFE_EXPO=$(echo "${EXPO_NAME}" | sed 's/[^a-zA-Z0-9._-]/-/g')
-            SCHEME=$(echo "${SCHEMES}" | grep -i "${SAFE_EXPO}" | head -n 1 || true)
+            SCHEME=$(echo "${SCHEMES}" | grep -i "${EXPO_NAME}" | head -n 1 || true)
           fi
-          # 4) primeiro scheme disponível
           if [ -z "${SCHEME}" ]; then
             SCHEME=$(echo "${SCHEMES}" | head -n 1)
           fi
-
           if [ -z "${SCHEME}" ]; then
             echo "::error::Não foi possível determinar o Xcode scheme."
             exit 1
@@ -219,46 +119,58 @@ jobs:
           echo "workspace=${WORKSPACE}" >> "${GITHUB_OUTPUT}"
           echo "Usando scheme: ${SCHEME}"
 
-      # -----------------------------------------------------------------------
-      # 8. Archive Release SEM code signing
-      # -----------------------------------------------------------------------
-      - name: Xcode archive (unsigned)
+      # build (não archive) — mais fiável para IPA unsigned
+      - name: Xcode build Release (unsigned)
+        id: xcodebuild
         run: |
           set -euo pipefail
 
-          ARCHIVE_PATH="${RUNNER_TEMP}/CentFlow-unsigned.xcarchive"
+          DERIVED="${RUNNER_TEMP}/DerivedData"
+          mkdir -p "${DERIVED}"
 
+          set +e
           xcodebuild \
             -workspace "${{ steps.xcode.outputs.workspace }}" \
             -scheme "${{ steps.xcode.outputs.scheme }}" \
             -configuration Release \
-            -destination "generic/platform=iOS" \
-            -archivePath "${ARCHIVE_PATH}" \
+            -sdk iphoneos \
+            -derivedDataPath "${DERIVED}" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="-" \
-            CODE_SIGN_ENTITLEMENTS="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            archive
+            build 2>&1 | tee xcodebuild.log
+          BUILD_EXIT=${PIPESTATUS[0]}
+          set -e
 
-          echo "ARCHIVE_PATH=${ARCHIVE_PATH}" >> "${GITHUB_ENV}"
+          echo "DERIVED=${DERIVED}" >> "${GITHUB_ENV}"
 
-      # -----------------------------------------------------------------------
-      # 9. Empacotar .ipa a partir do .xcarchive (Payload/*.app → zip)
-      #    Método fiável para IPA unsigned (exportArchive exige perfil de signing).
-      # -----------------------------------------------------------------------
+          if [ "${BUILD_EXIT}" -ne 0 ]; then
+            echo "::error::xcodebuild falhou com exit code ${BUILD_EXIT}"
+            grep -i "error:" xcodebuild.log | tail -30 || true
+            exit "${BUILD_EXIT}"
+          fi
+
+      - name: Upload xcodebuild logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: xcodebuild.log
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Export unsigned .ipa
         run: |
           set -euo pipefail
 
-          APP_DIR="${ARCHIVE_PATH}/Products/Applications"
-          APP_BUNDLE=$(find "${APP_DIR}" -maxdepth 1 -name "*.app" -print -quit)
+          APP_BUNDLE=$(find "${DERIVED}" -name "*.app" -path "*Release-iphoneos*" -print -quit)
 
           if [ -z "${APP_BUNDLE}" ]; then
-            echo "::error::Nenhum .app encontrado em ${APP_DIR}"
-            ls -laR "${ARCHIVE_PATH}" || true
+            echo "::error::Nenhum .app Release-iphoneos encontrado em ${DERIVED}"
+            find "${DERIVED}" -name "*.app" | head -20 || true
             exit 1
           fi
 
@@ -271,20 +183,12 @@ jobs:
           mkdir -p "${PAYLOAD_DIR}"
           cp -R "${APP_BUNDLE}" "${PAYLOAD_DIR}/"
 
-          (
-            cd "${RUNNER_TEMP}"
-            zip -qr "${IPA_PATH}" Payload
-          )
-
+          (cd "${RUNNER_TEMP}" && zip -qr "${IPA_PATH}" Payload)
           rm -rf "${PAYLOAD_DIR}"
 
-          echo "IPA gerado: ${IPA_PATH}"
           ls -lh "${IPA_PATH}"
           echo "IPA_PATH=${IPA_PATH}" >> "${GITHUB_ENV}"
 
-      # -----------------------------------------------------------------------
-      # 10. Upload artifact para download no GitHub Actions
-      # -----------------------------------------------------------------------
       - name: Upload unsigned IPA artifact
         uses: actions/upload-artifact@v4
         with:

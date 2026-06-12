@@ -8,7 +8,8 @@
     "scheme": "centflow",
     "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.everyft1me.centflow"
     },
     "android": {
       "adaptiveIcon": {
