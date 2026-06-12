@@ -1,16 +1,6 @@
 # =============================================================================
 # CentFlow — Build iOS unsigned .ipa (LiveContainer)
 # =============================================================================
-# Gera um .ipa SEM assinatura para instalar via LiveContainer no iPhone.
-#
-# TROUBLESHOOTING (exit code 65)
-# ------------------------------
-# 1) Code signing em Pods → scripts/ci-ios-unsigned-prep.sh desactiva signing
-# 2) NODE_BINARY em falta → .xcode.env.local criado no prep script
-# 3) expo-dev-client sem plugin → REMOVIDO deste workflow (build standalone)
-# 4) Reanimated → babel.config.js com plugin obrigatório
-# 5) Ver xcodebuild.log no artifact "xcodebuild-logs" se o build falhar
-# =============================================================================
 
 name: Build iOS unsigned IPA
 
@@ -24,6 +14,7 @@ concurrency:
 env:
   CI: true
   EXPO_NO_TELEMETRY: 1
+  RCT_NO_LAUNCH_PACKAGER: 1
   EXPO_PUBLIC_API_URL: https://api.centflow.app
   EXPO_PUBLIC_MOCK_AUTH: "false"
 
@@ -119,7 +110,12 @@ jobs:
           echo "workspace=${WORKSPACE}" >> "${GITHUB_OUTPUT}"
           echo "Usando scheme: ${SCHEME}"
 
-      # build (não archive) — mais fiável para IPA unsigned
+      - name: Pre-bundle JavaScript (expo export embed)
+        run: |
+          set -euo pipefail
+          export NODE_BINARY="$(command -v node)"
+          npx expo export:embed --platform ios --dev false
+
       - name: Xcode build Release (unsigned)
         id: xcodebuild
         run: |
@@ -134,13 +130,19 @@ jobs:
             -scheme "${{ steps.xcode.outputs.scheme }}" \
             -configuration Release \
             -sdk iphoneos \
+            -destination "generic/platform=iOS" \
             -derivedDataPath "${DERIVED}" \
+            -xcconfig ios/CIUnsigned.xcconfig \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="-" \
             AD_HOC_CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             COMPILER_INDEX_STORE_ENABLE=NO \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            -skipPackagePluginValidation \
             build 2>&1 | tee xcodebuild.log
           BUILD_EXIT=${PIPESTATUS[0]}
           set -e
@@ -149,7 +151,10 @@ jobs:
 
           if [ "${BUILD_EXIT}" -ne 0 ]; then
             echo "::error::xcodebuild falhou com exit code ${BUILD_EXIT}"
-            grep -i "error:" xcodebuild.log | tail -30 || true
+            echo "=== Últimos erros ==="
+            grep -E "error:|fatal error:|Command .* failed" xcodebuild.log | tail -50 || true
+            echo "=== Últimas 80 linhas ==="
+            tail -80 xcodebuild.log || true
             exit "${BUILD_EXIT}"
           fi
 

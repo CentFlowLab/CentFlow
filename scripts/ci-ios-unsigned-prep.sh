@@ -10,11 +10,25 @@ if [[ ! -d ios ]]; then
   exit 1
 fi
 
-# Xcode scripts (Bundle React Native code) precisam de Node no PATH
 NODE_PATH="$(command -v node)"
+echo "export NODE_BINARY=${NODE_PATH}" > ios/.xcode.env
 echo "export NODE_BINARY=${NODE_PATH}" > ios/.xcode.env.local
-echo "NODE_BINARY=${NODE_PATH}" >> "${GITHUB_ENV:-/dev/null}" 2>/dev/null || true
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+  echo "NODE_BINARY=${NODE_PATH}" >> "${GITHUB_ENV}"
+fi
 echo "✓ NODE_BINARY=${NODE_PATH}"
+
+cat > ios/CIUnsigned.xcconfig <<'EOF'
+CODE_SIGNING_ALLOWED = NO
+CODE_SIGNING_REQUIRED = NO
+CODE_SIGN_IDENTITY =
+DEVELOPMENT_TEAM =
+AD_HOC_CODE_SIGNING_ALLOWED = NO
+GCC_TREAT_WARNINGS_AS_ERRORS = NO
+SWIFT_TREAT_WARNINGS_AS_ERRORS = NO
+ONLY_ACTIVE_ARCH = NO
+EOF
+echo "✓ Created ios/CIUnsigned.xcconfig"
 
 PODFILE="ios/Podfile"
 if ! grep -q "CI_UNSIGNED_BUILD" "${PODFILE}"; then
@@ -31,6 +45,7 @@ patch = """
         config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
         config.build_settings['CODE_SIGNING_IDENTITY'] = '-'
         config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = '-'
+        config.build_settings['DEVELOPMENT_TEAM'] = ''
       end
     end
 """
@@ -66,14 +81,46 @@ print("✓ Podfile patched for unsigned CI build")
 PY
 fi
 
-PBXPROJ="$(find ios -name 'project.pbxproj' -path '*.xcodeproj/*' | head -1)"
-if [[ -n "${PBXPROJ}" ]]; then
-  sed -i.bak \
-    -e 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' \
-    -e 's/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "";/g' \
-    -e 's/CODE_SIGN_IDENTITY = iPhone Developer;/CODE_SIGN_IDENTITY = "";/g' \
-    -e 's/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = "";/g' \
-    "${PBXPROJ}" || true
-  rm -f "${PBXPROJ}.bak"
-  echo "✓ Patched ${PBXPROJ}"
-fi
+python3 <<'PY'
+import re
+from pathlib import Path
+
+pbx_files = list(Path("ios").glob("*.xcodeproj/project.pbxproj"))
+if not pbx_files:
+    raise SystemExit("project.pbxproj not found")
+
+for pbx in pbx_files:
+    text = pbx.read_text()
+    signing_keys = {
+        "CODE_SIGN_STYLE": "Manual",
+        "CODE_SIGNING_ALLOWED": "NO",
+        "CODE_SIGNING_REQUIRED": "NO",
+        'CODE_SIGN_IDENTITY': '""',
+        "DEVELOPMENT_TEAM": '""',
+        "PROVISIONING_PROFILE_SPECIFIER": '""',
+    }
+
+    def patch_block(match: re.Match[str]) -> str:
+        block = match.group(0)
+        for key, value in signing_keys.items():
+            pattern = rf"{re.escape(key)} = [^;]*;"
+            replacement = f"{key} = {value};"
+            if re.search(pattern, block):
+                block = re.sub(pattern, replacement, block)
+            else:
+                block = block.replace(
+                    "buildSettings = {",
+                    f"buildSettings = {{\n\t\t\t\t{key} = {value};",
+                    1,
+                )
+        return block
+
+    updated = re.sub(
+        r"buildSettings = \{.*?\};",
+        patch_block,
+        text,
+        flags=re.DOTALL,
+    )
+    pbx.write_text(updated)
+    print(f"✓ Patched signing in {pbx}")
+PY
