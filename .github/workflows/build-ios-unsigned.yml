@@ -114,7 +114,8 @@ jobs:
         run: |
           set -euo pipefail
           export NODE_BINARY="$(command -v node)"
-          npx expo export:embed --platform ios --dev false
+          # --eager infere bundle-output/assets-dest (obrigatório sem --eager)
+          npx expo export:embed --platform ios --dev false --eager --reset-cache
 
       - name: Xcode build Release (unsigned)
         id: xcodebuild
