@@ -1,26 +1,27 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import {
+  inferCategoryFromMerchant,
+  parseReceiptFromRawText,
+  type ParsedReceipt,
+} from '../_shared/parse-receipt-pt.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type OcrItem = {
-  name: string;
-  quantity?: number;
-  unitPrice?: number;
-  total?: number;
-};
-
-type OcrPayload = {
+type OcrResponse = {
   merchantName?: string;
   totalAmount?: number;
   date?: string;
   suggestedCategory?: string;
-  confidence?: number;
-  rawText?: string;
-  items?: OcrItem[];
-  source: 'mock' | 'google_vision';
+  confidence: number;
+  rawText: string;
+  items: ParsedReceipt['items'];
+  nif?: string;
+  atcud?: string;
+  vatAmount?: number;
+  source: 'google_vision' | 'mock';
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -30,41 +31,26 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-/** Parser mínimo PT — substituir/expandir com Google Vision em produção */
-function parseReceiptText(rawText: string): OcrPayload {
-  const lines = rawText.split('\n').map((l) => l.trim()).filter(Boolean);
-  const merchantName = lines[0] ?? 'Comerciante';
-
-  const totalMatch = rawText.match(/(?:total|importe|valor)\s*[:\s]*(\d+[.,]\d{2})/i);
-  const totalAmount = totalMatch
-    ? Number(totalMatch[1].replace(',', '.'))
-    : undefined;
-
-  const dateMatch = rawText.match(/(\d{2}[./-]\d{2}[./-]\d{2,4})/);
-  const date = dateMatch?.[1];
-
-  const upper = rawText.toUpperCase();
-  let suggestedCategory = 'other';
-  if (/LIDL|CONTINENTE|PINGO|AUCHAN|MINIPREÇO|ALDI/.test(upper)) {
-    suggestedCategory = 'food';
-  }
-
+function toOcrResponse(parsed: ParsedReceipt, source: OcrResponse['source']): OcrResponse {
   return {
-    merchantName,
-    totalAmount,
-    date,
-    suggestedCategory,
-    confidence: rawText.length > 20 ? 0.65 : 0.35,
-    rawText,
-    items: [],
-    source: 'mock',
+    merchantName: parsed.merchantName,
+    totalAmount: parsed.totalAmount,
+    date: parsed.date,
+    suggestedCategory: inferCategoryFromMerchant(parsed.merchantName),
+    confidence: Math.min(parsed.confidence + (source === 'google_vision' ? 0.15 : 0), 1),
+    rawText: parsed.rawText,
+    items: parsed.items ?? [],
+    nif: parsed.nif,
+    atcud: parsed.atcud,
+    vatAmount: parsed.vatAmount,
+    source,
   };
 }
 
 async function runGoogleVision(
   imageBase64: string,
   apiKey: string,
-): Promise<OcrPayload | null> {
+): Promise<OcrResponse | null> {
   const response = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
     {
@@ -74,7 +60,9 @@ async function runGoogleVision(
         requests: [
           {
             image: { content: imageBase64 },
-            features: [{ type: 'TEXT_DETECTION', maxResults: 1 }],
+            features: [
+              { type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 },
+            ],
             imageContext: { languageHints: ['pt', 'en'] },
           },
         ],
@@ -93,24 +81,19 @@ async function runGoogleVision(
     data?.responses?.[0]?.textAnnotations?.[0]?.description ??
     '';
 
-  if (!rawText) return null;
+  if (!rawText || rawText.length < 8) return null;
 
-  const parsed = parseReceiptText(rawText);
-  return { ...parsed, source: 'google_vision', confidence: 0.82 };
+  const parsed = parseReceiptFromRawText(rawText);
+  return toOcrResponse(parsed, 'google_vision');
 }
 
-function mockOcrResult(): OcrPayload {
-  const today = new Date().toISOString().slice(0, 10);
-  return {
-    merchantName: 'Lidl',
-    totalAmount: 23.45,
-    date: today,
-    suggestedCategory: 'food',
-    confidence: 0.5,
-    rawText: 'LIDL\nTotal 23,45\n' + today,
-    items: [],
-    source: 'mock',
-  };
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
 }
 
 Deno.serve(async (req) => {
@@ -124,7 +107,9 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Missing Authorization header' }, 401);
     }
 
-    const { receiptId } = await req.json();
+    const body = await req.json();
+    const receiptId = body?.receiptId as string | undefined;
+
     if (!receiptId || typeof receiptId !== 'string') {
       return jsonResponse({ error: 'receiptId is required' }, 400);
     }
@@ -133,6 +118,16 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const googleVisionKey = Deno.env.get('GOOGLE_VISION_API_KEY');
+
+    if (!googleVisionKey) {
+      return jsonResponse(
+        {
+          error: 'GOOGLE_VISION_API_KEY not configured',
+          hint: 'Run: supabase secrets set GOOGLE_VISION_API_KEY=<key>',
+        },
+        503,
+      );
+    }
 
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -160,47 +155,38 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Receipt not found' }, 404);
     }
 
+    if (receipt.mime_type === 'application/pdf') {
+      return jsonResponse(
+        {
+          error: 'PDF OCR not supported yet',
+          hint: 'Use photo of receipt or fill manually',
+        },
+        422,
+      );
+    }
+
     await admin
       .from('receipts')
       .update({ status: 'processing' })
       .eq('id', receiptId);
 
-    let ocr: OcrPayload;
+    const { data: fileData, error: downloadError } = await admin.storage
+      .from('receipts')
+      .download(receipt.storage_path);
 
-    if (receipt.mime_type === 'application/pdf') {
-      ocr = {
-        ...mockOcrResult(),
-        confidence: 0,
-        rawText: 'PDF: OCR cloud pendente — preencher manualmente.',
-        source: 'mock',
-      };
-    } else {
-      const { data: fileData, error: downloadError } = await admin.storage
-        .from('receipts')
-        .download(receipt.storage_path);
+    if (downloadError || !fileData) {
+      await admin.from('receipts').update({ status: 'failed' }).eq('id', receiptId);
+      return jsonResponse({ error: 'Failed to download receipt image' }, 500);
+    }
 
-      if (downloadError || !fileData) {
-        await admin.from('receipts').update({ status: 'failed' }).eq('id', receiptId);
-        return jsonResponse({ error: 'Failed to download receipt image' }, 500);
-      }
+    const buffer = await fileData.arrayBuffer();
+    const imageBase64 = bytesToBase64(new Uint8Array(buffer));
 
-      const buffer = await fileData.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const imageBase64 = btoa(binary);
+    const ocr = await runGoogleVision(imageBase64, googleVisionKey);
 
-      if (googleVisionKey) {
-        const visionResult = await runGoogleVision(imageBase64, googleVisionKey);
-        ocr = visionResult ?? parseReceiptText('');
-        if (!visionResult) {
-          ocr = mockOcrResult();
-        }
-      } else {
-        ocr = mockOcrResult();
-      }
+    if (!ocr) {
+      await admin.from('receipts').update({ status: 'failed' }).eq('id', receiptId);
+      return jsonResponse({ error: 'Google Vision returned no text' }, 422);
     }
 
     const { data: ocrRow, error: ocrError } = await admin
@@ -230,7 +216,14 @@ Deno.serve(async (req) => {
 
     await admin.from('receipts').update({ status: 'ready' }).eq('id', receiptId);
 
-    return jsonResponse({ ocrResult: ocrRow });
+    return jsonResponse({
+      ocrResult: ocrRow,
+      parsed: {
+        nif: ocr.nif,
+        atcud: ocr.atcud,
+        vatAmount: ocr.vatAmount,
+      },
+    });
   } catch (error) {
     console.error(error);
     return jsonResponse(

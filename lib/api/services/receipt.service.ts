@@ -18,7 +18,12 @@ import type {
 import { isMockAuthEnabled, isMockOcrDemoEnabled } from '@/lib/auth';
 import { isSupabaseEnabled, supabaseReceipts } from '@/lib/supabase';
 import { getClientOcrUnavailableMessage, runClientOcr } from '@/lib/receipt/client-ocr';
-import { sanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
+import {
+  isAcceptableOcrResult,
+  ocrQualityScore,
+  sanitizeOcrResult,
+} from '@/lib/receipt/ocr-sanitize';
+import { resolveReceiptOcr } from '@/lib/receipt/resolve-receipt-ocr';
 import { RECEIPT_PREPROCESS_VERSION } from '@/lib/receipt/receipt-image-preprocess';
 import type { RawReceiptOcrPayload, RawReceiptResponse } from '@/lib/types/receipt.api';
 import { toIsoDateString } from '@/lib/utils/format';
@@ -137,23 +142,6 @@ function isOcrStillProcessing(payload?: RawReceiptOcrPayload | null): boolean {
   return status === 'processing' || status === 'pending' || status === 'queued';
 }
 
-function ocrQualityScore(result: ReceiptOcrResult | null): number {
-  if (!result) return 0;
-
-  let score = result.confidence ?? 0;
-  if (result.totalAmount !== undefined && result.totalAmount > 0) score += 0.25;
-  if (result.merchantName && result.merchantName.length >= 3) score += 0.2;
-  if (result.date) score += 0.1;
-  if (result.rawText && result.rawText.length > 40) score += 0.1;
-  if (result.items?.length) score += 0.1;
-
-  return Math.min(score, 1);
-}
-
-function isAcceptableOcrResult(result: ReceiptOcrResult | null): boolean {
-  return ocrQualityScore(result) >= 0.55;
-}
-
 async function pollOcrResult(receiptId: string): Promise<ReceiptOcrResult | null> {
   for (let attempt = 0; attempt < OCR_POLL_ATTEMPTS; attempt++) {
     if (attempt > 0) await delay(OCR_POLL_DELAY_MS);
@@ -224,24 +212,14 @@ export async function processReceiptFlow(
     ocrResult = createMockOcrResult();
   } else if (isMockAuthEnabled()) {
     const client = await runClientOcr(draft);
-    ocrResult = client.result;
+    ocrResult = client.result ? sanitizeOcrResult(client.result) : null;
     if (!ocrResult) {
       ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
     }
   } else if (isSupabaseEnabled()) {
-    try {
-      ocrResult = await supabaseReceipts.processReceiptOcr(upload.id, upload.ocrResult);
-    } catch {
-      ocrResult = null;
-    }
-
-    if (!ocrResult) {
-      const client = await runClientOcr(draft);
-      ocrResult = client.result;
-      if (!ocrResult) {
-        ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
-      }
-    }
+    const resolved = await resolveReceiptOcr(upload.id, draft, upload.ocrResult);
+    ocrResult = resolved.result;
+    ocrUnavailableReason = resolved.unavailableReason;
   } else {
     try {
       ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
@@ -251,7 +229,7 @@ export async function processReceiptFlow(
 
     if (!ocrResult) {
       const client = await runClientOcr(draft);
-      ocrResult = client.result;
+      ocrResult = client.result ? sanitizeOcrResult(client.result) : null;
       if (!ocrResult) {
         ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
       }

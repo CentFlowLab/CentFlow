@@ -51,6 +51,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "handoff": "tsx scripts/generate-handoff.ts",
+    "test:ocr": "tsx scripts/test-ocr-sanitize.ts",
     "supabase:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts",
     "eas:init": "eas init",
     "eas:build:dev:ios": "node scripts/eas-run.cjs build --profile development --platform ios",

@@ -91,7 +91,7 @@ export async function uploadReceipt(draft: ReceiptDraft): Promise<ReceiptUpload>
   return mapReceiptRow(updatedReceipt, signedUrl, localUri);
 }
 
-export async function invokeProcessReceiptOcr(receiptId: string): Promise<ReceiptOcrResult | null> {
+export async function invokeVisionOcr(receiptId: string): Promise<ReceiptOcrResult | null> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase.functions.invoke(OCR_FUNCTION, {
@@ -99,14 +99,24 @@ export async function invokeProcessReceiptOcr(receiptId: string): Promise<Receip
   });
 
   if (error) {
-    console.warn('[supabase] process-receipt failed:', error.message);
-    return null;
+    throw new Error(error.message);
+  }
+
+  if (data?.error) {
+    throw new Error(
+      typeof data.hint === 'string' ? `${data.error} — ${data.hint}` : data.error,
+    );
   }
 
   const ocrRow = data?.ocrResult;
   if (!ocrRow) return null;
 
   return mapOcrResultRow(ocrRow);
+}
+
+/** @deprecated Use invokeVisionOcr — mantido para compatibilidade */
+export async function invokeProcessReceiptOcr(receiptId: string): Promise<ReceiptOcrResult | null> {
+  return invokeVisionOcr(receiptId);
 }
 
 export async function fetchOcrResult(receiptId: string): Promise<ReceiptOcrResult | null> {
@@ -131,7 +141,7 @@ export async function processReceiptOcr(
   const existing = await fetchOcrResult(receiptId);
   if (existing) return existing;
 
-  return invokeProcessReceiptOcr(receiptId);
+  return invokeVisionOcr(receiptId);
 }
 
 /** Confirmação reflecte-se no INSERT de transactions — ver createTransaction */
