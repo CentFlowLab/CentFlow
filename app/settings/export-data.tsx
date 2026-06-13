@@ -1,33 +1,43 @@
 import { useState } from 'react';
-import { Alert, Share, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { SettingsHero, SettingsScreenLayout } from '@/components/settings/SettingsScreenLayout';
+import {
+  SettingsHero,
+  SettingsScreenLayout,
+} from '@/components/settings';
 import { Button, Card, Text } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import { exportUserDataJson } from '@/lib/export/export.service';
 import { spacing } from '@/lib/theme';
 
 export default function ExportDataScreen() {
   const [exporting, setExporting] = useState(false);
   const { data: transactions } = useTransactions('all');
   const { data: assets } = useAssets();
+  const { showToast } = useToast();
+
+  const assetCount =
+    (assets?.goals.length ?? 0) +
+    (assets?.warranties.length ?? 0) +
+    (assets?.inventory.length ?? 0);
 
   async function handleExport() {
     setExporting(true);
 
     try {
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        transactions: transactions ?? [],
-        assets: assets ?? { goals: [], warranties: [], inventory: [] },
-      };
-
-      await Share.share({
-        message: JSON.stringify(payload, null, 2),
-        title: 'CentFlow — Exportação de dados',
+      await exportUserDataJson(transactions ?? [], assets ?? {
+        goals: [],
+        warranties: [],
+        inventory: [],
       });
-    } catch {
-      Alert.alert('Exportação cancelada', 'Não foi possível partilhar os dados.');
+      showToast('Dados exportados com sucesso.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Não foi possível exportar os dados.',
+        'error',
+      );
     } finally {
       setExporting(false);
     }
@@ -43,11 +53,7 @@ export default function ExportDataScreen() {
 
       <Card variant="elevated" style={styles.card}>
         <Text variant="bodyMedium">
-          {transactions?.length ?? 0} movimentos ·{' '}
-          {(assets?.goals.length ?? 0) +
-            (assets?.warranties.length ?? 0) +
-            (assets?.inventory.length ?? 0)}{' '}
-          ativos
+          {transactions?.length ?? 0} movimentos · {assetCount} ativos
         </Text>
         <Text variant="caption" color="textMuted">
           Ficheiro JSON legível — útil para backup ou migração futura.

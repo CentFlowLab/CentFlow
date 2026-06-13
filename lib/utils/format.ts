@@ -1,11 +1,28 @@
-const CURRENCY_LOCALE = 'pt-PT';
 const DEFAULT_CURRENCY = 'EUR';
+const DEFAULT_LOCALE = 'pt-PT';
+
+let activeCurrency = DEFAULT_CURRENCY;
+let activeLocale = DEFAULT_LOCALE;
+
+export type FormatContext = {
+  currency?: string;
+  locale?: string;
+};
+
+export function setFormatContext(context: FormatContext): void {
+  if (context.currency) activeCurrency = context.currency;
+  if (context.locale) activeLocale = context.locale;
+}
+
+export function getFormatContext(): { currency: string; locale: string } {
+  return { currency: activeCurrency, locale: activeLocale };
+}
 
 export function formatCurrency(
   value: number,
-  currency: string = DEFAULT_CURRENCY,
+  currency: string = activeCurrency,
 ): string {
-  return new Intl.NumberFormat(CURRENCY_LOCALE, {
+  return new Intl.NumberFormat(activeLocale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
@@ -18,9 +35,9 @@ export function formatPercent(value: number, decimals = 1, showSign = true): str
   return `${sign}${value.toFixed(decimals)}%`;
 }
 
-export function formatCompactCurrency(value: number, currency = DEFAULT_CURRENCY): string {
+export function formatCompactCurrency(value: number, currency = activeCurrency): string {
   if (Math.abs(value) >= 1000) {
-    return new Intl.NumberFormat(CURRENCY_LOCALE, {
+    return new Intl.NumberFormat(activeLocale, {
       style: 'currency',
       currency,
       notation: 'compact',
@@ -34,7 +51,7 @@ export function formatDateShort(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
 
-  return new Intl.DateTimeFormat(CURRENCY_LOCALE, {
+  return new Intl.DateTimeFormat(activeLocale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -49,7 +66,7 @@ export function toIsoDateString(date: Date = new Date()): string {
 }
 
 export function formatDateLong(date: Date = new Date()): string {
-  const formatted = new Intl.DateTimeFormat(CURRENCY_LOCALE, {
+  const formatted = new Intl.DateTimeFormat(activeLocale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

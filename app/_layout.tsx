@@ -8,8 +8,10 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthLoadingScreen } from '@/components/auth';
+import { ToastProvider } from '@/components/ui/Toast';
 import { queryClient } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { PreferencesProvider } from '@/lib/preferences/PreferencesProvider';
 import { colors } from '@/lib/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -33,10 +35,14 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider value={CentFlowTheme}>
-          <StatusBar style="light" />
-          <RootNavigator />
-        </ThemeProvider>
+        <ToastProvider>
+          <PreferencesProvider>
+            <ThemeProvider value={CentFlowTheme}>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </ThemeProvider>
+          </PreferencesProvider>
+        </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

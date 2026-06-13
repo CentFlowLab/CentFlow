@@ -1,31 +1,49 @@
 import { SymbolView } from 'expo-symbols';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   AttentionCard,
-  DashboardGreeting,
+  DashboardHeaderLeading,
   DashboardSkeleton,
+  DemoModeBadge,
+  HomeAssetsSummaryCard,
+  HomeQuickActions,
   MetricCard,
   NetWorthHeroCard,
   SuggestionCard,
 } from '@/components/dashboard';
+import { AppHeader } from '@/components/layout';
+import { AddTransactionModal, TransactionListItem } from '@/components/movements';
 import { FinancialProfileDetailSheet, FinancialProfileProgress } from '@/components/profile';
-import { EmptyState, ErrorState, RefetchingIndicator, ScreenContainer, SectionHeader, Text } from '@/components/ui';
-import { useDashboardData } from '@/hooks/queries/useDashboardData';
+import {
+  EmptyState,
+  ErrorState,
+  RefetchingIndicator,
+  ScreenContainer,
+  SectionHeader,
+  Text,
+} from '@/components/ui';
+import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
-import { formatCurrency, formatPercent } from '@/lib/utils/format';
 import { colors, spacing } from '@/lib/theme';
+import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
 export default function InicioScreen() {
-  const { data, isLoading, isError, error, refetch, isRefetching } = useDashboardData();
+  const insets = useSafeAreaInsets();
+  const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
+  const [addMovementVisible, setAddMovementVisible] = useState(false);
+
+  const header = <AppHeader leading={<DashboardHeaderLeading />} showBrand={false} />;
 
   if (isLoading) {
     return (
       <View style={styles.screen}>
-        <DashboardGreeting />
+        {header}
         <ScreenContainer>
           <DashboardSkeleton />
         </ScreenContainer>
@@ -36,7 +54,7 @@ export default function InicioScreen() {
   if (isError || !data) {
     return (
       <View style={styles.screen}>
-        <DashboardGreeting />
+        {header}
         <View style={styles.centered}>
           <ErrorState
             context="dashboard"
@@ -57,6 +75,9 @@ export default function InicioScreen() {
     personalInflation,
     attentionItems,
     suggestions,
+    assetsSummary,
+    recentTransactions,
+    dataSource,
   } = data;
 
   const netWorthChangeColor =
@@ -68,117 +89,167 @@ export default function InicioScreen() {
 
   return (
     <View style={styles.screen}>
-      <DashboardGreeting />
+      {header}
 
-      <ScreenContainer>
-        <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
-
-        <FinancialProfileProgress
-          profile={financialProfile}
-          isLoading={isProfileScoreLoading}
-          variant="compact"
-          style={styles.profileProgress}
-          onPress={() => setProfileDetailVisible(true)}
-        />
-
-        <SectionHeader title="O que mudou?" subtitle="Resumo rápido do período" />
-        <View style={styles.metricsGrid}>
-          <MetricCard
-            label="Gastos"
-            value={formatCurrency(weeklySpending)}
-            subtitle="esta semana"
-            icon={{
-              ios: 'cart.fill',
-              android: 'shopping_cart',
-              web: 'shopping_cart',
-            }}
-            iconColor={colors.danger}
-            valueColor={colors.text}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.primary}
           />
-          <MetricCard
-            label="Património"
-            value={formatCompactChange(netWorthChangeThisMonth)}
-            subtitle="este mês"
-            icon={{
-              ios: 'chart.line.uptrend.xyaxis',
-              android: 'trending_up',
-              web: 'trending_up',
-            }}
-            iconColor={netWorthChangeColor}
-            valueColor={netWorthChangeColor}
-          />
-          <MetricCard
-            label="Inflação"
-            value={
-              personalInflation !== null
-                ? formatPercent(personalInflation)
-                : '—'
-            }
-            subtitle="pessoal"
-            icon={{
-              ios: 'percent',
-              android: 'percent',
-              web: 'percent',
-            }}
-            iconColor={colors.accent}
-            valueColor={
-              personalInflation !== null && personalInflation > 0
-                ? colors.warning
-                : colors.text
-            }
-          />
-        </View>
+        }
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+        ]}>
+        <ScreenContainer>
+          {dataSource === 'mock' ? <DemoModeBadge /> : null}
 
-        <View style={styles.section}>
+          <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
+
+          <HomeAssetsSummaryCard summary={assetsSummary} />
+
+          <FinancialProfileProgress
+            profile={financialProfile}
+            isLoading={isProfileScoreLoading}
+            variant="compact"
+            style={styles.profileProgress}
+            onPress={() => setProfileDetailVisible(true)}
+          />
+
           <SectionHeader
-            title="O que precisa da minha atenção?"
-            subtitle={
-              attentionItems.length > 0
-                ? `${attentionItems.length} alerta${attentionItems.length > 1 ? 's' : ''}`
+            title="Últimos movimentos"
+            subtitle="Actividade recente"
+            actionLabel={recentTransactions.length > 0 ? 'Ver todos' : undefined}
+            onAction={
+              recentTransactions.length > 0
+                ? () => router.push('/(tabs)/movimentos')
                 : undefined
             }
           />
-          {attentionItems.length > 0 ? (
-            attentionItems.slice(0, 4).map((item) => (
-              <AttentionCard key={item.id} item={item} />
-            ))
-          ) : (
-            <CardEmptyAttention />
-          )}
-        </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="O que devo fazer?" subtitle="Sugestões para ti" />
-          {suggestions.length > 0 ? (
-            suggestions.map((suggestion) => (
-              <SuggestionCard key={suggestion.id} suggestion={suggestion} />
+          {recentTransactions.length > 0 ? (
+            recentTransactions.map((transaction) => (
+              <TransactionListItem key={transaction.id} transaction={transaction} />
             ))
           ) : (
-            <EmptyState
-              icon={
-                <SymbolView
-                  name={{
-                    ios: 'lightbulb.fill',
-                    android: 'lightbulb',
-                    web: 'lightbulb',
-                  }}
-                  tintColor={colors.primary}
-                  size={28}
-                />
-              }
-              title="Tudo em ordem"
-              description="Quando tivermos mais dados, aparecerão aqui sugestões personalizadas para optimizar as tuas finanças."
+            <View style={styles.emptyTransactions}>
+              <Text variant="body" color="textSecondary" align="center">
+                Ainda não há movimentos. Adiciona o primeiro abaixo.
+              </Text>
+            </View>
+          )}
+
+          <SectionHeader title="O que mudou?" subtitle="Resumo rápido do período" />
+          <View style={styles.metricsGrid}>
+            <MetricCard
+              label="Gastos"
+              value={formatCurrency(weeklySpending)}
+              subtitle="esta semana"
+              icon={{
+                ios: 'cart.fill',
+                android: 'shopping_cart',
+                web: 'shopping_cart',
+              }}
+              iconColor={colors.danger}
+              valueColor={colors.text}
             />
-          )}
-        </View>
+            <MetricCard
+              label="Património"
+              value={formatCompactChange(netWorthChangeThisMonth)}
+              subtitle="este mês"
+              icon={{
+                ios: 'chart.line.uptrend.xyaxis',
+                android: 'trending_up',
+                web: 'trending_up',
+              }}
+              iconColor={netWorthChangeColor}
+              valueColor={netWorthChangeColor}
+            />
+            <MetricCard
+              label="Inflação"
+              value={
+                personalInflation !== null ? formatPercent(personalInflation) : '—'
+              }
+              subtitle="pessoal"
+              icon={{
+                ios: 'percent',
+                android: 'percent',
+                web: 'percent',
+              }}
+              iconColor={colors.accent}
+              valueColor={
+                personalInflation !== null && personalInflation > 0
+                  ? colors.warning
+                  : colors.text
+              }
+            />
+          </View>
 
-        <RefetchingIndicator visible={isRefetching} />
-      </ScreenContainer>
+          <View style={styles.section}>
+            <SectionHeader
+              title="O que precisa da minha atenção?"
+              subtitle={
+                attentionItems.length > 0
+                  ? `${attentionItems.length} alerta${attentionItems.length > 1 ? 's' : ''}`
+                  : undefined
+              }
+            />
+            {attentionItems.length > 0 ? (
+              attentionItems.slice(0, 4).map((item) => (
+                <AttentionCard key={item.id} item={item} />
+              ))
+            ) : (
+              <CardEmptyAttention />
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader title="O que devo fazer?" subtitle="Sugestões para ti" />
+            {suggestions.length > 0 ? (
+              suggestions.map((suggestion) => (
+                <SuggestionCard key={suggestion.id} suggestion={suggestion} />
+              ))
+            ) : (
+              <EmptyState
+                icon={
+                  <SymbolView
+                    name={{
+                      ios: 'lightbulb.fill',
+                      android: 'lightbulb',
+                      web: 'lightbulb',
+                    }}
+                    tintColor={colors.primary}
+                    size={28}
+                  />
+                }
+                title="Tudo em ordem"
+                description="Quando tivermos mais dados, aparecerão aqui sugestões personalizadas para optimizar as tuas finanças."
+              />
+            )}
+          </View>
+
+          <HomeQuickActions
+            onAddMovement={() => setAddMovementVisible(true)}
+            onViewMovements={() => router.push('/(tabs)/movimentos')}
+            onNewGoal={() => router.push('/(tabs)/ativos')}
+          />
+
+          <RefetchingIndicator visible={isRefetching} />
+        </ScreenContainer>
+      </ScrollView>
 
       <FinancialProfileDetailSheet
         visible={profileDetailVisible}
         profile={financialProfile}
         onClose={() => setProfileDetailVisible(false)}
+      />
+
+      <AddTransactionModal
+        visible={addMovementVisible}
+        onClose={() => setAddMovementVisible(false)}
       />
     </View>
   );
@@ -212,6 +283,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',
@@ -229,6 +303,10 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: spacing['2xl'],
+  },
+  emptyTransactions: {
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.lg,
   },
   emptyAttention: {
     alignItems: 'center',

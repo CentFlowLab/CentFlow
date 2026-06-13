@@ -1,41 +1,38 @@
-import { useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { SettingsHero, SettingsScreenLayout } from '@/components/settings/SettingsScreenLayout';
-import { Card, Text } from '@/components/ui';
-import { colors, spacing } from '@/lib/theme';
-
-type ToggleRowProps = {
-  label: string;
-  description: string;
-  value: boolean;
-  onValueChange: (value: boolean) => void;
-};
-
-function ToggleRow({ label, description, value, onValueChange }: ToggleRowProps) {
-  return (
-    <View style={styles.toggleRow}>
-      <View style={styles.toggleText}>
-        <Text variant="bodyMedium">{label}</Text>
-        <Text variant="caption" color="textMuted">
-          {description}
-        </Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: colors.surfaceHighlight, true: colors.primaryMuted }}
-        thumbColor={value ? colors.primary : colors.textMuted}
-      />
-    </View>
-  );
-}
+import {
+  SettingsHero,
+  SettingsScreenLayout,
+  SettingsToggleRow,
+} from '@/components/settings';
+import { Card, LoadingSpinner } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
+import { spacing } from '@/lib/theme';
 
 export default function NotificationsScreen() {
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [warrantyAlerts, setWarrantyAlerts] = useState(true);
-  const [budgetAlerts, setBudgetAlerts] = useState(false);
-  const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const { data: preferences, isLoading } = useUserPreferences();
+  const updatePreferences = useUpdatePreferences();
+  const { showToast } = useToast();
+
+  async function handleToggle(
+    key: 'pushNotifications' | 'warrantyAlerts' | 'budgetAlerts' | 'weeklyDigest',
+    value: boolean,
+  ) {
+    try {
+      await updatePreferences.mutateAsync({ [key]: value });
+    } catch {
+      showToast('Não foi possível guardar a preferência.', 'error');
+    }
+  }
+
+  if (isLoading || !preferences) {
+    return (
+      <SettingsScreenLayout title="Notificações" subtitle="Alertas e resumos personalizados">
+        <LoadingSpinner message="A carregar preferências..." />
+      </SettingsScreenLayout>
+    );
+  }
 
   return (
     <SettingsScreenLayout
@@ -48,29 +45,33 @@ export default function NotificationsScreen() {
       />
 
       <Card variant="elevated" style={styles.card}>
-        <ToggleRow
+        <SettingsToggleRow
           label="Notificações push"
           description="Receber alertas no telemóvel"
-          value={pushEnabled}
-          onValueChange={setPushEnabled}
+          value={preferences.pushNotifications}
+          onValueChange={(value) => handleToggle('pushNotifications', value)}
+          disabled={updatePreferences.isPending}
         />
-        <ToggleRow
+        <SettingsToggleRow
           label="Garantias a expirar"
           description="Aviso 30 dias antes do fim"
-          value={warrantyAlerts}
-          onValueChange={setWarrantyAlerts}
+          value={preferences.warrantyAlerts}
+          onValueChange={(value) => handleToggle('warrantyAlerts', value)}
+          disabled={updatePreferences.isPending}
         />
-        <ToggleRow
+        <SettingsToggleRow
           label="Orçamento mensal"
           description="Quando ultrapassares limites definidos"
-          value={budgetAlerts}
-          onValueChange={setBudgetAlerts}
+          value={preferences.budgetAlerts}
+          onValueChange={(value) => handleToggle('budgetAlerts', value)}
+          disabled={updatePreferences.isPending}
         />
-        <ToggleRow
+        <SettingsToggleRow
           label="Resumo semanal"
           description="Email com evolução do património"
-          value={weeklyDigest}
-          onValueChange={setWeeklyDigest}
+          value={preferences.weeklyDigest}
+          onValueChange={(value) => handleToggle('weeklyDigest', value)}
+          disabled={updatePreferences.isPending}
         />
       </Card>
     </SettingsScreenLayout>
@@ -80,15 +81,5 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   card: {
     gap: spacing.lg,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  toggleText: {
-    flex: 1,
-    gap: spacing.xs,
   },
 });

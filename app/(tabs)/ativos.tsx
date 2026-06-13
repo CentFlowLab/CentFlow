@@ -84,8 +84,6 @@ export default function AtivosScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader
-        title="Ativos"
-        subtitle="Objetivos, garantias e inventário"
         action={{
           icon: (
             <SymbolView

@@ -70,7 +70,8 @@
         }
       ],
       "expo-ocr-kit",
-      "expo-updates"
+      "expo-updates",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

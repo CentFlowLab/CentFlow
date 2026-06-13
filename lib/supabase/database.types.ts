@@ -43,6 +43,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_preferences: {
+        Row: {
+          user_id: string;
+          push_notifications: boolean;
+          warranty_alerts: boolean;
+          budget_alerts: boolean;
+          weekly_digest: boolean;
+          region: string;
+          theme_id: string;
+          biometrics_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          push_notifications?: boolean;
+          warranty_alerts?: boolean;
+          budget_alerts?: boolean;
+          weekly_digest?: boolean;
+          region?: string;
+          theme_id?: string;
+          biometrics_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          push_notifications?: boolean;
+          warranty_alerts?: boolean;
+          budget_alerts?: boolean;
+          weekly_digest?: boolean;
+          region?: string;
+          theme_id?: string;
+          biometrics_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       receipts: {
         Row: {
           id: string;

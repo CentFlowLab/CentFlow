@@ -23,10 +23,7 @@ export default function AnalisesScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader
-        title="Análises"
-        subtitle={data?.periodLabel ?? 'Insights sobre o teu património'}
-      />
+      <AppHeader />
 
       {isLoading ? (
         <ScreenContainer>

@@ -22,7 +22,13 @@ export function SettingsScreenLayout({
 
   return (
     <View style={styles.screen}>
-      <AppHeader title={title} subtitle={subtitle} showAvatar showBack />
+      <AppHeader
+        variant="detail"
+        title={title}
+        subtitle={subtitle}
+        showBack
+        showAvatar={false}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[

@@ -19,6 +19,7 @@ import type {
 
 export function invalidateTransactionQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ['transactions'] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.home });
   queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
   queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
   queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });

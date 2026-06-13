@@ -99,7 +99,13 @@ export default function PerfilScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Perfil" subtitle="Conta e preferências" showAvatar={false} />
+      <AppHeader
+        variant="detail"
+        title="Perfil"
+        subtitle="Conta e preferências"
+        showBack
+        showAvatar={false}
+      />
 
       {isLoading ? (
         <ScreenContainer>

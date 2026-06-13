@@ -1,5 +1,6 @@
 export const queryKeys = {
   dashboard: ['dashboard'] as const,
+  home: ['home'] as const,
   netWorth: ['net-worth'] as const,
   transactions: (filters?: Record<string, unknown>) =>
     ['transactions', filters ?? {}] as const,
@@ -9,6 +10,7 @@ export const queryKeys = {
   warranties: ['warranties'] as const,
   inventory: ['inventory'] as const,
   profile: ['profile'] as const,
+  preferences: ['preferences'] as const,
   financialProfile: ['financial-profile'] as const,
   assets: ['assets'] as const,
   prices: ['prices'] as const,

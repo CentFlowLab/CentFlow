@@ -61,8 +61,6 @@ export default function MovimentosScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader
-        title="Movimentos"
-        subtitle="Transações e talões num só lugar"
         secondaryAction={{
           icon: (
             <SymbolView

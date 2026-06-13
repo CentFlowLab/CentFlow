@@ -22,6 +22,7 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<boolean>;
   completeGoogleSignInFromCallback: (url: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: (patch: Partial<User>) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -105,6 +106,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     queryClient.clear();
   }, []);
 
+  const refreshUser = useCallback(async (patch: Partial<User>) => {
+    setUser((current) => {
+      if (!current) return current;
+      const next = { ...current, ...patch };
+      if (patch.name) {
+        next.avatarInitials = patch.name
+          .split(' ')
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((part) => part[0]?.toUpperCase() ?? '')
+          .join('');
+      }
+      return next;
+    });
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -116,8 +133,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signInWithGoogle,
       completeGoogleSignInFromCallback,
       signOut,
+      refreshUser,
     }),
-    [user, isLoading, signIn, signUp, signInWithGoogle, completeGoogleSignInFromCallback, signOut],
+    [user, isLoading, signIn, signUp, signInWithGoogle, completeGoogleSignInFromCallback, signOut, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

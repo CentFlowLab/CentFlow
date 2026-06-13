@@ -1,26 +1,53 @@
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { SettingsHero, SettingsScreenLayout } from '@/components/settings/SettingsScreenLayout';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import {
+  SettingsHero,
+  SettingsScreenLayout,
+} from '@/components/settings/SettingsScreenLayout';
+import { Button, Card, LoadingSpinner, Text, TextField } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import { useUpdateProfile } from '@/hooks/mutations/useProfileMutations';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { spacing } from '@/lib/theme';
 
 export default function PersonalDataScreen() {
-  const { data: profile } = useProfile();
-  const [name, setName] = useState(profile?.name ?? '');
-  const [email, setEmail] = useState(profile?.email ?? '');
-  const [saved, setSaved] = useState(false);
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const { showToast } = useToast();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
-    if (profile?.name) setName(profile.name);
-    if (profile?.email) setEmail(profile.email);
-  }, [profile?.name, profile?.email]);
+    if (profile) {
+      setName(profile.name);
+      setEmail(profile.email);
+    }
+  }, [profile?.name, profile?.email, profile]);
 
-  function handleSave() {
-    setSaved(true);
-    Alert.alert('Dados guardados', 'As tuas alterações foram registadas localmente.');
-    setTimeout(() => setSaved(false), 2000);
+  async function handleSave() {
+    if (!name.trim()) {
+      showToast('O nome é obrigatório.', 'error');
+      return;
+    }
+
+    try {
+      await updateProfile.mutateAsync({ name: name.trim(), email: email.trim() });
+      showToast('Dados guardados com sucesso.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Não foi possível guardar os dados.',
+        'error',
+      );
+    }
+  }
+
+  if (isLoading && !profile) {
+    return (
+      <SettingsScreenLayout title="Dados pessoais" subtitle="Nome, email e identidade da conta">
+        <LoadingSpinner message="A carregar perfil..." />
+      </SettingsScreenLayout>
+    );
   }
 
   return (
@@ -44,13 +71,14 @@ export default function PersonalDataScreen() {
           autoCapitalize="none"
         />
         <Text variant="caption" color="textMuted">
-          A sincronização com a cloud estará disponível quando a API estiver ligada.
+          Alterações ao email podem requerer confirmação por correio, consoante o método de login.
         </Text>
       </Card>
 
       <Button
-        label={saved ? 'Guardado ✓' : 'Guardar alterações'}
+        label="Guardar alterações"
         onPress={handleSave}
+        loading={updateProfile.isPending}
         fullWidth
       />
     </SettingsScreenLayout>

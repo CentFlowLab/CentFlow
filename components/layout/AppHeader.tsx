@@ -3,8 +3,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui';
-import { useProfile } from '@/hooks/queries/useProfile';
 import { colors, radius, spacing } from '@/lib/theme';
+
+import { UserAvatarButton } from './UserAvatarButton';
 
 type HeaderAction = {
   icon: React.ReactNode;
@@ -13,11 +14,17 @@ type HeaderAction = {
 };
 
 type AppHeaderProps = {
-  title: string;
+  /** Título subtil — omitir nas tabs principais para look limpo */
+  title?: string;
   subtitle?: string;
-  showAvatar?: boolean;
+  /** main = tabs (minimal); detail = sub-ecrãs com back */
+  variant?: 'main' | 'detail';
   showBack?: boolean;
   onBack?: () => void;
+  showBrand?: boolean;
+  showAvatar?: boolean;
+  /** Conteúdo custom à esquerda (ex: saudação no Início) */
+  leading?: React.ReactNode;
   action?: HeaderAction;
   secondaryAction?: HeaderAction;
 };
@@ -25,16 +32,17 @@ type AppHeaderProps = {
 export function AppHeader({
   title,
   subtitle,
-  showAvatar = true,
+  variant = 'main',
   showBack = false,
   onBack,
+  showBrand = variant === 'main',
+  showAvatar = true,
+  leading,
   action,
   secondaryAction,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
-  const { data: profile } = useProfile();
-
-  const initials = profile?.avatarInitials ?? 'CF';
+  const isDetail = variant === 'detail';
 
   function handleBack() {
     if (onBack) {
@@ -45,7 +53,7 @@ export function AppHeader({
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.xs }]}>
       <View style={styles.left}>
         {showBack ? (
           <Pressable
@@ -59,17 +67,27 @@ export function AppHeader({
           </Pressable>
         ) : null}
 
-        <View style={styles.textGroup}>
-          <Text variant="label" color="textMuted">
-            CentFlow
-          </Text>
-          <Text variant="h1">{title}</Text>
-          {subtitle ? (
-            <Text variant="caption" color="textSecondary">
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
+        {leading ? (
+          <View style={styles.leading}>{leading}</View>
+        ) : (
+          <View style={styles.textGroup}>
+            {showBrand && !isDetail ? (
+              <Text variant="caption" color="textMuted" style={styles.brand}>
+                CentFlow
+              </Text>
+            ) : null}
+            {title ? (
+              <Text variant={isDetail ? 'h3' : 'caption'} color={isDetail ? 'text' : 'textMuted'}>
+                {title}
+              </Text>
+            ) : null}
+            {subtitle && isDetail ? (
+              <Text variant="caption" color="textSecondary">
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
+        )}
       </View>
 
       <View style={styles.actions}>
@@ -93,17 +111,7 @@ export function AppHeader({
           </Pressable>
         ) : null}
 
-        {showAvatar ? (
-          <Pressable
-            onPress={() => router.push('/(tabs)/perfil')}
-            style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}
-            accessibilityLabel="Abrir perfil"
-            accessibilityRole="button">
-            <Text variant="bodyMedium" color="primary" style={styles.avatarText}>
-              {initials}
-            </Text>
-          </Pressable>
-        ) : null}
+        {showAvatar ? <UserAvatarButton size={40} /> : null}
       </View>
     </View>
   );
@@ -112,17 +120,23 @@ export function AppHeader({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
     backgroundColor: colors.background,
+    minHeight: 52,
   },
   left: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.sm,
+    minHeight: 40,
+  },
+  leading: {
+    flex: 1,
+    justifyContent: 'center',
   },
   backButton: {
     width: 36,
@@ -130,24 +144,28 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.sm,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
   textGroup: {
     flex: 1,
-    gap: spacing.xs,
+    justifyContent: 'center',
+    gap: 2,
+  },
+  brand: {
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    fontSize: 11,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: spacing.sm,
   },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: radius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -156,27 +174,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionButton: {
-    width: 44,
-    height: 44,
+    width: 38,
+    height: 38,
     borderRadius: radius.full,
     backgroundColor: colors.primaryMuted,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    backgroundColor: colors.primaryMuted,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.85,

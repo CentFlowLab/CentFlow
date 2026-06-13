@@ -1,10 +1,16 @@
 import { useState } from 'react';
-import { Alert, Share, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { SettingsHero, SettingsScreenLayout } from '@/components/settings/SettingsScreenLayout';
+import {
+  SettingsHero,
+  SettingsScreenLayout,
+} from '@/components/settings';
 import { Button, Card, Text } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useDashboardData } from '@/hooks/queries/useDashboardData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
+import { useProfile } from '@/hooks/queries/useProfile';
+import { exportFinancialPdf } from '@/lib/export/export.service';
 import { spacing } from '@/lib/theme';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
@@ -12,28 +18,20 @@ export default function ExportPdfScreen() {
   const [exporting, setExporting] = useState(false);
   const { data: dashboard } = useDashboardData();
   const { data: profile } = useFinancialProfile();
+  const { data: user } = useProfile();
+  const { showToast } = useToast();
 
   async function handleExport() {
     setExporting(true);
 
     try {
-      const summary = [
-        'CentFlow — Relatório Financeiro',
-        '================================',
-        '',
-        `Património líquido: ${formatCurrency(dashboard?.netWorth.netWorth ?? 0)}`,
-        `Variação: ${formatPercent(dashboard?.netWorthChangePercent ?? 0)}`,
-        `Perfil financeiro: ${profile?.score ?? 0}% (${profile?.levelLabel ?? '—'})`,
-        '',
-        'Este relatório foi gerado a partir dos dados da tua conta CentFlow.',
-      ].join('\n');
-
-      await Share.share({
-        message: summary,
-        title: 'CentFlow — Relatório',
-      });
-    } catch {
-      Alert.alert('Exportação cancelada', 'Não foi possível partilhar o relatório.');
+      await exportFinancialPdf(dashboard, profile, user?.name ?? 'Utilizador');
+      showToast('Relatório PDF gerado com sucesso.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Não foi possível gerar o relatório.',
+        'error',
+      );
     } finally {
       setExporting(false);
     }
@@ -48,14 +46,19 @@ export default function ExportPdfScreen() {
       />
 
       <Card variant="elevated" style={styles.card}>
-        <Text variant="body" color="textSecondary">
-          O relatório inclui património líquido, variação recente e nível do teu perfil
-          financeiro. Podes partilhar por email, WhatsApp ou guardar como PDF no telemóvel.
+        <Text variant="bodyMedium">
+          Património: {formatCurrency(dashboard?.netWorth.netWorth ?? 0)}
+        </Text>
+        <Text variant="bodyMedium">
+          Variação: {formatPercent(dashboard?.netWorthChangePercent ?? 0)}
+        </Text>
+        <Text variant="caption" color="textMuted">
+          O PDF pode ser partilhado por email, WhatsApp ou guardado no telemóvel.
         </Text>
       </Card>
 
       <Button
-        label={exporting ? 'A preparar...' : 'Gerar e partilhar relatório'}
+        label={exporting ? 'A preparar...' : 'Gerar e partilhar PDF'}
         onPress={handleExport}
         loading={exporting}
         fullWidth

@@ -1,48 +1,66 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet } from 'react-native';
 
-import { SettingsHero, SettingsScreenLayout } from '@/components/settings/SettingsScreenLayout';
-import { Card, Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
-
-const CURRENCIES = ['EUR (€)', 'USD ($)', 'GBP (£)'] as const;
-const REGIONS = ['Portugal', 'Brasil', 'Espanha', 'Outro'] as const;
-
-type OptionGroupProps = {
-  title: string;
-  options: readonly string[];
-  value: string;
-  onChange: (value: string) => void;
-};
-
-function OptionGroup({ title, options, value, onChange }: OptionGroupProps) {
-  return (
-    <View style={styles.group}>
-      <Text variant="label" color="textMuted">
-        {title}
-      </Text>
-      <View style={styles.options}>
-        {options.map((option) => {
-          const selected = value === option;
-          return (
-            <Pressable
-              key={option}
-              onPress={() => onChange(option)}
-              style={[styles.option, selected && styles.optionSelected]}>
-              <Text variant="bodyMedium" color={selected ? 'primary' : 'textSecondary'}>
-                {option}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
+import {
+  SettingsHero,
+  SettingsOptionGroup,
+  SettingsScreenLayout,
+} from '@/components/settings';
+import { Button, Card, LoadingSpinner } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import { useUpdateCurrency } from '@/hooks/mutations/useProfileMutations';
+import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
+import { useProfile } from '@/hooks/queries/useProfile';
+import { CURRENCY_OPTIONS, REGION_OPTIONS } from '@/lib/preferences/config';
+import type { SupportedCurrency, UserRegion } from '@/lib/preferences/types';
+import { spacing } from '@/lib/theme';
 
 export default function CurrencyRegionScreen() {
-  const [currency, setCurrency] = useState<string>('EUR (€)');
-  const [region, setRegion] = useState<string>('Portugal');
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: preferences, isLoading: prefsLoading } = useUserPreferences();
+  const updateCurrency = useUpdateCurrency();
+  const updatePreferences = useUpdatePreferences();
+  const { showToast } = useToast();
+
+  const [currency, setCurrency] = useState<SupportedCurrency>('EUR');
+  const [region, setRegion] = useState<UserRegion>('portugal');
+
+  useEffect(() => {
+    if (profile?.currency) {
+      setCurrency(profile.currency as SupportedCurrency);
+    }
+  }, [profile?.currency]);
+
+  useEffect(() => {
+    if (preferences?.region) {
+      setRegion(preferences.region);
+    }
+  }, [preferences?.region]);
+
+  async function handleSave() {
+    try {
+      await Promise.all([
+        updateCurrency.mutateAsync(currency),
+        updatePreferences.mutateAsync({ region }),
+      ]);
+      showToast('Moeda e região actualizadas.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Não foi possível guardar as preferências.',
+        'error',
+      );
+    }
+  }
+
+  if ((profileLoading && !profile) || (prefsLoading && !preferences)) {
+    return (
+      <SettingsScreenLayout title="Moeda e região" subtitle="Formatação de valores e contexto local">
+        <LoadingSpinner message="A carregar..." />
+      </SettingsScreenLayout>
+    );
+  }
+
+  const saving = updateCurrency.isPending || updatePreferences.isPending;
 
   return (
     <SettingsScreenLayout
@@ -51,23 +69,27 @@ export default function CurrencyRegionScreen() {
       <SettingsHero
         icon={{ ios: 'eurosign.circle', android: 'euro', web: 'euro' }}
         title="Preferências regionais"
-        description="Define como os valores monetários e datas são apresentados."
+        description="Define como os valores monetários e datas são apresentados em toda a app."
       />
 
       <Card variant="elevated" style={styles.card}>
-        <OptionGroup
+        <SettingsOptionGroup
           title="Moeda principal"
-          options={CURRENCIES}
+          options={CURRENCY_OPTIONS.map((item) => ({ id: item.code, label: item.label }))}
           value={currency}
           onChange={setCurrency}
+          disabled={saving}
         />
-        <OptionGroup
+        <SettingsOptionGroup
           title="Região"
-          options={REGIONS}
+          options={REGION_OPTIONS}
           value={region}
           onChange={setRegion}
+          disabled={saving}
         />
       </Card>
+
+      <Button label="Guardar preferências" onPress={handleSave} loading={saving} fullWidth />
     </SettingsScreenLayout>
   );
 }
@@ -75,23 +97,5 @@ export default function CurrencyRegionScreen() {
 const styles = StyleSheet.create({
   card: {
     gap: spacing['2xl'],
-  },
-  group: {
-    gap: spacing.sm,
-  },
-  options: {
-    gap: spacing.sm,
-  },
-  option: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  optionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryMuted,
   },
 });

@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api/client';
+import { loadMockProfileOverlay } from '@/lib/api/services/profile.service';
 import { getAccessToken, setAccessToken } from '@/lib/api/token';
 import { isSupabaseEnabled, supabaseAuth } from '@/lib/supabase';
 
@@ -140,22 +141,22 @@ export async function getCurrentUser(): Promise<User> {
   if (isMockAuthEnabled()) {
     const token = getAccessToken();
     if (token === 'mock-google-token') {
-      return {
+      return loadMockProfileOverlay('mock-google-user-1', {
         id: 'mock-google-user-1',
         name: 'Utilizador Google',
         email: 'google.user@gmail.com',
         avatarInitials: 'UG',
         currency: 'EUR',
-      };
+      });
     }
     if (token === 'mock-dev-token') {
-      return {
+      return loadMockProfileOverlay('mock-user-1', {
         id: 'mock-user-1',
         name: 'Utilizador Dev',
         email: 'dev@centflow.app',
         avatarInitials: 'UD',
         currency: 'EUR',
-      };
+      });
     }
   }
 

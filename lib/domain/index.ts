@@ -46,3 +46,5 @@ export type {
   RecurringInvestment,
   Suggestion,
 } from './types';
+
+export type { HomeAssetsSummary, HomeScreenData } from './home.types';

@@ -1,67 +1,91 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { SettingsHero, SettingsScreenLayout } from '@/components/settings/SettingsScreenLayout';
-import { Card, Text } from '@/components/ui';
+import {
+  SettingsHero,
+  SettingsScreenLayout,
+} from '@/components/settings';
+import { Card, LoadingSpinner, Text } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
+import { THEME_OPTIONS } from '@/lib/preferences/config';
+import type { ThemeId } from '@/lib/preferences/types';
 import { colors, radius, spacing } from '@/lib/theme';
 
-const THEMES = [
-  {
-    id: 'dark-premium',
-    name: 'Dark Premium',
-    description: 'Teal e gold — tema atual da CentFlow',
-    active: true,
-    preview: [colors.background, colors.surface, colors.primary],
-  },
-  {
-    id: 'dark-classic',
-    name: 'Dark Classic',
-    description: 'Em breve — tons mais neutros',
-    active: false,
-    preview: ['#0B0B0F', '#17171C', '#8B8B9A'],
-  },
-] as const;
-
 export default function AppearanceScreen() {
+  const { data: preferences, isLoading } = useUserPreferences();
+  const updatePreferences = useUpdatePreferences();
+  const { showToast } = useToast();
+
+  async function handleSelectTheme(themeId: ThemeId) {
+    const theme = THEME_OPTIONS.find((item) => item.id === themeId);
+    if (!theme?.available) {
+      showToast('Este tema estará disponível em breve.', 'info');
+      return;
+    }
+
+    try {
+      await updatePreferences.mutateAsync({ themeId });
+      showToast(`Tema "${theme.name}" activo.`, 'success');
+    } catch {
+      showToast('Não foi possível guardar o tema.', 'error');
+    }
+  }
+
+  if (isLoading || !preferences) {
+    return (
+      <SettingsScreenLayout title="Aparência" subtitle="Tema visual da aplicação">
+        <LoadingSpinner message="A carregar tema..." />
+      </SettingsScreenLayout>
+    );
+  }
+
   return (
     <SettingsScreenLayout title="Aparência" subtitle="Tema visual da aplicação">
       <SettingsHero
         icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
         title="Personaliza o visual"
-        description="O tema Dark Premium está activo em toda a app."
+        description="A tua preferência fica guardada para quando novos temas estiverem disponíveis."
       />
 
-      {THEMES.map((theme) => (
-        <Pressable
-          key={theme.id}
-          disabled={!theme.active}
-          style={({ pressed }) => [pressed && theme.active && styles.pressed]}>
-          <Card
-            variant={theme.active ? 'elevated' : 'outlined'}
-            style={[styles.themeCard, theme.active && styles.themeCardActive]}>
-            <View style={styles.themeHeader}>
-              <Text variant="bodyMedium">{theme.name}</Text>
-              {theme.active ? (
-                <View style={styles.activeBadge}>
-                  <Text variant="caption" color="primary">
-                    Activo
+      {THEME_OPTIONS.map((theme) => {
+        const isActive = preferences.themeId === theme.id;
+        return (
+          <Pressable
+            key={theme.id}
+            onPress={() => handleSelectTheme(theme.id)}
+            style={({ pressed }) => [pressed && styles.pressed]}>
+            <Card
+              variant={isActive ? 'elevated' : 'outlined'}
+              style={[styles.themeCard, isActive && styles.themeCardActive]}>
+              <View style={styles.themeHeader}>
+                <Text variant="bodyMedium">{theme.name}</Text>
+                {isActive ? (
+                  <View style={styles.activeBadge}>
+                    <Text variant="caption" color="primary">
+                      Activo
+                    </Text>
+                  </View>
+                ) : !theme.available ? (
+                  <Text variant="caption" color="textMuted">
+                    Em breve
                   </Text>
-                </View>
-              ) : null}
-            </View>
-            <Text variant="caption" color="textMuted">
-              {theme.description}
-            </Text>
-            <View style={styles.previewRow}>
-              {theme.preview.map((color, index) => (
-                <View
-                  key={`${theme.id}-${index}`}
-                  style={[styles.previewSwatch, { backgroundColor: color }]}
-                />
-              ))}
-            </View>
-          </Card>
-        </Pressable>
-      ))}
+                ) : null}
+              </View>
+              <Text variant="caption" color="textMuted">
+                {theme.description}
+              </Text>
+              <View style={styles.previewRow}>
+                {theme.preview.map((color, index) => (
+                  <View
+                    key={`${theme.id}-${index}`}
+                    style={[styles.previewSwatch, { backgroundColor: color }]}
+                  />
+                ))}
+              </View>
+            </Card>
+          </Pressable>
+        );
+      })}
     </SettingsScreenLayout>
   );
 }
@@ -69,6 +93,7 @@ export default function AppearanceScreen() {
 const styles = StyleSheet.create({
   themeCard: {
     gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   themeCardActive: {
     borderColor: colors.primary,

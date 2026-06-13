@@ -19,10 +19,7 @@ export default function PrecosScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader
-        title="Preços"
-        subtitle={data?.periodLabel ?? 'Inflação pessoal e variações'}
-      />
+      <AppHeader />
 
       {isLoading ? (
         <ScreenContainer>
