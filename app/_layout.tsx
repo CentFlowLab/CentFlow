@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthLoadingScreen } from '@/components/auth';
+import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
 import { queryClient } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -63,6 +64,12 @@ function RootNavigator() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/*
+        Onboarding gate (OnboardingGateEffect):
+        - Sem onboarding concluído/saltado → redirecciona para /onboarding
+        - Protege (tabs), settings/* e deep links autenticados
+        - Bypass em dev: EXPO_PUBLIC_SKIP_ONBOARDING=true
+      */}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="auth/callback" />
 
@@ -76,6 +83,8 @@ function RootNavigator() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
+
+      {isAuthenticated ? <OnboardingGateEffect /> : null}
     </GestureHandlerRootView>
   );
 }

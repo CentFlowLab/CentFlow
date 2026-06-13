@@ -1,13 +1,28 @@
 import type {
   ReceiptConfirmationInput,
+  ReceiptConfirmedItem,
   ReceiptFormItem,
   ReceiptFormValues,
   ReceiptOcrResult,
 } from './receipt.types';
+import { receiptConfirmedItemsSchema } from './receipt-items.schema';
 import { toIsoDateString } from '@/lib/utils/format';
 
 function createItemId(prefix: string, index: number): string {
   return `${prefix}-${index}`;
+}
+
+function parseItemAmount(value: string): number | null {
+  const normalized = value.replace(/\s/g, '').replace(',', '.');
+  const n = Number(normalized);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function parseOptionalNumber(value?: string): number | undefined {
+  if (!value?.trim()) return undefined;
+  const normalized = value.replace(/\s/g, '').replace(',', '.');
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 export function emptyReceiptFormItem(): ReceiptFormItem {
@@ -39,6 +54,8 @@ export function ocrItemsToFormItems(
     id: createItemId('ocr', index),
     name: item.name,
     amount: item.total !== undefined ? String(item.total) : '',
+    quantity: item.quantity !== undefined ? String(item.quantity) : undefined,
+    unitPrice: item.unitPrice !== undefined ? String(item.unitPrice) : undefined,
     fromOcr: true,
   }));
 }
@@ -57,6 +74,42 @@ export function ocrToFormValues(ocr: ReceiptOcrResult | null): ReceiptFormValues
   };
 }
 
+/** Converte linhas do formulário para itens confirmados (filtra vazios) */
+export function formItemsToConfirmedItems(
+  items: ReceiptFormItem[],
+  defaultCategory?: string,
+): ReceiptConfirmedItem[] {
+  const confirmed = items
+    .map((item, index) => {
+      const name = item.name.trim();
+      const totalPrice = parseItemAmount(item.amount);
+      if (!name || totalPrice === null) return null;
+
+      const quantity = parseOptionalNumber(item.quantity);
+      const unitPrice = parseOptionalNumber(item.unitPrice);
+
+      return {
+        id: item.id || createItemId('item', index),
+        name,
+        quantity,
+        unitPrice,
+        totalPrice,
+        category: defaultCategory,
+      } satisfies ReceiptConfirmedItem;
+    })
+    .filter((item): item is ReceiptConfirmedItem => item !== null);
+
+  const parsed = receiptConfirmedItemsSchema.safeParse(
+    confirmed.map(({ id: _id, ...rest }) => rest),
+  );
+
+  if (!parsed.success) {
+    return confirmed.filter((item) => item.name && item.totalPrice > 0);
+  }
+
+  return confirmed;
+}
+
 export function countOcrFilledFields(ocr: ReceiptOcrResult | null): number {
   if (!ocr) return 0;
 
@@ -72,6 +125,8 @@ export function formValuesToConfirmation(
   values: ReceiptFormValues,
   amount: number,
 ): ReceiptConfirmationInput {
+  const items = formItemsToConfirmedItems(values.items, values.category);
+
   return {
     type: values.type,
     merchantName: values.merchantName.trim(),
@@ -79,7 +134,37 @@ export function formValuesToConfirmation(
     category: values.category,
     description: values.description.trim() || undefined,
     date: values.date,
+    items,
   };
+}
+
+function ocrFieldHadValue(field: keyof ReceiptFormValues, ocr: ReceiptOcrResult): boolean {
+  const original = ocrToFormValues(ocr);
+  switch (field) {
+    case 'merchantName':
+      return original.merchantName !== '';
+    case 'amount':
+      return original.amount !== '';
+    case 'date':
+      return original.date !== '';
+    case 'category':
+      return original.category !== '';
+    case 'description':
+      return original.description !== '';
+    default:
+      return false;
+  }
+}
+
+/** Campo veio do OCR mas foi alterado pelo utilizador */
+export function wasOcrFieldEdited(
+  field: keyof ReceiptFormValues,
+  current: ReceiptFormValues,
+  ocr: ReceiptOcrResult | null,
+): boolean {
+  if (!ocr) return false;
+  if (!ocrFieldHadValue(field, ocr)) return false;
+  return !isOcrFieldUnchanged(field, current, ocr);
 }
 
 /** Campo ainda igual ao valor original do OCR */

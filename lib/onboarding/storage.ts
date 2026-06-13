@@ -1,24 +1,52 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const ONBOARDING_KEY = 'centflow_onboarding_completed';
+import { EMPTY_ONBOARDING_ANSWERS, type OnboardingAnswers } from './types';
 
-let memoryFlag = false;
+const ANSWERS_KEY_PREFIX = 'centflow_onboarding_answers_';
 
-export async function getOnboardingCompleted(): Promise<boolean> {
-  if (Platform.OS === 'web') {
-    return memoryFlag;
-  }
+const memoryStore = new Map<string, OnboardingAnswers>();
 
-  const value = await SecureStore.getItemAsync(ONBOARDING_KEY);
-  return value === 'true';
+function answersKey(userId: string) {
+  return `${ANSWERS_KEY_PREFIX}${userId}`;
 }
 
-export async function setOnboardingCompleted(): Promise<void> {
+export async function loadOnboardingAnswers(userId: string): Promise<OnboardingAnswers> {
   if (Platform.OS === 'web') {
-    memoryFlag = true;
+    return memoryStore.get(userId) ?? { ...EMPTY_ONBOARDING_ANSWERS };
+  }
+
+  try {
+    const raw = await SecureStore.getItemAsync(answersKey(userId));
+    if (!raw) return { ...EMPTY_ONBOARDING_ANSWERS };
+    return { ...EMPTY_ONBOARDING_ANSWERS, ...JSON.parse(raw) };
+  } catch {
+    return { ...EMPTY_ONBOARDING_ANSWERS };
+  }
+}
+
+export async function saveOnboardingAnswers(
+  userId: string,
+  answers: OnboardingAnswers,
+): Promise<void> {
+  if (Platform.OS === 'web') {
+    memoryStore.set(userId, answers);
     return;
   }
 
-  await SecureStore.setItemAsync(ONBOARDING_KEY, 'true');
+  await SecureStore.setItemAsync(answersKey(userId), JSON.stringify(answers));
+}
+
+export async function getOnboardingCompleted(userId: string): Promise<boolean> {
+  const answers = await loadOnboardingAnswers(userId);
+  return answers.completed;
+}
+
+export async function setOnboardingCompleted(userId: string): Promise<void> {
+  const current = await loadOnboardingAnswers(userId);
+  await saveOnboardingAnswers(userId, {
+    ...current,
+    completed: true,
+    completedAt: new Date().toISOString(),
+  });
 }

@@ -1,5 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,6 +29,8 @@ import { colors, spacing } from '@/lib/theme';
 
 export default function AtivosScreen() {
   const insets = useSafeAreaInsets();
+  const { action } = useLocalSearchParams<{ action?: string }>();
+  const handledAction = useRef(false);
   const [activeTab, setActiveTab] = useState<AssetsTab>('objetivos');
   const [goalFormVisible, setGoalFormVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -56,6 +59,31 @@ export default function AtivosScreen() {
     const config = ASSETS_EMPTY_CONFIG[activeTab];
     Alert.alert(config.title, config.highlights.join('\n\n• '));
   }
+
+  useEffect(() => {
+    if (handledAction.current || !action) return;
+    handledAction.current = true;
+
+    if (action === 'new-goal') {
+      setActiveTab('objetivos');
+      setEditingGoal(null);
+      setGoalFormVisible(true);
+      return;
+    }
+
+    if (action === 'new-warranty') {
+      setActiveTab('garantias');
+      setEditingWarranty(null);
+      setWarrantyFormVisible(true);
+      return;
+    }
+
+    if (action === 'new-asset') {
+      setActiveTab('inventario');
+      setEditingInventory(null);
+      setInventoryFormVisible(true);
+    }
+  }, [action]);
 
   function openCreateGoal() {
     setEditingGoal(null);

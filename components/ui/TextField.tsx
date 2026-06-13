@@ -16,6 +16,8 @@ type TextFieldProps = TextInputProps & {
   error?: string;
   /** Destaque visual quando o valor veio do OCR e ainda não foi editado */
   ocrHighlighted?: boolean;
+  /** Campo veio do OCR mas foi alterado pelo utilizador */
+  ocrEdited?: boolean;
   /** Nível de confiança do OCR para cores do campo */
   ocrConfidenceLevel?: OcrConfidenceLevel;
 };
@@ -31,6 +33,7 @@ export function TextField({
   label,
   error,
   ocrHighlighted,
+  ocrEdited,
   ocrConfidenceLevel,
   style,
   ...props
@@ -48,6 +51,13 @@ export function TextField({
           <View style={[styles.ocrBadge, { backgroundColor: ocrTone?.badgeBg }]}>
             <Text variant="caption" style={[styles.ocrBadgeText, { color: ocrTone?.badge }]}>
               {OCR_BADGE_LABELS[level]}
+            </Text>
+          </View>
+        ) : null}
+        {ocrEdited ? (
+          <View style={[styles.ocrBadge, styles.editedBadge]}>
+            <Text variant="caption" style={styles.editedBadgeText}>
+              Editado
             </Text>
           </View>
         ) : null}
@@ -94,6 +104,14 @@ const styles = StyleSheet.create({
   ocrBadgeText: {
     fontWeight: '700',
     fontSize: 10,
+  },
+  editedBadge: {
+    backgroundColor: colors.surfaceHighlight,
+  },
+  editedBadgeText: {
+    fontWeight: '600',
+    fontSize: 10,
+    color: colors.textMuted,
   },
   input: {
     backgroundColor: colors.surface,

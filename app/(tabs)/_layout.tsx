@@ -1,30 +1,11 @@
-import { Tabs, useRouter, type Href } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { Tabs } from 'expo-router';
+import { Platform, StyleSheet } from 'react-native';
 
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import { colors, typography } from '@/lib/theme';
 
 export default function TabLayout() {
-  const router = useRouter();
-  const { completed, isLoading } = useOnboarding();
-
-  useEffect(() => {
-    if (!isLoading && completed === false) {
-      router.replace('/onboarding' as Href);
-    }
-  }, [completed, isLoading, router]);
-
-  if (isLoading || completed === false) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
-  }
-
   return (
     <Tabs
       screenOptions={{
@@ -123,12 +104,6 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-  },
   tabBar: {
     backgroundColor: colors.tabBar,
     borderTopColor: colors.tabBarBorder,

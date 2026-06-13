@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useProcessReceipt } from '@/hooks/useProcessReceipt';
 import { useReceiptImage } from '@/hooks/useReceiptImage';
 import {
@@ -26,6 +27,7 @@ import { toIsoDateString } from '@/lib/utils/format';
 
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
 import { ReceiptAttachmentField } from './ReceiptAttachmentField';
+import { ReceiptOcrProcessingOverlay } from './ReceiptOcrProcessingOverlay';
 
 type AddTransactionModalProps = {
   visible: boolean;
@@ -53,12 +55,15 @@ export function AddTransactionModal({
   const createMutation = useCreateTransaction();
   const processReceipt = useProcessReceipt();
   const receiptImage = useReceiptImage();
+  const { showToast } = useToast();
   const didAutoPick = useRef(false);
+  const retakeBaselineUri = useRef<string | null>(null);
 
   const [processedReceipt, setProcessedReceipt] = useState<ProcessedReceipt | null>(null);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [manualFillMode, setManualFillMode] = useState(false);
   const [isUploadingOnly, setIsUploadingOnly] = useState(false);
+  const [retakePending, setRetakePending] = useState(false);
 
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
@@ -88,6 +93,7 @@ export function AddTransactionModal({
     setConfirmVisible(false);
     setManualFillMode(false);
     setIsUploadingOnly(false);
+    setRetakePending(false);
     receiptImage.reset();
     createMutation.reset();
     processReceipt.reset();
@@ -104,11 +110,31 @@ export function AddTransactionModal({
     receiptImage.showSourcePicker();
   }, [visible, startWithReceiptPicker]);
 
+  useEffect(() => {
+    if (!retakePending || !receiptImage.draft) return;
+    if (receiptImage.isPicking || receiptImage.isPreprocessing) return;
+
+    if (retakeBaselineUri.current === receiptImage.draft.localUri) {
+      setRetakePending(false);
+      retakeBaselineUri.current = null;
+      return;
+    }
+
+    setRetakePending(false);
+    retakeBaselineUri.current = null;
+    void handleProcessReceipt();
+  }, [
+    retakePending,
+    receiptImage.draft,
+    receiptImage.isPicking,
+    receiptImage.isPreprocessing,
+  ]);
+
   function applyFormValues(values: ReceiptFormValues) {
     setType(values.type);
     setAmount(values.amount);
     setCategory(values.category);
-    setDescription(values.description);
+    setDescription(values.description || values.merchantName);
     setDate(values.date);
   }
 
@@ -225,7 +251,7 @@ export function AddTransactionModal({
   ) {
     const confirmation = formValuesToConfirmation(values, parseAmount(values.amount));
 
-    await createMutation.mutateAsync({
+    const outcome = await createMutation.mutateAsync({
       type: confirmation.type,
       amount: confirmation.amount,
       category: confirmation.category,
@@ -241,6 +267,31 @@ export function AddTransactionModal({
 
     setConfirmVisible(false);
     onClose();
+
+    const itemsCount = outcome.itemsSavedCount;
+    if (itemsCount > 0) {
+      showToast(
+        `Movimento criado — ${itemsCount} ${itemsCount === 1 ? 'item do talão guardado' : 'itens do talão guardados'}.`,
+        'success',
+      );
+    } else {
+      showToast('Movimento criado com talão anexado.', 'success');
+    }
+  }
+
+  function handleRetakePhoto() {
+    retakeBaselineUri.current = receiptImage.draft?.localUri ?? null;
+    setConfirmVisible(false);
+    setRetakePending(true);
+    void receiptImage.showSourcePicker();
+  }
+
+  function handleDiscardReceipt() {
+    setConfirmVisible(false);
+    setProcessedReceipt(null);
+    setManualFillMode(false);
+    receiptImage.reset();
+    showToast('Talão descartado.', 'info');
   }
 
   function handleFillManually(processed: ProcessedReceipt, values: ReceiptFormValues) {
@@ -358,6 +409,10 @@ export function AddTransactionModal({
           </Card>
         )}
 
+        {hasReceipt && !manualFillMode && isProcessing && processPhaseLabel ? (
+          <ReceiptOcrProcessingOverlay phaseLabel={processPhaseLabel} />
+        ) : null}
+
         {apiError ? (
           <Card variant="outlined" style={styles.errorCard}>
             <Text variant="caption" color="danger">
@@ -436,6 +491,8 @@ export function AddTransactionModal({
         onConfirm={handleConfirmReceipt}
         onFillManually={handleFillManually}
         onIgnoreOcr={handleIgnoreOcr}
+        onRetakePhoto={handleRetakePhoto}
+        onDiscard={handleDiscardReceipt}
         isSaving={isSaving}
         phaseLabel={savePhaseLabel}
       />

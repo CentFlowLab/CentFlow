@@ -1,5 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,6 +29,8 @@ const FILTER_SEGMENTS = [
 
 export default function MovimentosScreen() {
   const insets = useSafeAreaInsets();
+  const { action } = useLocalSearchParams<{ action?: string }>();
+  const handledAction = useRef(false);
   const [filter, setFilter] = useState<TransactionFilter>('all');
   const [modalVisible, setModalVisible] = useState(false);
   const [csvModalVisible, setCsvModalVisible] = useState(false);
@@ -51,6 +54,13 @@ export default function MovimentosScreen() {
     setModalVisible(false);
     setStartWithReceiptPicker(false);
   }
+
+  useEffect(() => {
+    if (handledAction.current || action !== 'receipt') return;
+    handledAction.current = true;
+    openAddModal(true);
+    showToast('Digitaliza o teu primeiro talão!', 'info');
+  }, [action, showToast]);
 
   function handleEdit(transaction: Transaction) {
     setEditingTransaction(transaction);

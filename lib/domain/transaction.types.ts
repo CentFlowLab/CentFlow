@@ -1,5 +1,6 @@
 import type {
   ReceiptConfirmationInput,
+  ReceiptConfirmedItem,
   ReceiptDraft,
   ReceiptMeta,
   ReceiptOcrResult,
@@ -24,6 +25,8 @@ export interface Transaction {
   receiptUrl?: string | null;
   /** URI local ou remota para preview na lista */
   receiptImage?: string | null;
+  /** Itens de linha confirmados do talão */
+  receiptItems?: ReceiptConfirmedItem[];
 }
 
 export interface CreateTransactionInput {
@@ -57,6 +60,8 @@ export type CreateTransactionOutcome = {
   /** Dados OCR (para ecrã de confirmação na próxima iteração) */
   ocrResult?: ReceiptOcrResult | null;
   ocrProcessed: boolean;
+  /** Número de linhas de produto guardadas com o talão */
+  itemsSavedCount: number;
 };
 
 /** Campos editáveis de um movimento existente */

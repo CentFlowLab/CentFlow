@@ -1,10 +1,14 @@
 import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SegmentedControl } from '@/components/layout';
 import { Card, Text, TextField } from '@/components/ui';
 import { getCategoriesForType } from '@/lib/data/transaction-categories';
-import { isOcrFieldUnchanged } from '@/lib/domain/receipt-confirmation';
+import {
+  isOcrFieldUnchanged,
+  wasOcrFieldEdited,
+} from '@/lib/domain/receipt-confirmation';
 import type { ReceiptFormValues, ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import {
   getOcrFieldConfidence,
@@ -21,6 +25,8 @@ type ReceiptDataFormProps = {
   ocrSnapshot?: ReceiptOcrResult | null;
   errors?: Record<string, string>;
   manualMode?: boolean;
+  /** Esconde itens por defeito para manter o ecrã de confirmação calmo */
+  collapseItems?: boolean;
 };
 
 const TYPE_SEGMENTS = [
@@ -28,23 +34,33 @@ const TYPE_SEGMENTS = [
   { key: 'income' as const, label: 'Receita' },
 ];
 
+type OcrFormField = 'merchantName' | 'amount' | 'date' | 'category' | 'description';
+
 export function ReceiptDataForm({
   values,
   onChange,
   ocrSnapshot,
   errors,
   manualMode = false,
+  collapseItems = false,
 }: ReceiptDataFormProps) {
+  const [itemsExpanded, setItemsExpanded] = useState(!collapseItems);
   const categories = getCategoriesForType(values.type);
   const showOcr = Boolean(ocrSnapshot) && !manualMode;
+  const itemCount = values.items.length;
 
   function update<K extends keyof ReceiptFormValues>(key: K, value: ReceiptFormValues[K]) {
     onChange({ ...values, [key]: value });
   }
 
-  function isOcr(key: keyof ReceiptFormValues): boolean {
+  function isOcr(key: OcrFormField): boolean {
     if (!showOcr) return false;
     return isOcrFieldUnchanged(key, values, ocrSnapshot ?? null);
+  }
+
+  function isEdited(key: OcrFormField): boolean {
+    if (!showOcr) return false;
+    return wasOcrFieldEdited(key, values, ocrSnapshot ?? null);
   }
 
   function ocrLevel(key: 'merchantName' | 'amount' | 'date' | 'category') {
@@ -53,29 +69,14 @@ export function ReceiptDataForm({
   }
 
   const categoryOcr = isOcr('category');
+  const categoryEdited = isEdited('category');
   const categoryTone = categoryOcr && ocrSnapshot
     ? getOcrFieldTone(getOcrFieldConfidence(ocrSnapshot, 'category'))
     : null;
 
   return (
     <View style={styles.container}>
-      <Card variant="outlined" style={styles.primarySection}>
-        <View style={styles.sectionHeader}>
-          <SymbolView
-            name={{ ios: 'star.fill', android: 'star', web: 'star' }}
-            tintColor={colors.primary}
-            size={16}
-          />
-          <Text variant="bodyMedium" style={styles.sectionTitle}>
-            Campos principais
-          </Text>
-          {showOcr ? (
-            <Text variant="caption" color="textMuted">
-              Edita o que o OCR errou
-            </Text>
-          ) : null}
-        </View>
-
+      <View style={styles.fields}>
         <TextField
           label="Loja"
           value={values.merchantName}
@@ -83,6 +84,7 @@ export function ReceiptDataForm({
           placeholder="Ex: Continente, Galp, Worten"
           error={errors?.merchantName}
           ocrHighlighted={isOcr('merchantName')}
+          ocrEdited={isEdited('merchantName')}
           ocrConfidenceLevel={ocrLevel('merchantName')}
           autoCapitalize="words"
         />
@@ -97,6 +99,7 @@ export function ReceiptDataForm({
               placeholder="0,00"
               error={errors?.amount}
               ocrHighlighted={isOcr('amount')}
+              ocrEdited={isEdited('amount')}
               ocrConfidenceLevel={ocrLevel('amount')}
             />
           </View>
@@ -108,6 +111,7 @@ export function ReceiptDataForm({
               placeholder="AAAA-MM-DD"
               error={errors?.date}
               ocrHighlighted={isOcr('date')}
+              ocrEdited={isEdited('date')}
               ocrConfidenceLevel={ocrLevel('date')}
             />
           </View>
@@ -118,8 +122,13 @@ export function ReceiptDataForm({
             <Text variant="caption" color="textSecondary" style={styles.fieldLabel}>
               Categoria
             </Text>
-            {categoryOcr ? (
-              <OcrFieldBadge level={ocrLevel('category')} compact />
+            {categoryOcr ? <OcrFieldBadge level={ocrLevel('category')} compact /> : null}
+            {categoryEdited ? (
+              <View style={styles.editedChip}>
+                <Text variant="caption" color="textMuted">
+                  Editado
+                </Text>
+              </View>
             ) : null}
           </View>
           <View
@@ -158,12 +167,6 @@ export function ReceiptDataForm({
             </Text>
           ) : null}
         </View>
-      </Card>
-
-      <Card variant="outlined" style={styles.section}>
-        <Text variant="bodyMedium" style={styles.sectionTitle}>
-          Tipo e notas
-        </Text>
 
         <SegmentedControl
           segments={TYPE_SEGMENTS}
@@ -178,17 +181,60 @@ export function ReceiptDataForm({
           placeholder="Notas sobre a compra"
           maxLength={200}
           ocrHighlighted={isOcr('description')}
+          ocrEdited={isEdited('description')}
         />
-      </Card>
+      </View>
 
-      <Card variant="outlined" style={styles.section}>
-        <ReceiptItemsEditor
-          items={values.items}
-          onChange={(items) => update('items', items)}
-          manualMode={manualMode}
-          ocrSnapshot={showOcr ? ocrSnapshot : null}
-        />
-      </Card>
+      {itemCount > 0 || !collapseItems ? (
+        <Card variant="outlined" style={styles.itemsCard}>
+          {collapseItems ? (
+            <Pressable
+              onPress={() => setItemsExpanded((open) => !open)}
+              style={styles.itemsToggle}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: itemsExpanded }}>
+              <View style={styles.itemsToggleText}>
+                <Text variant="bodyMedium" style={styles.sectionTitle}>
+                  Itens do talão
+                </Text>
+                <Text variant="caption" color="textMuted">
+                  {itemCount > 0
+                    ? `${itemCount} linha${itemCount === 1 ? '' : 's'} (opcional)`
+                    : 'Sem itens detetados'}
+                </Text>
+              </View>
+              <SymbolView
+                name={{
+                  ios: itemsExpanded ? 'chevron.up' : 'chevron.down',
+                  android: itemsExpanded ? 'expand_less' : 'expand_more',
+                  web: itemsExpanded ? 'expand_less' : 'expand_more',
+                }}
+                tintColor={colors.textMuted}
+                size={18}
+              />
+            </Pressable>
+          ) : (
+            <Text variant="bodyMedium" style={styles.sectionTitle}>
+              Itens do talão
+            </Text>
+          )}
+
+          {itemsExpanded ? (
+            <ReceiptItemsEditor
+              items={values.items}
+              onChange={(items) => update('items', items)}
+              manualMode={manualMode}
+              ocrSnapshot={showOcr ? ocrSnapshot : null}
+            />
+          ) : null}
+        </Card>
+      ) : null}
+
+      {showOcr ? (
+        <Text variant="caption" color="textMuted">
+          Verde = OCR confiável · Amarelo = rever · Cinza «Editado» = alteraste o valor
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -197,24 +243,11 @@ const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
   },
-  primarySection: {
+  fields: {
     gap: spacing.lg,
-    backgroundColor: colors.backgroundElevated,
-    borderColor: colors.primaryMuted,
-  },
-  section: {
-    gap: spacing.lg,
-    backgroundColor: colors.backgroundElevated,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
   },
   sectionTitle: {
     fontWeight: '600',
-    flex: 1,
   },
   amountDateRow: {
     flexDirection: 'row',
@@ -236,6 +269,12 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontWeight: '500',
+  },
+  editedChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceHighlight,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -263,5 +302,19 @@ const styles = StyleSheet.create({
   },
   categoryLabelActive: {
     fontWeight: '600',
+  },
+  itemsCard: {
+    gap: spacing.md,
+    backgroundColor: colors.backgroundElevated,
+  },
+  itemsToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  itemsToggleText: {
+    flex: 1,
+    gap: 2,
   },
 });

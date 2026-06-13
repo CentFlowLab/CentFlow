@@ -1,7 +1,7 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
 import { FinancialProfileDetailSheet, FinancialProfileProgress } from '@/components/profile';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
@@ -57,6 +58,11 @@ const MENU_SECTIONS: Array<{
         label: 'Aparência',
         route: '/settings/appearance',
       },
+      {
+        icon: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
+        label: 'Repetir onboarding',
+        route: '__redo_onboarding__',
+      },
     ],
   },
   {
@@ -83,10 +89,40 @@ const MENU_SECTIONS: Array<{
 
 export default function PerfilScreen() {
   const { signOut } = useAuth();
+  const { reset: resetOnboarding } = useOnboarding();
   const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
   const [loggingOut, setLoggingOut] = useState(false);
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
+  const [resettingOnboarding, setResettingOnboarding] = useState(false);
+
+  function handleRedoOnboarding() {
+    Alert.alert(
+      'Repetir onboarding?',
+      'Voltas a responder às perguntas de personalização. Os teus dados financeiros não são afectados.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Repetir',
+          onPress: () => {
+            setResettingOnboarding(true);
+            void resetOnboarding()
+              .then(() => router.replace('/onboarding'))
+              .finally(() => setResettingOnboarding(false));
+          },
+        },
+      ],
+    );
+  }
+
+  function handleMenuPress(route: string) {
+    if (route === '__redo_onboarding__') {
+      handleRedoOnboarding();
+      return;
+    }
+
+    router.push(route as never);
+  }
 
   async function handleSignOut() {
     setLoggingOut(true);
@@ -151,7 +187,8 @@ export default function PerfilScreen() {
                 {section.items.map((item, itemIndex) => (
                   <Pressable
                     key={item.label}
-                    onPress={() => router.push(item.route as never)}
+                    onPress={() => handleMenuPress(item.route)}
+                    disabled={item.route === '__redo_onboarding__' && resettingOnboarding}
                     style={({ pressed }) => [
                       styles.menuItem,
                       itemIndex < section.items.length - 1 && styles.menuItemBorder,

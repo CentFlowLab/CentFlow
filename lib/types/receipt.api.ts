@@ -64,4 +64,5 @@ export interface RawReceiptConfirmPayload {
   category?: string;
   description?: string;
   type?: string;
+  items?: RawReceiptOcrItem[];
 }

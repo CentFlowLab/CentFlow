@@ -13,7 +13,7 @@ import { colors, radius, spacing } from '@/lib/theme';
 
 import { Text } from './Text';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 
 type ButtonProps = Omit<PressableProps, 'style' | 'children'> & {
   label: string;
@@ -37,6 +37,7 @@ const variantStyles: Record<
   },
   ghost: { bg: 'transparent', text: colors.primary },
   danger: { bg: colors.dangerMuted, text: colors.danger },
+  success: { bg: colors.success, text: colors.textInverse },
 };
 
 export function Button({
@@ -58,7 +59,11 @@ export function Button({
     <View style={[styles.content, { height }]}>
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? colors.textInverse : colors.primary}
+          color={
+            variant === 'primary' || variant === 'success'
+              ? colors.textInverse
+              : colors.primary
+          }
           size="small"
         />
       ) : (
@@ -75,7 +80,12 @@ export function Button({
     </View>
   );
 
-  if (variant === 'primary') {
+  if (variant === 'primary' || variant === 'success') {
+    const gradientColors =
+      variant === 'success'
+        ? ([colors.success, '#10B981'] as const)
+        : ([colors.primary, colors.primaryDark] as const);
+
     return (
       <Pressable
         disabled={isDisabled}
@@ -87,7 +97,7 @@ export function Button({
         ]}
         {...props}>
         <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
+          colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.gradient, { borderRadius: radius.md }]}>

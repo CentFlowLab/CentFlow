@@ -186,6 +186,15 @@ export function toReceiptConfirmPayload(
     category: data.category,
     description: data.description,
     type: data.type,
+    items: data.items?.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      unitPrice: item.unitPrice,
+      total_price: item.totalPrice,
+      total: item.totalPrice,
+      category: item.category,
+    })),
   };
 }
 

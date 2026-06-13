@@ -82,6 +82,78 @@ export interface Database {
         };
         Relationships: [];
       };
+      onboarding_answers: {
+        Row: {
+          user_id: string;
+          completed: boolean;
+          completed_at: string | null;
+          skipped: boolean;
+          answers: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          completed?: boolean;
+          completed_at?: string | null;
+          skipped?: boolean;
+          answers?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          completed?: boolean;
+          completed_at?: string | null;
+          skipped?: boolean;
+          answers?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      receipt_items: {
+        Row: {
+          id: string;
+          receipt_id: string;
+          user_id: string;
+          transaction_id: string | null;
+          name: string;
+          quantity: number | null;
+          unit_price: number | null;
+          total_price: number;
+          category: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          receipt_id: string;
+          user_id: string;
+          transaction_id?: string | null;
+          name: string;
+          quantity?: number | null;
+          unit_price?: number | null;
+          total_price: number;
+          category?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          receipt_id?: string;
+          user_id?: string;
+          transaction_id?: string | null;
+          name?: string;
+          quantity?: number | null;
+          unit_price?: number | null;
+          total_price?: number;
+          category?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       receipts: {
         Row: {
           id: string;

@@ -13,12 +13,18 @@ import {
   toUpdateTransactionPayload,
 } from '@/lib/api/mappers/transaction.mapper';
 import {
+  fetchReceiptItemsMap,
+  rollbackCreatedTransaction,
+  saveReceiptConfirmation,
+} from '@/lib/api/services/receipt-items.service';
+import {
   confirmReceiptData,
   processReceiptOcr,
   uploadReceipt,
 } from '@/lib/api/services/receipt.service';
 import { isMockAuthEnabled } from '@/lib/auth';
 import { isSupabaseEnabled, supabaseTransactions } from '@/lib/supabase';
+import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import type {
   CreateTransactionInput,
   CreateTransactionOptions,
@@ -27,34 +33,53 @@ import type {
   TransactionFilter,
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
-import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import type {
   RawTransaction,
   RawTransactionsResponse,
 } from '@/lib/types/transaction.api';
 
+async function attachReceiptItems(transactions: Transaction[]): Promise<Transaction[]> {
+  const receiptIds = [
+    ...new Set(transactions.map((tx) => tx.receiptId).filter(Boolean)),
+  ] as string[];
+
+  if (receiptIds.length === 0) return transactions;
+
+  const itemsMap = await fetchReceiptItemsMap(receiptIds);
+
+  return transactions.map((tx) => {
+    if (!tx.receiptId) return tx;
+    const items = itemsMap.get(tx.receiptId);
+    if (!items?.length) return tx;
+    return { ...tx, receiptItems: items };
+  });
+}
+
 export async function fetchTransactions(
   filter: TransactionFilter = 'all',
 ): Promise<Transaction[]> {
+  let transactions: Transaction[];
+
   if (isMockAuthEnabled()) {
-    return fetchMockTransactions(filter);
+    transactions = await fetchMockTransactions(filter);
+  } else if (isSupabaseEnabled()) {
+    transactions = await supabaseTransactions.fetchTransactions(filter);
+  } else {
+    const params = filter === 'all' ? undefined : { type: filter };
+
+    const raw = await apiFetch<RawTransactionsResponse | RawTransaction[]>(
+      API_ENDPOINTS.transactions,
+      { params },
+    );
+
+    transactions = mapTransactionsResponse(raw);
+
+    if (filter !== 'all') {
+      transactions = transactions.filter((t) => t.type === filter);
+    }
   }
 
-  if (isSupabaseEnabled()) {
-    return supabaseTransactions.fetchTransactions(filter);
-  }
-
-  const params = filter === 'all' ? undefined : { type: filter };
-
-  const raw = await apiFetch<RawTransactionsResponse | RawTransaction[]>(
-    API_ENDPOINTS.transactions,
-    { params },
-  );
-
-  const transactions = mapTransactionsResponse(raw);
-
-  if (filter === 'all') return transactions;
-  return transactions.filter((t) => t.type === filter);
+  return attachReceiptItems(transactions);
 }
 
 /**
@@ -96,10 +121,6 @@ export async function createTransaction(
 
   options?.onPhase?.('creating_transaction');
 
-  if (input.confirmation && receiptId) {
-    await confirmReceiptData(receiptId, input.confirmation);
-  }
-
   const transactionInput: CreateTransactionInput = {
     type: input.confirmation?.type ?? input.type,
     amount: input.confirmation?.amount ?? input.amount,
@@ -129,6 +150,10 @@ export async function createTransaction(
       transaction.receiptUrl = receiptUrl;
     }
   } else {
+    if (input.confirmation && receiptId) {
+      await confirmReceiptData(receiptId, input.confirmation);
+    }
+
     const payload = toCreateTransactionPayload({ ...transactionInput, receiptId });
 
     const raw = await apiFetch<RawTransaction>(API_ENDPOINTS.transactions, {
@@ -149,10 +174,43 @@ export async function createTransaction(
     }
   }
 
+  let itemsSavedCount = 0;
+
+  if (input.confirmation && receiptId) {
+    try {
+      itemsSavedCount = await saveReceiptConfirmation(
+        receiptId,
+        transaction.id,
+        input.confirmation,
+      );
+
+      if (input.confirmation.items?.length) {
+        transaction = {
+          ...transaction,
+          receiptItems: input.confirmation.items,
+        };
+      }
+
+      if (__DEV__ && itemsSavedCount > 0) {
+        console.log(
+          `[CentFlow] receipt_items saved: ${itemsSavedCount} for receipt ${receiptId}`,
+        );
+      }
+    } catch (error) {
+      if (isMockAuthEnabled()) {
+        await deleteMockTransaction(transaction.id);
+      } else {
+        await rollbackCreatedTransaction(transaction.id);
+      }
+      throw error;
+    }
+  }
+
   return {
     transaction,
     ocrResult,
     ocrProcessed,
+    itemsSavedCount,
   };
 }
 

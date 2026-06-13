@@ -57,6 +57,16 @@ export interface ProcessedReceipt {
   draft: ReceiptDraft;
 }
 
+/** Item confirmado pelo utilizador — persistido em receipt_items */
+export interface ReceiptConfirmedItem {
+  id: string;
+  name: string;
+  quantity?: number;
+  unitPrice?: number;
+  totalPrice: number;
+  category?: string;
+}
+
 /** Dados revistos pelo utilizador no ecrã de confirmação */
 export interface ReceiptConfirmationInput {
   type: TransactionType;
@@ -65,6 +75,8 @@ export interface ReceiptConfirmationInput {
   category: string;
   description?: string;
   date: string;
+  /** Linhas de produto confirmadas (pode ser vazio) */
+  items?: ReceiptConfirmedItem[];
 }
 
 export type ReceiptMeta = {
@@ -78,6 +90,8 @@ export type ReceiptFormItem = {
   id: string;
   name: string;
   amount: string;
+  quantity?: string;
+  unitPrice?: string;
   /** Item veio do OCR e ainda não foi editado */
   fromOcr?: boolean;
 };

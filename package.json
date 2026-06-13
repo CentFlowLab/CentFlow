@@ -60,6 +60,7 @@
     "eas:build:dev:android": "node scripts/eas-run.cjs build --profile development --platform android",
     "eas:build:preview:ios": "node scripts/eas-run.cjs build --profile preview --platform ios",
     "eas:build:preview:android": "node scripts/eas-run.cjs build --profile preview --platform android",
+    "eas:build:preview-real:android": "node scripts/eas-run.cjs build --profile preview-real --platform android",
     "eas:build:preview-simulator:ios": "node scripts/eas-run.cjs build --profile preview-simulator --platform ios",
     "eas:build:production:ios": "node scripts/eas-run.cjs build --profile production --platform ios",
     "eas:build:production:android": "node scripts/eas-run.cjs build --profile production --platform android",

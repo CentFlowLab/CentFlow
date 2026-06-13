@@ -32,6 +32,20 @@
         "buildType": "apk"
       }
     },
+    "preview-real": {
+      "extends": "preview",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
+        "EXPO_PUBLIC_MOCK_AUTH": "false",
+        "EXPO_PUBLIC_MOCK_OCR": "false",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oxhjfwmhcwadlltinlck.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_nY3Bqe4UcgbtIteavz6H1Q_kgquHcDQ"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "preview-simulator": {
       "extends": "preview",
       "ios": {
@@ -44,7 +58,9 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
         "EXPO_PUBLIC_MOCK_AUTH": "false",
-        "EXPO_PUBLIC_MOCK_OCR": "false"
+        "EXPO_PUBLIC_MOCK_OCR": "false",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oxhjfwmhcwadlltinlck.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_nY3Bqe4UcgbtIteavz6H1Q_kgquHcDQ"
       }
     }
   },

@@ -18,6 +18,7 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 import { colors, spacing } from '@/lib/theme';
 
 import { TransactionForm } from './TransactionForm';
+import { ReceiptItemsSummary } from './ReceiptItemsSummary';
 
 type EditTransactionModalProps = {
   visible: boolean;
@@ -123,6 +124,10 @@ export function EditTransactionModal({
             O talão anexado mantém-se ligado a este movimento.
           </Text>
         </Card>
+      ) : null}
+
+      {transaction.receiptItems && transaction.receiptItems.length > 0 ? (
+        <ReceiptItemsSummary items={transaction.receiptItems} compact />
       ) : null}
 
       <TransactionForm values={values} onChange={setValues} errors={errors} />

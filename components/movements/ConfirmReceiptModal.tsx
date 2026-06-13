@@ -1,6 +1,12 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text } from '@/components/ui';
@@ -14,11 +20,16 @@ import { receiptConfirmationSchema } from '@/lib/domain/receipt-confirmation.sch
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
-import { colors, spacing } from '@/lib/theme';
+import {
+  getOcrConfidenceTone,
+  getOcrSourceLabel,
+} from '@/lib/receipt/ocr-confidence';
+import { colors, radius, spacing } from '@/lib/theme';
 
-import { OcrDetectionSummary } from './OcrDetectionSummary';
 import { OcrFailureCard } from './ocr/OcrFailureCard';
+import { OcrFieldsChecklist } from './ocr/OcrFieldsChecklist';
 import { ReceiptDataForm } from './ReceiptDataForm';
+import { ReceiptImageViewer } from './ReceiptImageViewer';
 import { ReceiptPreview } from './ReceiptPreview';
 
 type ConfirmReceiptModalProps = {
@@ -28,6 +39,8 @@ type ConfirmReceiptModalProps = {
   onConfirm: (processed: ProcessedReceipt, values: ReceiptFormValues) => Promise<void>;
   onFillManually: (processed: ProcessedReceipt, values: ReceiptFormValues) => void;
   onIgnoreOcr: (processed: ProcessedReceipt) => void;
+  onRetakePhoto: () => void;
+  onDiscard: () => void;
   isSaving: boolean;
   phaseLabel?: string | null;
 };
@@ -49,7 +62,7 @@ function ocrStatusLabel(
   if (manualMode) {
     return {
       title: 'Preenchimento manual',
-      subtitle: 'Os dados do OCR foram ignorados. O talão original continua anexado.',
+      subtitle: 'O talão original continua anexado ao movimento.',
       tone: 'neutral',
     };
   }
@@ -59,7 +72,7 @@ function ocrStatusLabel(
       title: 'Sem leitura automática',
       subtitle:
         unavailableReason ??
-        'Preenche os campos abaixo — o talão original fica guardado no movimento.',
+        'Preenche os campos — a foto do talão fica guardada no movimento.',
       tone: 'neutral',
     };
   }
@@ -72,8 +85,8 @@ function ocrStatusLabel(
 
   if (isDemo) {
     return {
-      title: 'Dados de demonstração (não reais)',
-      subtitle: 'Ignora o OCR e preenche manualmente com os valores reais do talão.',
+      title: 'Dados de demonstração',
+      subtitle: 'Substitui pelos valores reais do teu talão.',
       tone: 'warning',
     };
   }
@@ -81,11 +94,11 @@ function ocrStatusLabel(
   if (filled >= 3 && confidence >= 0.65) {
     return {
       title: isApi
-        ? 'Boa leitura — confirma antes de guardar'
+        ? 'Boa leitura — confirma os dados'
         : isDevice
-          ? 'Leitura no dispositivo — revê os campos'
-          : 'Dados detectados com boa confiança',
-      subtitle: 'Campos a verde/amarelo vieram do OCR. Edita o que estiver errado.',
+          ? 'Leitura no dispositivo'
+          : 'Dados detectados',
+      subtitle: 'Revê rapidamente e corrige o que estiver errado.',
       tone: 'success',
     };
   }
@@ -100,9 +113,22 @@ function ocrStatusLabel(
 
   return {
     title: 'Poucos dados detectados',
-    subtitle: 'Preenche manualmente ou ignora a leitura automática.',
+    subtitle: 'Preenche manualmente ou tira outra foto com melhor luz.',
     tone: 'neutral',
   };
+}
+
+function getPhotoQualityHint(
+  ocr: ProcessedReceipt['ocrResult'],
+  manualMode: boolean,
+): string | null {
+  if (manualMode || !ocr) return null;
+  const confidence = ocr.confidence ?? 0;
+  const filled = countOcrFilledFields(ocr);
+  if (confidence < 0.45 || filled <= 1) {
+    return 'Foto com pouca luz ou desfocada? Tira outra com o texto bem visível.';
+  }
+  return null;
 }
 
 export function ConfirmReceiptModal({
@@ -112,13 +138,20 @@ export function ConfirmReceiptModal({
   onConfirm,
   onFillManually,
   onIgnoreOcr,
+  onRetakePhoto,
+  onDiscard,
   isSaving,
   phaseLabel,
 }: ConfirmReceiptModalProps) {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 680;
+
   const [values, setValues] = useState<ReceiptFormValues>(() => emptyReceiptFormValues());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [manualMode, setManualMode] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [rawTextOpen, setRawTextOpen] = useState(false);
 
   useEffect(() => {
     if (!visible || !processed) return;
@@ -126,6 +159,8 @@ export function ConfirmReceiptModal({
     setErrors({});
     setApiError(null);
     setManualMode(false);
+    setViewerOpen(false);
+    setRawTextOpen(false);
   }, [visible, processed]);
 
   if (!processed) return null;
@@ -162,6 +197,17 @@ export function ConfirmReceiptModal({
     onIgnoreOcr(processed!);
   }
 
+  function confirmDiscard() {
+    Alert.alert(
+      'Descartar talão?',
+      'A foto e os dados lidos serão removidos. O movimento não será criado.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Descartar', style: 'destructive', onPress: onDiscard },
+      ],
+    );
+  }
+
   const hasOcr = processed.ocrResult !== null && !manualMode;
   const ocrFailed = !processed.ocrResult && !manualMode;
   const status = ocrStatusLabel(
@@ -174,106 +220,219 @@ export function ConfirmReceiptModal({
     localUri: getReceiptDisplayUri(processed.draft),
     fileName: processed.draft.fileName.replace(/-ocr\.jpg$/i, '-original.jpg'),
   };
+  const qualityHint = getPhotoQualityHint(processed.ocrResult, manualMode);
+  const ocrTone = processed.ocrResult
+    ? getOcrConfidenceTone(processed.ocrResult.confidence, processed.ocrResult.source)
+    : null;
+  const showRawText =
+    Boolean(processed.ocrResult?.rawText) &&
+    !manualMode &&
+    (ocrTone?.level === 'low' || ocrTone?.level === 'medium' || ocrFailed);
 
   return (
-    <DraggableBottomSheet
-      visible={visible}
-      onClose={onClose}
-      maxHeight="94%"
-      scrollContentStyle={styles.content}
-      header={(requestClose) => (
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text variant="h2">Rever e editar</Text>
-            <Text variant="caption" color="textMuted">
-              Confirma os dados do talão — o original fica sempre anexado
-            </Text>
+    <>
+      <DraggableBottomSheet
+        visible={visible}
+        onClose={onClose}
+        maxHeight="94%"
+        scrollContentStyle={styles.content}
+        header={(requestClose) => (
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <Text variant="h2">Confirmar talão</Text>
+              <Text variant="caption" color="textMuted">
+                Revê a foto e corrige os dados antes de guardar
+              </Text>
+            </View>
+            <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
+              <SymbolView
+                name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+                tintColor={colors.textMuted}
+                size={28}
+              />
+            </Pressable>
           </View>
-          <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
-            <SymbolView
-              name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
-              tintColor={colors.textMuted}
-              size={28}
+        )}>
+        <StatusBanner title={status.title} subtitle={status.subtitle} tone={status.tone} />
+
+        <View style={[styles.main, isWide && styles.mainWide]}>
+          <View style={[styles.previewColumn, isWide && styles.previewColumnWide]}>
+            <ReceiptPreview
+              draft={previewDraft}
+              variant="hero"
+              onPress={() => setViewerOpen(true)}
+              qualityHint={qualityHint}
             />
-          </Pressable>
+
+            <View style={styles.previewActions}>
+              <Button
+                label="Tirar outra foto"
+                variant="secondary"
+                onPress={onRetakePhoto}
+                disabled={isSaving}
+                fullWidth
+                icon={
+                  <SymbolView
+                    name={{ ios: 'camera.fill', android: 'photo_camera', web: 'photo_camera' }}
+                    tintColor={colors.text}
+                    size={18}
+                  />
+                }
+              />
+              <Button
+                label="Descartar"
+                variant="ghost"
+                onPress={confirmDiscard}
+                disabled={isSaving}
+                fullWidth
+              />
+            </View>
+
+            {hasOcr && processed.ocrResult ? (
+              <OcrConfidenceStrip ocr={processed.ocrResult} />
+            ) : null}
+          </View>
+
+          <View style={[styles.formColumn, isWide && styles.formColumnWide]}>
+            {ocrFailed ? (
+              <OcrFailureCard message={processed.ocrUnavailableReason} />
+            ) : null}
+
+            {manualMode ? (
+              <Card variant="outlined" style={styles.manualCard}>
+                <Text variant="caption" color="textSecondary">
+                  Modo manual — preenche Loja, Total e Data. O talão original permanece
+                  anexado.
+                </Text>
+              </Card>
+            ) : null}
+
+            {hasOcr && processed.ocrResult ? (
+              <OcrFieldsChecklist ocr={processed.ocrResult} />
+            ) : null}
+
+            <ReceiptDataForm
+              values={values}
+              onChange={setValues}
+              ocrSnapshot={manualMode ? null : processed.ocrResult}
+              errors={errors}
+              manualMode={manualMode}
+              collapseItems
+            />
+
+            {showRawText ? (
+              <Card variant="outlined" style={styles.rawTextCard}>
+                <Pressable
+                  onPress={() => setRawTextOpen((open) => !open)}
+                  style={styles.rawTextToggle}>
+                  <Text variant="caption" color="textSecondary" style={styles.rawTextTitle}>
+                    Texto lido pelo OCR
+                  </Text>
+                  <SymbolView
+                    name={{
+                      ios: rawTextOpen ? 'chevron.up' : 'chevron.down',
+                      android: rawTextOpen ? 'expand_less' : 'expand_more',
+                      web: rawTextOpen ? 'expand_less' : 'expand_more',
+                    }}
+                    tintColor={colors.textMuted}
+                    size={16}
+                  />
+                </Pressable>
+                {rawTextOpen ? (
+                  <Text variant="caption" color="textMuted" style={styles.rawTextBody}>
+                    {processed.ocrResult?.rawText}
+                  </Text>
+                ) : null}
+              </Card>
+            ) : null}
+          </View>
         </View>
-      )}>
-      <StatusBanner title={status.title} subtitle={status.subtitle} tone={status.tone} />
 
-      <ReceiptPreview draft={previewDraft} />
-
-      {hasOcr ? <OcrDetectionSummary ocr={processed.ocrResult!} /> : null}
-
-      {ocrFailed ? (
-        <OcrFailureCard message={processed.ocrUnavailableReason} />
-      ) : null}
-
-      {manualMode ? (
-        <Card variant="outlined" style={styles.manualCard}>
-          <Text variant="caption" color="textSecondary">
-            Modo manual activo. Preenche Loja, Total e Data — o talão original permanece
-            anexado.
-          </Text>
-        </Card>
-      ) : null}
-
-      <ReceiptDataForm
-        values={values}
-        onChange={setValues}
-        ocrSnapshot={manualMode ? null : processed.ocrResult}
-        errors={errors}
-        manualMode={manualMode}
-      />
-
-      {apiError ? (
-        <Card variant="outlined" style={styles.errorCard}>
-          <Text variant="caption" color="danger">
-            {apiError}
-          </Text>
-        </Card>
-      ) : null}
-
-      <View style={styles.actions}>
-        {phaseLabel ? (
-          <Text variant="caption" color="textMuted" align="center">
-            {phaseLabel}
-          </Text>
+        {apiError ? (
+          <Card variant="outlined" style={styles.errorCard}>
+            <Text variant="caption" color="danger">
+              {apiError}
+            </Text>
+          </Card>
         ) : null}
 
-        <Button
-          label={phaseLabel ?? 'Confirmar e guardar movimento'}
-          onPress={handleConfirm}
-          loading={isSaving}
-          fullWidth
-          size="lg"
-        />
+        <View style={styles.actions}>
+          {phaseLabel ? (
+            <Text variant="caption" color="textMuted" align="center">
+              {phaseLabel}
+            </Text>
+          ) : null}
 
-        {!manualMode ? (
           <Button
-            label="Ignorar OCR e preencher manualmente"
-            variant="secondary"
-            onPress={handleIgnoreOcr}
-            disabled={isSaving}
+            label={phaseLabel ?? 'Confirmar e guardar'}
+            onPress={handleConfirm}
+            loading={isSaving}
+            variant="success"
             fullWidth
+            size="lg"
             icon={
               <SymbolView
-                name={{ ios: 'hand.raised.fill', android: 'back_hand', web: 'back_hand' }}
-                tintColor={colors.text}
-                size={18}
+                name={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }}
+                tintColor={colors.textInverse}
+                size={20}
               />
             }
           />
-        ) : null}
 
-        <Button
-          label="Voltar ao formulário principal"
-          variant="ghost"
-          onPress={() => onFillManually(processed, values)}
-          disabled={isSaving}
-          fullWidth
+          {!manualMode ? (
+            <Button
+              label="Ignorar OCR e preencher manualmente"
+              variant="secondary"
+              onPress={handleIgnoreOcr}
+              disabled={isSaving}
+              fullWidth
+            />
+          ) : null}
+
+          <Button
+            label="Voltar ao formulário principal"
+            variant="ghost"
+            onPress={() => onFillManually(processed, values)}
+            disabled={isSaving}
+            fullWidth
+          />
+        </View>
+      </DraggableBottomSheet>
+
+      <ReceiptImageViewer
+        visible={viewerOpen}
+        uri={getReceiptDisplayUri(processed.draft)}
+        fileName={previewDraft.fileName}
+        onClose={() => setViewerOpen(false)}
+      />
+    </>
+  );
+}
+
+function OcrConfidenceStrip({ ocr }: { ocr: NonNullable<ProcessedReceipt['ocrResult']> }) {
+  const tone = getOcrConfidenceTone(ocr.confidence, ocr.source);
+  const filledFields = countOcrFilledFields(ocr);
+
+  return (
+    <Card
+      variant="outlined"
+      style={[styles.ocrStrip, { borderColor: tone.color, backgroundColor: tone.bg }]}>
+      <View style={styles.ocrStripRow}>
+        <SymbolView
+          name={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }}
+          tintColor={tone.color}
+          size={16}
         />
+        <View style={styles.ocrStripText}>
+          <Text variant="caption" style={{ color: tone.color, fontWeight: '700' }}>
+            Confiança OCR: {tone.label}
+          </Text>
+          <Text variant="caption" color="textMuted">
+            {getOcrSourceLabel(ocr.source)} · {filledFields} campos
+          </Text>
+        </View>
       </View>
-    </DraggableBottomSheet>
+    </Card>
   );
 }
 
@@ -335,6 +494,43 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingBottom: spacing.xl,
   },
+  main: {
+    gap: spacing.lg,
+  },
+  mainWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xl,
+  },
+  previewColumn: {
+    gap: spacing.md,
+  },
+  previewColumnWide: {
+    flex: 0.42,
+    minWidth: 240,
+  },
+  formColumn: {
+    gap: spacing.lg,
+    flex: 1,
+  },
+  formColumnWide: {
+    flex: 0.58,
+  },
+  previewActions: {
+    gap: spacing.sm,
+  },
+  ocrStrip: {
+    gap: spacing.xs,
+  },
+  ocrStripRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  ocrStripText: {
+    flex: 1,
+    gap: 2,
+  },
   statusCard: {
     gap: spacing.xs,
   },
@@ -353,6 +549,23 @@ const styles = StyleSheet.create({
   manualCard: {
     borderColor: colors.border,
     backgroundColor: colors.surfaceHighlight,
+  },
+  rawTextCard: {
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  rawTextToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  rawTextTitle: {
+    fontWeight: '600',
+  },
+  rawTextBody: {
+    lineHeight: 18,
+    fontFamily: 'monospace',
   },
   errorCard: {
     borderColor: colors.danger,
