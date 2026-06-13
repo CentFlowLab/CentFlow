@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useImportCsv } from '@/hooks/useImportCsv';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import type { CsvParseResult } from '@/lib/csv/csv-import.types';
@@ -23,6 +24,7 @@ type Step = 'pick' | 'preview' | 'done';
 
 export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
   const importMutation = useImportCsv();
+  const { showToast } = useToast();
 
   const [step, setStep] = useState<Step>('pick');
   const [parseResult, setParseResult] = useState<CsvParseResult | null>(null);
@@ -87,6 +89,12 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
       }
 
       setStep('done');
+      showToast(
+        `${result.imported} movimento${result.imported === 1 ? '' : 's'} importado${
+          result.imported === 1 ? '' : 's'
+        }.`,
+        'success',
+      );
     } catch (error) {
       setImportError(getApiErrorMessage(error, 'a importação'));
     }

@@ -90,7 +90,12 @@ export function SwipeableTransactionListItem({
   }
 
   const row = (
-    <Card variant="elevated" style={styles.card}>
+    <Pressable
+      onPress={() => onEdit(transaction)}
+      onLongPress={() => onEdit(transaction)}
+      delayLongPress={320}
+      style={({ pressed }) => [pressed && styles.rowPressed]}>
+      <Card variant="elevated" style={styles.card}>
       <View style={[styles.iconWrapper, isIncome ? styles.iconIncome : styles.iconExpense]}>
         <SymbolView name={icon} tintColor={amountColor} size={20} />
       </View>
@@ -146,6 +151,7 @@ export function SwipeableTransactionListItem({
         {formatCurrency(transaction.amount, transaction.currency)}
       </Text>
     </Card>
+    </Pressable>
   );
 
   if (Platform.OS === 'web') {
@@ -166,6 +172,9 @@ export function SwipeableTransactionListItem({
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: spacing.md,
+  },
+  rowPressed: {
+    opacity: 0.92,
   },
   card: {
     flexDirection: 'row',

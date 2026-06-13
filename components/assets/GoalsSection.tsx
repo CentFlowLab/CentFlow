@@ -1,12 +1,13 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Card, SectionHeader, Text } from '@/components/ui';
+import { Card, Text } from '@/components/ui';
 import type { Goal } from '@/lib/domain/assets.types';
 import { getGoalsAggregate } from '@/lib/domain/goal.utils';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
 import { ASSETS_SECTION_META } from './assets.config';
+import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { GoalListItem } from './GoalListItem';
 import { GoalProgressBar } from './GoalProgressBar';
 import { GoalsEmptyState } from './GoalsEmptyState';
@@ -26,7 +27,6 @@ export function GoalsSection({ goals, onAdd, onEdit, onLearnMore, onDelete }: Go
   if (goals.length === 0) {
     return (
       <View style={styles.container}>
-        <SectionHeader title={meta.title} subtitle={meta.subtitle} />
         <GoalsEmptyState onCreate={onAdd} onLearnMore={onLearnMore} />
       </View>
     );
@@ -36,11 +36,10 @@ export function GoalsSection({ goals, onAdd, onEdit, onLearnMore, onDelete }: Go
 
   return (
     <View style={styles.container}>
-      <SectionHeader
-        title={meta.title}
-        subtitle={`${goals.length} objetivo${goals.length === 1 ? '' : 's'} activo${goals.length === 1 ? '' : 's'}`}
-        actionLabel={meta.addLabel}
-        onAction={onAdd}
+      <AssetsTabToolbar
+        label={`${goals.length} objetivo${goals.length === 1 ? '' : 's'}`}
+        addLabel={meta.addLabel}
+        onAdd={onAdd}
       />
 
       <Card variant="outlined" style={styles.summaryCard}>

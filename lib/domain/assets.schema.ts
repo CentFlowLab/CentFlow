@@ -34,4 +34,6 @@ export const createInventoryItemSchema = z.object({
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
 export type UpdateGoalInput = CreateGoalInput;
 export type CreateWarrantyInput = z.infer<typeof createWarrantySchema>;
+export type UpdateWarrantyInput = CreateWarrantyInput;
 export type CreateInventoryItemInput = z.infer<typeof createInventoryItemSchema>;
+export type UpdateInventoryItemInput = CreateInventoryItemInput;

@@ -1,37 +1,45 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
-import type { AssetsCounts } from '@/lib/domain/assets.types';
+import type { AssetsCounts, AssetsTab } from '@/lib/domain/assets.types';
 import { colors, radius, spacing } from '@/lib/theme';
 
 type AssetsOverviewCardProps = {
   counts: AssetsCounts;
+  activeTab?: AssetsTab;
+  onTabPress?: (tab: AssetsTab) => void;
+};
+
+const TAB_COUNT_KEY: Record<AssetsTab, keyof AssetsCounts> = {
+  objetivos: 'goals',
+  garantias: 'warranties',
+  inventario: 'inventory',
 };
 
 const OVERVIEW_ITEMS: Array<{
-  key: keyof AssetsCounts;
+  key: AssetsTab;
   label: string;
   icon: SymbolViewProps['name'];
   color: string;
   bg: string;
 }> = [
   {
-    key: 'goals',
+    key: 'objetivos',
     label: 'Objetivos',
     icon: { ios: 'target', android: 'flag', web: 'flag' },
     color: colors.primary,
     bg: colors.primaryMuted,
   },
   {
-    key: 'warranties',
+    key: 'garantias',
     label: 'Garantias',
     icon: { ios: 'shield.fill', android: 'verified_user', web: 'verified_user' },
     color: colors.accent,
     bg: colors.accentMuted,
   },
   {
-    key: 'inventory',
+    key: 'inventario',
     label: 'Inventário',
     icon: { ios: 'shippingbox.fill', android: 'inventory_2', web: 'inventory_2' },
     color: colors.success,
@@ -39,7 +47,11 @@ const OVERVIEW_ITEMS: Array<{
   },
 ];
 
-export function AssetsOverviewCard({ counts }: AssetsOverviewCardProps) {
+export function AssetsOverviewCard({
+  counts,
+  activeTab,
+  onTabPress,
+}: AssetsOverviewCardProps) {
   return (
     <Card variant="elevated" style={styles.card}>
       <Text variant="label" color="textMuted">
@@ -48,13 +60,21 @@ export function AssetsOverviewCard({ counts }: AssetsOverviewCardProps) {
 
       <View style={styles.grid}>
         {OVERVIEW_ITEMS.map((item) => {
-          const count = counts[item.key];
+          const count = counts[TAB_COUNT_KEY[item.key]];
+          const isActive = activeTab === item.key;
 
           return (
-            <View
+            <Pressable
               key={item.key}
-              style={[styles.tile, { backgroundColor: item.bg }]}
-              accessibilityLabel={`${item.label}, ${count} registados`}>
+              onPress={() => onTabPress?.(item.key)}
+              style={[
+                styles.tile,
+                { backgroundColor: item.bg },
+                isActive && styles.tileActive,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.label}, ${count} registados`}
+              accessibilityState={{ selected: isActive }}>
               <SymbolView name={item.icon} tintColor={item.color} size={18} />
               <Text variant="h3" style={{ color: item.color }}>
                 {count}
@@ -62,7 +82,7 @@ export function AssetsOverviewCard({ counts }: AssetsOverviewCardProps) {
               <Text variant="caption" color="textMuted" numberOfLines={1}>
                 {item.label}
               </Text>
-            </View>
+            </Pressable>
           );
         })}
       </View>
@@ -87,5 +107,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  tileActive: {
+    borderColor: colors.primary,
+    borderWidth: 1.5,
   },
 });

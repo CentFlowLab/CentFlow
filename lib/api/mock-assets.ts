@@ -9,6 +9,8 @@ import type {
   CreateGoalInput,
   CreateInventoryItemInput,
   CreateWarrantyInput,
+  UpdateInventoryItemInput,
+  UpdateWarrantyInput,
 } from '@/lib/domain/assets.schema';
 
 let goalsStore: Goal[] = buildSeedGoals();
@@ -112,6 +114,45 @@ export async function createMockInventoryItem(
   };
   inventoryStore = [item, ...inventoryStore];
   return item;
+}
+
+export async function updateMockWarranty(id: string, input: UpdateWarrantyInput): Promise<Warranty> {
+  await new Promise((r) => setTimeout(r, 200));
+  const existing = warrantiesStore.find((w) => w.id === id);
+  if (!existing) throw new Error('Garantia não encontrada');
+
+  const updated: Warranty = {
+    ...existing,
+    product: input.product.trim(),
+    expiresAt: input.expiresAt,
+    store: input.store?.trim() || undefined,
+    purchaseDate: input.purchaseDate || undefined,
+    receiptTransactionId: input.receiptTransactionId,
+    receiptId: input.receiptId ?? undefined,
+    receiptLabel: input.receiptLabel?.trim() || undefined,
+  };
+
+  warrantiesStore = warrantiesStore.map((w) => (w.id === id ? updated : w));
+  return updated;
+}
+
+export async function updateMockInventoryItem(
+  id: string,
+  input: UpdateInventoryItemInput,
+): Promise<InventoryItem> {
+  await new Promise((r) => setTimeout(r, 200));
+  const existing = inventoryStore.find((i) => i.id === id);
+  if (!existing) throw new Error('Item não encontrado');
+
+  const updated: InventoryItem = {
+    ...existing,
+    name: input.name.trim(),
+    value: input.value,
+    category: input.category?.trim() || undefined,
+  };
+
+  inventoryStore = inventoryStore.map((i) => (i.id === id ? updated : i));
+  return updated;
 }
 
 export async function deleteMockGoal(id: string): Promise<void> {

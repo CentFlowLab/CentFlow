@@ -67,3 +67,21 @@ export function getWarrantiesSummary(warranties: Array<{ expiresAt: string }>) {
     expired,
   };
 }
+
+export function sortWarrantiesByUrgency<T extends { expiresAt: string }>(warranties: T[]): T[] {
+  return [...warranties].sort((a, b) => {
+    const daysA = daysUntil(a.expiresAt);
+    const daysB = daysUntil(b.expiresAt);
+
+    const priority = (days: number) => {
+      if (days < 0) return 0;
+      if (days <= WARRANTY_CRITICAL_DAYS) return 1;
+      if (days <= WARRANTY_WARNING_DAYS) return 2;
+      return 3;
+    };
+
+    const priorityDiff = priority(daysA) - priority(daysB);
+    if (priorityDiff !== 0) return priorityDiff;
+    return daysA - daysB;
+  });
+}

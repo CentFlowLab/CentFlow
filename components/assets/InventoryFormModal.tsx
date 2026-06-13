@@ -1,18 +1,25 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ASSETS_SECTION_META } from '@/components/assets/assets.config';
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
-import { useCreateInventoryItem } from '@/hooks/queries/useAssets';
-import { createInventoryItemSchema } from '@/lib/domain/assets.schema';
+import {
+  useCreateInventoryItem,
+  useDeleteInventoryItem,
+  useUpdateInventoryItem,
+} from '@/hooks/queries/useAssets';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { createInventoryItemSchema } from '@/lib/domain/assets.schema';
+import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
+import { formatCurrency } from '@/lib/utils/format';
 
-type AddAssetModalProps = {
+type InventoryFormModalProps = {
   visible: boolean;
   onClose: () => void;
+  item?: InventoryItem | null;
 };
 
 function parseAmount(value: string): number {
@@ -20,8 +27,15 @@ function parseAmount(value: string): number {
   return Number(normalized);
 }
 
-export function AddAssetModal({ visible, onClose }: AddAssetModalProps) {
+export function InventoryFormModal({
+  visible,
+  onClose,
+  item = null,
+}: InventoryFormModalProps) {
+  const isEditing = Boolean(item);
   const createInventory = useCreateInventoryItem();
+  const updateInventory = useUpdateInventoryItem();
+  const deleteInventory = useDeleteInventoryItem();
   const meta = ASSETS_SECTION_META.inventario;
 
   const [name, setName] = useState('');
@@ -30,15 +44,28 @@ export function AddAssetModal({ visible, onClose }: AddAssetModalProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
+  const isSaving = createInventory.isPending || updateInventory.isPending;
+  const isDeleting = deleteInventory.isPending;
+
   useEffect(() => {
     if (!visible) return;
-    setName('');
-    setValue('');
-    setCategory('');
+
+    if (item) {
+      setName(item.name);
+      setValue(String(item.value));
+      setCategory(item.category ?? '');
+    } else {
+      setName('');
+      setValue('');
+      setCategory('');
+    }
+
     setErrors({});
     setApiError(null);
     createInventory.reset();
-  }, [visible, createInventory]);
+    updateInventory.reset();
+    deleteInventory.reset();
+  }, [visible, item, createInventory, updateInventory, deleteInventory]);
 
   async function handleSave() {
     setApiError(null);
@@ -61,12 +88,47 @@ export function AddAssetModal({ visible, onClose }: AddAssetModalProps) {
     }
 
     try {
-      await createInventory.mutateAsync(result.data);
+      if (isEditing && item) {
+        await updateInventory.mutateAsync({ id: item.id, input: result.data });
+      } else {
+        await createInventory.mutateAsync(result.data);
+      }
       onClose();
     } catch (error) {
-      setApiError(getApiErrorMessage(error, 'o registo'));
+      setApiError(getApiErrorMessage(error, 'o item'));
     }
   }
+
+  function confirmDelete() {
+    if (!item) return;
+    const message = `Eliminar "${item.name}"?`;
+
+    if (Platform.OS === 'web') {
+      if (typeof globalThis.confirm === 'function' && globalThis.confirm(message)) {
+        void executeDelete();
+      }
+      return;
+    }
+
+    Alert.alert('Eliminar item', message, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: () => void executeDelete() },
+    ]);
+  }
+
+  async function executeDelete() {
+    if (!item) return;
+    try {
+      await deleteInventory.mutateAsync(item.id);
+      onClose();
+    } catch (error) {
+      setApiError(getApiErrorMessage(error, 'o item'));
+    }
+  }
+
+  const parsedValue = parseAmount(value);
+  const previewValue =
+    value && !Number.isNaN(parsedValue) ? formatCurrency(parsedValue) : null;
 
   return (
     <DraggableBottomSheet
@@ -77,7 +139,7 @@ export function AddAssetModal({ visible, onClose }: AddAssetModalProps) {
       header={(requestClose) => (
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text variant="h2">{meta.addLabel}</Text>
+            <Text variant="h2">{isEditing ? 'Editar item' : meta.addLabel}</Text>
             <Text variant="caption" color="textMuted">
               {meta.subtitle}
             </Text>
@@ -99,7 +161,7 @@ export function AddAssetModal({ visible, onClose }: AddAssetModalProps) {
         error={errors.name}
       />
       <TextField
-        label="Valor estimado (€)"
+        label="Valor estimado"
         value={value}
         onChangeText={setValue}
         keyboardType="decimal-pad"
@@ -113,6 +175,17 @@ export function AddAssetModal({ visible, onClose }: AddAssetModalProps) {
         placeholder="Ex: eletrónica"
       />
 
+      {previewValue ? (
+        <Card variant="outlined" padding="md" style={styles.previewCard}>
+          <Text variant="caption" color="textMuted">
+            Valor estimado
+          </Text>
+          <Text variant="h3" color="primary">
+            {previewValue}
+          </Text>
+        </Card>
+      ) : null}
+
       {apiError ? (
         <Card variant="outlined" style={styles.errorCard}>
           <Text variant="caption" color="danger">
@@ -122,14 +195,35 @@ export function AddAssetModal({ visible, onClose }: AddAssetModalProps) {
       ) : null}
 
       <Button
-        label={createInventory.isPending ? 'A guardar...' : 'Guardar'}
+        label={isSaving ? 'A guardar...' : isEditing ? 'Guardar alterações' : 'Guardar'}
         onPress={handleSave}
-        loading={createInventory.isPending}
+        loading={isSaving}
         fullWidth
         size="lg"
       />
+
+      {isEditing ? (
+        <Button
+          label="Eliminar item"
+          variant="ghost"
+          onPress={confirmDelete}
+          loading={isDeleting}
+          fullWidth
+        />
+      ) : null}
     </DraggableBottomSheet>
   );
+}
+
+/** @deprecated Use InventoryFormModal */
+export function AddAssetModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  return <InventoryFormModal visible={visible} onClose={onClose} />;
 }
 
 const styles = StyleSheet.create({
@@ -147,6 +241,9 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.lg,
     paddingBottom: spacing.xl,
+  },
+  previewCard: {
+    backgroundColor: colors.backgroundElevated,
   },
   errorCard: {
     borderColor: colors.danger,

@@ -9,6 +9,7 @@ import {
   updateTransaction,
 } from '@/lib/api/services/transaction.service';
 import { useAuth } from '@/lib/auth';
+import { getCategoryLabel } from '@/lib/data/transaction-categories';
 import type {
   CreateTransactionInput,
   CreateTransactionPhase,
@@ -16,6 +17,21 @@ import type {
   TransactionFilter,
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
+
+type TransactionSnapshot = Array<[readonly unknown[], Transaction[] | undefined]>;
+
+export function getTransactionQueries(queryClient: QueryClient): TransactionSnapshot {
+  return queryClient.getQueriesData<Transaction[]>({ queryKey: ['transactions'] });
+}
+
+export function patchTransactionCaches(
+  queryClient: QueryClient,
+  updater: (transactions: Transaction[]) => Transaction[],
+) {
+  queryClient.setQueriesData<Transaction[]>({ queryKey: ['transactions'] }, (current) =>
+    updater(current ?? []),
+  );
+}
 
 export function invalidateTransactionQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -83,7 +99,34 @@ export function useUpdateTransaction() {
       transactionId: string;
       input: UpdateTransactionInput;
     }) => updateTransaction(transactionId, input),
-    onSuccess: () => invalidateTransactionQueries(queryClient),
+    onMutate: async ({ transactionId, input }) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] });
+      const snapshot = getTransactionQueries(queryClient);
+
+      patchTransactionCaches(queryClient, (transactions) =>
+        transactions.map((transaction) =>
+          transaction.id === transactionId
+            ? {
+                ...transaction,
+                type: input.type,
+                amount: input.amount,
+                category: input.category,
+                categoryLabel: getCategoryLabel(input.category, input.type),
+                description: input.description,
+                date: input.date,
+              }
+            : transaction,
+        ),
+      );
+
+      return { snapshot };
+    },
+    onError: (_error, _variables, context) => {
+      context?.snapshot.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: () => invalidateTransactionQueries(queryClient),
   });
 }
 
@@ -92,6 +135,21 @@ export function useDeleteTransaction() {
 
   return useMutation({
     mutationFn: (transactionId: string) => deleteTransaction(transactionId),
-    onSuccess: () => invalidateTransactionQueries(queryClient),
+    onMutate: async (transactionId) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] });
+      const snapshot = getTransactionQueries(queryClient);
+
+      patchTransactionCaches(queryClient, (transactions) =>
+        transactions.filter((transaction) => transaction.id !== transactionId),
+      );
+
+      return { snapshot };
+    },
+    onError: (_error, _transactionId, context) => {
+      context?.snapshot.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: () => invalidateTransactionQueries(queryClient),
   });
 }

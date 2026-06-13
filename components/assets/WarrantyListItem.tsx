@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { Warranty } from '@/lib/domain/assets.types';
@@ -9,16 +9,21 @@ import { formatDateShort } from '@/lib/utils/format';
 
 type WarrantyListItemProps = {
   warranty: Warranty;
+  onPress?: (warranty: Warranty) => void;
 };
 
-export function WarrantyListItem({ warranty }: WarrantyListItemProps) {
+export function WarrantyListItem({ warranty, onPress }: WarrantyListItemProps) {
   const expiry = getWarrantyExpiryInfo(warranty.expiresAt);
   const isUrgent = expiry.status === 'critical' || expiry.status === 'expired';
 
   return (
-    <Card
-      variant="elevated"
-      style={[styles.card, isUrgent && styles.cardUrgent]}>
+    <Pressable
+      onPress={() => onPress?.(warranty)}
+      disabled={!onPress}
+      style={({ pressed }) => [pressed && onPress && styles.pressed]}>
+      <Card
+        variant="elevated"
+        style={[styles.card, isUrgent && styles.cardUrgent]}>
       <View style={[styles.icon, isUrgent && styles.iconUrgent]}>
         <SymbolView
           name={{
@@ -63,10 +68,14 @@ export function WarrantyListItem({ warranty }: WarrantyListItemProps) {
         </Text>
       </View>
     </Card>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressed: {
+    opacity: 0.92,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

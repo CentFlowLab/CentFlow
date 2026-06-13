@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { InventoryItem } from '@/lib/domain/types';
@@ -8,11 +8,16 @@ import { formatCurrency } from '@/lib/utils/format';
 
 type InventoryListItemProps = {
   item: InventoryItem;
+  onPress?: (item: InventoryItem) => void;
 };
 
-export function InventoryListItem({ item }: InventoryListItemProps) {
+export function InventoryListItem({ item, onPress }: InventoryListItemProps) {
   return (
-    <Card variant="elevated" style={styles.card}>
+    <Pressable
+      onPress={() => onPress?.(item)}
+      disabled={!onPress}
+      style={({ pressed }) => [pressed && onPress && styles.pressed]}>
+      <Card variant="elevated" style={styles.card}>
       <View style={styles.icon}>
         <SymbolView
           name={{ ios: 'shippingbox.fill', android: 'inventory_2', web: 'inventory_2' }}
@@ -34,10 +39,14 @@ export function InventoryListItem({ item }: InventoryListItemProps) {
 
       <Text variant="bodyMedium">{formatCurrency(item.value)}</Text>
     </Card>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressed: {
+    opacity: 0.92,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

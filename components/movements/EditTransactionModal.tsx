@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useUpdateTransaction } from '@/hooks/queries/useTransactions';
 import {
   formValuesToUpdateInput,
@@ -30,6 +31,7 @@ export function EditTransactionModal({
   onClose,
 }: EditTransactionModalProps) {
   const updateMutation = useUpdateTransaction();
+  const { showToast } = useToast();
   const [values, setValues] = useState<TransactionFormValues>(() =>
     transaction ? transactionToFormValues(transaction) : {
       type: 'expense',
@@ -77,6 +79,7 @@ export function EditTransactionModal({
         transactionId: transaction!.id,
         input: result.data,
       });
+      showToast('Movimento actualizado.', 'success');
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'a atualização do movimento'));

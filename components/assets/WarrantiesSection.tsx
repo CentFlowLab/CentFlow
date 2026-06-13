@@ -1,12 +1,14 @@
 import { SymbolView } from 'expo-symbols';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Card, SectionHeader, Text } from '@/components/ui';
+import { Card, Text } from '@/components/ui';
 import type { Warranty } from '@/lib/domain/assets.types';
-import { getWarrantiesSummary } from '@/lib/domain/warranty.utils';
+import { getWarrantiesSummary, sortWarrantiesByUrgency } from '@/lib/domain/warranty.utils';
 import { colors, spacing } from '@/lib/theme';
 
 import { ASSETS_SECTION_META } from './assets.config';
+import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { SwipeableAssetRow } from './SwipeableAssetRow';
 import { WarrantiesEmptyState } from './WarrantiesEmptyState';
 import { WarrantyListItem } from './WarrantyListItem';
@@ -14,6 +16,7 @@ import { WarrantyListItem } from './WarrantyListItem';
 type WarrantiesSectionProps = {
   warranties: Warranty[];
   onAdd?: () => void;
+  onEdit?: (warranty: Warranty) => void;
   onLearnMore?: () => void;
   onDelete?: (warranty: Warranty) => void;
 };
@@ -21,15 +24,16 @@ type WarrantiesSectionProps = {
 export function WarrantiesSection({
   warranties,
   onAdd,
+  onEdit,
   onLearnMore,
   onDelete,
 }: WarrantiesSectionProps) {
   const meta = ASSETS_SECTION_META.garantias;
+  const sortedWarranties = useMemo(() => sortWarrantiesByUrgency(warranties), [warranties]);
 
   if (warranties.length === 0) {
     return (
       <View style={styles.container}>
-        <SectionHeader title={meta.title} subtitle={meta.subtitle} />
         <WarrantiesEmptyState onCreate={onAdd} onLearnMore={onLearnMore} />
       </View>
     );
@@ -39,11 +43,10 @@ export function WarrantiesSection({
 
   return (
     <View style={styles.container}>
-      <SectionHeader
-        title={meta.title}
-        subtitle={`${warranties.length} garantia${warranties.length === 1 ? '' : 's'} registada${warranties.length === 1 ? '' : 's'}`}
-        actionLabel={meta.addLabel}
-        onAction={onAdd}
+      <AssetsTabToolbar
+        label={`${warranties.length} garantia${warranties.length === 1 ? '' : 's'}`}
+        addLabel={meta.addLabel}
+        onAdd={onAdd}
       />
 
       {summary.expiringSoon > 0 || summary.expired > 0 ? (
@@ -82,12 +85,12 @@ export function WarrantiesSection({
       ) : null}
 
       <View style={styles.list}>
-        {warranties.map((warranty) => (
+        {sortedWarranties.map((warranty) => (
           <SwipeableAssetRow
             key={warranty.id}
             label={warranty.product}
             onDelete={() => onDelete?.(warranty)}>
-            <WarrantyListItem warranty={warranty} />
+            <WarrantyListItem warranty={warranty} onPress={onEdit} />
           </SwipeableAssetRow>
         ))}
       </View>

@@ -12,6 +12,7 @@ import {
   TransactionsSkeleton,
 } from '@/components/movements';
 import { EmptyState, ErrorState, RefetchingIndicator } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import {
   useDeleteTransaction,
   useTransactions,
@@ -36,6 +37,7 @@ export default function MovimentosScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
   const deleteMutation = useDeleteTransaction();
+  const { showToast } = useToast();
 
   const transactions = useMemo(() => data ?? [], [data]);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
@@ -55,7 +57,14 @@ export default function MovimentosScreen() {
   }
 
   function handleDelete(transaction: Transaction) {
-    deleteMutation.mutate(transaction.id);
+    deleteMutation.mutate(transaction.id, {
+      onSuccess: () => {
+        showToast('Movimento eliminado.', 'success');
+      },
+      onError: () => {
+        showToast('Não foi possível eliminar o movimento.', 'error');
+      },
+    });
   }
 
   return (
@@ -168,10 +177,6 @@ export default function MovimentosScreen() {
         visible={modalVisible}
         onClose={closeAddModal}
         startWithReceiptPicker={startWithReceiptPicker}
-        onImportCsv={() => {
-          closeAddModal();
-          setCsvModalVisible(true);
-        }}
       />
 
       <ImportCsvModal

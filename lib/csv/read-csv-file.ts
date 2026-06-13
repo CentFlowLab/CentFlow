@@ -1,5 +1,5 @@
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 export async function pickCsvFile(): Promise<{ name: string; text: string } | null> {
@@ -24,7 +24,6 @@ export async function pickCsvFile(): Promise<{ name: string; text: string } | nu
   let text: string;
 
   if (Platform.OS === 'web') {
-    // No web, o picker expõe o File nativo — mais fiável que fetch(blob:)
     if ('file' in asset && asset.file instanceof File) {
       text = await asset.file.text();
     } else {

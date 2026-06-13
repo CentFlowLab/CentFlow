@@ -1,10 +1,11 @@
-export { AddAssetModal } from './AddAssetModal';
+export { AddAssetModal, InventoryFormModal } from './InventoryFormModal';
 export { AddGoalModal, GoalFormModal } from './GoalFormModal';
-export { AddWarrantyModal } from './AddWarrantyModal';
+export { AddWarrantyModal, WarrantyFormModal } from './WarrantyFormModal';
 export { ASSETS_EMPTY_CONFIG, ASSETS_SEGMENTS, ASSETS_SECTION_META } from './assets.config';
 export { AssetsEmptyState } from './AssetsEmptyState';
 export { AssetsOverviewCard } from './AssetsOverviewCard';
 export { AssetsSectionShell } from './AssetsSectionShell';
+export { AssetsTabToolbar } from './AssetsTabToolbar';
 export { GoalListItem } from './GoalListItem';
 export { GoalProgressBar } from './GoalProgressBar';
 export { GoalsEmptyState } from './GoalsEmptyState';

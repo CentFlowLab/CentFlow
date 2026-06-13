@@ -6,12 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ASSETS_EMPTY_CONFIG,
   ASSETS_SEGMENTS,
-  AddAssetModal,
-  AddWarrantyModal,
   AssetsOverviewCard,
   GoalFormModal,
   GoalsSection,
+  InventoryFormModal,
   InventorySection,
+  WarrantyFormModal,
   WarrantiesSection,
 } from '@/components/assets';
 import { AppHeader, SegmentedControl } from '@/components/layout';
@@ -22,16 +22,19 @@ import {
   useDeleteInventoryItem,
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
-import type { AssetsTab, Goal } from '@/lib/domain/assets.types';
+import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
+import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 
 export default function AtivosScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<AssetsTab>('objetivos');
-  const [addModalVisible, setAddModalVisible] = useState(false);
   const [goalFormVisible, setGoalFormVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  const [addWarrantyModalVisible, setAddWarrantyModalVisible] = useState(false);
+  const [warrantyFormVisible, setWarrantyFormVisible] = useState(false);
+  const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
+  const [inventoryFormVisible, setInventoryFormVisible] = useState(false);
+  const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
   const deleteGoal = useDeleteGoal();
@@ -69,16 +72,46 @@ export default function AtivosScreen() {
     setEditingGoal(null);
   }
 
+  function openCreateWarranty() {
+    setEditingWarranty(null);
+    setWarrantyFormVisible(true);
+  }
+
+  function openEditWarranty(warranty: Warranty) {
+    setEditingWarranty(warranty);
+    setWarrantyFormVisible(true);
+  }
+
+  function closeWarrantyForm() {
+    setWarrantyFormVisible(false);
+    setEditingWarranty(null);
+  }
+
+  function openCreateInventory() {
+    setEditingInventory(null);
+    setInventoryFormVisible(true);
+  }
+
+  function openEditInventory(item: InventoryItem) {
+    setEditingInventory(item);
+    setInventoryFormVisible(true);
+  }
+
+  function closeInventoryForm() {
+    setInventoryFormVisible(false);
+    setEditingInventory(null);
+  }
+
   function handleAdd() {
     if (activeTab === 'objetivos') {
       openCreateGoal();
       return;
     }
     if (activeTab === 'garantias') {
-      setAddWarrantyModalVisible(true);
+      openCreateWarranty();
       return;
     }
-    setAddModalVisible(true);
+    openCreateInventory();
   }
 
   return (
@@ -111,77 +144,81 @@ export default function AtivosScreen() {
           />
         </View>
       ) : (
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={colors.primary}
-          />
-        }
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
-        ]}>
-        <ScreenContainer>
-          <AssetsOverviewCard counts={counts} />
-
-          <View style={styles.segmentWrapper}>
-            <SegmentedControl
-              segments={ASSETS_SEGMENTS}
-              value={activeTab}
-              onChange={setActiveTab}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={colors.primary}
             />
-          </View>
-
-          {activeTab === 'objetivos' ? (
-            <GoalsSection
-              goals={assets.goals}
-              onAdd={openCreateGoal}
-              onEdit={openEditGoal}
-              onLearnMore={handleLearnMore}
-              onDelete={(goal) => deleteGoal.mutate(goal.id)}
+          }
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+          ]}>
+          <ScreenContainer>
+            <AssetsOverviewCard
+              counts={counts}
+              activeTab={activeTab}
+              onTabPress={setActiveTab}
             />
-          ) : null}
 
-          {activeTab === 'garantias' ? (
-            <WarrantiesSection
-              warranties={assets.warranties}
-              onAdd={handleAdd}
-              onLearnMore={handleLearnMore}
-              onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
-            />
-          ) : null}
+            <View style={styles.segmentWrapper}>
+              <SegmentedControl
+                segments={ASSETS_SEGMENTS}
+                value={activeTab}
+                onChange={setActiveTab}
+              />
+            </View>
 
-          {activeTab === 'inventario' ? (
-            <InventorySection
-              inventory={assets.inventory}
-              onAdd={handleAdd}
-              onLearnMore={handleLearnMore}
-              onDelete={(item) => deleteInventory.mutate(item.id)}
-            />
-          ) : null}
+            {activeTab === 'objetivos' ? (
+              <GoalsSection
+                goals={assets.goals}
+                onAdd={openCreateGoal}
+                onEdit={openEditGoal}
+                onLearnMore={handleLearnMore}
+                onDelete={(goal) => deleteGoal.mutate(goal.id)}
+              />
+            ) : null}
 
-          <RefetchingIndicator visible={isRefetching && !isLoading} />
-        </ScreenContainer>
-      </ScrollView>
+            {activeTab === 'garantias' ? (
+              <WarrantiesSection
+                warranties={assets.warranties}
+                onAdd={openCreateWarranty}
+                onEdit={openEditWarranty}
+                onLearnMore={handleLearnMore}
+                onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
+              />
+            ) : null}
+
+            {activeTab === 'inventario' ? (
+              <InventorySection
+                inventory={assets.inventory}
+                onAdd={openCreateInventory}
+                onEdit={openEditInventory}
+                onLearnMore={handleLearnMore}
+                onDelete={(item) => deleteInventory.mutate(item.id)}
+              />
+            ) : null}
+
+            <RefetchingIndicator visible={isRefetching && !isLoading} />
+          </ScreenContainer>
+        </ScrollView>
       )}
 
-      <GoalFormModal
-        visible={goalFormVisible}
-        goal={editingGoal}
-        onClose={closeGoalForm}
+      <GoalFormModal visible={goalFormVisible} goal={editingGoal} onClose={closeGoalForm} />
+
+      <WarrantyFormModal
+        visible={warrantyFormVisible}
+        warranty={editingWarranty}
+        onClose={closeWarrantyForm}
       />
 
-      <AddWarrantyModal
-        visible={addWarrantyModalVisible}
-        onClose={() => setAddWarrantyModalVisible(false)}
-      />
-
-      <AddAssetModal
-        visible={addModalVisible}
-        onClose={() => setAddModalVisible(false)}
+      <InventoryFormModal
+        visible={inventoryFormVisible}
+        item={editingInventory}
+        onClose={closeInventoryForm}
       />
     </View>
   );

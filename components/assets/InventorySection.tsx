@@ -1,14 +1,20 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Card, Text } from '@/components/ui';
 import type { InventoryItem } from '@/lib/domain/types';
+import { colors, spacing } from '@/lib/theme';
+import { formatCurrency } from '@/lib/utils/format';
 
-import { AssetsSectionShell } from './AssetsSectionShell';
+import { ASSETS_EMPTY_CONFIG, ASSETS_SECTION_META } from './assets.config';
+import { AssetsEmptyState } from './AssetsEmptyState';
+import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { InventoryListItem } from './InventoryListItem';
 import { SwipeableAssetRow } from './SwipeableAssetRow';
 
 type InventorySectionProps = {
   inventory: InventoryItem[];
   onAdd?: () => void;
+  onEdit?: (item: InventoryItem) => void;
   onLearnMore?: () => void;
   onDelete?: (item: InventoryItem) => void;
 };
@@ -16,30 +22,67 @@ type InventorySectionProps = {
 export function InventorySection({
   inventory,
   onAdd,
+  onEdit,
   onLearnMore,
   onDelete,
 }: InventorySectionProps) {
+  const meta = ASSETS_SECTION_META.inventario;
+  const emptyConfig = ASSETS_EMPTY_CONFIG.inventario;
+  const totalValue = inventory.reduce((sum, item) => sum + item.value, 0);
+
+  if (inventory.length === 0) {
+    return (
+      <View style={styles.container}>
+        <AssetsEmptyState
+          config={emptyConfig}
+          onPrimaryAction={onAdd}
+          onSecondaryAction={onLearnMore}
+        />
+      </View>
+    );
+  }
+
   return (
-    <AssetsSectionShell
-      tab="inventario"
-      count={inventory.length}
-      onAdd={onAdd}
-      onLearnMore={onLearnMore}>
+    <View style={styles.container}>
+      <AssetsTabToolbar
+        label={`${inventory.length} item${inventory.length === 1 ? '' : 's'}`}
+        addLabel={meta.addLabel}
+        onAdd={onAdd}
+      />
+
+      <Card variant="outlined" style={styles.summaryCard}>
+        <Text variant="caption" color="textMuted">
+          Valor total estimado
+        </Text>
+        <Text variant="h3" color="success">
+          {formatCurrency(totalValue)}
+        </Text>
+      </Card>
+
       <View style={styles.list}>
         {inventory.map((item) => (
           <SwipeableAssetRow
             key={item.id}
             label={item.name}
             onDelete={() => onDelete?.(item)}>
-            <InventoryListItem item={item} />
+            <InventoryListItem item={item} onPress={onEdit} />
           </SwipeableAssetRow>
         ))}
       </View>
-    </AssetsSectionShell>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    minHeight: 280,
+  },
+  summaryCard: {
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundElevated,
+  },
   list: {
     flex: 1,
   },

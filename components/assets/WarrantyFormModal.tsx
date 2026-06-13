@@ -1,27 +1,36 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
-import { useCreateWarranty } from '@/hooks/queries/useAssets';
+import {
+  useCreateWarranty,
+  useDeleteWarranty,
+  useUpdateWarranty,
+} from '@/hooks/queries/useAssets';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { createWarrantySchema } from '@/lib/domain/assets.schema';
+import type { Warranty } from '@/lib/domain/assets.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { getWarrantyExpiryInfo } from '@/lib/domain/warranty.utils';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 import { toIsoDateString } from '@/lib/utils/format';
 
 import { WarrantyReceiptPicker } from './WarrantyReceiptPicker';
 
-type AddWarrantyModalProps = {
+type WarrantyFormModalProps = {
   visible: boolean;
   onClose: () => void;
+  warranty?: Warranty | null;
 };
 
-export function AddWarrantyModal({ visible, onClose }: AddWarrantyModalProps) {
+export function WarrantyFormModal({ visible, onClose, warranty = null }: WarrantyFormModalProps) {
+  const isEditing = Boolean(warranty);
   const createWarranty = useCreateWarranty();
+  const updateWarranty = useUpdateWarranty();
+  const deleteWarranty = useDeleteWarranty();
   const { data: transactions = [], isLoading: isLoadingTransactions } = useTransactions('all');
 
   const [product, setProduct] = useState('');
@@ -32,17 +41,36 @@ export function AddWarrantyModal({ visible, onClose }: AddWarrantyModalProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
+  const isSaving = createWarranty.isPending || updateWarranty.isPending;
+  const isDeleting = deleteWarranty.isPending;
+
   useEffect(() => {
     if (!visible) return;
-    setProduct('');
-    setExpiresAt(toIsoDateString(new Date(Date.now() + 365 * 86400000)));
-    setPurchaseDate('');
-    setStore('');
-    setSelectedReceipt(null);
+
+    if (warranty) {
+      setProduct(warranty.product);
+      setExpiresAt(warranty.expiresAt);
+      setPurchaseDate(warranty.purchaseDate ?? '');
+      setStore(warranty.store ?? '');
+      setSelectedReceipt(
+        warranty.receiptTransactionId
+          ? transactions.find((tx) => tx.id === warranty.receiptTransactionId) ?? null
+          : null,
+      );
+    } else {
+      setProduct('');
+      setExpiresAt(toIsoDateString(new Date(Date.now() + 365 * 86400000)));
+      setPurchaseDate('');
+      setStore('');
+      setSelectedReceipt(null);
+    }
+
     setErrors({});
     setApiError(null);
     createWarranty.reset();
-  }, [visible, createWarranty]);
+    updateWarranty.reset();
+    deleteWarranty.reset();
+  }, [visible, warranty, transactions, createWarranty, updateWarranty, deleteWarranty]);
 
   const expiryPreview = useMemo(() => {
     if (!expiresAt || !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) return null;
@@ -87,7 +115,38 @@ export function AddWarrantyModal({ visible, onClose }: AddWarrantyModalProps) {
     }
 
     try {
-      await createWarranty.mutateAsync(result.data);
+      if (isEditing && warranty) {
+        await updateWarranty.mutateAsync({ id: warranty.id, input: result.data });
+      } else {
+        await createWarranty.mutateAsync(result.data);
+      }
+      onClose();
+    } catch (error) {
+      setApiError(getApiErrorMessage(error, 'a garantia'));
+    }
+  }
+
+  function confirmDelete() {
+    if (!warranty) return;
+    const message = `Eliminar garantia de "${warranty.product}"?`;
+
+    if (Platform.OS === 'web') {
+      if (typeof globalThis.confirm === 'function' && globalThis.confirm(message)) {
+        void executeDelete();
+      }
+      return;
+    }
+
+    Alert.alert('Eliminar garantia', message, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: () => void executeDelete() },
+    ]);
+  }
+
+  async function executeDelete() {
+    if (!warranty) return;
+    try {
+      await deleteWarranty.mutateAsync(warranty.id);
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'a garantia'));
@@ -103,7 +162,7 @@ export function AddWarrantyModal({ visible, onClose }: AddWarrantyModalProps) {
       header={(requestClose) => (
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text variant="h2">Nova garantia</Text>
+            <Text variant="h2">{isEditing ? 'Editar garantia' : 'Nova garantia'}</Text>
             <Text variant="caption" color="textMuted">
               Regista validade e associa ao talão de compra
             </Text>
@@ -121,7 +180,7 @@ export function AddWarrantyModal({ visible, onClose }: AddWarrantyModalProps) {
         label="Produto"
         value={product}
         onChangeText={setProduct}
-        placeholder="Ex: MacBook Pro 14&quot;"
+        placeholder='Ex: MacBook Pro 14"'
         error={errors.product}
       />
 
@@ -208,21 +267,35 @@ export function AddWarrantyModal({ visible, onClose }: AddWarrantyModalProps) {
       ) : null}
 
       <Button
-        label={createWarranty.isPending ? 'A guardar...' : 'Guardar garantia'}
+        label={isSaving ? 'A guardar...' : isEditing ? 'Guardar alterações' : 'Guardar garantia'}
         onPress={handleSave}
-        loading={createWarranty.isPending}
+        loading={isSaving}
         fullWidth
         size="lg"
-        icon={
-          <SymbolView
-            name={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
-            tintColor={colors.textInverse}
-            size={18}
-          />
-        }
       />
+
+      {isEditing ? (
+        <Button
+          label="Eliminar garantia"
+          variant="ghost"
+          onPress={confirmDelete}
+          loading={isDeleting}
+          fullWidth
+        />
+      ) : null}
     </DraggableBottomSheet>
   );
+}
+
+/** @deprecated Use WarrantyFormModal */
+export function AddWarrantyModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  return <WarrantyFormModal visible={visible} onClose={onClose} />;
 }
 
 const styles = StyleSheet.create({

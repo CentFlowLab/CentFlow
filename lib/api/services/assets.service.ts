@@ -7,6 +7,8 @@ import {
   deleteMockWarranty,
   fetchMockAssets,
   updateMockGoal,
+  updateMockInventoryItem,
+  updateMockWarranty,
 } from '@/lib/api/mock-assets';
 import { isMockAuthEnabled } from '@/lib/auth';
 import type {
@@ -19,6 +21,8 @@ import type {
   CreateInventoryItemInput,
   CreateWarrantyInput,
   UpdateGoalInput,
+  UpdateInventoryItemInput,
+  UpdateWarrantyInput,
 } from '@/lib/domain/assets.schema';
 import type { InventoryItem } from '@/lib/domain/types';
 import { isSupabaseEnabled, supabaseAssets } from '@/lib/supabase';
@@ -57,11 +61,26 @@ export async function createWarranty(input: CreateWarrantyInput): Promise<Warran
   throw new Error('Backend de ativos indisponível');
 }
 
+export async function updateWarranty(id: string, input: UpdateWarrantyInput): Promise<Warranty> {
+  if (isMockAuthEnabled()) return updateMockWarranty(id, input);
+  if (isSupabaseEnabled()) return supabaseAssets.updateWarranty(id, input);
+  throw new Error('Backend de ativos indisponível');
+}
+
 export async function createInventoryItem(
   input: CreateInventoryItemInput,
 ): Promise<InventoryItem> {
   if (isMockAuthEnabled()) return createMockInventoryItem(input);
   if (isSupabaseEnabled()) return supabaseAssets.createInventoryItem(input);
+  throw new Error('Backend de ativos indisponível');
+}
+
+export async function updateInventoryItem(
+  id: string,
+  input: UpdateInventoryItemInput,
+): Promise<InventoryItem> {
+  if (isMockAuthEnabled()) return updateMockInventoryItem(id, input);
+  if (isSupabaseEnabled()) return supabaseAssets.updateInventoryItem(id, input);
   throw new Error('Backend de ativos indisponível');
 }
 

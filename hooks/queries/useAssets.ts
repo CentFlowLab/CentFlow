@@ -10,6 +10,8 @@ import {
   deleteWarranty,
   fetchAssetsData,
   updateGoal,
+  updateInventoryItem,
+  updateWarranty,
 } from '@/lib/api/services/assets.service';
 import { useAuth } from '@/lib/auth';
 import type { AssetsData } from '@/lib/domain/assets.types';
@@ -18,6 +20,8 @@ import type {
   CreateInventoryItemInput,
   CreateWarrantyInput,
   UpdateGoalInput,
+  UpdateInventoryItemInput,
+  UpdateWarrantyInput,
 } from '@/lib/domain/assets.schema';
 
 export function invalidateAssetsQueries(queryClient: QueryClient) {
@@ -62,10 +66,28 @@ export function useCreateWarranty() {
   });
 }
 
+export function useUpdateWarranty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateWarrantyInput }) =>
+      updateWarranty(id, input),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
 export function useCreateInventoryItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateInventoryItemInput) => createInventoryItem(input),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
+export function useUpdateInventoryItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateInventoryItemInput }) =>
+      updateInventoryItem(id, input),
     onSuccess: () => invalidateAssetsQueries(queryClient),
   });
 }
