@@ -22,6 +22,7 @@
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.6",
+    "expo-updates": "~56.0.19",
     "expo-web-browser": "~56.0.5",
     "jpeg-js": "^0.4.4",
     "react": "19.2.3",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eas-cli": "^20.1.0",
     "tsx": "^4.20.3",
     "typescript": "~6.0.3"
   },
@@ -47,7 +49,18 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "handoff": "tsx scripts/generate-handoff.ts"
+    "handoff": "tsx scripts/generate-handoff.ts",
+    "eas:init": "eas init",
+    "eas:build:dev:ios": "node scripts/eas-run.cjs build --profile development --platform ios",
+    "eas:build:dev:android": "node scripts/eas-run.cjs build --profile development --platform android",
+    "eas:build:preview:ios": "node scripts/eas-run.cjs build --profile preview --platform ios",
+    "eas:build:preview:android": "node scripts/eas-run.cjs build --profile preview --platform android",
+    "eas:build:preview-simulator:ios": "node scripts/eas-run.cjs build --profile preview-simulator --platform ios",
+    "eas:build:production:ios": "node scripts/eas-run.cjs build --profile production --platform ios",
+    "eas:build:production:android": "node scripts/eas-run.cjs build --profile production --platform android",
+    "eas:update:preview": "node scripts/eas-run.cjs update --channel preview --environment preview --message",
+    "eas:update:production": "node scripts/eas-run.cjs update --channel production --environment production --message",
+    "eas:update:list": "node scripts/eas-run.cjs update:list"
   },
   "private": true
 }

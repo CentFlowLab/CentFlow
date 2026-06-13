@@ -1,8 +1,18 @@
 # =============================================================================
 # CentFlow — Build iOS unsigned .ipa (LiveContainer)
 # =============================================================================
+#
+# ⚠️  ALTERNATIVA LEGACY — o fluxo principal é EAS Build + EAS Update.
+#     Ver docs/BUILD.md para builds rápidos e OTA.
+#
+#     Usa este workflow apenas se:
+#     - Não tens conta Apple Developer
+#     - Precisas de IPA unsigned para LiveContainer
+#
+#     Para activar: GitHub → Actions → "Build iOS unsigned IPA" → Run workflow
+# =============================================================================
 
-name: Build iOS unsigned IPA
+name: Build iOS unsigned IPA (legacy)
 
 on:
   workflow_dispatch:
