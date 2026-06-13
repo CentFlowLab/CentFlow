@@ -1,11 +1,19 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
-import { FinancialProfileProgress } from '@/components/profile';
-import { Button, Card, ScreenContainer, SectionHeader, Text } from '@/components/ui';
+import { FinancialProfileDetailSheet, FinancialProfileProgress } from '@/components/profile';
+import {
+  Button,
+  Card,
+  ErrorState,
+  ProfileSkeleton,
+  ScreenContainer,
+  SectionHeader,
+  Text,
+} from '@/components/ui';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useAuth } from '@/lib/auth';
@@ -75,9 +83,10 @@ const MENU_SECTIONS: Array<{
 
 export default function PerfilScreen() {
   const { signOut } = useAuth();
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [profileDetailVisible, setProfileDetailVisible] = useState(false);
 
   async function handleSignOut() {
     setLoggingOut(true);
@@ -93,8 +102,17 @@ export default function PerfilScreen() {
       <AppHeader title="Perfil" subtitle="Conta e preferências" showAvatar={false} />
 
       {isLoading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={colors.primary} size="large" />
+        <ScreenContainer>
+          <ProfileSkeleton />
+        </ScreenContainer>
+      ) : isError ? (
+        <View style={styles.errorState}>
+          <ErrorState
+            context="profile"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
+          />
         </View>
       ) : (
         <ScreenContainer>
@@ -103,6 +121,7 @@ export default function PerfilScreen() {
             isLoading={isProfileScoreLoading}
             variant="full"
             style={styles.profileProgress}
+            onPress={() => setProfileDetailVisible(true)}
           />
 
           <Card variant="elevated" style={styles.profileCard}>
@@ -166,6 +185,12 @@ export default function PerfilScreen() {
           />
         </ScreenContainer>
       )}
+
+      <FinancialProfileDetailSheet
+        visible={profileDetailVisible}
+        profile={financialProfile}
+        onClose={() => setProfileDetailVisible(false)}
+      />
     </View>
   );
 }
@@ -175,10 +200,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  loading: {
+  errorState: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
   },
   profileCard: {
     flexDirection: 'row',

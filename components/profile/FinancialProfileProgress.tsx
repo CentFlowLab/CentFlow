@@ -1,24 +1,26 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
-import { Card, Text } from '@/components/ui';
-import type { FinancialProfileResult, ProfileDimensionId } from '@/lib/domain/financial-profile.types';
+import { Card, Skeleton, SkeletonGroup, Text } from '@/components/ui';
+import type { FinancialProfileResult } from '@/lib/domain/financial-profile.types';
 import { colors, radius, spacing } from '@/lib/theme';
+
+import { FinancialProfileDimensionRow } from './FinancialProfileDimensionRow';
+import { getProfileProgressColor } from './financial-profile.config';
 
 type FinancialProfileProgressProps = {
   profile?: FinancialProfileResult;
   isLoading?: boolean;
   variant?: 'full' | 'compact';
   style?: StyleProp<ViewStyle>;
-};
-
-const DIMENSION_ICONS: Record<ProfileDimensionId, SymbolViewProps['name']> = {
-  transactions: { ios: 'list.bullet', android: 'receipt_long', web: 'receipt_long' },
-  receipts: { ios: 'doc.text.viewfinder', android: 'document_scanner', web: 'document_scanner' },
-  goals: { ios: 'target', android: 'flag', web: 'flag' },
-  assets: { ios: 'shippingbox.fill', android: 'inventory_2', web: 'inventory_2' },
-  patrimony: { ios: 'banknote.fill', android: 'account_balance', web: 'account_balance' },
+  onPress?: () => void;
 };
 
 export function FinancialProfileProgress({
@@ -26,25 +28,155 @@ export function FinancialProfileProgress({
   isLoading = false,
   variant = 'full',
   style,
+  onPress,
 }: FinancialProfileProgressProps) {
   if (isLoading || !profile) {
     return (
       <Card variant="elevated" style={[styles.card, style]}>
-        <View style={styles.loading}>
-          <ActivityIndicator color={colors.primary} />
-          <Text variant="caption" color="textMuted">
-            A calcular o teu perfil financeiro...
-          </Text>
-        </View>
+        <Skeleton width="55%" height={12} />
+        <Skeleton width="100%" height={8} style={styles.loadingBar} />
+        <SkeletonGroup gap={spacing.sm} style={styles.loadingRows}>
+          <Skeleton width="100%" height={36} />
+          <Skeleton width="100%" height={36} />
+        </SkeletonGroup>
       </Card>
     );
   }
 
-  const progressColor = getProgressColor(profile.score);
-  const showPending = variant === 'full';
-  const pendingPreview = profile.pendingDimensions.slice(0, variant === 'compact' ? 2 : 5);
+  const progressColor = getProfileProgressColor(profile.score);
+  const isCompact = variant === 'compact';
+  const pendingPreview = profile.pendingDimensions.slice(0, isCompact ? 2 : 3);
+  const completedCount = profile.dimensions.filter((d) => d.completed).length;
 
-  return (
+  const content = (
+    <>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.titleRow}>
+            <Text variant="label" color="textMuted">
+              Perfil Financeiro
+            </Text>
+            <View style={[styles.levelPill, { borderColor: `${progressColor}55` }]}>
+              <SymbolView
+                name={{
+                  ios: profile.level >= 3 ? 'crown.fill' : 'star.fill',
+                  android: profile.level >= 3 ? 'workspace_premium' : 'star',
+                  web: profile.level >= 3 ? 'workspace_premium' : 'star',
+                }}
+                tintColor={progressColor}
+                size={12}
+              />
+              <Text variant="caption" style={{ color: progressColor }}>
+                {profile.levelLabel}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.scoreRow}>
+            <Text variant={isCompact ? 'h1' : 'display'} style={{ color: progressColor }}>
+              {profile.score}%
+            </Text>
+            {!isCompact ? (
+              <Text variant="caption" color="textMuted">
+                {completedCount}/{profile.dimensions.length} áreas
+              </Text>
+            ) : null}
+          </View>
+          <Text variant="bodyMedium">{profile.levelTitle}</Text>
+        </View>
+
+        <View style={[styles.iconBadge, { backgroundColor: `${progressColor}22` }]}>
+          <SymbolView
+            name={{
+              ios: profile.level >= 3 ? 'sparkles' : profile.level >= 2 ? 'chart.bar.fill' : 'lightbulb.fill',
+              android: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
+              web: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
+            }}
+            tintColor={progressColor}
+            size={isCompact ? 22 : 28}
+          />
+        </View>
+      </View>
+
+      <View style={styles.progressTrack}>
+        <LinearGradient
+          colors={[progressColor, colors.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.progressFill, { width: `${profile.score}%` }]}
+        />
+      </View>
+
+      {profile.nextLevel ? (
+        <Text variant="caption" color="textSecondary">
+          Faltam {profile.pointsToNextLevel}% para o Nível {profile.nextLevel}
+        </Text>
+      ) : (
+        <Text variant="caption" color="success">
+          Perfil completo — Assistente CentFlow desbloqueado
+        </Text>
+      )}
+
+      {isCompact ? (
+        <View style={styles.unlockRow}>
+          {profile.unlockedFeatures.slice(0, 2).map((feature) => (
+            <UnlockChip key={feature} label={feature} unlocked />
+          ))}
+          {profile.lockedFeatures[0] ? (
+            <UnlockChip label={profile.lockedFeatures[0]} unlocked={false} />
+          ) : null}
+        </View>
+      ) : (
+        <View style={styles.featuresSection}>
+          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+            Desbloqueado neste nível
+          </Text>
+          <View style={styles.unlockRow}>
+            {profile.unlockedFeatures.map((feature) => (
+              <UnlockChip key={feature} label={feature} unlocked />
+            ))}
+          </View>
+          {profile.lockedFeatures.length > 0 ? (
+            <>
+              <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+                Próximos desbloqueios
+              </Text>
+              <View style={styles.unlockRow}>
+                {profile.lockedFeatures.map((feature) => (
+                  <UnlockChip key={feature} label={feature} unlocked={false} />
+                ))}
+              </View>
+            </>
+          ) : null}
+        </View>
+      )}
+
+      {!isCompact && pendingPreview.length > 0 ? (
+        <View style={styles.pendingSection}>
+          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+            Para subir de nível
+          </Text>
+          {pendingPreview.map((dimension) => (
+            <FinancialProfileDimensionRow
+              key={dimension.id}
+              dimension={dimension}
+              showDescription={false}
+            />
+          ))}
+          {profile.pendingDimensions.length > pendingPreview.length ? (
+            <Text variant="caption" color="textMuted" align="center">
+              +{profile.pendingDimensions.length - pendingPreview.length} área
+              {profile.pendingDimensions.length - pendingPreview.length === 1 ? '' : 's'} por completar
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      {onPress ? <DetailLink isCompact={isCompact} /> : null}
+    </>
+  );
+
+  const card = (
     <View style={[styles.wrapper, style]}>
       <LinearGradient
         colors={['rgba(45,212,191,0.18)', 'rgba(20,184,166,0.06)', 'rgba(5,8,14,0)']}
@@ -52,132 +184,40 @@ export function FinancialProfileProgress({
         end={{ x: 1, y: 1 }}
         style={styles.glow}
       />
-
       <Card variant="elevated" style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.titleRow}>
-              <Text variant="label" color="textMuted">
-                Perfil Financeiro
-              </Text>
-              <View style={[styles.levelPill, { borderColor: `${progressColor}55` }]}>
-                <SymbolView
-                  name={{
-                    ios: profile.level >= 3 ? 'crown.fill' : 'star.fill',
-                    android: profile.level >= 3 ? 'workspace_premium' : 'star',
-                    web: profile.level >= 3 ? 'workspace_premium' : 'star',
-                  }}
-                  tintColor={progressColor}
-                  size={12}
-                />
-                <Text variant="caption" style={{ color: progressColor }}>
-                  {profile.levelLabel}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.scoreRow}>
-              <Text variant="display" style={{ color: progressColor }}>
-                {profile.score}%
-              </Text>
-            </View>
-            <Text variant="bodyMedium">{profile.levelTitle}</Text>
-          </View>
-
-          <View style={[styles.iconBadge, { backgroundColor: `${progressColor}22` }]}>
-            <SymbolView
-              name={{
-                ios: profile.level >= 3 ? 'sparkles' : profile.level >= 2 ? 'chart.bar.fill' : 'lightbulb.fill',
-                android: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
-                web: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
-              }}
-              tintColor={progressColor}
-              size={28}
-            />
-          </View>
-        </View>
-
-        <View style={styles.progressTrack}>
-          <LinearGradient
-            colors={[progressColor, colors.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.progressFill, { width: `${profile.score}%` }]}
-          />
-        </View>
-
-        {profile.nextLevel ? (
-          <Text variant="caption" color="textSecondary">
-            Faltam {profile.pointsToNextLevel}% para o Nível {profile.nextLevel}
-          </Text>
-        ) : (
-          <Text variant="caption" color="success">
-            Perfil completo — Assistente CentFlow desbloqueado
-          </Text>
-        )}
-
-        {variant === 'compact' ? (
-          <View style={styles.unlockRow}>
-            {profile.unlockedFeatures.slice(0, 2).map((feature) => (
-              <UnlockChip key={feature} label={feature} unlocked />
-            ))}
-            {profile.lockedFeatures[0] ? (
-              <UnlockChip label={profile.lockedFeatures[0]} unlocked={false} />
-            ) : null}
-          </View>
-        ) : (
-          <View style={styles.featuresSection}>
-            <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-              Desbloqueado neste nível
-            </Text>
-            <View style={styles.unlockRow}>
-              {profile.unlockedFeatures.map((feature) => (
-                <UnlockChip key={feature} label={feature} unlocked />
-              ))}
-            </View>
-            {profile.lockedFeatures.length > 0 ? (
-              <>
-                <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-                  Próximos desbloqueios
-                </Text>
-                <View style={styles.unlockRow}>
-                  {profile.lockedFeatures.map((feature) => (
-                    <UnlockChip key={feature} label={feature} unlocked={false} />
-                  ))}
-                </View>
-              </>
-            ) : null}
-          </View>
-        )}
-
-        {showPending && pendingPreview.length > 0 ? (
-          <View style={styles.pendingSection}>
-            <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-              Para subir de nível
-            </Text>
-            {pendingPreview.map((dimension) => (
-              <View key={dimension.id} style={styles.pendingItem}>
-                <View style={styles.pendingIcon}>
-                  <SymbolView
-                    name={DIMENSION_ICONS[dimension.id]}
-                    tintColor={colors.textMuted}
-                    size={16}
-                  />
-                </View>
-                <View style={styles.pendingText}>
-                  <Text variant="bodyMedium">{dimension.label}</Text>
-                  <Text variant="caption" color="textMuted">
-                    {dimension.actionHint}
-                  </Text>
-                </View>
-                <Text variant="caption" color="accent">
-                  +{dimension.maxWeight}%
-                </Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        {content}
       </Card>
+    </View>
+  );
+
+  if (!onPress) return card;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Perfil financeiro ${profile.score} por cento. Ver detalhe completo.`}>
+      {card}
+    </Pressable>
+  );
+}
+
+type DetailLinkProps = {
+  isCompact: boolean;
+};
+
+function DetailLink({ isCompact }: DetailLinkProps) {
+  return (
+    <View style={styles.detailLink}>
+      <Text variant="caption" color="primary">
+        {isCompact ? 'Ver progresso completo' : 'Ver detalhe de todas as áreas'}
+      </Text>
+      <SymbolView
+        name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+        tintColor={colors.primary}
+        size={14}
+      />
     </View>
   );
 }
@@ -206,12 +246,6 @@ function UnlockChip({ label, unlocked }: UnlockChipProps) {
   );
 }
 
-function getProgressColor(score: number): string {
-  if (score >= 60) return colors.success;
-  if (score >= 30) return colors.primary;
-  return colors.accent;
-}
-
 const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
@@ -225,11 +259,15 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     borderColor: colors.borderStrong,
   },
-  loading: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.xl,
+  loadingBar: {
+    marginTop: spacing.sm,
+  },
+  loadingRows: {
+    marginTop: spacing.sm,
+  },
+  pressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
   },
   header: {
     flexDirection: 'row',
@@ -308,26 +346,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceHighlight,
   },
   pendingSection: {
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingTop: spacing.xs,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  pendingItem: {
+  detailLink: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  pendingIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceHighlight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  pendingText: {
-    flex: 1,
-    gap: 2,
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 });

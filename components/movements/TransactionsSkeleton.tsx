@@ -1,23 +1,20 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
-
-function Block({ width, height }: { width: number | `${number}%`; height: number }) {
-  return <View style={[styles.block, { width, height }]} />;
-}
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
+import { spacing } from '@/lib/theme';
 
 export function TransactionsSkeleton() {
   return (
     <View style={styles.container}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Card key={i} variant="elevated" style={styles.row}>
-          <Block width={40} height={40} />
-          <View style={styles.textGroup}>
-            <Block width="70%" height={14} />
-            <Block width="45%" height={10} />
-          </View>
-          <Block width={64} height={14} />
+          <Skeleton width={40} height={40} borderRadius={12} />
+          <SkeletonGroup gap={spacing.sm} style={styles.textGroup}>
+            <Skeleton width="70%" height={14} />
+            <Skeleton width="45%" height={10} />
+          </SkeletonGroup>
+          <Skeleton width={64} height={14} />
         </Card>
       ))}
     </View>
@@ -29,10 +26,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingTop: spacing.sm,
   },
-  block: {
-    backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.sm,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -40,6 +33,5 @@ const styles = StyleSheet.create({
   },
   textGroup: {
     flex: 1,
-    gap: spacing.sm,
   },
 });

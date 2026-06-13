@@ -58,6 +58,8 @@ function RootNavigator() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="auth/callback" />
+
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />

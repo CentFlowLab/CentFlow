@@ -55,6 +55,19 @@ function buildSeedTransactions(): Transaction[] {
       receiptUrl: null,
       receiptImage: null,
     },
+    {
+      id: 'mock-tx-4',
+      type: 'expense',
+      amount: 2199,
+      category: 'shopping',
+      categoryLabel: getCategoryLabel('shopping', 'expense'),
+      description: 'Fnac · MacBook Pro 14"',
+      date: toIsoDateString(new Date(Date.now() - 90 * 86400000)),
+      currency: 'EUR',
+      receiptId: 'mock-receipt-1',
+      receiptUrl: null,
+      receiptImage: 'file://mock-receipt-macbook.jpg',
+    },
   ];
 }
 

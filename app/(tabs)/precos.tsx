@@ -2,14 +2,20 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
-import { Card, EmptyState, ScreenContainer, SectionHeader, Text } from '@/components/ui';
+import {
+  Card,
+  ErrorState,
+  PricesSkeleton,
+  ScreenContainer,
+  SectionHeader,
+  Text,
+} from '@/components/ui';
 import { usePricesData } from '@/hooks/queries/usePricesData';
-import { getApiErrorMessage } from '@/lib/api/errors';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
 export default function PrecosScreen() {
-  const { data, isLoading, isError, error, refetch } = usePricesData();
+  const { data, isLoading, isError, error, refetch, isRefetching } = usePricesData();
 
   return (
     <View style={styles.screen}>
@@ -20,26 +26,15 @@ export default function PrecosScreen() {
 
       {isLoading ? (
         <ScreenContainer>
-          <Card variant="elevated" style={styles.skeleton}>
-            <Text variant="caption" color="textMuted">
-              A carregar dados de preços...
-            </Text>
-          </Card>
+          <PricesSkeleton />
         </ScreenContainer>
       ) : isError || !data ? (
         <View style={styles.centered}>
-          <EmptyState
-            icon={
-              <SymbolView
-                name={{ ios: 'exclamationmark.triangle', android: 'warning', web: 'warning' }}
-                tintColor={colors.danger}
-                size={32}
-              />
-            }
-            title="Não foi possível carregar"
-            description={getApiErrorMessage(error, 'os preços')}
-            actionLabel="Tentar novamente"
-            onAction={() => refetch()}
+          <ErrorState
+            context="prices"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
           />
         </View>
       ) : (
@@ -182,10 +177,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-  },
-  skeleton: {
-    paddingVertical: spacing['3xl'],
-    alignItems: 'center',
   },
   metricsRow: {
     flexDirection: 'row',

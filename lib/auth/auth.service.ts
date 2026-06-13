@@ -3,7 +3,7 @@ import { getAccessToken, setAccessToken } from '@/lib/api/token';
 import { isSupabaseEnabled, supabaseAuth } from '@/lib/supabase';
 
 import { AUTH_ENDPOINTS } from './constants';
-import { createMockSession, isMockAuthEnabled } from './mock-auth';
+import { createMockSession, createMockGoogleSession, isMockAuthEnabled } from './mock-auth';
 import { deleteToken, loadToken, saveToken } from './storage';
 import type {
   AuthSession,
@@ -107,15 +107,56 @@ export async function register(credentials: RegisterCredentials): Promise<AuthSe
   return persistSession(normalizeAuthResponse(raw));
 }
 
+export type GoogleSignInResult = AuthSession | 'web-redirect';
+
+export async function loginWithGoogle(): Promise<GoogleSignInResult> {
+  if (isMockAuthEnabled()) {
+    return persistSession(createMockGoogleSession());
+  }
+
+  if (isSupabaseEnabled()) {
+    const result = await supabaseAuth.signInWithGoogle();
+    if (result === 'web-redirect') {
+      return 'web-redirect';
+    }
+    return persistSession(result);
+  }
+
+  throw new Error(
+    'Login com Google requer Supabase. Define EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY e desactiva EXPO_PUBLIC_MOCK_AUTH.',
+  );
+}
+
+export async function completeGoogleOAuthCallback(url: string): Promise<AuthSession> {
+  if (!isSupabaseEnabled()) {
+    throw new Error('Callback OAuth só disponível com Supabase activo.');
+  }
+
+  const session = await supabaseAuth.completeGoogleOAuthFromUrl(url);
+  return persistSession(session);
+}
+
 export async function getCurrentUser(): Promise<User> {
-  if (isMockAuthEnabled() && getAccessToken() === 'mock-dev-token') {
-    return {
-      id: 'mock-user-1',
-      name: 'Utilizador Dev',
-      email: 'dev@centflow.app',
-      avatarInitials: 'UD',
-      currency: 'EUR',
-    };
+  if (isMockAuthEnabled()) {
+    const token = getAccessToken();
+    if (token === 'mock-google-token') {
+      return {
+        id: 'mock-google-user-1',
+        name: 'Utilizador Google',
+        email: 'google.user@gmail.com',
+        avatarInitials: 'UG',
+        currency: 'EUR',
+      };
+    }
+    if (token === 'mock-dev-token') {
+      return {
+        id: 'mock-user-1',
+        name: 'Utilizador Dev',
+        email: 'dev@centflow.app',
+        avatarInitials: 'UD',
+        currency: 'EUR',
+      };
+    }
   }
 
   if (isSupabaseEnabled()) {

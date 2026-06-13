@@ -31,6 +31,9 @@ type WarrantyRow = {
   purchase_date: string | null;
   store: string | null;
   notes: string | null;
+  receipt_transaction_id: string | null;
+  receipt_id: string | null;
+  receipt_label: string | null;
 };
 
 type InventoryRow = {
@@ -60,6 +63,9 @@ function mapWarrantyRow(row: WarrantyRow): Warranty {
     purchaseDate: row.purchase_date ?? undefined,
     store: row.store ?? undefined,
     notes: row.notes ?? undefined,
+    receiptTransactionId: row.receipt_transaction_id ?? undefined,
+    receiptId: row.receipt_id ?? undefined,
+    receiptLabel: row.receipt_label ?? undefined,
   };
 }
 
@@ -122,6 +128,25 @@ export async function createGoal(input: CreateGoalInput): Promise<Goal> {
   return mapGoalRow(data as GoalRow);
 }
 
+export async function updateGoal(id: string, input: CreateGoalInput): Promise<Goal> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('goals')
+    .update({
+      name: input.name.trim(),
+      target: input.target,
+      current: input.current ?? 0,
+      deadline: input.deadline || null,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return mapGoalRow(data as GoalRow);
+}
+
 export async function createWarranty(input: CreateWarrantyInput): Promise<Warranty> {
   const supabase = getSupabaseClient();
   const userId = await getUserId();
@@ -133,6 +158,10 @@ export async function createWarranty(input: CreateWarrantyInput): Promise<Warran
       product: input.product.trim(),
       expires_at: input.expiresAt,
       store: input.store?.trim() || null,
+      purchase_date: input.purchaseDate || null,
+      receipt_transaction_id: input.receiptTransactionId || null,
+      receipt_id: input.receiptId || null,
+      receipt_label: input.receiptLabel?.trim() || null,
     } satisfies TablesInsert<'warranties'>)
     .select()
     .single();

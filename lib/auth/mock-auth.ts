@@ -42,3 +42,18 @@ export function createMockSession(
     },
   };
 }
+
+export function createMockGoogleSession(): AuthSession {
+  const name = 'Utilizador Google';
+
+  return {
+    token: 'mock-google-token',
+    user: {
+      id: 'mock-google-user-1',
+      name,
+      email: 'google.user@gmail.com',
+      avatarInitials: getInitials(name),
+      currency: 'EUR',
+    },
+  };
+}

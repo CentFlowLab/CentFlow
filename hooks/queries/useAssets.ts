@@ -9,6 +9,7 @@ import {
   deleteInventoryItem,
   deleteWarranty,
   fetchAssetsData,
+  updateGoal,
 } from '@/lib/api/services/assets.service';
 import { useAuth } from '@/lib/auth';
 import type { AssetsData } from '@/lib/domain/assets.types';
@@ -16,13 +17,8 @@ import type {
   CreateGoalInput,
   CreateInventoryItemInput,
   CreateWarrantyInput,
+  UpdateGoalInput,
 } from '@/lib/domain/assets.schema';
-
-const EMPTY_ASSETS: AssetsData = {
-  goals: [],
-  warranties: [],
-  inventory: [],
-};
 
 export function invalidateAssetsQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: queryKeys.assets });
@@ -38,7 +34,6 @@ export function useAssets() {
     queryFn: fetchAssetsData,
     enabled: isAuthenticated,
     staleTime: 1000 * 60 * 2,
-    placeholderData: EMPTY_ASSETS,
   });
 }
 
@@ -46,6 +41,14 @@ export function useCreateGoal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateGoalInput) => createGoal(input),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
+export function useUpdateGoal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateGoalInput }) => updateGoal(id, input),
     onSuccess: () => invalidateAssetsQueries(queryClient),
   });
 }

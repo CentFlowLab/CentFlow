@@ -2,18 +2,19 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AuthScreenLayout } from '@/components/auth';
+import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
 import { Button, Card, Text, TextField } from '@/components/ui';
-import { loginSchema, useAuth } from '@/lib/auth';
+import { isMockAuthEnabled, loginSchema, useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
 export default function LoginScreen() {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle, isGoogleSignInAvailable } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleLogin() {
     setApiError(null);
@@ -39,6 +40,22 @@ export default function LoginScreen() {
       setApiError(error instanceof Error ? error.message : 'Erro ao iniciar sessão');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setApiError(null);
+    setGoogleLoading(true);
+
+    try {
+      const completed = await signInWithGoogle();
+      if (completed) {
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : 'Erro ao iniciar sessão com Google');
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -101,10 +118,27 @@ export default function LoginScreen() {
         label="Entrar"
         onPress={handleLogin}
         loading={loading}
+        disabled={googleLoading}
         fullWidth
         size="lg"
         style={styles.submit}
       />
+
+      {isGoogleSignInAvailable ? (
+        <>
+          <AuthSocialDivider />
+          <GoogleSignInButton
+            onPress={handleGoogleSignIn}
+            loading={googleLoading}
+            disabled={loading}
+          />
+          {isMockAuthEnabled() ? (
+            <Text variant="caption" color="textMuted" align="center">
+              Modo dev — simula conta Google sem OAuth real
+            </Text>
+          ) : null}
+        </>
+      ) : null}
     </AuthScreenLayout>
   );
 }

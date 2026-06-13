@@ -1,4 +1,5 @@
 import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -9,17 +10,17 @@ import {
   NetWorthHeroCard,
   SuggestionCard,
 } from '@/components/dashboard';
-import { FinancialProfileProgress } from '@/components/profile';
-import { EmptyState, ScreenContainer, SectionHeader, Text } from '@/components/ui';
+import { FinancialProfileDetailSheet, FinancialProfileProgress } from '@/components/profile';
+import { EmptyState, ErrorState, RefetchingIndicator, ScreenContainer, SectionHeader, Text } from '@/components/ui';
 import { useDashboardData } from '@/hooks/queries/useDashboardData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
-import { ApiError } from '@/lib/api/client';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 import { colors, spacing } from '@/lib/theme';
 
 export default function InicioScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useDashboardData();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
+  const [profileDetailVisible, setProfileDetailVisible] = useState(false);
 
   if (isLoading) {
     return (
@@ -37,18 +38,11 @@ export default function InicioScreen() {
       <View style={styles.screen}>
         <DashboardGreeting />
         <View style={styles.centered}>
-          <EmptyState
-            icon={
-              <SymbolView
-                name={{ ios: 'exclamationmark.triangle', android: 'warning', web: 'warning' }}
-                tintColor={colors.danger}
-                size={32}
-              />
-            }
-            title="Não foi possível carregar"
-            description={getErrorMessage(error)}
-            actionLabel="Tentar novamente"
-            onAction={() => refetch()}
+          <ErrorState
+            context="dashboard"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
           />
         </View>
       </View>
@@ -77,14 +71,15 @@ export default function InicioScreen() {
       <DashboardGreeting />
 
       <ScreenContainer>
+        <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
+
         <FinancialProfileProgress
           profile={financialProfile}
           isLoading={isProfileScoreLoading}
           variant="compact"
           style={styles.profileProgress}
+          onPress={() => setProfileDetailVisible(true)}
         />
-
-        <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
 
         <SectionHeader title="O que mudou?" subtitle="Resumo rápido do período" />
         <View style={styles.metricsGrid}>
@@ -177,28 +172,16 @@ export default function InicioScreen() {
           )}
         </View>
 
-        {isRefetching && (
-          <Text variant="caption" color="textMuted" align="center" style={styles.refetching}>
-            A atualizar...
-          </Text>
-        )}
+        <RefetchingIndicator visible={isRefetching} />
       </ScreenContainer>
+
+      <FinancialProfileDetailSheet
+        visible={profileDetailVisible}
+        profile={financialProfile}
+        onClose={() => setProfileDetailVisible(false)}
+      />
     </View>
   );
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 401) {
-      return 'A tua sessão expirou. Inicia sessão novamente.';
-    }
-    if (error.status >= 500) {
-      return 'O servidor está temporariamente indisponível. Tenta dentro de momentos.';
-    }
-    const body = error.body as { message?: string } | undefined;
-    if (body?.message) return body.message;
-  }
-  return 'Ocorreu um erro ao obter os dados do dashboard. Tenta novamente.';
 }
 
 function CardEmptyAttention() {
@@ -256,8 +239,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  refetching: {
-    paddingBottom: spacing.lg,
   },
 });

@@ -77,16 +77,22 @@ export const mockWarranties = [
     id: 'war-1',
     product: 'MacBook Pro 14"',
     expiresAt: getDateFromNow(12),
+    store: 'Fnac',
+    receiptTransactionId: 'mock-tx-4',
+    receiptId: 'mock-receipt-1',
+    receiptLabel: 'Fnac · MacBook Pro 14"',
   },
   {
     id: 'war-2',
     product: 'Frigorífico Samsung',
     expiresAt: getDateFromNow(45),
+    store: 'Worten',
   },
   {
     id: 'war-3',
     product: 'Aspirador Dyson',
     expiresAt: getDateFromNow(8),
+    store: 'El Corte Inglés',
   },
 ];
 
@@ -132,8 +138,8 @@ export const mockTransactions: Array<{
 }> = [];
 
 export const mockGoals = [
-  { id: 'goal-1', name: 'Fundo de emergência', target: 5000, current: 4250 },
-  { id: 'goal-2', name: 'Viagem Japão', target: 3000, current: 1200 },
+  { id: 'goal-1', name: 'Fundo de emergência', target: 5000, current: 4250, deadline: '2026-12-31' },
+  { id: 'goal-2', name: 'Viagem Japão', target: 3000, current: 1200, deadline: '2027-06-01' },
 ];
 
 // ─── Dashboard (composto a partir das entidades base) ─────────────────────────

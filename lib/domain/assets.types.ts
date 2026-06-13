@@ -19,6 +19,11 @@ export type Warranty = {
   purchaseDate?: string;
   store?: string;
   notes?: string;
+  /** Movimento com talão associado */
+  receiptTransactionId?: string;
+  receiptId?: string;
+  /** Rótulo para UI (descrição do movimento/talão) */
+  receiptLabel?: string;
 };
 
 export type AssetsData = {

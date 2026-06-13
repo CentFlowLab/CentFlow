@@ -9,6 +9,11 @@ export function isSupabaseEnabled(): boolean {
   return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
+/** Google Sign-In disponível com Supabase ou em modo mock (dev). */
+export function isGoogleSignInAvailable(): boolean {
+  return isMockAuthEnabled() || isSupabaseEnabled();
+}
+
 export function getSupabaseUrl(): string {
   return SUPABASE_URL;
 }

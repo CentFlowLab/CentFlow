@@ -1,4 +1,3 @@
-import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -8,9 +7,14 @@ import {
   PatrimonyAllocationCard,
 } from '@/components/analysis';
 import { AppHeader } from '@/components/layout';
-import { EmptyState, ScreenContainer, SectionHeader, Text } from '@/components/ui';
+import {
+  ErrorState,
+  RefetchingIndicator,
+  ScreenContainer,
+  SectionHeader,
+  Text,
+} from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
-import { getApiErrorMessage } from '@/lib/api/errors';
 import { formatCurrency } from '@/lib/utils/format';
 import { colors, spacing } from '@/lib/theme';
 
@@ -30,18 +34,11 @@ export default function AnalisesScreen() {
         </ScreenContainer>
       ) : isError || !data ? (
         <View style={styles.centered}>
-          <EmptyState
-            icon={
-              <SymbolView
-                name={{ ios: 'exclamationmark.triangle', android: 'warning', web: 'warning' }}
-                tintColor={colors.danger}
-                size={32}
-              />
-            }
-            title="Não foi possível carregar"
-            description={getApiErrorMessage(error, 'as análises')}
-            actionLabel="Tentar novamente"
-            onAction={() => refetch()}
+          <ErrorState
+            context="analysis"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
           />
         </View>
       ) : (
@@ -85,11 +82,7 @@ export default function AnalisesScreen() {
           {/* CentFlow Brain */}
           <InsightsSection insights={data.insights} />
 
-          {isRefetching && (
-            <Text variant="caption" color="textMuted" align="center" style={styles.refetching}>
-              A atualizar...
-            </Text>
-          )}
+          <RefetchingIndicator visible={isRefetching} />
         </ScreenContainer>
       )}
     </View>
@@ -146,8 +139,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.md,
     gap: spacing.xs,
-  },
-  refetching: {
-    paddingBottom: spacing.lg,
   },
 });

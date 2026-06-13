@@ -23,6 +23,7 @@ function buildSeedGoals(): Goal[] {
     target: g.target,
     current: g.current,
     currency: 'EUR',
+    deadline: g.deadline,
   }));
 }
 
@@ -31,6 +32,10 @@ function buildSeedWarranties(): Warranty[] {
     id: w.id,
     product: w.product,
     expiresAt: w.expiresAt,
+    store: w.store,
+    receiptTransactionId: w.receiptTransactionId,
+    receiptId: w.receiptId,
+    receiptLabel: w.receiptLabel,
   }));
 }
 
@@ -62,6 +67,23 @@ export async function createMockGoal(input: CreateGoalInput): Promise<Goal> {
   return goal;
 }
 
+export async function updateMockGoal(id: string, input: CreateGoalInput): Promise<Goal> {
+  await new Promise((r) => setTimeout(r, 200));
+  const existing = goalsStore.find((g) => g.id === id);
+  if (!existing) throw new Error('Objetivo não encontrado');
+
+  const updated: Goal = {
+    ...existing,
+    name: input.name.trim(),
+    target: input.target,
+    current: input.current ?? 0,
+    deadline: input.deadline || undefined,
+  };
+
+  goalsStore = goalsStore.map((g) => (g.id === id ? updated : g));
+  return updated;
+}
+
 export async function createMockWarranty(input: CreateWarrantyInput): Promise<Warranty> {
   await new Promise((r) => setTimeout(r, 200));
   const warranty: Warranty = {
@@ -69,6 +91,10 @@ export async function createMockWarranty(input: CreateWarrantyInput): Promise<Wa
     product: input.product.trim(),
     expiresAt: input.expiresAt,
     store: input.store?.trim() || undefined,
+    purchaseDate: input.purchaseDate || undefined,
+    receiptTransactionId: input.receiptTransactionId,
+    receiptId: input.receiptId ?? undefined,
+    receiptLabel: input.receiptLabel?.trim() || undefined,
   };
   warrantiesStore = [warranty, ...warrantiesStore];
   return warranty;

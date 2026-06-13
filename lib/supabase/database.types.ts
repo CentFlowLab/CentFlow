@@ -211,6 +211,9 @@ export interface Database {
           purchase_date: string | null;
           store: string | null;
           notes: string | null;
+          receipt_transaction_id: string | null;
+          receipt_id: string | null;
+          receipt_label: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -222,6 +225,9 @@ export interface Database {
           purchase_date?: string | null;
           store?: string | null;
           notes?: string | null;
+          receipt_transaction_id?: string | null;
+          receipt_id?: string | null;
+          receipt_label?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -233,6 +239,9 @@ export interface Database {
           purchase_date?: string | null;
           store?: string | null;
           notes?: string | null;
+          receipt_transaction_id?: string | null;
+          receipt_id?: string | null;
+          receipt_label?: string | null;
           created_at?: string;
           updated_at?: string;
         };

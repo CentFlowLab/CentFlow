@@ -11,12 +11,11 @@ import {
   SwipeableTransactionListItem,
   TransactionsSkeleton,
 } from '@/components/movements';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, ErrorState, RefetchingIndicator } from '@/components/ui';
 import {
   useDeleteTransaction,
   useTransactions,
 } from '@/hooks/queries/useTransactions';
-import { getApiErrorMessage } from '@/lib/api/errors';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import { colors, spacing } from '@/lib/theme';
 
@@ -106,22 +105,11 @@ export default function MovimentosScreen() {
         </View>
       ) : isError ? (
         <View style={styles.centered}>
-          <EmptyState
-            icon={
-              <SymbolView
-                name={{
-                  ios: 'exclamationmark.triangle',
-                  android: 'warning',
-                  web: 'warning',
-                }}
-                tintColor={colors.danger}
-                size={32}
-              />
-            }
-            title="Não foi possível carregar"
-            description={getApiErrorMessage(error, 'os movimentos')}
-            actionLabel="Tentar novamente"
-            onAction={() => refetch()}
+          <ErrorState
+            context="movements"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
           />
         </View>
       ) : (

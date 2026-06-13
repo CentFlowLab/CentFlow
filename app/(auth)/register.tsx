@@ -2,13 +2,13 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AuthScreenLayout } from '@/components/auth';
+import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { isMockAuthEnabled, registerSchema, useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
 export default function RegisterScreen() {
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle, isGoogleSignInAvailable } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,6 +16,7 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleRegister() {
     setApiError(null);
@@ -50,6 +51,22 @@ export default function RegisterScreen() {
       setApiError(error instanceof Error ? error.message : 'Erro ao criar conta');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setApiError(null);
+    setGoogleLoading(true);
+
+    try {
+      const completed = await signInWithGoogle();
+      if (completed) {
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : 'Erro ao iniciar sessão com Google');
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -131,10 +148,22 @@ export default function RegisterScreen() {
         label="Criar conta"
         onPress={handleRegister}
         loading={loading}
+        disabled={googleLoading}
         fullWidth
         size="lg"
         style={styles.submit}
       />
+
+      {isGoogleSignInAvailable ? (
+        <>
+          <AuthSocialDivider />
+          <GoogleSignInButton
+            onPress={handleGoogleSignIn}
+            loading={googleLoading}
+            disabled={loading}
+          />
+        </>
+      ) : null}
     </AuthScreenLayout>
   );
 }

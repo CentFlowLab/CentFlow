@@ -7,28 +7,33 @@ import {
   ASSETS_EMPTY_CONFIG,
   ASSETS_SEGMENTS,
   AddAssetModal,
+  AddWarrantyModal,
   AssetsOverviewCard,
+  GoalFormModal,
   GoalsSection,
   InventorySection,
   WarrantiesSection,
 } from '@/components/assets';
 import { AppHeader, SegmentedControl } from '@/components/layout';
-import { ScreenContainer } from '@/components/ui';
+import { ScreenContainer, ErrorState, AssetsSkeleton, RefetchingIndicator } from '@/components/ui';
 import {
   useAssets,
   useDeleteGoal,
   useDeleteInventoryItem,
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
-import type { AssetsTab } from '@/lib/domain/assets.types';
+import type { AssetsTab, Goal } from '@/lib/domain/assets.types';
 import { colors, spacing } from '@/lib/theme';
 
 export default function AtivosScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<AssetsTab>('objetivos');
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [goalFormVisible, setGoalFormVisible] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [addWarrantyModalVisible, setAddWarrantyModalVisible] = useState(false);
 
-  const { data, refetch, isRefetching } = useAssets();
+  const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
   const deleteGoal = useDeleteGoal();
   const deleteWarranty = useDeleteWarranty();
   const deleteInventory = useDeleteInventoryItem();
@@ -49,7 +54,30 @@ export default function AtivosScreen() {
     Alert.alert(config.title, config.highlights.join('\n\n• '));
   }
 
+  function openCreateGoal() {
+    setEditingGoal(null);
+    setGoalFormVisible(true);
+  }
+
+  function openEditGoal(goal: Goal) {
+    setEditingGoal(goal);
+    setGoalFormVisible(true);
+  }
+
+  function closeGoalForm() {
+    setGoalFormVisible(false);
+    setEditingGoal(null);
+  }
+
   function handleAdd() {
+    if (activeTab === 'objetivos') {
+      openCreateGoal();
+      return;
+    }
+    if (activeTab === 'garantias') {
+      setAddWarrantyModalVisible(true);
+      return;
+    }
     setAddModalVisible(true);
   }
 
@@ -71,6 +99,20 @@ export default function AtivosScreen() {
         }}
       />
 
+      {isLoading ? (
+        <ScreenContainer>
+          <AssetsSkeleton />
+        </ScreenContainer>
+      ) : isError ? (
+        <View style={styles.errorState}>
+          <ErrorState
+            context="assets"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
+          />
+        </View>
+      ) : (
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -98,7 +140,8 @@ export default function AtivosScreen() {
           {activeTab === 'objetivos' ? (
             <GoalsSection
               goals={assets.goals}
-              onAdd={handleAdd}
+              onAdd={openCreateGoal}
+              onEdit={openEditGoal}
               onLearnMore={handleLearnMore}
               onDelete={(goal) => deleteGoal.mutate(goal.id)}
             />
@@ -121,12 +164,25 @@ export default function AtivosScreen() {
               onDelete={(item) => deleteInventory.mutate(item.id)}
             />
           ) : null}
+
+          <RefetchingIndicator visible={isRefetching && !isLoading} />
         </ScreenContainer>
       </ScrollView>
+      )}
+
+      <GoalFormModal
+        visible={goalFormVisible}
+        goal={editingGoal}
+        onClose={closeGoalForm}
+      />
+
+      <AddWarrantyModal
+        visible={addWarrantyModalVisible}
+        onClose={() => setAddWarrantyModalVisible(false)}
+      />
 
       <AddAssetModal
         visible={addModalVisible}
-        tab={activeTab}
         onClose={() => setAddModalVisible(false)}
       />
     </View>
@@ -144,5 +200,9 @@ const styles = StyleSheet.create({
   segmentWrapper: {
     marginTop: spacing.lg,
     marginBottom: spacing['2xl'],
+  },
+  errorState: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
   },
 });

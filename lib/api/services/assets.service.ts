@@ -6,6 +6,7 @@ import {
   deleteMockInventoryItem,
   deleteMockWarranty,
   fetchMockAssets,
+  updateMockGoal,
 } from '@/lib/api/mock-assets';
 import { isMockAuthEnabled } from '@/lib/auth';
 import type {
@@ -17,6 +18,7 @@ import type {
   CreateGoalInput,
   CreateInventoryItemInput,
   CreateWarrantyInput,
+  UpdateGoalInput,
 } from '@/lib/domain/assets.schema';
 import type { InventoryItem } from '@/lib/domain/types';
 import { isSupabaseEnabled, supabaseAssets } from '@/lib/supabase';
@@ -40,6 +42,12 @@ export async function fetchAssetsData(): Promise<AssetsData> {
 export async function createGoal(input: CreateGoalInput): Promise<Goal> {
   if (isMockAuthEnabled()) return createMockGoal(input);
   if (isSupabaseEnabled()) return supabaseAssets.createGoal(input);
+  throw new Error('Backend de ativos indisponível');
+}
+
+export async function updateGoal(id: string, input: UpdateGoalInput): Promise<Goal> {
+  if (isMockAuthEnabled()) return updateMockGoal(id, input);
+  if (isSupabaseEnabled()) return supabaseAssets.updateGoal(id, input);
   throw new Error('Backend de ativos indisponível');
 }
 

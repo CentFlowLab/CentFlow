@@ -1,6 +1,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { queryClient } from '@/lib/api';
+import { isGoogleSignInAvailable } from '@/lib/supabase';
 
 import * as authService from './auth.service';
 import { getAuthErrorMessage } from './errors';
@@ -15,8 +16,11 @@ type AuthContextValue = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isGoogleSignInAvailable: boolean;
   signIn: (credentials: LoginCredentials) => Promise<void>;
   signUp: (credentials: RegisterCredentials) => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
+  completeGoogleSignInFromCallback: (url: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -73,6 +77,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [applySession]);
 
+  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
+    try {
+      const result = await authService.loginWithGoogle();
+      if (result === 'web-redirect') {
+        return false;
+      }
+      applySession(result);
+      return true;
+    } catch (error) {
+      throw new Error(getAuthErrorMessage(error));
+    }
+  }, [applySession]);
+
+  const completeGoogleSignInFromCallback = useCallback(async (url: string) => {
+    try {
+      const session = await authService.completeGoogleOAuthCallback(url);
+      applySession(session);
+    } catch (error) {
+      throw new Error(getAuthErrorMessage(error));
+    }
+  }, [applySession]);
+
   const signOut = useCallback(async () => {
     await authService.logout();
     setUser(null);
@@ -84,11 +110,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       isAuthenticated: !!user,
       isLoading,
+      isGoogleSignInAvailable: isGoogleSignInAvailable(),
       signIn,
       signUp,
+      signInWithGoogle,
+      completeGoogleSignInFromCallback,
       signOut,
     }),
-    [user, isLoading, signIn, signUp, signOut],
+    [user, isLoading, signIn, signUp, signInWithGoogle, completeGoogleSignInFromCallback, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

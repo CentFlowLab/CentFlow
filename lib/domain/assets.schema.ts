@@ -15,6 +15,14 @@ export const createWarrantySchema = z.object({
   product: z.string().min(1, 'Indica o produto').max(120),
   expiresAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
   store: z.string().max(80).optional(),
+  purchaseDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
+    .optional()
+    .or(z.literal('')),
+  receiptTransactionId: z.string().optional(),
+  receiptId: z.string().optional().nullable(),
+  receiptLabel: z.string().max(120).optional(),
 });
 
 export const createInventoryItemSchema = z.object({
@@ -24,5 +32,6 @@ export const createInventoryItemSchema = z.object({
 });
 
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
+export type UpdateGoalInput = CreateGoalInput;
 export type CreateWarrantyInput = z.infer<typeof createWarrantySchema>;
 export type CreateInventoryItemInput = z.infer<typeof createInventoryItemSchema>;
