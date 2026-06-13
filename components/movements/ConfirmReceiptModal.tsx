@@ -1,16 +1,8 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text } from '@/components/ui';
 import {
   countOcrFilledFields,
@@ -22,7 +14,7 @@ import { receiptConfirmationSchema } from '@/lib/domain/receipt-confirmation.sch
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 
 import { OcrResultCard } from './OcrResultCard';
 import { ReceiptDataForm } from './ReceiptDataForm';
@@ -93,7 +85,6 @@ export function ConfirmReceiptModal({
   isSaving,
   phaseLabel,
 }: ConfirmReceiptModalProps) {
-  const insets = useSafeAreaInsets();
   const [values, setValues] = useState<ReceiptFormValues>(() => emptyReceiptFormValues());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -150,100 +141,86 @@ export function ConfirmReceiptModal({
   };
 
   return (
-    <Modal
+    <DraggableBottomSheet
       visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Fechar" />
-
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-          <View style={styles.handle} />
-
-          <View style={styles.header}>
-            <Text variant="h2">Rever e editar</Text>
-            <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Fechar">
-              <SymbolView
-                name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
-                tintColor={colors.textMuted}
-                size={28}
-              />
-            </Pressable>
-          </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.content}>
-            <StatusBanner title={status.title} subtitle={status.subtitle} tone={status.tone} />
-
-            <ReceiptPreview draft={previewDraft} />
-
-            {hasOcr ? <OcrResultCard ocr={processed.ocrResult!} /> : null}
-
-            {!hasOcr && !manualMode ? (
-              <Card variant="outlined" style={styles.noOcr}>
-                <Text variant="caption" color="textMuted">
-                  O OCR não devolveu dados úteis. Preenche os campos abaixo — o talão
-                  original permanece anexado ao movimento.
-                </Text>
-              </Card>
-            ) : null}
-
-            <ReceiptDataForm
-              values={values}
-              onChange={setValues}
-              ocrSnapshot={manualMode ? null : processed.ocrResult}
-              errors={errors}
-              manualMode={manualMode}
+      onClose={onClose}
+      maxHeight="94%"
+      scrollContentStyle={styles.content}
+      header={(requestClose) => (
+        <View style={styles.header}>
+          <Text variant="h2">Rever e editar</Text>
+          <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
+            <SymbolView
+              name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+              tintColor={colors.textMuted}
+              size={28}
             />
+          </Pressable>
+        </View>
+      )}>
+      <StatusBanner title={status.title} subtitle={status.subtitle} tone={status.tone} />
 
-            {apiError ? (
-              <Card variant="outlined" style={styles.errorCard}>
-                <Text variant="caption" color="danger">
-                  {apiError}
-                </Text>
-              </Card>
-            ) : null}
+      <ReceiptPreview draft={previewDraft} />
 
-            {phaseLabel ? (
-              <Text variant="caption" color="textMuted" align="center">
-                {phaseLabel}
-              </Text>
-            ) : null}
+      {hasOcr ? <OcrResultCard ocr={processed.ocrResult!} /> : null}
 
-            <Button
-              label={phaseLabel ?? 'Confirmar e guardar'}
-              onPress={handleConfirm}
-              loading={isSaving}
-              fullWidth
-              size="lg"
-            />
+      {!hasOcr && !manualMode ? (
+        <Card variant="outlined" style={styles.noOcr}>
+          <Text variant="caption" color="textMuted">
+            O OCR não devolveu dados úteis. Preenche os campos abaixo — o talão original
+            permanece anexado ao movimento.
+          </Text>
+        </Card>
+      ) : null}
 
-            {hasOcr ? (
-              <Button
-                label="Ignorar OCR e preencher manualmente"
-                variant="secondary"
-                onPress={handleIgnoreOcr}
-                disabled={isSaving}
-                fullWidth
-              />
-            ) : null}
+      <ReceiptDataForm
+        values={values}
+        onChange={setValues}
+        ocrSnapshot={manualMode ? null : processed.ocrResult}
+        errors={errors}
+        manualMode={manualMode}
+      />
 
-            <Button
-              label="Voltar ao formulário principal"
-              variant="ghost"
-              onPress={() => onFillManually(processed, values)}
-              disabled={isSaving}
-              fullWidth
-            />
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+      {apiError ? (
+        <Card variant="outlined" style={styles.errorCard}>
+          <Text variant="caption" color="danger">
+            {apiError}
+          </Text>
+        </Card>
+      ) : null}
+
+      {phaseLabel ? (
+        <Text variant="caption" color="textMuted" align="center">
+          {phaseLabel}
+        </Text>
+      ) : null}
+
+      <Button
+        label={phaseLabel ?? 'Confirmar e guardar'}
+        onPress={handleConfirm}
+        loading={isSaving}
+        fullWidth
+        size="lg"
+      />
+
+      {hasOcr ? (
+        <Button
+          label="Ignorar OCR e preencher manualmente"
+          variant="secondary"
+          onPress={handleIgnoreOcr}
+          disabled={isSaving}
+          fullWidth
+        />
+      ) : null}
+
+      <Button
+        label="Voltar ao formulário principal"
+        variant="ghost"
+        onPress={() => onFillManually(processed, values)}
+        disabled={isSaving}
+        fullWidth
+      />
+    </DraggableBottomSheet>
   );
 }
 
@@ -288,32 +265,6 @@ function StatusBanner({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.overlay,
-  },
-  sheet: {
-    backgroundColor: colors.backgroundElevated,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    maxHeight: '94%',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.borderStrong,
-    marginBottom: spacing.lg,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -322,7 +273,6 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    paddingBottom: spacing.xl,
   },
   statusCard: {
     gap: spacing.xs,

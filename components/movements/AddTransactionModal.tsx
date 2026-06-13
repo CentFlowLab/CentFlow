@@ -1,17 +1,8 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { SegmentedControl } from '@/components/layout';
+import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { useProcessReceipt } from '@/hooks/useProcessReceipt';
 import { useReceiptImage } from '@/hooks/useReceiptImage';
@@ -57,7 +48,6 @@ export function AddTransactionModal({
   onClose,
   startWithReceiptPicker = false,
 }: AddTransactionModalProps) {
-  const insets = useSafeAreaInsets();
   const createMutation = useCreateTransaction();
   const processReceipt = useProcessReceipt();
   const receiptImage = useReceiptImage();
@@ -260,172 +250,153 @@ export function AddTransactionModal({
 
   return (
     <>
-      <Modal
+      <DraggableBottomSheet
         visible={visible && !confirmVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={onClose}>
-        <View style={styles.overlay}>
-          <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Fechar" />
+        onClose={onClose}
+        maxHeight="92%"
+        scrollContentStyle={styles.form}
+        header={(requestClose) => (
+          <View style={styles.header}>
+            <Text variant="h2">Novo movimento</Text>
+            <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
+              <SymbolView
+                name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+                tintColor={colors.textMuted}
+                size={28}
+              />
+            </Pressable>
+          </View>
+        )}>
+        <ReceiptAttachmentField
+          draft={receiptImage.draft}
+          isPicking={receiptImage.isPicking}
+          isPreprocessing={receiptImage.isPreprocessing}
+          pickError={receiptImage.pickError}
+          onPick={receiptImage.showSourcePicker}
+          onRemove={receiptImage.remove}
+        />
 
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-            <View style={styles.handle} />
+        {showTransactionForm ? (
+          <>
+            <SegmentedControl segments={TYPE_SEGMENTS} value={type} onChange={setType} />
 
-            <View style={styles.header}>
-              <Text variant="h2">Novo movimento</Text>
-              <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Fechar">
-                <SymbolView
-                  name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
-                  tintColor={colors.textMuted}
-                  size={28}
-                />
-              </Pressable>
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.form}>
-            <ReceiptAttachmentField
-              draft={receiptImage.draft}
-              isPicking={receiptImage.isPicking}
-              isPreprocessing={receiptImage.isPreprocessing}
-              pickError={receiptImage.pickError}
-              onPick={receiptImage.showSourcePicker}
-              onRemove={receiptImage.remove}
+            <TextField
+              label="Valor (€)"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+              placeholder="0,00"
+              error={errors.amount}
             />
 
-              {showTransactionForm ? (
-                <>
-                  <SegmentedControl
-                    segments={TYPE_SEGMENTS}
-                    value={type}
-                    onChange={setType}
-                  />
-
-                  <TextField
-                    label="Valor (€)"
-                    value={amount}
-                    onChangeText={setAmount}
-                    keyboardType="decimal-pad"
-                    placeholder="0,00"
-                    error={errors.amount}
-                  />
-
-                  <View style={styles.field}>
-                    <Text variant="caption" color="textSecondary" style={styles.fieldLabel}>
-                      Categoria
-                    </Text>
-                    <View style={styles.categoryGrid}>
-                      {categories.map((item) => {
-                        const isSelected = category === item.id;
-                        return (
-                          <Pressable
-                            key={item.id}
-                            onPress={() => setCategory(item.id)}
-                            style={[styles.categoryChip, isSelected && styles.categoryChipActive]}>
-                            <SymbolView
-                              name={item.icon}
-                              tintColor={isSelected ? colors.primary : colors.textMuted}
-                              size={16}
-                            />
-                            <Text
-                              variant="caption"
-                              color={isSelected ? 'text' : 'textMuted'}
-                              style={isSelected ? styles.categoryLabelActive : undefined}>
-                              {item.label}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                    {errors.category ? (
-                      <Text variant="caption" color="danger" style={styles.fieldError}>
-                        {errors.category}
+            <View style={styles.field}>
+              <Text variant="caption" color="textSecondary" style={styles.fieldLabel}>
+                Categoria
+              </Text>
+              <View style={styles.categoryGrid}>
+                {categories.map((item) => {
+                  const isSelected = category === item.id;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => setCategory(item.id)}
+                      style={[styles.categoryChip, isSelected && styles.categoryChipActive]}>
+                      <SymbolView
+                        name={item.icon}
+                        tintColor={isSelected ? colors.primary : colors.textMuted}
+                        size={16}
+                      />
+                      <Text
+                        variant="caption"
+                        color={isSelected ? 'text' : 'textMuted'}
+                        style={isSelected ? styles.categoryLabelActive : undefined}>
+                        {item.label}
                       </Text>
-                    ) : null}
-                  </View>
-
-                  <TextField
-                    label="Descrição (opcional)"
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="Ex: Jantar com amigos"
-                    maxLength={200}
-                  />
-
-                  <TextField
-                    label="Data"
-                    value={date}
-                    onChangeText={setDate}
-                    placeholder="AAAA-MM-DD"
-                    error={errors.date}
-                  />
-                </>
-              ) : (
-                <Card variant="outlined" style={styles.hintCard}>
-                  <Text variant="caption" color="textSecondary">
-                    Com talão anexado, analisa a imagem para extrair dados automaticamente
-                    ou preenche manualmente no passo seguinte.
-                  </Text>
-                </Card>
-              )}
-
-              {apiError ? (
-                <Card variant="outlined" style={styles.errorCard}>
-                  <Text variant="caption" color="danger">
-                    {apiError}
-                  </Text>
-                </Card>
-              ) : null}
-
-              {(isProcessing && processPhaseLabel) || (isSaving && savePhaseLabel) ? (
-                <Text variant="caption" color="textMuted" align="center">
-                  {processPhaseLabel ?? savePhaseLabel}
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {errors.category ? (
+                <Text variant="caption" color="danger" style={styles.fieldError}>
+                  {errors.category}
                 </Text>
               ) : null}
+            </View>
 
-              {hasReceipt && !manualFillMode ? (
-                <Button
-                  label={processPhaseLabel ?? 'Analisar talão'}
-                  onPress={handleProcessReceipt}
-                  loading={isProcessing}
-                  disabled={receiptImage.isPicking || isBusy}
-                  fullWidth
-                  size="lg"
-                />
-              ) : null}
+            <TextField
+              label="Descrição (opcional)"
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Ex: Jantar com amigos"
+              maxLength={200}
+            />
 
-              {showTransactionForm ? (
-                <Button
-                  label={
-                    savePhaseLabel ??
-                    (hasReceipt ? 'Guardar movimento' : 'Guardar movimento')
-                  }
-                  onPress={handleSaveManual}
-                  loading={isSaving}
-                  disabled={receiptImage.isPicking || isBusy}
-                  fullWidth
-                  size="lg"
-                />
-              ) : null}
+            <TextField
+              label="Data"
+              value={date}
+              onChangeText={setDate}
+              placeholder="AAAA-MM-DD"
+              error={errors.date}
+            />
+          </>
+        ) : (
+          <Card variant="outlined" style={styles.hintCard}>
+            <Text variant="caption" color="textSecondary">
+              Com talão anexado, analisa a imagem para extrair dados automaticamente ou
+              preenche manualmente no passo seguinte.
+            </Text>
+          </Card>
+        )}
 
-              {hasReceipt && !manualFillMode ? (
-                <Button
-                  label={isUploadingOnly ? 'A guardar talão...' : 'Ignorar OCR e preencher manualmente'}
-                  variant="secondary"
-                  onPress={() => void handleManualWithoutOcr()}
-                  loading={isUploadingOnly}
-                  disabled={isBusy || receiptImage.isPicking}
-                  fullWidth
-                />
-              ) : null}
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+        {apiError ? (
+          <Card variant="outlined" style={styles.errorCard}>
+            <Text variant="caption" color="danger">
+              {apiError}
+            </Text>
+          </Card>
+        ) : null}
+
+        {(isProcessing && processPhaseLabel) || (isSaving && savePhaseLabel) ? (
+          <Text variant="caption" color="textMuted" align="center">
+            {processPhaseLabel ?? savePhaseLabel}
+          </Text>
+        ) : null}
+
+        {hasReceipt && !manualFillMode ? (
+          <Button
+            label={processPhaseLabel ?? 'Analisar talão'}
+            onPress={handleProcessReceipt}
+            loading={isProcessing}
+            disabled={receiptImage.isPicking || isBusy}
+            fullWidth
+            size="lg"
+          />
+        ) : null}
+
+        {showTransactionForm ? (
+          <Button
+            label={savePhaseLabel ?? 'Guardar movimento'}
+            onPress={handleSaveManual}
+            loading={isSaving}
+            disabled={receiptImage.isPicking || isBusy}
+            fullWidth
+            size="lg"
+          />
+        ) : null}
+
+        {hasReceipt && !manualFillMode ? (
+          <Button
+            label={
+              isUploadingOnly ? 'A guardar talão...' : 'Ignorar OCR e preencher manualmente'
+            }
+            variant="secondary"
+            onPress={() => void handleManualWithoutOcr()}
+            loading={isUploadingOnly}
+            disabled={isBusy || receiptImage.isPicking}
+            fullWidth
+          />
+        ) : null}
+      </DraggableBottomSheet>
 
       <ConfirmReceiptModal
         visible={confirmVisible}
@@ -442,32 +413,6 @@ export function AddTransactionModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.overlay,
-  },
-  sheet: {
-    backgroundColor: colors.backgroundElevated,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    maxHeight: '92%',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.borderStrong,
-    marginBottom: spacing.lg,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -476,7 +421,6 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: spacing.lg,
-    paddingBottom: spacing.xl,
   },
   field: {
     gap: spacing.xs,
