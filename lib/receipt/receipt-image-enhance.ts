@@ -9,14 +9,32 @@ const BRIGHTNESS_OFFSET = 6;
 const SOFT_THRESHOLD = 165;
 /** Intensidade do unsharp mask (nitidez). */
 const SHARPEN_AMOUNT = 0.55;
+/** Acima disto usa enhancement leve (sem blur) para evitar OOM no telemóvel */
+const LIGHTWEIGHT_PIXEL_THRESHOLD = 900_000;
 
 function uint8ToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const chunk = 0x8000;
+  const chunk = 8192;
+  const parts: string[] = [];
+
   for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    const slice = bytes.subarray(i, i + chunk);
+    let binary = '';
+    for (let j = 0; j < slice.length; j++) {
+      binary += String.fromCharCode(slice[j]);
+    }
+    parts.push(binary);
   }
-  return btoa(binary);
+
+  return btoa(parts.join(''));
+}
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }
 
 function clampByte(value: number): number {
@@ -59,16 +77,38 @@ function boxBlurGray(gray: Float32Array, width: number, height: number): Float32
   return out;
 }
 
+type EnhanceOptions = {
+  lightweight?: boolean;
+};
+
 /**
- * Melhora legibilidade OCR: grayscale + contraste + nitidez + binarização suave.
- * Corre em JS puro (jpeg-js) — funciona em iOS/Android sem módulos nativos extra.
+ * Melhora legibilidade OCR: grayscale + contraste + (opcional) nitidez + binarização suave.
  */
 export function enhanceReceiptPixels(
   rgba: Uint8Array,
   width: number,
   height: number,
+  options: EnhanceOptions = {},
 ): Uint8Array {
   const pixelCount = width * height;
+  const out = new Uint8Array(rgba.length);
+  const lightweight = options.lightweight ?? pixelCount > LIGHTWEIGHT_PIXEL_THRESHOLD;
+
+  if (lightweight) {
+    for (let px = 0; px < pixelCount; px++) {
+      const i = px * 4;
+      const gray = rgbToGray(rgba[i], rgba[i + 1], rgba[i + 2]);
+      let value = (gray - 128) * CONTRAST_FACTOR + 128 + BRIGHTNESS_OFFSET;
+      value = applySoftBinarization(value);
+      const v = clampByte(value);
+      out[i] = v;
+      out[i + 1] = v;
+      out[i + 2] = v;
+      out[i + 3] = rgba[i + 3];
+    }
+    return out;
+  }
+
   const gray = new Float32Array(pixelCount);
 
   for (let px = 0; px < pixelCount; px++) {
@@ -77,7 +117,6 @@ export function enhanceReceiptPixels(
   }
 
   const blurred = boxBlurGray(gray, width, height);
-  const out = new Uint8Array(rgba.length);
 
   for (let px = 0; px < pixelCount; px++) {
     const i = px * 4;
@@ -100,13 +139,16 @@ export async function applyContrastEnhancement(sourceUri: string): Promise<strin
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const bytes = base64ToUint8Array(base64);
   const decoded = jpeg.decode(bytes, { useTArray: true, formatAsRGBA: true });
 
-  const enhanced = enhanceReceiptPixels(decoded.data, decoded.width, decoded.height);
+  const enhanced = enhanceReceiptPixels(decoded.data, decoded.width, decoded.height, {
+    lightweight: decoded.width * decoded.height > LIGHTWEIGHT_PIXEL_THRESHOLD,
+  });
+
   const encoded = jpeg.encode(
     { data: enhanced, width: decoded.width, height: decoded.height },
-    93,
+    90,
   );
 
   const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;

@@ -1,22 +1,47 @@
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
 import type { ReceiptDraft } from '@/lib/domain/receipt.types';
-import { preprocessReceiptImage } from '@/lib/receipt/receipt-image-preprocess';
+import {
+  isPdfReceipt,
+  preparePdfReceiptDraft,
+  preprocessReceiptImage,
+} from '@/lib/receipt/receipt-image-preprocess';
 
 async function buildDraftFromAsset(
   asset: ImagePicker.ImagePickerAsset,
 ): Promise<ReceiptDraft> {
   const fileName = asset.fileName ?? `receipt-${Date.now()}.jpg`;
 
-  // Pré-processamento OCR: resize + JPEG 92% (ver receipt-image-preprocess.ts)
   return preprocessReceiptImage(asset.uri, {
     originalWidth: asset.width,
     originalHeight: asset.height,
     fileName,
+    mimeType: asset.mimeType ?? undefined,
     exif: asset.exif ?? undefined,
   });
+}
+
+async function buildDraftFromDocument(
+  asset: DocumentPicker.DocumentPickerAsset,
+): Promise<ReceiptDraft> {
+  const fileName = asset.name ?? `document-${Date.now()}`;
+  const mimeType = asset.mimeType ?? undefined;
+
+  if (isPdfReceipt(mimeType, fileName)) {
+    return preparePdfReceiptDraft(asset.uri, fileName);
+  }
+
+  if (mimeType?.startsWith('image/') || /\.(jpe?g|png|heic|webp)$/i.test(fileName)) {
+    return preprocessReceiptImage(asset.uri, {
+      fileName,
+      mimeType,
+    });
+  }
+
+  throw new Error('Formato não suportado. Usa imagem (JPG/PNG) ou PDF.');
 }
 
 async function ensureCameraPermission(): Promise<boolean> {
@@ -64,9 +89,7 @@ export function useReceiptImage() {
     try {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
-        // Qualidade alta no picker; compressão final no preprocess v3
         quality: 1,
-        // Sem crop manual — evita cortar linhas de total/itens
         allowsEditing: false,
         exif: true,
       });
@@ -79,8 +102,11 @@ export function useReceiptImage() {
           setIsPreprocessing(false);
         }
       }
-    } catch {
-      setPickError('Não foi possível optimizar a imagem. Tenta outra foto.');
+    } catch (error) {
+      if (__DEV__) console.warn('[useReceiptImage] camera preprocess failed', error);
+      setPickError(
+        'Não foi possível preparar a foto. Tenta outra imagem com boa luz e foco.',
+      );
     } finally {
       setIsPicking(false);
     }
@@ -109,8 +135,38 @@ export function useReceiptImage() {
           setIsPreprocessing(false);
         }
       }
-    } catch {
-      setPickError('Não foi possível optimizar a imagem. Tenta outra foto.');
+    } catch (error) {
+      if (__DEV__) console.warn('[useReceiptImage] gallery preprocess failed', error);
+      setPickError(
+        'Não foi possível preparar a imagem. Tenta JPG/PNG ou importa o PDF directamente.',
+      );
+    } finally {
+      setIsPicking(false);
+    }
+  }, []);
+
+  const pickFromDocument = useCallback(async () => {
+    setPickError(null);
+    setIsPicking(true);
+
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (!result.canceled && result.assets?.[0]) {
+        setIsPreprocessing(true);
+        try {
+          setDraft(await buildDraftFromDocument(result.assets[0]));
+        } finally {
+          setIsPreprocessing(false);
+        }
+      }
+    } catch (error) {
+      if (__DEV__) console.warn('[useReceiptImage] document pick failed', error);
+      setPickError('Não foi possível abrir o ficheiro. Tenta um PDF ou imagem.');
     } finally {
       setIsPicking(false);
     }
@@ -118,16 +174,17 @@ export function useReceiptImage() {
 
   const showSourcePicker = useCallback(() => {
     if (Platform.OS === 'web') {
-      void pickFromGallery();
+      void pickFromDocument();
       return;
     }
 
-    Alert.alert('Anexar talão', 'Como queres adicionar a foto?', [
+    Alert.alert('Anexar talão ou fatura', 'Como queres adicionar o documento?', [
       { text: 'Tirar foto', onPress: () => void pickFromCamera() },
-      { text: 'Escolher da galeria', onPress: () => void pickFromGallery() },
+      { text: 'Galeria (imagem)', onPress: () => void pickFromGallery() },
+      { text: 'PDF / ficheiro', onPress: () => void pickFromDocument() },
       { text: 'Cancelar', style: 'cancel' },
     ]);
-  }, [pickFromCamera, pickFromGallery]);
+  }, [pickFromCamera, pickFromGallery, pickFromDocument]);
 
   const remove = useCallback(() => {
     setDraft(null);
@@ -148,6 +205,7 @@ export function useReceiptImage() {
     pickError,
     pickFromCamera,
     pickFromGallery,
+    pickFromDocument,
     showSourcePicker,
     remove,
     reset,

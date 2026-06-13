@@ -3,7 +3,10 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
 import type { ReceiptDraft } from '@/lib/domain/receipt.types';
-import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
+import {
+  getReceiptDisplayUri,
+  isPdfReceipt,
+} from '@/lib/receipt/receipt-image-preprocess';
 import { colors, radius, spacing } from '@/lib/theme';
 
 type ReceiptPreviewProps = {
@@ -12,16 +15,30 @@ type ReceiptPreviewProps = {
 };
 
 export function ReceiptPreview({ draft, onRemove }: ReceiptPreviewProps) {
+  const isPdf = isPdfReceipt(draft.mimeType, draft.fileName);
   const displayUri = getReceiptDisplayUri(draft);
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: displayUri }} style={styles.image} resizeMode="cover" />
+      {isPdf ? (
+        <View style={styles.pdfPreview}>
+          <SymbolView
+            name={{ ios: 'doc.fill', android: 'description', web: 'description' }}
+            tintColor={colors.primary}
+            size={40}
+          />
+          <Text variant="caption" color="textSecondary">
+            Documento PDF
+          </Text>
+        </View>
+      ) : (
+        <Image source={{ uri: displayUri }} style={styles.image} resizeMode="cover" />
+      )}
 
       <View style={styles.meta}>
         <View style={styles.metaText}>
           <Text variant="caption" color="textSecondary">
-            Talão anexado
+            {isPdf ? 'Fatura PDF anexada' : 'Talão anexado'}
           </Text>
           <Text variant="caption" color="textMuted" numberOfLines={1}>
             {draft.fileName}
@@ -57,6 +74,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 120,
     backgroundColor: colors.surfaceHighlight,
+  },
+  pdfPreview: {
+    width: '100%',
+    height: 120,
+    backgroundColor: colors.surfaceHighlight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   meta: {
     flexDirection: 'row',

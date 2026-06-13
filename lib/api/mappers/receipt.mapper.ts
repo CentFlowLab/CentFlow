@@ -12,7 +12,7 @@ import type {
   RawReceiptOcrPayload,
   RawReceiptResponse,
 } from '@/lib/types/receipt.api';
-import { RECEIPT_PREPROCESS_VERSION } from '@/lib/receipt/receipt-image-preprocess';
+import { RECEIPT_PREPROCESS_VERSION, isPdfReceipt } from '@/lib/receipt/receipt-image-preprocess';
 import type { ReceiptConfirmationInput } from '@/lib/domain/receipt.types';
 
 function pick<T>(...values: (T | undefined | null)[]): T | undefined {
@@ -49,6 +49,14 @@ function normalizeReceiptStatus(raw?: string): ReceiptUpload['status'] {
  * Native: uri object (RN). Web: Blob via fetch. Valida existência com expo-file-system.
  */
 function appendOcrUploadHints(formData: FormData, draft: ReceiptDraft) {
+  if (isPdfReceipt(draft.mimeType, draft.fileName)) {
+    formData.append('locale', 'pt-PT');
+    formData.append('document_type', 'invoice');
+    formData.append('documentType', 'invoice');
+    formData.append('file_format', 'pdf');
+    return;
+  }
+
   // Hints para o backend optimizar OCR (ignorados se não suportados)
   const version = draft.preprocessVersion ?? RECEIPT_PREPROCESS_VERSION;
   formData.append('locale', 'pt-PT');
@@ -64,6 +72,8 @@ function appendOcrUploadHints(formData: FormData, draft: ReceiptDraft) {
 }
 
 async function appendOriginalFile(formData: FormData, draft: ReceiptDraft) {
+  if (isPdfReceipt(draft.mimeType, draft.fileName)) return;
+
   const originalUri = draft.originalLocalUri;
   if (!originalUri || originalUri === draft.localUri) return;
 

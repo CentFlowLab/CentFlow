@@ -7,22 +7,13 @@ import { applyContrastEnhancement } from './receipt-image-enhance';
 import { getExifRotationDegrees } from './receipt-exif';
 
 /**
- * Pipeline de pré-processamento mobile para OCR de talões (v4).
+ * Pipeline de pré-processamento mobile para OCR de talões (v4.1).
  *
- * Passos:
- *  1. Preservar cópia da foto original (para anexo ao movimento)
- *  2. Correcção de rotação (EXIF Orientation)
- *  3. Resize — largura máx. 1400px (sweet spot cloud OCR)
- *  4. Grayscale + contraste + nitidez + binarização suave (jpeg-js)
- *  5. Compressão JPEG inteligente (qualidade alta, reduz só se ficheiro > 1.8MB)
- *
- * Deskew pesado deve correr no backend — ver backend-reference/ e OCR_PIPELINE.md.
+ * Resiliente: normaliza HEIC/PNG via ImageManipulator; enhancement opcional com fallback.
  */
 export const RECEIPT_PREPROCESS_VERSION = '4';
 
-/** Largura máxima enviada ao OCR (1200–1500px) */
 const OCR_MAX_WIDTH = 1400;
-/** Upscale se a foto for demasiado pequena para ler texto */
 const OCR_MIN_WIDTH = 1000;
 const MAX_FILE_BYTES = 1_800_000;
 const JPEG_QUALITIES = [0.92, 0.86, 0.8] as const;
@@ -31,30 +22,25 @@ export type PreprocessReceiptOptions = {
   originalWidth?: number;
   originalHeight?: number;
   fileName?: string;
+  mimeType?: string;
   exif?: Record<string, unknown> | null;
 };
 
-function resolveTargetWidth(width?: number): number | undefined {
+export function isPdfReceipt(mimeType?: string, fileName?: string): boolean {
+  if (mimeType === 'application/pdf') return true;
+  return Boolean(fileName?.toLowerCase().endsWith('.pdf'));
+}
+
+function resolveTargetWidth(width?: number): number {
   if (!width || width <= 0) return OCR_MAX_WIDTH;
   if (width > OCR_MAX_WIDTH) return OCR_MAX_WIDTH;
   if (width < OCR_MIN_WIDTH) return OCR_MAX_WIDTH;
-  return undefined;
+  return width;
 }
 
 async function getFileSize(uri: string): Promise<number> {
   const info = await FileSystem.getInfoAsync(uri);
   return info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0;
-}
-
-async function preserveOriginalCopy(uri: string, fileName?: string): Promise<string> {
-  const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
-  if (!cacheDir) return uri;
-
-  const baseName = fileName?.replace(/\.[^.]+$/, '') ?? 'receipt';
-  const dest = `${cacheDir}${baseName}-original-${Date.now()}.jpg`;
-
-  await FileSystem.copyAsync({ from: uri, to: dest });
-  return dest;
 }
 
 async function saveWithSmartCompression(
@@ -77,56 +63,157 @@ async function saveWithSmartCompression(
   return { uri, width, height };
 }
 
-export async function preprocessReceiptImage(
+function buildImageDraft(
+  localUri: string,
+  originalLocalUri: string,
+  fileName: string,
+  width: number,
+  height: number,
+  preprocessed: boolean,
+  preprocessVersion?: string,
+  originalDimensions?: { width: number; height: number },
+): ReceiptDraft {
+  const baseName = fileName.replace(/\.[^.]+$/, '') || 'receipt';
+
+  return {
+    localUri,
+    originalLocalUri,
+    mimeType: 'image/jpeg',
+    fileName: `${baseName}-ocr.jpg`,
+    width,
+    height,
+    preprocessed,
+    preprocessVersion,
+    originalDimensions,
+  };
+}
+
+/** PDF — sem pré-processamento de imagem; upload directo. */
+export async function preparePdfReceiptDraft(
   uri: string,
-  options: PreprocessReceiptOptions = {},
+  fileName: string,
 ): Promise<ReceiptDraft> {
-  const { originalWidth, originalHeight, fileName, exif } = options;
-  const originalLocalUri = await preserveOriginalCopy(uri, fileName);
-  const actions: ImageManipulator.Action[] = [];
+  const safeName = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
 
-  const rotation = getExifRotationDegrees(exif);
-  if (rotation !== 0) {
-    actions.push({ rotate: rotation });
-  }
+  return {
+    localUri: uri,
+    originalLocalUri: uri,
+    mimeType: 'application/pdf',
+    fileName: safeName,
+    preprocessed: false,
+  };
+}
 
-  const targetWidth = resolveTargetWidth(originalWidth);
-  if (targetWidth) {
-    actions.push({ resize: { width: targetWidth } });
-  }
-
-  const resized = await ImageManipulator.manipulateAsync(
+async function normalizeToJpeg(
+  uri: string,
+  actions: ImageManipulator.Action[],
+): Promise<ImageManipulator.ImageResult> {
+  return ImageManipulator.manipulateAsync(
     uri,
-    actions.length > 0 ? actions : [{ resize: { width: OCR_MAX_WIDTH } }],
+    actions.length > 0 ? actions : [],
     {
-      compress: 0.96,
+      compress: 0.92,
       format: ImageManipulator.SaveFormat.JPEG,
     },
   );
+}
 
-  const enhancedUri = await applyContrastEnhancement(resized.uri);
+async function preprocessWithManipulatorOnly(
+  uri: string,
+  options: PreprocessReceiptOptions,
+): Promise<ReceiptDraft> {
+  const { originalWidth, originalHeight, fileName, exif } = options;
+  const rotation = getExifRotationDegrees(exif);
+  const rotateActions: ImageManipulator.Action[] =
+    rotation !== 0 ? [{ rotate: rotation }] : [];
+
+  const normalized = await normalizeToJpeg(uri, rotateActions);
+  const targetWidth = resolveTargetWidth(originalWidth ?? normalized.width);
+
+  const resized = await ImageManipulator.manipulateAsync(
+    normalized.uri,
+    [{ resize: { width: targetWidth } }],
+    { compress: 0.88, format: ImageManipulator.SaveFormat.JPEG },
+  );
+
   const final = await saveWithSmartCompression(
-    enhancedUri,
+    resized.uri,
     resized.width,
     resized.height,
   );
 
-  const baseName = fileName?.replace(/\.[^.]+$/, '') ?? 'receipt';
+  return buildImageDraft(
+    final.uri,
+    normalized.uri,
+    fileName ?? 'receipt',
+    final.width,
+    final.height,
+    true,
+    `${RECEIPT_PREPROCESS_VERSION}-lite`,
+    originalWidth && originalHeight
+      ? { width: originalWidth, height: originalHeight }
+      : { width: normalized.width, height: normalized.height },
+  );
+}
 
-  return {
-    localUri: final.uri,
-    originalLocalUri,
-    mimeType: 'image/jpeg',
-    fileName: `${baseName}-ocr.jpg`,
-    width: final.width,
-    height: final.height,
-    preprocessed: true,
-    preprocessVersion: RECEIPT_PREPROCESS_VERSION,
-    originalDimensions:
+export async function preprocessReceiptImage(
+  uri: string,
+  options: PreprocessReceiptOptions = {},
+): Promise<ReceiptDraft> {
+  const { originalWidth, originalHeight, fileName, mimeType, exif } = options;
+
+  if (isPdfReceipt(mimeType, fileName)) {
+    return preparePdfReceiptDraft(uri, fileName ?? `receipt-${Date.now()}.pdf`);
+  }
+
+  try {
+    const rotation = getExifRotationDegrees(exif);
+    const rotateActions: ImageManipulator.Action[] =
+      rotation !== 0 ? [{ rotate: rotation }] : [];
+
+    // Normaliza HEIC/PNG/screenshot para JPEG acessível (evita falhas de copyAsync/jpeg-js)
+    const normalized = await normalizeToJpeg(uri, rotateActions);
+    const targetWidth = resolveTargetWidth(originalWidth ?? normalized.width);
+
+    const resized = await ImageManipulator.manipulateAsync(
+      normalized.uri,
+      [{ resize: { width: targetWidth } }],
+      { compress: 0.96, format: ImageManipulator.SaveFormat.JPEG },
+    );
+
+    let ocrUri = resized.uri;
+    let preprocessVersion: string = RECEIPT_PREPROCESS_VERSION;
+
+    try {
+      ocrUri = await applyContrastEnhancement(resized.uri);
+    } catch {
+      // Fallback: JPEG redimensionado sem enhancement JS (ainda válido para OCR)
+      ocrUri = resized.uri;
+      preprocessVersion = `${RECEIPT_PREPROCESS_VERSION}-lite`;
+    }
+
+    const final = await saveWithSmartCompression(
+      ocrUri,
+      resized.width,
+      resized.height,
+    );
+
+    return buildImageDraft(
+      final.uri,
+      normalized.uri,
+      fileName ?? 'receipt',
+      final.width,
+      final.height,
+      true,
+      preprocessVersion,
       originalWidth && originalHeight
         ? { width: originalWidth, height: originalHeight }
-        : undefined,
-  };
+        : { width: normalized.width, height: normalized.height },
+    );
+  } catch {
+    // Último recurso: só ImageManipulator, sem jpeg-js
+    return preprocessWithManipulatorOnly(uri, options);
+  }
 }
 
 /** URI preferida para preview do utilizador (foto original, não a versão OCR). */
