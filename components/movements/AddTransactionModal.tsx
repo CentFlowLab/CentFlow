@@ -120,14 +120,22 @@ export function AddTransactionModal({
       setProcessedReceipt(processed);
       setConfirmVisible(true);
     } catch (error) {
-      if (error instanceof ReceiptUploadError) {
-        setApiError(
-          `${getReceiptUploadErrorMessage(error)} Podes ignorar o OCR e preencher manualmente.`,
-        );
-      } else {
-        setApiError(
-          `${getApiErrorMessage(error, 'o talão')} Podes ignorar o OCR e preencher manualmente.`,
-        );
+      try {
+        const processed = await uploadReceiptOnly(receiptImage.draft);
+        setProcessedReceipt({
+          ...processed,
+          ocrUnavailableReason:
+            error instanceof ReceiptUploadError
+              ? `${getReceiptUploadErrorMessage(error)} Preenche manualmente.`
+              : `${getApiErrorMessage(error, 'o OCR')}. Preenche manualmente.`,
+        });
+        setConfirmVisible(true);
+      } catch (uploadError) {
+        if (uploadError instanceof ReceiptUploadError) {
+          setApiError(getReceiptUploadErrorMessage(uploadError));
+        } else {
+          setApiError(getApiErrorMessage(uploadError, 'o talão'));
+        }
       }
     }
   }

@@ -5,6 +5,8 @@ import {
   type TextInputProps,
 } from 'react-native';
 
+import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
+import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
 
 import { Text } from './Text';
@@ -14,9 +16,28 @@ type TextFieldProps = TextInputProps & {
   error?: string;
   /** Destaque visual quando o valor veio do OCR e ainda não foi editado */
   ocrHighlighted?: boolean;
+  /** Nível de confiança do OCR para cores do campo */
+  ocrConfidenceLevel?: OcrConfidenceLevel;
 };
 
-export function TextField({ label, error, ocrHighlighted, style, ...props }: TextFieldProps) {
+const OCR_BADGE_LABELS: Record<OcrConfidenceLevel, string> = {
+  high: 'OCR alto',
+  medium: 'OCR médio',
+  low: 'OCR baixo',
+  unknown: 'OCR',
+};
+
+export function TextField({
+  label,
+  error,
+  ocrHighlighted,
+  ocrConfidenceLevel,
+  style,
+  ...props
+}: TextFieldProps) {
+  const level = ocrConfidenceLevel ?? 'unknown';
+  const ocrTone = ocrHighlighted ? getOcrFieldTone(level) : null;
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.labelRow}>
@@ -24,9 +45,9 @@ export function TextField({ label, error, ocrHighlighted, style, ...props }: Tex
           {label}
         </Text>
         {ocrHighlighted ? (
-          <View style={styles.ocrBadge}>
-            <Text variant="caption" color="accent" style={styles.ocrBadgeText}>
-              OCR
+          <View style={[styles.ocrBadge, { backgroundColor: ocrTone?.badgeBg }]}>
+            <Text variant="caption" style={[styles.ocrBadgeText, { color: ocrTone?.badge }]}>
+              {OCR_BADGE_LABELS[level]}
             </Text>
           </View>
         ) : null}
@@ -35,7 +56,10 @@ export function TextField({ label, error, ocrHighlighted, style, ...props }: Tex
         placeholderTextColor={colors.textMuted}
         style={[
           styles.input,
-          ocrHighlighted && styles.inputOcr,
+          ocrTone && {
+            borderColor: ocrTone.border,
+            backgroundColor: ocrTone.background,
+          },
           error && styles.inputError,
           style,
         ]}
@@ -66,10 +90,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.sm,
-    backgroundColor: colors.accentMuted,
   },
   ocrBadgeText: {
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 10,
   },
   input: {
@@ -82,10 +105,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text,
     minHeight: 48,
-  },
-  inputOcr: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accentMuted,
   },
   inputError: {
     borderColor: colors.danger,

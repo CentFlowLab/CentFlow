@@ -58,3 +58,12 @@ export type CreateTransactionOutcome = {
   ocrResult?: ReceiptOcrResult | null;
   ocrProcessed: boolean;
 };
+
+/** Campos editáveis de um movimento existente */
+export type UpdateTransactionInput = {
+  type: TransactionType;
+  amount: number;
+  category: string;
+  description?: string;
+  date: string;
+};

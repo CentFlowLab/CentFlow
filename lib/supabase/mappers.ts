@@ -11,6 +11,7 @@ import type {
   Transaction,
   TransactionFilter,
   TransactionType,
+  UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import type { LoginCredentials, RegisterCredentials, User } from '@/lib/auth/types';
 
@@ -134,6 +135,16 @@ export function toTransactionInsert(
 }
 
 export function toConfirmationTransactionPatch(input: ReceiptConfirmationInput) {
+  return {
+    type: input.type,
+    amount: input.amount,
+    category: input.category,
+    description: input.description?.trim() || null,
+    transaction_date: input.date,
+  };
+}
+
+export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
   return {
     type: input.type,
     amount: input.amount,

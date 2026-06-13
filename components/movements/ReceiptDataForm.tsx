@@ -6,8 +6,13 @@ import { Card, Text, TextField } from '@/components/ui';
 import { getCategoriesForType } from '@/lib/data/transaction-categories';
 import { isOcrFieldUnchanged } from '@/lib/domain/receipt-confirmation';
 import type { ReceiptFormValues, ReceiptOcrResult } from '@/lib/domain/receipt.types';
+import {
+  getOcrFieldConfidence,
+  getOcrFieldTone,
+} from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
 
+import { OcrFieldBadge } from './ocr/OcrFieldBadge';
 import { ReceiptItemsEditor } from './ReceiptItemsEditor';
 
 type ReceiptDataFormProps = {
@@ -42,12 +47,34 @@ export function ReceiptDataForm({
     return isOcrFieldUnchanged(key, values, ocrSnapshot ?? null);
   }
 
+  function ocrLevel(key: 'merchantName' | 'amount' | 'date' | 'category') {
+    if (!showOcr || !ocrSnapshot) return undefined;
+    return getOcrFieldConfidence(ocrSnapshot, key);
+  }
+
+  const categoryOcr = isOcr('category');
+  const categoryTone = categoryOcr && ocrSnapshot
+    ? getOcrFieldTone(getOcrFieldConfidence(ocrSnapshot, 'category'))
+    : null;
+
   return (
     <View style={styles.container}>
-      <Card variant="outlined" style={styles.section}>
-        <Text variant="bodyMedium" style={styles.sectionTitle}>
-          Dados do movimento
-        </Text>
+      <Card variant="outlined" style={styles.primarySection}>
+        <View style={styles.sectionHeader}>
+          <SymbolView
+            name={{ ios: 'star.fill', android: 'star', web: 'star' }}
+            tintColor={colors.primary}
+            size={16}
+          />
+          <Text variant="bodyMedium" style={styles.sectionTitle}>
+            Campos principais
+          </Text>
+          {showOcr ? (
+            <Text variant="caption" color="textMuted">
+              Edita o que o OCR errou
+            </Text>
+          ) : null}
+        </View>
 
         <TextField
           label="Loja"
@@ -56,6 +83,7 @@ export function ReceiptDataForm({
           placeholder="Ex: Continente, Galp, Worten"
           error={errors?.merchantName}
           ocrHighlighted={isOcr('merchantName')}
+          ocrConfidenceLevel={ocrLevel('merchantName')}
           autoCapitalize="words"
         />
 
@@ -69,6 +97,7 @@ export function ReceiptDataForm({
               placeholder="0,00"
               error={errors?.amount}
               ocrHighlighted={isOcr('amount')}
+              ocrConfidenceLevel={ocrLevel('amount')}
             />
           </View>
           <View style={styles.dateField}>
@@ -79,6 +108,7 @@ export function ReceiptDataForm({
               placeholder="AAAA-MM-DD"
               error={errors?.date}
               ocrHighlighted={isOcr('date')}
+              ocrConfidenceLevel={ocrLevel('date')}
             />
           </View>
         </View>
@@ -88,9 +118,18 @@ export function ReceiptDataForm({
             <Text variant="caption" color="textSecondary" style={styles.fieldLabel}>
               Categoria
             </Text>
-            {isOcr('category') ? <OcrBadge /> : null}
+            {categoryOcr ? (
+              <OcrFieldBadge level={ocrLevel('category')} compact />
+            ) : null}
           </View>
-          <View style={[styles.categoryGrid, isOcr('category') && styles.categoryGridOcr]}>
+          <View
+            style={[
+              styles.categoryGrid,
+              categoryTone && {
+                borderColor: categoryTone.border,
+                backgroundColor: categoryTone.background,
+              },
+            ]}>
             {categories.map((item) => {
               const isSelected = values.category === item.id;
               return (
@@ -119,6 +158,12 @@ export function ReceiptDataForm({
             </Text>
           ) : null}
         </View>
+      </Card>
+
+      <Card variant="outlined" style={styles.section}>
+        <Text variant="bodyMedium" style={styles.sectionTitle}>
+          Tipo e notas
+        </Text>
 
         <SegmentedControl
           segments={TYPE_SEGMENTS}
@@ -141,18 +186,9 @@ export function ReceiptDataForm({
           items={values.items}
           onChange={(items) => update('items', items)}
           manualMode={manualMode}
+          ocrSnapshot={showOcr ? ocrSnapshot : null}
         />
       </Card>
-    </View>
-  );
-}
-
-function OcrBadge() {
-  return (
-    <View style={styles.ocrBadge}>
-      <Text variant="caption" color="accent" style={styles.ocrBadgeText}>
-        OCR
-      </Text>
     </View>
   );
 }
@@ -161,12 +197,24 @@ const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
   },
+  primarySection: {
+    gap: spacing.lg,
+    backgroundColor: colors.backgroundElevated,
+    borderColor: colors.primaryMuted,
+  },
   section: {
     gap: spacing.lg,
     backgroundColor: colors.backgroundElevated,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
   sectionTitle: {
     fontWeight: '600',
+    flex: 1,
   },
   amountDateRow: {
     flexDirection: 'row',
@@ -189,27 +237,14 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontWeight: '500',
   },
-  ocrBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.accentMuted,
-  },
-  ocrBadgeText: {
-    fontWeight: '600',
-    fontSize: 10,
-  },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-  },
-  categoryGridOcr: {
     padding: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.accentMuted,
+    borderColor: colors.border,
   },
   categoryChip: {
     flexDirection: 'row',

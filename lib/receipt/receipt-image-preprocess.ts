@@ -3,18 +3,20 @@ import * as ImageManipulator from 'expo-image-manipulator';
 
 import type { ReceiptDraft } from '@/lib/domain/receipt.types';
 
-import { applyContrastEnhancement } from './receipt-image-enhance';
+import { applyBestContrastEnhancement } from './receipt-image-enhance';
 import { getExifRotationDegrees } from './receipt-exif';
 
 /**
- * Pipeline de pré-processamento mobile para OCR de talões (v4.1).
+ * Pipeline de pré-processamento mobile para OCR de talões (v5).
  *
- * Resiliente: normaliza HEIC/PNG via ImageManipulator; enhancement opcional com fallback.
+ * v5: largura ideal 1280px, histogram stretch, contraste/nitidez agressivos,
+ * passagem dupla (standard vs binarização forte), EXIF + grayscale.
  */
-export const RECEIPT_PREPROCESS_VERSION = '4';
+export const RECEIPT_PREPROCESS_VERSION = '5';
 
+const OCR_IDEAL_WIDTH = 1280;
 const OCR_MAX_WIDTH = 1400;
-const OCR_MIN_WIDTH = 1000;
+const OCR_MIN_WIDTH = 1200;
 const MAX_FILE_BYTES = 1_800_000;
 const JPEG_QUALITIES = [0.92, 0.86, 0.8] as const;
 
@@ -31,11 +33,16 @@ export function isPdfReceipt(mimeType?: string, fileName?: string): boolean {
   return Boolean(fileName?.toLowerCase().endsWith('.pdf'));
 }
 
+/**
+ * Largura alvo para OCR — zona ideal 1200–1400px.
+ * Imagens pequenas são ampliadas; grandes são reduzidas.
+ */
 function resolveTargetWidth(width?: number): number {
-  if (!width || width <= 0) return OCR_MAX_WIDTH;
-  if (width > OCR_MAX_WIDTH) return OCR_MAX_WIDTH;
-  if (width < OCR_MIN_WIDTH) return OCR_MAX_WIDTH;
-  return width;
+  if (!width || width <= 0) return OCR_IDEAL_WIDTH;
+  if (width > OCR_MAX_WIDTH) return OCR_IDEAL_WIDTH;
+  if (width < OCR_MIN_WIDTH) return OCR_IDEAL_WIDTH;
+  if (width >= OCR_MIN_WIDTH && width <= OCR_MAX_WIDTH) return width;
+  return OCR_IDEAL_WIDTH;
 }
 
 async function getFileSize(uri: string): Promise<number> {
@@ -112,7 +119,7 @@ async function normalizeToJpeg(
     uri,
     actions.length > 0 ? actions : [],
     {
-      compress: 0.92,
+      compress: 0.94,
       format: ImageManipulator.SaveFormat.JPEG,
     },
   );
@@ -133,7 +140,7 @@ async function preprocessWithManipulatorOnly(
   const resized = await ImageManipulator.manipulateAsync(
     normalized.uri,
     [{ resize: { width: targetWidth } }],
-    { compress: 0.88, format: ImageManipulator.SaveFormat.JPEG },
+    { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG },
   );
 
   const final = await saveWithSmartCompression(
@@ -171,7 +178,6 @@ export async function preprocessReceiptImage(
     const rotateActions: ImageManipulator.Action[] =
       rotation !== 0 ? [{ rotate: rotation }] : [];
 
-    // Normaliza HEIC/PNG/screenshot para JPEG acessível (evita falhas de copyAsync/jpeg-js)
     const normalized = await normalizeToJpeg(uri, rotateActions);
     const targetWidth = resolveTargetWidth(originalWidth ?? normalized.width);
 
@@ -185,9 +191,8 @@ export async function preprocessReceiptImage(
     let preprocessVersion: string = RECEIPT_PREPROCESS_VERSION;
 
     try {
-      ocrUri = await applyContrastEnhancement(resized.uri);
+      ocrUri = await applyBestContrastEnhancement(resized.uri);
     } catch {
-      // Fallback: JPEG redimensionado sem enhancement JS (ainda válido para OCR)
       ocrUri = resized.uri;
       preprocessVersion = `${RECEIPT_PREPROCESS_VERSION}-lite`;
     }
@@ -211,7 +216,6 @@ export async function preprocessReceiptImage(
         : { width: normalized.width, height: normalized.height },
     );
   } catch {
-    // Último recurso: só ImageManipulator, sem jpeg-js
     return preprocessWithManipulatorOnly(uri, options);
   }
 }

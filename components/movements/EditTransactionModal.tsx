@@ -1,0 +1,172 @@
+import { SymbolView } from 'expo-symbols';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { DraggableBottomSheet } from '@/components/layout';
+import { Button, Card, Text } from '@/components/ui';
+import { useUpdateTransaction } from '@/hooks/queries/useTransactions';
+import {
+  formValuesToUpdateInput,
+  parseTransactionAmount,
+  transactionToFormValues,
+  type TransactionFormValues,
+} from '@/lib/domain/transaction-form';
+import { updateTransactionSchema } from '@/lib/domain/transaction.schema';
+import type { Transaction } from '@/lib/domain/transaction.types';
+import { getApiErrorMessage } from '@/lib/api/errors';
+import { colors, spacing } from '@/lib/theme';
+
+import { TransactionForm } from './TransactionForm';
+
+type EditTransactionModalProps = {
+  visible: boolean;
+  transaction: Transaction | null;
+  onClose: () => void;
+};
+
+export function EditTransactionModal({
+  visible,
+  transaction,
+  onClose,
+}: EditTransactionModalProps) {
+  const updateMutation = useUpdateTransaction();
+  const [values, setValues] = useState<TransactionFormValues>(() =>
+    transaction ? transactionToFormValues(transaction) : {
+      type: 'expense',
+      amount: '',
+      category: '',
+      description: '',
+      date: '',
+    },
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!visible || !transaction) return;
+    setValues(transactionToFormValues(transaction));
+    setErrors({});
+    setApiError(null);
+    updateMutation.reset();
+  }, [visible, transaction?.id]);
+
+  if (!transaction) return null;
+
+  async function handleSave() {
+    setApiError(null);
+    const parsedAmount = parseTransactionAmount(values.amount);
+    const result = updateTransactionSchema.safeParse({
+      ...formValuesToUpdateInput(values),
+      amount: parsedAmount,
+    });
+
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const key = issue.path[0];
+        if (typeof key === 'string') fieldErrors[key] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setErrors({});
+
+    try {
+      await updateMutation.mutateAsync({
+        transactionId: transaction!.id,
+        input: result.data,
+      });
+      onClose();
+    } catch (error) {
+      setApiError(getApiErrorMessage(error, 'a atualização do movimento'));
+    }
+  }
+
+  const title =
+    transaction.description?.trim() || transaction.categoryLabel || 'Movimento';
+
+  return (
+    <DraggableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      maxHeight="92%"
+      scrollContentStyle={styles.content}
+      header={(requestClose) => (
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text variant="h2">Editar movimento</Text>
+            <Text variant="caption" color="textMuted" numberOfLines={1}>
+              {title}
+            </Text>
+          </View>
+          <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
+            <SymbolView
+              name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+              tintColor={colors.textMuted}
+              size={28}
+            />
+          </Pressable>
+        </View>
+      )}>
+      {transaction.receiptId || transaction.receiptImage ? (
+        <Card variant="outlined" style={styles.receiptNote}>
+          <SymbolView
+            name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
+            tintColor={colors.textMuted}
+            size={16}
+          />
+          <Text variant="caption" color="textSecondary">
+            O talão anexado mantém-se ligado a este movimento.
+          </Text>
+        </Card>
+      ) : null}
+
+      <TransactionForm values={values} onChange={setValues} errors={errors} />
+
+      {apiError ? (
+        <Card variant="outlined" style={styles.errorCard}>
+          <Text variant="caption" color="danger">
+            {apiError}
+          </Text>
+        </Card>
+      ) : null}
+
+      <Button
+        label={updateMutation.isPending ? 'A guardar...' : 'Guardar alterações'}
+        onPress={handleSave}
+        loading={updateMutation.isPending}
+        fullWidth
+        size="lg"
+      />
+    </DraggableBottomSheet>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  content: {
+    gap: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  receiptNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderColor: colors.border,
+  },
+  errorCard: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerMuted,
+  },
+});

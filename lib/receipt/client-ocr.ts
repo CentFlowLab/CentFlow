@@ -31,7 +31,7 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
     const result = sanitizeOcrResult({
       ...parsed,
       rawText,
-      confidence: 0.68,
+      confidence: rawText.length > 100 ? 0.74 : rawText.length > 40 ? 0.68 : 0.52,
       source: 'device',
     });
 

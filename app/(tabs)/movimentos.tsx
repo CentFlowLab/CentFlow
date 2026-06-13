@@ -1,19 +1,24 @@
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader, SegmentedControl } from '@/components/layout';
 import {
   AddTransactionModal,
-  TransactionListItem,
+  EditTransactionModal,
+  ImportCsvModal,
+  SwipeableTransactionListItem,
   TransactionsSkeleton,
 } from '@/components/movements';
 import { EmptyState, Text } from '@/components/ui';
-import { useTransactions } from '@/hooks/queries/useTransactions';
+import {
+  useDeleteTransaction,
+  useTransactions,
+} from '@/hooks/queries/useTransactions';
 import { getApiErrorMessage } from '@/lib/api/errors';
-import type { TransactionFilter } from '@/lib/domain/transaction.types';
-import { colors, spacing } from '@/lib/theme';
+import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
+import { colors, radius, spacing } from '@/lib/theme';
 
 const FILTER_SEGMENTS = [
   { key: 'all' as const, label: 'Todos' },
@@ -25,10 +30,13 @@ export default function MovimentosScreen() {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<TransactionFilter>('all');
   const [modalVisible, setModalVisible] = useState(false);
+  const [csvModalVisible, setCsvModalVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
+  const deleteMutation = useDeleteTransaction();
 
   const transactions = useMemo(() => data ?? [], [data]);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
@@ -41,6 +49,14 @@ export default function MovimentosScreen() {
   function closeAddModal() {
     setModalVisible(false);
     setStartWithReceiptPicker(false);
+  }
+
+  function handleEdit(transaction: Transaction) {
+    setEditingTransaction(transaction);
+  }
+
+  function handleDelete(transaction: Transaction) {
+    deleteMutation.mutate(transaction.id);
   }
 
   return (
@@ -68,6 +84,20 @@ export default function MovimentosScreen() {
           value={filter}
           onChange={setFilter}
         />
+        <Pressable
+          onPress={() => setCsvModalVisible(true)}
+          style={({ pressed }) => [styles.importButton, pressed && styles.importButtonPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Importar CSV">
+          <SymbolView
+            name={{ ios: 'square.and.arrow.down', android: 'upload_file', web: 'upload_file' }}
+            tintColor={colors.primary}
+            size={18}
+          />
+          <Text variant="bodyMedium" color="primary">
+            Importar CSV
+          </Text>
+        </Pressable>
       </View>
 
       {isLoading ? (
@@ -98,7 +128,13 @@ export default function MovimentosScreen() {
         <FlatList
           data={transactions}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <TransactionListItem transaction={item} />}
+          renderItem={({ item }) => (
+            <SwipeableTransactionListItem
+              transaction={item}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
           contentContainerStyle={[
             styles.listContent,
             isEmpty && styles.listContentEmpty,
@@ -154,6 +190,17 @@ export default function MovimentosScreen() {
         onClose={closeAddModal}
         startWithReceiptPicker={startWithReceiptPicker}
       />
+
+      <ImportCsvModal
+        visible={csvModalVisible}
+        onClose={() => setCsvModalVisible(false)}
+      />
+
+      <EditTransactionModal
+        visible={editingTransaction !== null}
+        transaction={editingTransaction}
+        onClose={() => setEditingTransaction(null)}
+      />
     </View>
   );
 }
@@ -166,6 +213,21 @@ const styles = StyleSheet.create({
   filters: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  importButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  importButtonPressed: {
+    opacity: 0.85,
   },
   listPadding: {
     paddingHorizontal: spacing.lg,

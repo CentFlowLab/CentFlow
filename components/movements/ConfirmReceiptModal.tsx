@@ -17,6 +17,7 @@ import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
 import { colors, spacing } from '@/lib/theme';
 
 import { OcrDetectionSummary } from './OcrDetectionSummary';
+import { OcrFailureCard } from './ocr/OcrFailureCard';
 import { ReceiptDataForm } from './ReceiptDataForm';
 import { ReceiptPreview } from './ReceiptPreview';
 
@@ -48,15 +49,17 @@ function ocrStatusLabel(
   if (manualMode) {
     return {
       title: 'Preenchimento manual',
-      subtitle: 'Os dados do OCR foram ignorados. Preenche os campos abaixo.',
+      subtitle: 'Os dados do OCR foram ignorados. O talão original continua anexado.',
       tone: 'neutral',
     };
   }
 
   if (!ocr) {
     return {
-      title: 'OCR sem resultados',
-      subtitle: unavailableReason ?? 'Preenche manualmente — o talão original fica guardado.',
+      title: 'Sem leitura automática',
+      subtitle:
+        unavailableReason ??
+        'Preenche os campos abaixo — o talão original fica guardado no movimento.',
       tone: 'neutral',
     };
   }
@@ -70,7 +73,7 @@ function ocrStatusLabel(
   if (isDemo) {
     return {
       title: 'Dados de demonstração (não reais)',
-      subtitle: 'Estes valores são fictícios. Ignora o OCR e preenche manualmente.',
+      subtitle: 'Ignora o OCR e preenche manualmente com os valores reais do talão.',
       tone: 'warning',
     };
   }
@@ -78,25 +81,25 @@ function ocrStatusLabel(
   if (filled >= 3 && confidence >= 0.65) {
     return {
       title: isApi
-        ? 'Google Vision — boa leitura'
+        ? 'Boa leitura — confirma antes de guardar'
         : isDevice
-          ? 'Leitura no dispositivo — confirma os dados'
+          ? 'Leitura no dispositivo — revê os campos'
           : 'Dados detectados com boa confiança',
-      subtitle: 'Revê loja, total e data antes de guardar. Podes editar qualquer campo.',
+      subtitle: 'Campos a verde/amarelo vieram do OCR. Edita o que estiver errado.',
       tone: 'success',
     };
   }
 
   if (filled >= 1) {
     return {
-      title: 'Leitura parcial — confirma os dados',
-      subtitle: 'Alguns campos podem estar incorrectos. Edita o que precisares.',
+      title: 'Leitura parcial',
+      subtitle: 'Alguns campos podem estar incorrectos. Completa o que falta.',
       tone: 'warning',
     };
   }
 
   return {
-    title: 'OCR com poucos dados',
+    title: 'Poucos dados detectados',
     subtitle: 'Preenche manualmente ou ignora a leitura automática.',
     tone: 'neutral',
   };
@@ -160,6 +163,7 @@ export function ConfirmReceiptModal({
   }
 
   const hasOcr = processed.ocrResult !== null && !manualMode;
+  const ocrFailed = !processed.ocrResult && !manualMode;
   const status = ocrStatusLabel(
     processed.ocrResult,
     processed.ocrUnavailableReason,
@@ -182,7 +186,7 @@ export function ConfirmReceiptModal({
           <View style={styles.headerText}>
             <Text variant="h2">Rever e editar</Text>
             <Text variant="caption" color="textMuted">
-              Confirma os dados do talão antes de guardar o movimento
+              Confirma os dados do talão — o original fica sempre anexado
             </Text>
           </View>
           <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
@@ -200,11 +204,15 @@ export function ConfirmReceiptModal({
 
       {hasOcr ? <OcrDetectionSummary ocr={processed.ocrResult!} /> : null}
 
-      {!hasOcr && !manualMode ? (
-        <Card variant="outlined" style={styles.noOcr}>
-          <Text variant="caption" color="textMuted">
-            {processed.ocrUnavailableReason ??
-              'O OCR não devolveu dados úteis. Preenche os campos abaixo — o talão original permanece anexado ao movimento.'}
+      {ocrFailed ? (
+        <OcrFailureCard message={processed.ocrUnavailableReason} />
+      ) : null}
+
+      {manualMode ? (
+        <Card variant="outlined" style={styles.manualCard}>
+          <Text variant="caption" color="textSecondary">
+            Modo manual activo. Preenche Loja, Total e Data — o talão original permanece
+            anexado.
           </Text>
         </Card>
       ) : null}
@@ -233,20 +241,27 @@ export function ConfirmReceiptModal({
         ) : null}
 
         <Button
-          label={phaseLabel ?? 'Confirmar e Guardar Movimento'}
+          label={phaseLabel ?? 'Confirmar e guardar movimento'}
           onPress={handleConfirm}
           loading={isSaving}
           fullWidth
           size="lg"
         />
 
-        {hasOcr ? (
+        {!manualMode ? (
           <Button
             label="Ignorar OCR e preencher manualmente"
             variant="secondary"
             onPress={handleIgnoreOcr}
             disabled={isSaving}
             fullWidth
+            icon={
+              <SymbolView
+                name={{ ios: 'hand.raised.fill', android: 'back_hand', web: 'back_hand' }}
+                tintColor={colors.text}
+                size={18}
+              />
+            }
           />
         ) : null}
 
@@ -278,7 +293,9 @@ function StatusBanner({
   }[tone];
 
   return (
-    <Card variant="outlined" style={[styles.statusCard, { borderColor: palette.border, backgroundColor: palette.bg }]}>
+    <Card
+      variant="outlined"
+      style={[styles.statusCard, { borderColor: palette.border, backgroundColor: palette.bg }]}>
       <View style={styles.statusRow}>
         <SymbolView
           name={{
@@ -333,8 +350,9 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontWeight: '600',
   },
-  noOcr: {
+  manualCard: {
     borderColor: colors.border,
+    backgroundColor: colors.surfaceHighlight,
   },
   errorCard: {
     borderColor: colors.danger,

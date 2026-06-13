@@ -1,0 +1,91 @@
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+
+import { queryKeys } from '@/lib/api/keys';
+import {
+  createGoal,
+  createInventoryItem,
+  createWarranty,
+  deleteGoal,
+  deleteInventoryItem,
+  deleteWarranty,
+  fetchAssetsData,
+} from '@/lib/api/services/assets.service';
+import { useAuth } from '@/lib/auth';
+import type { AssetsData } from '@/lib/domain/assets.types';
+import type {
+  CreateGoalInput,
+  CreateInventoryItemInput,
+  CreateWarrantyInput,
+} from '@/lib/domain/assets.schema';
+
+const EMPTY_ASSETS: AssetsData = {
+  goals: [],
+  warranties: [],
+  inventory: [],
+};
+
+export function invalidateAssetsQueries(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: queryKeys.assets });
+  queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
+  queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+}
+
+export function useAssets() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery<AssetsData>({
+    queryKey: queryKeys.assets,
+    queryFn: fetchAssetsData,
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 2,
+    placeholderData: EMPTY_ASSETS,
+  });
+}
+
+export function useCreateGoal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateGoalInput) => createGoal(input),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
+export function useCreateWarranty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateWarrantyInput) => createWarranty(input),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
+export function useCreateInventoryItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateInventoryItemInput) => createInventoryItem(input),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
+export function useDeleteGoal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteGoal(id),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
+export function useDeleteWarranty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteWarranty(id),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}
+
+export function useDeleteInventoryItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteInventoryItem(id),
+    onSuccess: () => invalidateAssetsQueries(queryClient),
+  });
+}

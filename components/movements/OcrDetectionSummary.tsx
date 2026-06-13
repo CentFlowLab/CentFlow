@@ -8,7 +8,9 @@ import {
   getOcrConfidenceTone,
   getOcrSourceLabel,
 } from '@/lib/receipt/ocr-confidence';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
+
+import { OcrFieldsChecklist } from './ocr/OcrFieldsChecklist';
 
 type OcrDetectionSummaryProps = {
   ocr: ReceiptOcrResult;
@@ -20,16 +22,16 @@ export function OcrDetectionSummary({ ocr }: OcrDetectionSummaryProps) {
   const itemCount = ocr.items?.length ?? 0;
 
   return (
-    <Card variant="outlined" style={styles.card}>
+    <Card variant="outlined" style={[styles.card, { borderColor: tone.color }]}>
       <View style={styles.header}>
         <View style={styles.titleBlock}>
           <View style={styles.titleRow}>
             <SymbolView
               name={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }}
-              tintColor={colors.accent}
+              tintColor={tone.color}
               size={18}
             />
-            <Text variant="bodyMedium">Deteção OCR</Text>
+            <Text variant="bodyMedium">Leitura automática</Text>
           </View>
           <Text variant="caption" color="textMuted">
             {getOcrSourceLabel(ocr.source)} · {filledFields} campos · {itemCount} itens
@@ -57,12 +59,11 @@ export function OcrDetectionSummary({ ocr }: OcrDetectionSummaryProps) {
         </View>
       </View>
 
+      <OcrFieldsChecklist ocr={ocr} />
+
       <Text variant="caption" color="textSecondary">
-        Os campos com etiqueta{' '}
-        <Text variant="caption" color="accent" style={styles.ocrInline}>
-          OCR
-        </Text>{' '}
-        abaixo ainda têm o valor detectado. Edita o que precisares antes de guardar.
+        Campos com badge colorido ainda têm o valor detetado. Verde = alta confiança, amarelo =
+        rever, vermelho = provável erro.
       </Text>
     </Card>
   );
@@ -70,9 +71,8 @@ export function OcrDetectionSummary({ ocr }: OcrDetectionSummaryProps) {
 
 const styles = StyleSheet.create({
   card: {
-    gap: spacing.sm,
-    borderColor: colors.accentMuted,
-    backgroundColor: colors.accentMuted,
+    gap: spacing.md,
+    backgroundColor: colors.surface,
   },
   header: {
     flexDirection: 'row',
@@ -95,13 +95,10 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
-    borderRadius: radius.md,
+    borderRadius: 8,
   },
   confidenceText: {
     fontWeight: '700',
     fontSize: 12,
-  },
-  ocrInline: {
-    fontWeight: '700',
   },
 });

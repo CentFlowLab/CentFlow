@@ -3,20 +3,40 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
 import { emptyReceiptFormItem } from '@/lib/domain/receipt-confirmation';
-import type { ReceiptFormItem } from '@/lib/domain/receipt.types';
+import type { ReceiptFormItem, ReceiptOcrResult } from '@/lib/domain/receipt.types';
+import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
+import { formatCurrency } from '@/lib/utils/format';
+
+import { OcrFieldBadge } from './ocr/OcrFieldBadge';
 
 type ReceiptItemsEditorProps = {
   items: ReceiptFormItem[];
   onChange: (items: ReceiptFormItem[]) => void;
   manualMode?: boolean;
+  ocrSnapshot?: ReceiptOcrResult | null;
 };
+
+function parseItemAmount(value: string): number {
+  const normalized = value.replace(/\s/g, '').replace(',', '.');
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export function ReceiptItemsEditor({
   items,
   onChange,
   manualMode = false,
+  ocrSnapshot,
 }: ReceiptItemsEditorProps) {
+  const itemsSum = items.reduce((sum, item) => sum + parseItemAmount(item.amount), 0);
+  const showOcr = Boolean(ocrSnapshot) && !manualMode;
+  const itemsTone = showOcr && ocrSnapshot
+    ? getOcrFieldTone(
+        (ocrSnapshot.items?.length ?? 0) >= 2 ? 'medium' : 'low',
+      )
+    : null;
+
   function updateItem(id: string, patch: Partial<ReceiptFormItem>) {
     onChange(
       items.map((item) => {
@@ -41,11 +61,14 @@ export function ReceiptItemsEditor({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text variant="bodyMedium">Itens do talão</Text>
+        <View style={styles.headerText}>
+          <View style={styles.titleRow}>
+            <Text variant="bodyMedium">Itens do talão</Text>
+            {showOcr && items.length > 0 ? <OcrFieldBadge level="medium" compact /> : null}
+          </View>
           <Text variant="caption" color="textMuted">
             {items.length > 0
-              ? 'Edita nome e valor. Útil para conferir o total.'
+              ? 'Edita nome e valor para conferir o total.'
               : 'Adiciona linhas se quiseres detalhar a compra.'}
           </Text>
         </View>
@@ -59,7 +82,14 @@ export function ReceiptItemsEditor({
       </View>
 
       {items.length > 0 ? (
-        <View style={styles.list}>
+        <View
+          style={[
+            styles.list,
+            itemsTone && {
+              borderColor: itemsTone.border,
+              backgroundColor: itemsTone.background,
+            },
+          ]}>
           <View style={styles.columnHeader}>
             <Text variant="caption" color="textMuted" style={styles.nameCol}>
               Artigo
@@ -83,7 +113,9 @@ export function ReceiptItemsEditor({
                     !manualMode && item.fromOcr && styles.inputOcr,
                   ]}
                 />
-                {!manualMode && item.fromOcr ? <OcrDot /> : null}
+                {!manualMode && item.fromOcr ? (
+                  <View style={styles.ocrDot} />
+                ) : null}
               </View>
 
               <View style={[styles.amountCol, styles.inputWrap]}>
@@ -114,6 +146,17 @@ export function ReceiptItemsEditor({
               </Pressable>
             </View>
           ))}
+
+          {itemsSum > 0 ? (
+            <View style={styles.sumRow}>
+              <Text variant="caption" color="textMuted">
+                Soma dos itens
+              </Text>
+              <Text variant="bodyMedium" color="primary">
+                {formatCurrency(itemsSum)}
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : (
         <View style={styles.empty}>
@@ -134,10 +177,6 @@ export function ReceiptItemsEditor({
   );
 }
 
-function OcrDot() {
-  return <View style={styles.ocrDot} />;
-}
-
 const styles = StyleSheet.create({
   container: {
     gap: spacing.md,
@@ -146,6 +185,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  headerText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   countBadge: {
@@ -161,6 +209,10 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   columnHeader: {
     flexDirection: 'row',
@@ -197,9 +249,8 @@ const styles = StyleSheet.create({
     minHeight: 42,
   },
   inputOcr: {
-    borderColor: colors.accent,
+    borderColor: colors.warning,
     backgroundColor: colors.accentMuted,
-    paddingRight: spacing.lg,
   },
   amountInput: {
     textAlign: 'right',
@@ -211,12 +262,21 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: radius.full,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.warning,
   },
   removeBtn: {
     width: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  sumRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.sm,
+    marginTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   empty: {
     paddingVertical: spacing.md,

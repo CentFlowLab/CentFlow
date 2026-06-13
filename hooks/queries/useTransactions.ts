@@ -1,10 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { queryKeys } from '@/lib/api/keys';
 import {
   createTransaction,
+  deleteTransaction,
   fetchTransactions,
+  updateTransaction,
 } from '@/lib/api/services/transaction.service';
 import { useAuth } from '@/lib/auth';
 import type {
@@ -12,7 +14,15 @@ import type {
   CreateTransactionPhase,
   Transaction,
   TransactionFilter,
+  UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
+
+export function invalidateTransactionQueries(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: ['transactions'] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+  queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
+  queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
+}
 
 export function useTransactions(filter: TransactionFilter = 'all') {
   const { isAuthenticated } = useAuth();
@@ -50,11 +60,7 @@ export function useCreateTransaction() {
     mutationFn: (input: CreateTransactionInput) =>
       createTransaction(input, { onPhase: setPhase }),
     onSettled: () => setPhase(null),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
-      queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
-    },
+    onSuccess: () => invalidateTransactionQueries(queryClient),
   });
 
   return {
@@ -63,4 +69,28 @@ export function useCreateTransaction() {
     phaseLabel: getCreateTransactionPhaseLabel(phase),
     data: mutation.data?.transaction,
   };
+}
+
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      transactionId,
+      input,
+    }: {
+      transactionId: string;
+      input: UpdateTransactionInput;
+    }) => updateTransaction(transactionId, input),
+    onSuccess: () => invalidateTransactionQueries(queryClient),
+  });
+}
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (transactionId: string) => deleteTransaction(transactionId),
+    onSuccess: () => invalidateTransactionQueries(queryClient),
+  });
 }

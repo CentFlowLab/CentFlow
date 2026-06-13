@@ -9,4 +9,6 @@ export const queryKeys = {
   warranties: ['warranties'] as const,
   inventory: ['inventory'] as const,
   profile: ['profile'] as const,
+  financialProfile: ['financial-profile'] as const,
+  assets: ['assets'] as const,
 } as const;

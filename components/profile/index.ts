@@ -1,0 +1,1 @@
+export { FinancialProfileProgress } from './FinancialProfileProgress';

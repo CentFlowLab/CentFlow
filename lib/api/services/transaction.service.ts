@@ -2,12 +2,15 @@ import { apiFetch } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import {
   createMockTransaction,
+  deleteMockTransaction,
   fetchMockTransactions,
+  updateMockTransaction,
 } from '@/lib/api/mock-transactions';
 import {
   mapTransaction,
   mapTransactionsResponse,
   toCreateTransactionPayload,
+  toUpdateTransactionPayload,
 } from '@/lib/api/mappers/transaction.mapper';
 import {
   confirmReceiptData,
@@ -22,6 +25,7 @@ import type {
   CreateTransactionOutcome,
   Transaction,
   TransactionFilter,
+  UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import type {
@@ -150,4 +154,39 @@ export async function createTransaction(
     ocrResult,
     ocrProcessed,
   };
+}
+
+export async function updateTransaction(
+  transactionId: string,
+  input: UpdateTransactionInput,
+): Promise<Transaction> {
+  if (isMockAuthEnabled()) {
+    return updateMockTransaction(transactionId, input);
+  }
+
+  if (isSupabaseEnabled()) {
+    return supabaseTransactions.updateTransaction(transactionId, input);
+  }
+
+  const payload = toUpdateTransactionPayload(input);
+  const raw = await apiFetch<RawTransaction>(API_ENDPOINTS.transaction(transactionId), {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+  return mapTransaction(raw);
+}
+
+export async function deleteTransaction(transactionId: string): Promise<void> {
+  if (isMockAuthEnabled()) {
+    return deleteMockTransaction(transactionId);
+  }
+
+  if (isSupabaseEnabled()) {
+    return supabaseTransactions.deleteTransaction(transactionId);
+  }
+
+  await apiFetch<void>(API_ENDPOINTS.transaction(transactionId), {
+    method: 'DELETE',
+  });
 }

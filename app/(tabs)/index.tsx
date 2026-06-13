@@ -9,14 +9,17 @@ import {
   NetWorthHeroCard,
   SuggestionCard,
 } from '@/components/dashboard';
+import { FinancialProfileProgress } from '@/components/profile';
 import { EmptyState, ScreenContainer, SectionHeader, Text } from '@/components/ui';
 import { useDashboardData } from '@/hooks/queries/useDashboardData';
+import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { ApiError } from '@/lib/api/client';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 import { colors, spacing } from '@/lib/theme';
 
 export default function InicioScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useDashboardData();
+  const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
 
   if (isLoading) {
     return (
@@ -74,6 +77,13 @@ export default function InicioScreen() {
       <DashboardGreeting />
 
       <ScreenContainer>
+        <FinancialProfileProgress
+          profile={financialProfile}
+          isLoading={isProfileScoreLoading}
+          variant="compact"
+          style={styles.profileProgress}
+        />
+
         <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
 
         <SectionHeader title="O que mudou?" subtitle="Resumo rápido do período" />
@@ -229,6 +239,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
+    marginBottom: spacing['2xl'],
+  },
+  profileProgress: {
     marginBottom: spacing['2xl'],
   },
   section: {

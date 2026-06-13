@@ -23,6 +23,9 @@ export const API_ENDPOINTS = {
   /** Lista e criação de movimentos */
   transactions: '/transactions',
 
+  /** Movimento individual */
+  transaction: (id: string) => `/transactions/${id}` as const,
+
   /** Upload de talões/faturas (multipart) */
   receipts: '/receipts',
 
@@ -37,6 +40,11 @@ export const API_ENDPOINTS = {
 
   /** Insights CentFlow Brain (fallback composto) */
   analyticsInsights: '/analytics/insights',
+
+  /** Ativos — preparados para score de perfil financeiro */
+  goals: '/goals',
+  warranties: '/warranties',
+  inventory: '/inventory',
 } as const;
 
 /** Endpoints dinâmicos de talões */

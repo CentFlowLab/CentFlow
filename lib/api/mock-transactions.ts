@@ -3,6 +3,7 @@ import type {
   CreateTransactionInput,
   Transaction,
   TransactionFilter,
+  UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import { toIsoDateString } from '@/lib/utils/format';
 
@@ -101,6 +102,53 @@ export async function createMockTransaction(
 
   store = [transaction, ...store];
   return transaction;
+}
+
+export async function createMockTransactionsBulk(
+  inputs: CreateTransactionInput[],
+): Promise<Transaction[]> {
+  const created: Transaction[] = [];
+
+  for (const input of inputs) {
+    created.push(await createMockTransaction(input));
+  }
+
+  return created;
+}
+
+export async function updateMockTransaction(
+  transactionId: string,
+  input: UpdateTransactionInput,
+): Promise<Transaction> {
+  await new Promise((r) => setTimeout(r, 250));
+
+  const index = store.findIndex((t) => t.id === transactionId);
+  if (index < 0) {
+    throw new Error('Movimento não encontrado');
+  }
+
+  const existing = store[index];
+  const updated: Transaction = {
+    ...existing,
+    type: input.type,
+    amount: input.amount,
+    category: input.category,
+    categoryLabel: getCategoryLabel(input.category, input.type),
+    description: input.description,
+    date: input.date,
+  };
+
+  store = [...store.slice(0, index), updated, ...store.slice(index + 1)];
+  return updated;
+}
+
+export async function deleteMockTransaction(transactionId: string): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200));
+  const exists = store.some((t) => t.id === transactionId);
+  if (!exists) {
+    throw new Error('Movimento não encontrado');
+  }
+  store = store.filter((t) => t.id !== transactionId);
 }
 
 /** Útil para testes — repõe dados iniciais. */

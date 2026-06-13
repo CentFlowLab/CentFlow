@@ -163,6 +163,111 @@ export interface Database {
         };
         Relationships: [];
       };
+      goals: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          target: number;
+          current: number;
+          currency: string;
+          deadline: string | null;
+          category: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          target: number;
+          current?: number;
+          currency?: string;
+          deadline?: string | null;
+          category?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          target?: number;
+          current?: number;
+          currency?: string;
+          deadline?: string | null;
+          category?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      warranties: {
+        Row: {
+          id: string;
+          user_id: string;
+          product: string;
+          expires_at: string;
+          purchase_date: string | null;
+          store: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          product: string;
+          expires_at: string;
+          purchase_date?: string | null;
+          store?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          product?: string;
+          expires_at?: string;
+          purchase_date?: string | null;
+          store?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      inventory_items: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          value: number;
+          category: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          value: number;
+          category?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          value?: number;
+          category?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -181,3 +286,6 @@ export type Profile = Tables<'profiles'>;
 export type ReceiptRow = Tables<'receipts'>;
 export type OcrResultRow = Tables<'ocr_results'>;
 export type TransactionRow = Tables<'transactions'>;
+export type GoalRow = Tables<'goals'>;
+export type WarrantyRow = Tables<'warranties'>;
+export type InventoryItemRow = Tables<'inventory_items'>;

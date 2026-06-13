@@ -3,6 +3,7 @@ import type {
   CreateTransactionInput,
   Transaction,
   TransactionType,
+  UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import type {
   RawCreateTransactionPayload,
@@ -90,5 +91,17 @@ export function toCreateTransactionPayload(
     date: input.date,
     receipt_id: input.receiptId,
     receiptId: input.receiptId,
+  };
+}
+
+export function toUpdateTransactionPayload(
+  input: UpdateTransactionInput,
+): RawCreateTransactionPayload {
+  return {
+    type: input.type,
+    amount: input.amount,
+    category: input.category,
+    description: input.description?.trim() || undefined,
+    date: input.date,
   };
 }

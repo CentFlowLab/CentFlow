@@ -10,4 +10,7 @@ export const createTransactionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
 });
 
+export const updateTransactionSchema = createTransactionSchema;
+
 export type CreateTransactionFormValues = z.infer<typeof createTransactionSchema>;
+export type UpdateTransactionFormValues = z.infer<typeof updateTransactionSchema>;

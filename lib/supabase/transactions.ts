@@ -2,6 +2,7 @@ import type {
   CreateTransactionInput,
   Transaction,
   TransactionFilter,
+  UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 
 import { getSupabaseClient } from './client';
@@ -11,6 +12,7 @@ import {
   mapTransactionRow,
   toConfirmationTransactionPatch,
   toTransactionInsert,
+  toTransactionUpdatePatch,
 } from './mappers';
 
 async function getSignedReceiptUrl(storagePath: string): Promise<string | null> {
@@ -132,8 +134,71 @@ export async function updateTransactionFromConfirmation(
   if (error) throw new Error(error.message);
 }
 
+export async function updateTransaction(
+  transactionId: string,
+  input: UpdateTransactionInput,
+): Promise<Transaction> {
+  const supabase = getSupabaseClient();
+  const patch = toTransactionUpdatePatch(input);
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .update(patch)
+    .eq('id', transactionId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const transaction = mapTransactionRow(data);
+
+  if (data.receipt_id) {
+    const { data: receipt } = await supabase
+      .from('receipts')
+      .select('storage_path')
+      .eq('id', data.receipt_id)
+      .maybeSingle();
+
+    if (receipt?.storage_path) {
+      const url = await getSignedReceiptUrl(receipt.storage_path);
+      transaction.receiptUrl = url;
+      transaction.receiptImage = url;
+    }
+  }
+
+  return transaction;
+}
+
 export async function deleteTransaction(transactionId: string): Promise<void> {
   const supabase = getSupabaseClient();
   const { error } = await supabase.from('transactions').delete().eq('id', transactionId);
   if (error) throw new Error(error.message);
+}
+
+export async function createTransactionsBulk(
+  inputs: CreateTransactionInput[],
+): Promise<Transaction[]> {
+  if (inputs.length === 0) return [];
+
+  const supabase = getSupabaseClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error('Utilizador não autenticado');
+  }
+
+  const payloads = inputs.map((input) => toTransactionInsert(user.id, input));
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert(payloads)
+    .select();
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map(mapTransactionRow);
 }

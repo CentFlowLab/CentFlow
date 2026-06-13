@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
+import { FinancialProfileProgress } from '@/components/profile';
 import { Button, Card, ScreenContainer, SectionHeader, Text } from '@/components/ui';
+import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
@@ -39,6 +41,7 @@ const MENU_SECTIONS: Array<{
 export default function PerfilScreen() {
   const { signOut } = useAuth();
   const { data: profile, isLoading } = useProfile();
+  const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleSignOut() {
@@ -60,6 +63,13 @@ export default function PerfilScreen() {
         </View>
       ) : (
         <ScreenContainer>
+          <FinancialProfileProgress
+            profile={financialProfile}
+            isLoading={isProfileScoreLoading}
+            variant="full"
+            style={styles.profileProgress}
+          />
+
           <Card variant="elevated" style={styles.profileCard}>
             <View style={styles.avatarLarge}>
               <Text variant="h2" color="primary">
@@ -135,6 +145,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
+    marginBottom: spacing['2xl'],
+  },
+  profileProgress: {
     marginBottom: spacing['2xl'],
   },
   avatarLarge: {
