@@ -16,7 +16,7 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
 import { colors, spacing } from '@/lib/theme';
 
-import { OcrResultCard } from './OcrResultCard';
+import { OcrDetectionSummary } from './OcrDetectionSummary';
 import { ReceiptDataForm } from './ReceiptDataForm';
 import { ReceiptPreview } from './ReceiptPreview';
 
@@ -39,11 +39,20 @@ function parseAmount(value: string): number {
 function ocrStatusLabel(
   ocr: ProcessedReceipt['ocrResult'],
   unavailableReason?: string,
+  manualMode?: boolean,
 ): {
   title: string;
   subtitle: string;
   tone: 'success' | 'warning' | 'neutral';
 } {
+  if (manualMode) {
+    return {
+      title: 'Preenchimento manual',
+      subtitle: 'Os dados do OCR foram ignorados. Preenche os campos abaixo.',
+      tone: 'neutral',
+    };
+  }
+
   if (!ocr) {
     return {
       title: 'OCR sem resultados',
@@ -55,6 +64,7 @@ function ocrStatusLabel(
   const filled = countOcrFilledFields(ocr);
   const confidence = ocr.confidence ?? 0;
   const isDevice = ocr.source === 'device';
+  const isApi = ocr.source === 'api';
   const isDemo = ocr.source === 'demo';
 
   if (isDemo) {
@@ -67,8 +77,12 @@ function ocrStatusLabel(
 
   if (filled >= 3 && confidence >= 0.65) {
     return {
-      title: isDevice ? 'Leitura no dispositivo — confirma os dados' : 'Dados detectados com boa confiança',
-      subtitle: 'Revê os campos destacados antes de guardar. O OCR pode errar em totais e datas.',
+      title: isApi
+        ? 'Google Vision — boa leitura'
+        : isDevice
+          ? 'Leitura no dispositivo — confirma os dados'
+          : 'Dados detectados com boa confiança',
+      subtitle: 'Revê loja, total e data antes de guardar. Podes editar qualquer campo.',
       tone: 'success',
     };
   }
@@ -147,8 +161,9 @@ export function ConfirmReceiptModal({
 
   const hasOcr = processed.ocrResult !== null && !manualMode;
   const status = ocrStatusLabel(
-    manualMode ? null : processed.ocrResult,
+    processed.ocrResult,
     processed.ocrUnavailableReason,
+    manualMode,
   );
   const previewDraft = {
     ...processed.draft,
@@ -164,7 +179,12 @@ export function ConfirmReceiptModal({
       scrollContentStyle={styles.content}
       header={(requestClose) => (
         <View style={styles.header}>
-          <Text variant="h2">Rever e editar</Text>
+          <View style={styles.headerText}>
+            <Text variant="h2">Rever e editar</Text>
+            <Text variant="caption" color="textMuted">
+              Confirma os dados do talão antes de guardar o movimento
+            </Text>
+          </View>
           <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
             <SymbolView
               name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
@@ -178,7 +198,7 @@ export function ConfirmReceiptModal({
 
       <ReceiptPreview draft={previewDraft} />
 
-      {hasOcr ? <OcrResultCard ocr={processed.ocrResult!} /> : null}
+      {hasOcr ? <OcrDetectionSummary ocr={processed.ocrResult!} /> : null}
 
       {!hasOcr && !manualMode ? (
         <Card variant="outlined" style={styles.noOcr}>
@@ -205,37 +225,39 @@ export function ConfirmReceiptModal({
         </Card>
       ) : null}
 
-      {phaseLabel ? (
-        <Text variant="caption" color="textMuted" align="center">
-          {phaseLabel}
-        </Text>
-      ) : null}
+      <View style={styles.actions}>
+        {phaseLabel ? (
+          <Text variant="caption" color="textMuted" align="center">
+            {phaseLabel}
+          </Text>
+        ) : null}
 
-      <Button
-        label={phaseLabel ?? 'Confirmar e guardar'}
-        onPress={handleConfirm}
-        loading={isSaving}
-        fullWidth
-        size="lg"
-      />
-
-      {hasOcr ? (
         <Button
-          label="Ignorar OCR e preencher manualmente"
-          variant="secondary"
-          onPress={handleIgnoreOcr}
+          label={phaseLabel ?? 'Confirmar e Guardar Movimento'}
+          onPress={handleConfirm}
+          loading={isSaving}
+          fullWidth
+          size="lg"
+        />
+
+        {hasOcr ? (
+          <Button
+            label="Ignorar OCR e preencher manualmente"
+            variant="secondary"
+            onPress={handleIgnoreOcr}
+            disabled={isSaving}
+            fullWidth
+          />
+        ) : null}
+
+        <Button
+          label="Voltar ao formulário principal"
+          variant="ghost"
+          onPress={() => onFillManually(processed, values)}
           disabled={isSaving}
           fullWidth
         />
-      ) : null}
-
-      <Button
-        label="Voltar ao formulário principal"
-        variant="ghost"
-        onPress={() => onFillManually(processed, values)}
-        disabled={isSaving}
-        fullWidth
-      />
+      </View>
     </DraggableBottomSheet>
   );
 }
@@ -283,12 +305,18 @@ function StatusBanner({
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+    gap: spacing.xs,
   },
   content: {
     gap: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   statusCard: {
     gap: spacing.xs,
@@ -311,5 +339,11 @@ const styles = StyleSheet.create({
   errorCard: {
     borderColor: colors.danger,
     backgroundColor: colors.dangerMuted,
+  },
+  actions: {
+    gap: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 });

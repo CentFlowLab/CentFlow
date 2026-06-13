@@ -3,6 +3,10 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
+import {
+  getOcrConfidenceTone,
+  getOcrSourceLabel,
+} from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 import { getCategoryLabel } from '@/lib/data/transaction-categories';
@@ -11,32 +15,21 @@ type OcrResultCardProps = {
   ocr: ReceiptOcrResult;
 };
 
-function confidenceTone(confidence?: number): {
-  label: string;
-  color: string;
-  bg: string;
-} {
-  const pct = confidence !== undefined ? Math.round(confidence * 100) : null;
-  if (pct === null) {
-    return { label: 'Sem confiança', color: colors.textMuted, bg: colors.surface };
-  }
-  if (pct >= 70) {
-    return { label: `${pct}% confiança`, color: colors.success, bg: colors.successMuted };
-  }
-  if (pct >= 45) {
-    return { label: `${pct}% confiança`, color: colors.warning, bg: colors.accentMuted };
-  }
-  return { label: `${pct}% confiança — rever`, color: colors.danger, bg: colors.dangerMuted };
+function confidenceTone(confidence?: number, source?: ReceiptOcrResult['source']) {
+  const tone = getOcrConfidenceTone(confidence, source);
+  return {
+    label: `${tone.label}${tone.level === 'low' ? ' — rever' : tone.level === 'high' ? ' confiança' : tone.level === 'medium' ? ' confiança' : ''}`,
+    color: tone.color,
+    bg: tone.bg,
+  };
 }
 
 function sourceLabel(source?: ReceiptOcrResult['source']): string {
-  if (source === 'device') return 'Leitura no dispositivo';
-  if (source === 'demo') return 'Dados de demonstração';
-  return 'Leitura automática';
+  return getOcrSourceLabel(source);
 }
 
 export function OcrResultCard({ ocr }: OcrResultCardProps) {
-  const tone = confidenceTone(ocr.source === 'demo' ? 40 : ocr.confidence);
+  const tone = confidenceTone(ocr.source === 'demo' ? 0.4 : ocr.confidence, ocr.source);
   const items = ocr.items ?? [];
 
   return (

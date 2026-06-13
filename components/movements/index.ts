@@ -1,7 +1,9 @@
 export { AddTransactionModal } from './AddTransactionModal';
 export { ConfirmReceiptModal } from './ConfirmReceiptModal';
+export { OcrDetectionSummary } from './OcrDetectionSummary';
 export { OcrResultCard } from './OcrResultCard';
 export { ReceiptDataForm } from './ReceiptDataForm';
+export { ReceiptItemsEditor } from './ReceiptItemsEditor';
 export { ReceiptAttachmentField } from './ReceiptAttachmentField';
 export { ReceiptPreview } from './ReceiptPreview';
 export { TransactionListItem } from './TransactionListItem';

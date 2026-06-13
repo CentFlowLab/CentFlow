@@ -1,9 +1,22 @@
 import type {
   ReceiptConfirmationInput,
+  ReceiptFormItem,
   ReceiptFormValues,
   ReceiptOcrResult,
 } from './receipt.types';
 import { toIsoDateString } from '@/lib/utils/format';
+
+function createItemId(prefix: string, index: number): string {
+  return `${prefix}-${index}`;
+}
+
+export function emptyReceiptFormItem(): ReceiptFormItem {
+  return {
+    id: createItemId('new', Date.now()),
+    name: '',
+    amount: '',
+  };
+}
 
 export function emptyReceiptFormValues(): ReceiptFormValues {
   return {
@@ -13,7 +26,21 @@ export function emptyReceiptFormValues(): ReceiptFormValues {
     category: '',
     description: '',
     date: toIsoDateString(),
+    items: [],
   };
+}
+
+export function ocrItemsToFormItems(
+  ocr: ReceiptOcrResult | null | undefined,
+): ReceiptFormItem[] {
+  if (!ocr?.items?.length) return [];
+
+  return ocr.items.map((item, index) => ({
+    id: createItemId('ocr', index),
+    name: item.name,
+    amount: item.total !== undefined ? String(item.total) : '',
+    fromOcr: true,
+  }));
 }
 
 export function ocrToFormValues(ocr: ReceiptOcrResult | null): ReceiptFormValues {
@@ -26,6 +53,7 @@ export function ocrToFormValues(ocr: ReceiptOcrResult | null): ReceiptFormValues
     category: ocr.suggestedCategory ?? '',
     description: ocr.merchantName ?? '',
     date: ocr.date ?? toIsoDateString(),
+    items: ocrItemsToFormItems(ocr),
   };
 }
 

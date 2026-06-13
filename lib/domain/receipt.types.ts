@@ -74,6 +74,14 @@ export type ReceiptMeta = {
 };
 
 /** Valores editáveis no formulário de confirmação (strings para inputs) */
+export type ReceiptFormItem = {
+  id: string;
+  name: string;
+  amount: string;
+  /** Item veio do OCR e ainda não foi editado */
+  fromOcr?: boolean;
+};
+
 export type ReceiptFormValues = {
   type: TransactionType;
   merchantName: string;
@@ -81,4 +89,5 @@ export type ReceiptFormValues = {
   category: string;
   description: string;
   date: string;
+  items: ReceiptFormItem[];
 };
