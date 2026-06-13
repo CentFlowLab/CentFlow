@@ -6,64 +6,104 @@ import { Text } from '@/components/ui';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { colors, radius, spacing } from '@/lib/theme';
 
+type HeaderAction = {
+  icon: React.ReactNode;
+  onPress: () => void;
+  accessibilityLabel: string;
+};
+
 type AppHeaderProps = {
   title: string;
   subtitle?: string;
   showAvatar?: boolean;
-  action?: {
-    icon: React.ReactNode;
-    onPress: () => void;
-    accessibilityLabel: string;
-  };
+  showBack?: boolean;
+  onBack?: () => void;
+  action?: HeaderAction;
+  secondaryAction?: HeaderAction;
 };
 
 export function AppHeader({
   title,
   subtitle,
   showAvatar = true,
+  showBack = false,
+  onBack,
   action,
+  secondaryAction,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
 
   const initials = profile?.avatarInitials ?? 'CF';
 
+  function handleBack() {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    router.back();
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
-      <View style={styles.textGroup}>
-        <Text variant="label" color="textMuted">
-          CentFlow
-        </Text>
-        <Text variant="h1">{title}</Text>
-        {subtitle && (
-          <Text variant="caption" color="textSecondary">
-            {subtitle}
+      <View style={styles.left}>
+        {showBack ? (
+          <Pressable
+            onPress={handleBack}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            accessibilityLabel="Voltar"
+            accessibilityRole="button">
+            <Text variant="h3" color="primary">
+              ‹
+            </Text>
+          </Pressable>
+        ) : null}
+
+        <View style={styles.textGroup}>
+          <Text variant="label" color="textMuted">
+            CentFlow
           </Text>
-        )}
+          <Text variant="h1">{title}</Text>
+          {subtitle ? (
+            <Text variant="caption" color="textSecondary">
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.actions}>
-        {action && (
+        {secondaryAction ? (
+          <Pressable
+            onPress={secondaryAction.onPress}
+            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+            accessibilityLabel={secondaryAction.accessibilityLabel}
+            accessibilityRole="button">
+            {secondaryAction.icon}
+          </Pressable>
+        ) : null}
+
+        {action ? (
           <Pressable
             onPress={action.onPress}
-            style={({ pressed }) => [styles.actionButton, pressed && styles.actionPressed]}
+            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
             accessibilityLabel={action.accessibilityLabel}
             accessibilityRole="button">
             {action.icon}
           </Pressable>
-        )}
+        ) : null}
 
-        {showAvatar && (
+        {showAvatar ? (
           <Pressable
             onPress={() => router.push('/(tabs)/perfil')}
-            style={({ pressed }) => [styles.avatar, pressed && styles.avatarPressed]}
+            style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}
             accessibilityLabel="Abrir perfil"
             accessibilityRole="button">
             <Text variant="bodyMedium" color="primary" style={styles.avatarText}>
               {initials}
             </Text>
           </Pressable>
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -78,6 +118,23 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     backgroundColor: colors.background,
   },
+  left: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   textGroup: {
     flex: 1,
     gap: spacing.xs,
@@ -87,6 +144,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.sm,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionButton: {
     width: 44,
@@ -98,10 +165,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
-  },
   avatar: {
     width: 44,
     height: 44,
@@ -112,11 +175,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.96 }],
-  },
   avatarText: {
     fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.96 }],
   },
 });

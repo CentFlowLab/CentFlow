@@ -31,6 +31,7 @@ type AddTransactionModalProps = {
   visible: boolean;
   onClose: () => void;
   startWithReceiptPicker?: boolean;
+  onImportCsv?: () => void;
 };
 
 const TYPE_SEGMENTS = [
@@ -47,6 +48,7 @@ export function AddTransactionModal({
   visible,
   onClose,
   startWithReceiptPicker = false,
+  onImportCsv,
 }: AddTransactionModalProps) {
   const createMutation = useCreateTransaction();
   const processReceipt = useProcessReceipt();
@@ -402,6 +404,27 @@ export function AddTransactionModal({
             loading={isUploadingOnly}
             disabled={isBusy || receiptImage.isPicking}
             fullWidth
+          />
+        ) : null}
+
+        {onImportCsv ? (
+          <Button
+            label="Importar CSV"
+            variant="secondary"
+            onPress={onImportCsv}
+            disabled={isBusy}
+            fullWidth
+            icon={
+              <SymbolView
+                name={{
+                  ios: 'square.and.arrow.down',
+                  android: 'upload_file',
+                  web: 'upload_file',
+                }}
+                tintColor={colors.primary}
+                size={18}
+              />
+            }
           />
         ) : null}
       </DraggableBottomSheet>

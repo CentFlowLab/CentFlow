@@ -35,7 +35,7 @@ export function SegmentedControl<T extends string>({
               style={[styles.segment, isActive && styles.segmentActive]}>
               <Text
                 variant="caption"
-                color={isActive ? 'text' : 'textMuted'}
+                color={isActive ? 'primary' : 'textMuted'}
                 style={isActive ? styles.activeLabel : undefined}>
                 {segment.label}
               </Text>
@@ -66,9 +66,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   segmentActive: {
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.primaryMuted,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: colors.primary,
   },
   activeLabel: {
     fontWeight: '600',

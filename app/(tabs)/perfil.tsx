@@ -1,6 +1,7 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
 import { FinancialProfileProgress } from '@/components/profile';
@@ -10,30 +11,64 @@ import { useProfile } from '@/hooks/queries/useProfile';
 import { useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
+type MenuItem = {
+  icon: SymbolViewProps['name'];
+  label: string;
+  route: string;
+};
+
 const MENU_SECTIONS: Array<{
   title: string;
-  items: Array<{ icon: SymbolViewProps['name']; label: string }>;
+  items: MenuItem[];
 }> = [
   {
     title: 'Conta',
     items: [
-      { icon: { ios: 'person.circle', android: 'account_circle', web: 'account_circle' }, label: 'Dados pessoais' },
-      { icon: { ios: 'bell.fill', android: 'notifications', web: 'notifications' }, label: 'Notificações' },
+      {
+        icon: { ios: 'person.circle', android: 'account_circle', web: 'account_circle' },
+        label: 'Dados pessoais',
+        route: '/settings/personal-data',
+      },
+      {
+        icon: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
+        label: 'Notificações',
+        route: '/settings/notifications',
+      },
     ],
   },
   {
     title: 'Preferências',
     items: [
-      { icon: { ios: 'eurosign.circle', android: 'euro', web: 'euro' }, label: 'Moeda e região' },
-      { icon: { ios: 'paintbrush.fill', android: 'palette', web: 'palette' }, label: 'Aparência' },
+      {
+        icon: { ios: 'eurosign.circle', android: 'euro', web: 'euro' },
+        label: 'Moeda e região',
+        route: '/settings/currency-region',
+      },
+      {
+        icon: { ios: 'paintbrush.fill', android: 'palette', web: 'palette' },
+        label: 'Aparência',
+        route: '/settings/appearance',
+      },
     ],
   },
   {
     title: 'Segurança & Dados',
     items: [
-      { icon: { ios: 'lock.fill', android: 'lock', web: 'lock' }, label: 'Segurança' },
-      { icon: { ios: 'doc.richtext', android: 'picture_as_pdf', web: 'picture_as_pdf' }, label: 'Exportar PDF' },
-      { icon: { ios: 'square.and.arrow.up', android: 'upload', web: 'upload' }, label: 'Exportar dados' },
+      {
+        icon: { ios: 'lock.fill', android: 'lock', web: 'lock' },
+        label: 'Segurança',
+        route: '/settings/security',
+      },
+      {
+        icon: { ios: 'doc.richtext', android: 'picture_as_pdf', web: 'picture_as_pdf' },
+        label: 'Exportar PDF',
+        route: '/settings/export-pdf',
+      },
+      {
+        icon: { ios: 'square.and.arrow.up', android: 'upload', web: 'upload' },
+        label: 'Exportar dados',
+        route: '/settings/export-data',
+      },
     ],
   },
 ];
@@ -88,13 +123,17 @@ export default function PerfilScreen() {
             <View key={section.title} style={styles.section}>
               <SectionHeader title={section.title} />
               <Card variant="outlined" padding="sm">
-                {section.items.map((item, index) => (
-                  <View
+                {section.items.map((item, itemIndex) => (
+                  <Pressable
                     key={item.label}
-                    style={[
+                    onPress={() => router.push(item.route as never)}
+                    style={({ pressed }) => [
                       styles.menuItem,
-                      index < section.items.length - 1 && styles.menuItemBorder,
-                    ]}>
+                      itemIndex < section.items.length - 1 && styles.menuItemBorder,
+                      pressed && styles.menuItemPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}>
                     <SymbolView
                       name={item.icon}
                       tintColor={colors.textSecondary}
@@ -112,7 +151,7 @@ export default function PerfilScreen() {
                       tintColor={colors.textMuted}
                       size={16}
                     />
-                  </View>
+                  </Pressable>
                 ))}
               </Card>
             </View>
@@ -157,6 +196,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
   },
   profileInfo: {
     flex: 1,
@@ -175,6 +216,9 @@ const styles = StyleSheet.create({
   menuItemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  menuItemPressed: {
+    backgroundColor: colors.surfaceHighlight,
   },
   menuLabel: {
     flex: 1,

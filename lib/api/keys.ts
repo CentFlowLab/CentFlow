@@ -11,4 +11,5 @@ export const queryKeys = {
   profile: ['profile'] as const,
   financialProfile: ['financial-profile'] as const,
   assets: ['assets'] as const,
+  prices: ['prices'] as const,
 } as const;

@@ -58,7 +58,6 @@ export default function AtivosScreen() {
       <AppHeader
         title="Ativos"
         subtitle="Objetivos, garantias e inventário"
-        showAvatar={false}
         action={{
           icon: (
             <SymbolView
@@ -86,11 +85,7 @@ export default function AtivosScreen() {
           { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
         ]}>
         <ScreenContainer>
-          <AssetsOverviewCard
-            counts={counts}
-            activeTab={activeTab}
-            onSelectTab={setActiveTab}
-          />
+          <AssetsOverviewCard counts={counts} />
 
           <View style={styles.segmentWrapper}>
             <SegmentedControl
@@ -147,7 +142,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   segmentWrapper: {
-    marginTop: spacing['2xl'],
+    marginTop: spacing.lg,
     marginBottom: spacing['2xl'],
   },
 });

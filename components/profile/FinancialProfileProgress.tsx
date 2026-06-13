@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -44,122 +45,140 @@ export function FinancialProfileProgress({
   const pendingPreview = profile.pendingDimensions.slice(0, variant === 'compact' ? 2 : 5);
 
   return (
-    <Card variant="elevated" style={[styles.card, style]}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text variant="label" color="textMuted">
-            Perfil Financeiro
-          </Text>
-          <View style={styles.scoreRow}>
-            <Text variant="h1" style={{ color: progressColor }}>
-              {profile.score}%
-            </Text>
-            <View style={[styles.levelBadge, { backgroundColor: `${progressColor}20` }]}>
-              <Text variant="caption" style={{ color: progressColor }}>
-                {profile.levelLabel}
+    <View style={[styles.wrapper, style]}>
+      <LinearGradient
+        colors={['rgba(45,212,191,0.18)', 'rgba(20,184,166,0.06)', 'rgba(5,8,14,0)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.glow}
+      />
+
+      <Card variant="elevated" style={styles.card}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={styles.titleRow}>
+              <Text variant="label" color="textMuted">
+                Perfil Financeiro
               </Text>
-            </View>
-          </View>
-          <Text variant="bodyMedium">{profile.levelTitle}</Text>
-        </View>
-        <SymbolView
-          name={{
-            ios: profile.level >= 3 ? 'sparkles' : profile.level >= 2 ? 'chart.bar.fill' : 'lightbulb.fill',
-            android: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
-            web: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
-          }}
-          tintColor={progressColor}
-          size={28}
-        />
-      </View>
-
-      <View style={styles.progressTrack}>
-        <View
-          style={[
-            styles.progressFill,
-            { width: `${profile.score}%`, backgroundColor: progressColor },
-          ]}
-        />
-      </View>
-
-      {profile.nextLevel ? (
-        <Text variant="caption" color="textSecondary">
-          Faltam {profile.pointsToNextLevel}% para o Nível {profile.nextLevel}
-        </Text>
-      ) : (
-        <Text variant="caption" color="success">
-          Perfil completo — Assistente CentFlow desbloqueado
-        </Text>
-      )}
-
-      {variant === 'compact' ? (
-        <View style={styles.unlockRow}>
-          {profile.unlockedFeatures.slice(0, 2).map((feature) => (
-            <UnlockChip key={feature} label={feature} unlocked />
-          ))}
-          {profile.lockedFeatures[0] ? (
-            <UnlockChip label={profile.lockedFeatures[0]} unlocked={false} />
-          ) : null}
-        </View>
-      ) : (
-        <View style={styles.featuresSection}>
-          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-            Desbloqueado neste nível
-          </Text>
-          <View style={styles.unlockRow}>
-            {profile.unlockedFeatures.map((feature) => (
-              <UnlockChip key={feature} label={feature} unlocked />
-            ))}
-          </View>
-          {profile.lockedFeatures.length > 0 ? (
-            <>
-              <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-                Próximos desbloqueios
-              </Text>
-              <View style={styles.unlockRow}>
-                {profile.lockedFeatures.map((feature) => (
-                  <UnlockChip key={feature} label={feature} unlocked={false} />
-                ))}
-              </View>
-            </>
-          ) : null}
-        </View>
-      )}
-
-      {showPending && pendingPreview.length > 0 ? (
-        <View style={styles.pendingSection}>
-          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-            Para subir de nível
-          </Text>
-          {pendingPreview.map((dimension) => (
-            <View key={dimension.id} style={styles.pendingItem}>
-              <View style={styles.pendingIcon}>
+              <View style={[styles.levelPill, { borderColor: `${progressColor}55` }]}>
                 <SymbolView
-                  name={DIMENSION_ICONS[dimension.id]}
-                  tintColor={colors.textMuted}
-                  size={16}
+                  name={{
+                    ios: profile.level >= 3 ? 'crown.fill' : 'star.fill',
+                    android: profile.level >= 3 ? 'workspace_premium' : 'star',
+                    web: profile.level >= 3 ? 'workspace_premium' : 'star',
+                  }}
+                  tintColor={progressColor}
+                  size={12}
                 />
-              </View>
-              <View style={styles.pendingText}>
-                <Text variant="bodyMedium">{dimension.label}</Text>
-                <Text variant="caption" color="textMuted">
-                  {dimension.actionHint}
+                <Text variant="caption" style={{ color: progressColor }}>
+                  {profile.levelLabel}
                 </Text>
               </View>
-              <Text variant="caption" color="accent">
-                +{dimension.maxWeight}%
+            </View>
+
+            <View style={styles.scoreRow}>
+              <Text variant="display" style={{ color: progressColor }}>
+                {profile.score}%
               </Text>
             </View>
-          ))}
-          {profile.pendingDimensions.length > pendingPreview.length ? (
-            <Text variant="caption" color="textMuted" align="center">
-              +{profile.pendingDimensions.length - pendingPreview.length} área
-              {profile.pendingDimensions.length - pendingPreview.length === 1 ? '' : 's'} por completar
-            </Text>
-          ) : null}
+            <Text variant="bodyMedium">{profile.levelTitle}</Text>
+          </View>
+
+          <View style={[styles.iconBadge, { backgroundColor: `${progressColor}22` }]}>
+            <SymbolView
+              name={{
+                ios: profile.level >= 3 ? 'sparkles' : profile.level >= 2 ? 'chart.bar.fill' : 'lightbulb.fill',
+                android: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
+                web: profile.level >= 3 ? 'auto_awesome' : profile.level >= 2 ? 'bar_chart' : 'lightbulb',
+              }}
+              tintColor={progressColor}
+              size={28}
+            />
+          </View>
         </View>
-      ) : null}
-    </Card>
+
+        <View style={styles.progressTrack}>
+          <LinearGradient
+            colors={[progressColor, colors.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${profile.score}%` }]}
+          />
+        </View>
+
+        {profile.nextLevel ? (
+          <Text variant="caption" color="textSecondary">
+            Faltam {profile.pointsToNextLevel}% para o Nível {profile.nextLevel}
+          </Text>
+        ) : (
+          <Text variant="caption" color="success">
+            Perfil completo — Assistente CentFlow desbloqueado
+          </Text>
+        )}
+
+        {variant === 'compact' ? (
+          <View style={styles.unlockRow}>
+            {profile.unlockedFeatures.slice(0, 2).map((feature) => (
+              <UnlockChip key={feature} label={feature} unlocked />
+            ))}
+            {profile.lockedFeatures[0] ? (
+              <UnlockChip label={profile.lockedFeatures[0]} unlocked={false} />
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.featuresSection}>
+            <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+              Desbloqueado neste nível
+            </Text>
+            <View style={styles.unlockRow}>
+              {profile.unlockedFeatures.map((feature) => (
+                <UnlockChip key={feature} label={feature} unlocked />
+              ))}
+            </View>
+            {profile.lockedFeatures.length > 0 ? (
+              <>
+                <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+                  Próximos desbloqueios
+                </Text>
+                <View style={styles.unlockRow}>
+                  {profile.lockedFeatures.map((feature) => (
+                    <UnlockChip key={feature} label={feature} unlocked={false} />
+                  ))}
+                </View>
+              </>
+            ) : null}
+          </View>
+        )}
+
+        {showPending && pendingPreview.length > 0 ? (
+          <View style={styles.pendingSection}>
+            <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+              Para subir de nível
+            </Text>
+            {pendingPreview.map((dimension) => (
+              <View key={dimension.id} style={styles.pendingItem}>
+                <View style={styles.pendingIcon}>
+                  <SymbolView
+                    name={DIMENSION_ICONS[dimension.id]}
+                    tintColor={colors.textMuted}
+                    size={16}
+                  />
+                </View>
+                <View style={styles.pendingText}>
+                  <Text variant="bodyMedium">{dimension.label}</Text>
+                  <Text variant="caption" color="textMuted">
+                    {dimension.actionHint}
+                  </Text>
+                </View>
+                <Text variant="caption" color="accent">
+                  +{dimension.maxWeight}%
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </Card>
+    </View>
   );
 }
 
@@ -170,11 +189,7 @@ type UnlockChipProps = {
 
 function UnlockChip({ label, unlocked }: UnlockChipProps) {
   return (
-    <View
-      style={[
-        styles.chip,
-        unlocked ? styles.chipUnlocked : styles.chipLocked,
-      ]}>
+    <View style={[styles.chip, unlocked ? styles.chipUnlocked : styles.chipLocked]}>
       <SymbolView
         name={{
           ios: unlocked ? 'checkmark.circle.fill' : 'lock.fill',
@@ -198,8 +213,17 @@ function getProgressColor(score: number): string {
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: 'relative',
+  },
+  glow: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: radius.xl,
+    transform: [{ scale: 1.02 }],
+  },
   card: {
     gap: spacing.md,
+    borderColor: colors.borderStrong,
   },
   loading: {
     alignItems: 'center',
@@ -217,18 +241,36 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
-  scoreRow: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  levelBadge: {
+  levelPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
+    borderWidth: 1,
+    backgroundColor: colors.surfaceHighlight,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+  },
+  iconBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   progressTrack: {
-    height: 8,
+    height: 10,
     borderRadius: radius.full,
     backgroundColor: colors.surfaceHighlight,
     overflow: 'hidden',

@@ -30,6 +30,7 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
   const [isPicking, setIsPicking] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importedCount, setImportedCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
@@ -40,8 +41,9 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
     setIsPicking(false);
     setImportError(null);
     setImportedCount(0);
+    setFailedCount(0);
     importMutation.reset();
-  }, [visible]);
+  }, [visible, importMutation]);
 
   async function handlePickFile() {
     setPickError(null);
@@ -57,9 +59,7 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
       const parsed = parseTransactionsCsv(file.text, file.name);
       setParseResult(parsed);
 
-      if (parsed.errors.length > 0 && parsed.validRows.length === 0) {
-        setStep('preview');
-      } else if (parsed.validRows.length > 0) {
+      if (parsed.validRows.length > 0 || parsed.errors.length > 0) {
         setStep('preview');
       } else {
         setPickError(parsed.errors[0] ?? 'Não foi possível ler o CSV.');
@@ -79,6 +79,13 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
     try {
       const result = await importMutation.mutateAsync(parseResult.validRows);
       setImportedCount(result.imported);
+      setFailedCount(result.failed);
+
+      if (result.imported === 0) {
+        setImportError('Nenhum movimento foi importado. Verifica os dados e tenta novamente.');
+        return;
+      }
+
       setStep('done');
     } catch (error) {
       setImportError(getApiErrorMessage(error, 'a importação'));
@@ -184,8 +191,12 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
 
           {parseResult.errors.length > 0 ? (
             <Card variant="outlined" padding="md" style={styles.errorCard}>
-              {parseResult.errors.map((message) => (
-                <Text key={message} variant="caption" color="danger" style={styles.errorLine}>
+              {parseResult.errors.map((message, errorIndex) => (
+                <Text
+                  key={`file-error-${errorIndex}`}
+                  variant="caption"
+                  color="danger"
+                  style={styles.errorLine}>
                   {message}
                 </Text>
               ))}
@@ -301,6 +312,9 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
             <Text variant="body" color="textMuted" align="center">
               {importedCount} movimento{importedCount === 1 ? '' : 's'} adicionado
               {importedCount === 1 ? '' : 's'} à tua lista.
+              {failedCount > 0
+                ? ` ${failedCount} falhou${failedCount === 1 ? '' : 'ram'}.`
+                : ''}
             </Text>
           </Card>
           <Button label="Fechar" onPress={handleClose} fullWidth />

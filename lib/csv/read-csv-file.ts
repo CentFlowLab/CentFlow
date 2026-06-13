@@ -9,6 +9,7 @@ export async function pickCsvFile(): Promise<{ name: string; text: string } | nu
       'text/comma-separated-values',
       'application/vnd.ms-excel',
       'text/plain',
+      '*/*',
     ],
     copyToCacheDirectory: true,
     multiple: false,
@@ -19,21 +20,28 @@ export async function pickCsvFile(): Promise<{ name: string; text: string } | nu
   }
 
   const asset = result.assets[0];
-  const uri = asset.uri;
   const name = asset.name ?? 'import.csv';
-
   let text: string;
 
   if (Platform.OS === 'web') {
-    const response = await fetch(uri);
-    if (!response.ok) {
-      throw new Error('Não foi possível ler o ficheiro CSV.');
+    // No web, o picker expõe o File nativo — mais fiável que fetch(blob:)
+    if ('file' in asset && asset.file instanceof File) {
+      text = await asset.file.text();
+    } else {
+      const response = await fetch(asset.uri);
+      if (!response.ok) {
+        throw new Error('Não foi possível ler o ficheiro CSV.');
+      }
+      text = await response.text();
     }
-    text = await response.text();
   } else {
-    text = await FileSystem.readAsStringAsync(uri, {
-      encoding: 'utf8',
+    text = await FileSystem.readAsStringAsync(asset.uri, {
+      encoding: FileSystem.EncodingType.UTF8,
     });
+  }
+
+  if (!text.trim()) {
+    throw new Error('O ficheiro CSV está vazio.');
   }
 
   return { name, text };

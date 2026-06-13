@@ -24,7 +24,7 @@ export function AssetsSectionShell({
 }: AssetsSectionShellProps) {
   const meta = ASSETS_SECTION_META[tab];
   const emptyConfig = ASSETS_EMPTY_CONFIG[tab];
-  const isEmpty = count === 0 && !children;
+  const isEmpty = count === 0;
 
   return (
     <View style={styles.container}>
