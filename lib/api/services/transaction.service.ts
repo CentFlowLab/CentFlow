@@ -15,6 +15,7 @@ import {
   uploadReceipt,
 } from '@/lib/api/services/receipt.service';
 import { isMockAuthEnabled } from '@/lib/auth';
+import { isSupabaseEnabled, supabaseTransactions } from '@/lib/supabase';
 import type {
   CreateTransactionInput,
   CreateTransactionOptions,
@@ -33,6 +34,10 @@ export async function fetchTransactions(
 ): Promise<Transaction[]> {
   if (isMockAuthEnabled()) {
     return fetchMockTransactions(filter);
+  }
+
+  if (isSupabaseEnabled()) {
+    return supabaseTransactions.fetchTransactions(filter);
   }
 
   const params = filter === 'all' ? undefined : { type: filter };
@@ -107,6 +112,18 @@ export async function createTransaction(
       receiptUrl,
       receiptImage,
     });
+  } else if (isSupabaseEnabled()) {
+    transaction = await supabaseTransactions.createTransaction({
+      ...transactionInput,
+      receiptId,
+    });
+
+    if (receiptImage && !transaction.receiptImage) {
+      transaction.receiptImage = receiptImage;
+    }
+    if (receiptUrl && !transaction.receiptUrl) {
+      transaction.receiptUrl = receiptUrl;
+    }
   } else {
     const payload = toCreateTransactionPayload({ ...transactionInput, receiptId });
 

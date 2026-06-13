@@ -16,6 +16,7 @@ import type {
   ReceiptUpload,
 } from '@/lib/domain/receipt.types';
 import { isMockAuthEnabled, isMockOcrDemoEnabled } from '@/lib/auth';
+import { isSupabaseEnabled, supabaseReceipts } from '@/lib/supabase';
 import { getClientOcrUnavailableMessage, runClientOcr } from '@/lib/receipt/client-ocr';
 import { sanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
 import { RECEIPT_PREPROCESS_VERSION } from '@/lib/receipt/receipt-image-preprocess';
@@ -227,6 +228,20 @@ export async function processReceiptFlow(
     if (!ocrResult) {
       ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
     }
+  } else if (isSupabaseEnabled()) {
+    try {
+      ocrResult = await supabaseReceipts.processReceiptOcr(upload.id, upload.ocrResult);
+    } catch {
+      ocrResult = null;
+    }
+
+    if (!ocrResult) {
+      const client = await runClientOcr(draft);
+      ocrResult = client.result;
+      if (!ocrResult) {
+        ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
+      }
+    }
   } else {
     try {
       ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
@@ -275,6 +290,10 @@ export async function confirmReceiptData(
     return;
   }
 
+  if (isSupabaseEnabled()) {
+    return supabaseReceipts.confirmReceiptData(receiptId, data);
+  }
+
   try {
     await apiFetch(receiptEndpoints.confirm(receiptId), {
       method: 'PATCH',
@@ -292,6 +311,10 @@ export async function uploadReceipt(draft: ReceiptDraft): Promise<ReceiptUpload>
   if (isMockAuthEnabled()) {
     await delay(500);
     return createMockReceiptUpload(draft);
+  }
+
+  if (isSupabaseEnabled()) {
+    return supabaseReceipts.uploadReceipt(draft);
   }
 
   try {
@@ -333,6 +356,11 @@ export async function processReceiptOcr(
 
   if (isMockAuthEnabled()) {
     return null;
+  }
+
+  if (isSupabaseEnabled()) {
+    const result = await supabaseReceipts.processReceiptOcr(receiptId, inlineResult);
+    return result ? sanitizeOcrResult(result) : null;
   }
 
   let best: ReceiptOcrResult | null = null;

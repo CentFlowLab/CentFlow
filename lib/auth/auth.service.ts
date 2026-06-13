@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api/client';
 import { getAccessToken, setAccessToken } from '@/lib/api/token';
+import { isSupabaseEnabled, supabaseAuth } from '@/lib/supabase';
 
 import { AUTH_ENDPOINTS } from './constants';
 import { createMockSession, isMockAuthEnabled } from './mock-auth';
@@ -70,6 +71,10 @@ export async function login(credentials: LoginCredentials): Promise<AuthSession>
     return persistSession(createMockSession(credentials));
   }
 
+  if (isSupabaseEnabled()) {
+    return persistSession(await supabaseAuth.login(credentials));
+  }
+
   const raw = await apiFetch<RawAuthResponse>(AUTH_ENDPOINTS.login, {
     method: 'POST',
     body: JSON.stringify({
@@ -84,6 +89,10 @@ export async function login(credentials: LoginCredentials): Promise<AuthSession>
 export async function register(credentials: RegisterCredentials): Promise<AuthSession> {
   if (isMockAuthEnabled()) {
     return persistSession(createMockSession(credentials));
+  }
+
+  if (isSupabaseEnabled()) {
+    return persistSession(await supabaseAuth.register(credentials));
   }
 
   const raw = await apiFetch<RawAuthResponse>(AUTH_ENDPOINTS.register, {
@@ -109,6 +118,10 @@ export async function getCurrentUser(): Promise<User> {
     };
   }
 
+  if (isSupabaseEnabled()) {
+    return supabaseAuth.getCurrentUser();
+  }
+
   const raw = await apiFetch<RawUser | { user: RawUser }>(AUTH_ENDPOINTS.me);
 
   if ('user' in raw && raw.user) {
@@ -119,14 +132,30 @@ export async function getCurrentUser(): Promise<User> {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
+  if (isSupabaseEnabled()) {
+    await supabaseAuth.requestPasswordReset(email);
+    return;
+  }
+
   await apiFetch(AUTH_ENDPOINTS.forgotPassword, {
     method: 'POST',
     body: JSON.stringify({ email: email.trim().toLowerCase() }),
   });
 }
 
-/** Carrega token guardado e valida com /auth/me. */
+/** Carrega token guardado e valida sessão. */
 export async function restoreSession(): Promise<AuthSession | null> {
+  if (isSupabaseEnabled()) {
+    const session = await supabaseAuth.restoreSession();
+    if (!session) {
+      await clearSession();
+      return null;
+    }
+    setAccessToken(session.token);
+    await saveToken(session.token);
+    return session;
+  }
+
   const token = await loadToken();
   if (!token) return null;
 
@@ -147,5 +176,8 @@ export async function clearSession(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
+  if (isSupabaseEnabled()) {
+    await supabaseAuth.logout();
+  }
   await clearSession();
 }

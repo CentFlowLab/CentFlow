@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.1",
     "@tanstack/react-query": "^5.101.0",
     "expo": "~56.0.11",
     "expo-auth-session": "~56.0.14",
@@ -50,6 +51,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "handoff": "tsx scripts/generate-handoff.ts",
+    "supabase:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts",
     "eas:init": "eas init",
     "eas:build:dev:ios": "node scripts/eas-run.cjs build --profile development --platform ios",
     "eas:build:dev:android": "node scripts/eas-run.cjs build --profile development --platform android",
