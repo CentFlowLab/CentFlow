@@ -15,9 +15,10 @@ import { toIsoDateString } from '@/lib/utils/format';
  */
 
 const TOTAL_PATTERNS = [
-  /(?:TOTAL\s*(?:EUR|€)?|VALOR\s*TOTAL|IMPORTE\s*TOTAL|TOTAL\s*A\s*PAGAR)\s*[:\s]*€?\s*(\d{1,6}[.,]\d{2})/i,
+  /(?:TOTAL\s*(?:EUR|€)?|VALOR\s*TOTAL|IMPORTE\s*TOTAL|TOTAL\s*A\s*PAGAR|A\s*PAGAR)\s*[:\s]*€?\s*(\d{1,6}[.,]\d{2})/i,
   /(?:^|\n)\s*TOTAL\s*[:\s]*(\d{1,6}[.,]\d{2})/im,
-  /€\s*(\d{1,6}[.,]\d{2})\s*$/im,
+  /(?:^|\n)\s*€\s*(\d{1,6}[.,]\d{2})\s*$/im,
+  /(\d{1,6}[.,]\d{2})\s*€\s*$/im,
 ];
 
 const DATE_PATTERNS = [
@@ -84,15 +85,16 @@ export function parseReceiptFromRawText(text: string): Partial<ReceiptOcrResult>
     }
   }
 
-  const merchantName = lines.slice(0, 6).find(
+  const merchantName = lines.slice(0, 8).find(
     (line) =>
       line.length >= 3 &&
-      line.length <= 48 &&
+      line.length <= 52 &&
       !NOISE_LINE.test(line) &&
       !ADDRESS_LINE.test(line) &&
       !PRICE_IN_LINE.test(line) &&
       !/^\d+[.,]\d{2}/.test(line) &&
-      !/^\d{2}[./-]\d{2}/.test(line),
+      !/^\d{2}[./-]\d{2}/.test(line) &&
+      !/^nif\b/i.test(line),
   );
 
   const items: ReceiptOcrItem[] = [];

@@ -7,24 +7,25 @@ import { applyContrastEnhancement } from './receipt-image-enhance';
 import { getExifRotationDegrees } from './receipt-exif';
 
 /**
- * Pipeline de pré-processamento mobile para OCR de talões (v3).
+ * Pipeline de pré-processamento mobile para OCR de talões (v4).
  *
  * Passos:
- *  1. Correcção de rotação (EXIF Orientation)
- *  2. Resize — largura máx. 1200px (ideal para motores cloud/Tesseract)
- *  3. Contraste + binarização suave (jpeg-js)
- *  4. Compressão JPEG inteligente (qualidade alta, reduz só se ficheiro > 1.8MB)
+ *  1. Preservar cópia da foto original (para anexo ao movimento)
+ *  2. Correcção de rotação (EXIF Orientation)
+ *  3. Resize — largura máx. 1400px (sweet spot cloud OCR)
+ *  4. Grayscale + contraste + nitidez + binarização suave (jpeg-js)
+ *  5. Compressão JPEG inteligente (qualidade alta, reduz só se ficheiro > 1.8MB)
  *
  * Deskew pesado deve correr no backend — ver backend-reference/ e OCR_PIPELINE.md.
  */
-export const RECEIPT_PREPROCESS_VERSION = '3';
+export const RECEIPT_PREPROCESS_VERSION = '4';
 
-/** Largura máxima enviada ao OCR */
-const OCR_MAX_WIDTH = 1200;
+/** Largura máxima enviada ao OCR (1200–1500px) */
+const OCR_MAX_WIDTH = 1400;
 /** Upscale se a foto for demasiado pequena para ler texto */
-const OCR_MIN_WIDTH = 900;
+const OCR_MIN_WIDTH = 1000;
 const MAX_FILE_BYTES = 1_800_000;
-const JPEG_QUALITIES = [0.9, 0.84, 0.78] as const;
+const JPEG_QUALITIES = [0.92, 0.86, 0.8] as const;
 
 export type PreprocessReceiptOptions = {
   originalWidth?: number;
@@ -43,6 +44,17 @@ function resolveTargetWidth(width?: number): number | undefined {
 async function getFileSize(uri: string): Promise<number> {
   const info = await FileSystem.getInfoAsync(uri);
   return info.exists && 'size' in info && typeof info.size === 'number' ? info.size : 0;
+}
+
+async function preserveOriginalCopy(uri: string, fileName?: string): Promise<string> {
+  const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+  if (!cacheDir) return uri;
+
+  const baseName = fileName?.replace(/\.[^.]+$/, '') ?? 'receipt';
+  const dest = `${cacheDir}${baseName}-original-${Date.now()}.jpg`;
+
+  await FileSystem.copyAsync({ from: uri, to: dest });
+  return dest;
 }
 
 async function saveWithSmartCompression(
@@ -70,6 +82,7 @@ export async function preprocessReceiptImage(
   options: PreprocessReceiptOptions = {},
 ): Promise<ReceiptDraft> {
   const { originalWidth, originalHeight, fileName, exif } = options;
+  const originalLocalUri = await preserveOriginalCopy(uri, fileName);
   const actions: ImageManipulator.Action[] = [];
 
   const rotation = getExifRotationDegrees(exif);
@@ -86,7 +99,7 @@ export async function preprocessReceiptImage(
     uri,
     actions.length > 0 ? actions : [{ resize: { width: OCR_MAX_WIDTH } }],
     {
-      compress: 0.95,
+      compress: 0.96,
       format: ImageManipulator.SaveFormat.JPEG,
     },
   );
@@ -102,6 +115,7 @@ export async function preprocessReceiptImage(
 
   return {
     localUri: final.uri,
+    originalLocalUri,
     mimeType: 'image/jpeg',
     fileName: `${baseName}-ocr.jpg`,
     width: final.width,
@@ -113,4 +127,9 @@ export async function preprocessReceiptImage(
         ? { width: originalWidth, height: originalHeight }
         : undefined,
   };
+}
+
+/** URI preferida para preview do utilizador (foto original, não a versão OCR). */
+export function getReceiptDisplayUri(draft: ReceiptDraft): string {
+  return draft.originalLocalUri ?? draft.localUri;
 }

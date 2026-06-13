@@ -98,8 +98,8 @@ function delay(ms: number) {
 function createMockReceiptUpload(draft: ReceiptDraft): ReceiptUpload {
   return {
     id: `mock-receipt-${mockReceiptCounter++}`,
-    url: draft.localUri,
-    localUri: draft.localUri,
+    url: draft.originalLocalUri ?? draft.localUri,
+    localUri: draft.originalLocalUri ?? draft.localUri,
     status: 'uploaded',
   };
 }
@@ -224,8 +224,21 @@ export async function processReceiptFlow(
   return {
     receiptId: upload.id,
     receiptUrl: upload.url,
-    receiptImage: upload.localUri ?? upload.url,
+    receiptImage: upload.localUri ?? draft.originalLocalUri ?? draft.localUri,
     ocrResult,
+    draft,
+  };
+}
+
+/** Upload sem OCR — para preenchimento manual com talão anexado. */
+export async function uploadReceiptOnly(draft: ReceiptDraft): Promise<ProcessedReceipt> {
+  const upload = await uploadReceipt(draft);
+
+  return {
+    receiptId: upload.id,
+    receiptUrl: upload.url,
+    receiptImage: upload.localUri ?? draft.originalLocalUri ?? draft.localUri,
+    ocrResult: null,
     draft,
   };
 }

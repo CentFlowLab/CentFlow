@@ -29,6 +29,7 @@ import {
   getReceiptUploadErrorMessage,
   ReceiptUploadError,
 } from '@/lib/api/errors';
+import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { colors, radius, spacing } from '@/lib/theme';
 import { toIsoDateString } from '@/lib/utils/format';
 
@@ -65,6 +66,7 @@ export function AddTransactionModal({
   const [processedReceipt, setProcessedReceipt] = useState<ProcessedReceipt | null>(null);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [manualFillMode, setManualFillMode] = useState(false);
+  const [isUploadingOnly, setIsUploadingOnly] = useState(false);
 
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
@@ -93,6 +95,7 @@ export function AddTransactionModal({
     setProcessedReceipt(null);
     setConfirmVisible(false);
     setManualFillMode(false);
+    setIsUploadingOnly(false);
     receiptImage.reset();
     createMutation.reset();
     processReceipt.reset();
@@ -128,10 +131,39 @@ export function AddTransactionModal({
       setConfirmVisible(true);
     } catch (error) {
       if (error instanceof ReceiptUploadError) {
+        setApiError(
+          `${getReceiptUploadErrorMessage(error)} Podes ignorar o OCR e preencher manualmente.`,
+        );
+      } else {
+        setApiError(
+          `${getApiErrorMessage(error, 'o talão')} Podes ignorar o OCR e preencher manualmente.`,
+        );
+      }
+    }
+  }
+
+  async function handleManualWithoutOcr() {
+    if (!receiptImage.draft) {
+      setManualFillMode(true);
+      return;
+    }
+
+    setApiError(null);
+    setIsUploadingOnly(true);
+
+    try {
+      const processed = await uploadReceiptOnly(receiptImage.draft);
+      setProcessedReceipt(processed);
+      setManualFillMode(true);
+    } catch (error) {
+      if (error instanceof ReceiptUploadError) {
         setApiError(getReceiptUploadErrorMessage(error));
       } else {
         setApiError(getApiErrorMessage(error, 'o talão'));
       }
+      setManualFillMode(true);
+    } finally {
+      setIsUploadingOnly(false);
     }
   }
 
@@ -170,7 +202,10 @@ export function AddTransactionModal({
                 receiptImage: processedReceipt.receiptImage,
               },
             }
-          : { receipt: receiptImage.draft ?? undefined }),
+          : {
+              receipt: receiptImage.draft ?? undefined,
+              skipOcr: true,
+            }),
       };
 
       await createMutation.mutateAsync(input);
@@ -215,8 +250,13 @@ export function AddTransactionModal({
     setConfirmVisible(false);
   }
 
+  function handleIgnoreOcr(processed: ProcessedReceipt) {
+    setProcessedReceipt(processed);
+  }
+
   const hasReceipt = Boolean(receiptImage.draft);
   const showTransactionForm = !hasReceipt || manualFillMode;
+  const isBusy = isProcessing || isSaving || isUploadingOnly;
 
   return (
     <>
@@ -352,7 +392,7 @@ export function AddTransactionModal({
                   label={processPhaseLabel ?? 'Analisar talão'}
                   onPress={handleProcessReceipt}
                   loading={isProcessing}
-                  disabled={receiptImage.isPicking || isSaving}
+                  disabled={receiptImage.isPicking || isBusy}
                   fullWidth
                   size="lg"
                 />
@@ -366,7 +406,7 @@ export function AddTransactionModal({
                   }
                   onPress={handleSaveManual}
                   loading={isSaving}
-                  disabled={receiptImage.isPicking || isProcessing}
+                  disabled={receiptImage.isPicking || isBusy}
                   fullWidth
                   size="lg"
                 />
@@ -374,10 +414,11 @@ export function AddTransactionModal({
 
               {hasReceipt && !manualFillMode ? (
                 <Button
-                  label="Preencher manualmente"
-                  variant="ghost"
-                  onPress={() => setManualFillMode(true)}
-                  disabled={isProcessing || isSaving}
+                  label={isUploadingOnly ? 'A guardar talão...' : 'Ignorar OCR e preencher manualmente'}
+                  variant="secondary"
+                  onPress={() => void handleManualWithoutOcr()}
+                  loading={isUploadingOnly}
+                  disabled={isBusy || receiptImage.isPicking}
                   fullWidth
                 />
               ) : null}
@@ -392,6 +433,7 @@ export function AddTransactionModal({
         onClose={() => setConfirmVisible(false)}
         onConfirm={handleConfirmReceipt}
         onFillManually={handleFillManually}
+        onIgnoreOcr={handleIgnoreOcr}
         isSaving={isSaving}
         phaseLabel={savePhaseLabel}
       />

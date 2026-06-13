@@ -13,6 +13,8 @@ type ReceiptDataFormProps = {
   onChange: (values: ReceiptFormValues) => void;
   ocrSnapshot?: ReceiptOcrResult | null;
   errors?: Record<string, string>;
+  /** Utilizador ignorou OCR — sem badges nem destaque */
+  manualMode?: boolean;
 };
 
 const TYPE_SEGMENTS = [
@@ -25,57 +27,75 @@ export function ReceiptDataForm({
   onChange,
   ocrSnapshot,
   errors,
+  manualMode = false,
 }: ReceiptDataFormProps) {
   const categories = getCategoriesForType(values.type);
+  const showOcr = Boolean(ocrSnapshot) && !manualMode;
 
   function update<K extends keyof ReceiptFormValues>(key: K, value: ReceiptFormValues[K]) {
     onChange({ ...values, [key]: value });
   }
 
+  function isOcr(key: keyof ReceiptFormValues): boolean {
+    if (!showOcr) return false;
+    return isOcrFieldUnchanged(key, values, ocrSnapshot ?? null);
+  }
+
   return (
     <View style={styles.container}>
-      <Text variant="bodyMedium">Rever e editar</Text>
-      <Text variant="caption" color="textMuted">
-        Os campos com etiqueta OCR mantêm o valor detectado. Edita o que precisares.
-      </Text>
+      <View style={styles.header}>
+        <Text variant="bodyMedium">Rever e editar</Text>
+        {showOcr ? (
+          <View style={styles.legend}>
+            <View style={styles.legendDot} />
+            <Text variant="caption" color="textMuted">
+              Campos com etiqueta OCR = valor detectado automaticamente
+            </Text>
+          </View>
+        ) : (
+          <Text variant="caption" color="textMuted">
+            Preenche os campos principais. O talão original fica guardado no movimento.
+          </Text>
+        )}
+      </View>
 
-      <SegmentedControl
-        segments={TYPE_SEGMENTS}
-        value={values.type}
-        onChange={(type) => update('type', type)}
+      <TextField
+        label="Loja"
+        value={values.merchantName}
+        onChangeText={(v) => update('merchantName', v)}
+        placeholder="Ex: Continente, Galp, Worten"
+        error={errors?.merchantName}
+        ocrHighlighted={isOcr('merchantName')}
+        autoCapitalize="words"
       />
 
-      <LabeledField ocr={isOcrFieldUnchanged('merchantName', values, ocrSnapshot ?? null)}>
-        <TextField
-          label="Loja / Merchant"
-          value={values.merchantName}
-          onChangeText={(v) => update('merchantName', v)}
-          placeholder="Ex: Continente"
-          error={errors?.merchantName}
-        />
-      </LabeledField>
+      <TextField
+        label="Total (€)"
+        value={values.amount}
+        onChangeText={(v) => update('amount', v)}
+        keyboardType="decimal-pad"
+        placeholder="0,00"
+        error={errors?.amount}
+        ocrHighlighted={isOcr('amount')}
+      />
 
-      <LabeledField ocr={isOcrFieldUnchanged('amount', values, ocrSnapshot ?? null)}>
-        <TextField
-          label="Valor total (€)"
-          value={values.amount}
-          onChangeText={(v) => update('amount', v)}
-          keyboardType="decimal-pad"
-          placeholder="0,00"
-          error={errors?.amount}
-        />
-      </LabeledField>
+      <TextField
+        label="Data"
+        value={values.date}
+        onChangeText={(v) => update('date', v)}
+        placeholder="AAAA-MM-DD"
+        error={errors?.date}
+        ocrHighlighted={isOcr('date')}
+      />
 
       <View style={styles.field}>
         <View style={styles.labelRow}>
           <Text variant="caption" color="textSecondary" style={styles.fieldLabel}>
             Categoria
           </Text>
-          {isOcrFieldUnchanged('category', values, ocrSnapshot ?? null) ? (
-            <OcrBadge />
-          ) : null}
+          {isOcr('category') ? <OcrBadge /> : null}
         </View>
-        <View style={styles.categoryGrid}>
+        <View style={[styles.categoryGrid, isOcr('category') && styles.categoryGridOcr]}>
           {categories.map((item) => {
             const isSelected = values.category === item.id;
             return (
@@ -105,44 +125,20 @@ export function ReceiptDataForm({
         ) : null}
       </View>
 
-      <LabeledField ocr={isOcrFieldUnchanged('description', values, ocrSnapshot ?? null)}>
-        <TextField
-          label="Descrição (opcional)"
-          value={values.description}
-          onChangeText={(v) => update('description', v)}
-          placeholder="Notas sobre a compra"
-          maxLength={200}
-        />
-      </LabeledField>
+      <SegmentedControl
+        segments={TYPE_SEGMENTS}
+        value={values.type}
+        onChange={(type) => update('type', type)}
+      />
 
-      <LabeledField ocr={isOcrFieldUnchanged('date', values, ocrSnapshot ?? null)}>
-        <TextField
-          label="Data"
-          value={values.date}
-          onChangeText={(v) => update('date', v)}
-          placeholder="AAAA-MM-DD"
-          error={errors?.date}
-        />
-      </LabeledField>
-    </View>
-  );
-}
-
-function LabeledField({
-  children,
-  ocr,
-}: {
-  children: React.ReactNode;
-  ocr: boolean;
-}) {
-  return (
-    <View style={styles.labeledField}>
-      {ocr ? (
-        <View style={styles.ocrRow}>
-          <OcrBadge />
-        </View>
-      ) : null}
-      {children}
+      <TextField
+        label="Descrição (opcional)"
+        value={values.description}
+        onChangeText={(v) => update('description', v)}
+        placeholder="Notas sobre a compra"
+        maxLength={200}
+        ocrHighlighted={isOcr('description')}
+      />
     </View>
   );
 }
@@ -161,21 +157,19 @@ const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
   },
-  labeledField: {
+  header: {
     gap: spacing.xs,
   },
-  ocrRow: {
-    alignItems: 'flex-start',
+  legend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  ocrBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.accentMuted,
-  },
-  ocrBadgeText: {
-    fontWeight: '600',
-    fontSize: 10,
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.accent,
   },
   field: {
     gap: spacing.xs,
@@ -188,10 +182,27 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontWeight: '500',
   },
+  ocrBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accentMuted,
+  },
+  ocrBadgeText: {
+    fontWeight: '600',
+    fontSize: 10,
+  },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  categoryGridOcr: {
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    backgroundColor: colors.accentMuted,
   },
   categoryChip: {
     flexDirection: 'row',

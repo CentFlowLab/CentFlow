@@ -36,7 +36,7 @@ export function ReceiptAttachmentField({
           <ReceiptPreview draft={draft} onRemove={onRemove} />
           {draft.preprocessed ? (
             <Text variant="caption" color="textMuted">
-              Imagem optimizada para OCR ({draft.width ?? '?'}×{draft.height ?? '?'}px)
+              Foto original guardada · versão OCR {draft.width ?? '?'}×{draft.height ?? '?'}px
             </Text>
           ) : null}
         </>

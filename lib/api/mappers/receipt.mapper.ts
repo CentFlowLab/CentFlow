@@ -55,11 +55,36 @@ function appendOcrUploadHints(formData: FormData, draft: ReceiptDraft) {
   formData.append('document_type', 'receipt');
   formData.append('preprocess_version', version);
   formData.append('preprocessVersion', version);
-  // v3: mobile já fez contraste — backend pode saltar ou aplicar deskew apenas
+  // v3+: mobile já fez contraste/nitidez — backend pode saltar ou aplicar deskew apenas
   formData.append('enhance_contrast', version >= '3' ? 'client_done' : 'true');
   formData.append('deskew', 'true');
+  formData.append('grayscale', version >= '4' ? 'client_done' : 'false');
   if (draft.width) formData.append('image_width', String(draft.width));
   if (draft.height) formData.append('image_height', String(draft.height));
+}
+
+async function appendOriginalFile(formData: FormData, draft: ReceiptDraft) {
+  const originalUri = draft.originalLocalUri;
+  if (!originalUri || originalUri === draft.localUri) return;
+
+  if (Platform.OS === 'web') {
+    const response = await fetch(originalUri);
+    const blob = await response.blob();
+    const baseName = draft.fileName.replace(/-ocr\.jpg$/i, '');
+    formData.append('original', blob, `${baseName}-original.jpg`);
+    return;
+  }
+
+  const info = await FileSystem.getInfoAsync(originalUri);
+  if (!info.exists) return;
+
+  const baseName = draft.fileName.replace(/-ocr\.jpg$/i, '');
+  formData.append('original', {
+    uri: originalUri,
+    name: `${baseName}-original.jpg`,
+    type: draft.mimeType,
+  } as unknown as Blob);
+  formData.append('preserve_original', 'true');
 }
 
 export async function buildReceiptFormData(draft: ReceiptDraft): Promise<FormData> {
@@ -70,6 +95,7 @@ export async function buildReceiptFormData(draft: ReceiptDraft): Promise<FormDat
     const blob = await response.blob();
     formData.append('file', blob, draft.fileName);
     appendOcrUploadHints(formData, draft);
+    await appendOriginalFile(formData, draft);
     return formData;
   }
 
@@ -85,6 +111,7 @@ export async function buildReceiptFormData(draft: ReceiptDraft): Promise<FormDat
   } as unknown as Blob);
 
   appendOcrUploadHints(formData, draft);
+  await appendOriginalFile(formData, draft);
 
   return formData;
 }
@@ -163,7 +190,7 @@ export function mapReceiptUpload(
   return {
     id: id !== undefined ? String(id) : `receipt-${Date.now()}`,
     url: pick(payload.url, payload.fileUrl, payload.file_url) ?? fallback?.localUri ?? '',
-    localUri: fallback?.localUri,
+    localUri: fallback?.originalLocalUri ?? fallback?.localUri,
     status: normalizeReceiptStatus(payload.status),
     ocrResult,
   };

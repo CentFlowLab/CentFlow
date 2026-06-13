@@ -38,6 +38,8 @@ export interface CreateTransactionInput {
   receiptMeta?: ReceiptMeta;
   /** Dados confirmados — enviados ao backend via PATCH /receipts/:id/confirm */
   confirmation?: ReceiptConfirmationInput;
+  /** Saltar OCR no upload inline (preenchimento manual) */
+  skipOcr?: boolean;
 }
 
 /** Fases do fluxo Opção A: upload → OCR → criar movimento */

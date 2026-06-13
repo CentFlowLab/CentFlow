@@ -7,6 +7,8 @@ export interface ReceiptDraft {
   fileName: string;
   width?: number;
   height?: number;
+  /** Foto original antes do pré-processamento OCR — usada para preview e arquivo */
+  originalLocalUri?: string;
   /** Imagem optimizada para OCR (expo-image-manipulator) */
   preprocessed?: boolean;
   preprocessVersion?: string;

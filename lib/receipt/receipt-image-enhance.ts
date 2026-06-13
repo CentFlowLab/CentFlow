@@ -2,11 +2,13 @@ import * as FileSystem from 'expo-file-system/legacy';
 import jpeg from 'jpeg-js';
 
 /** Contraste para texto de talões (1 = sem alteração). */
-const CONTRAST_FACTOR = 1.42;
+const CONTRAST_FACTOR = 1.52;
 /** Brilho leve após contraste (-255..255). */
-const BRIGHTNESS_OFFSET = 8;
+const BRIGHTNESS_OFFSET = 6;
 /** Limiar para binarização suave (talões térmicos / baixo contraste). */
-const SOFT_THRESHOLD = 168;
+const SOFT_THRESHOLD = 165;
+/** Intensidade do unsharp mask (nitidez). */
+const SHARPEN_AMOUNT = 0.55;
 
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = '';
@@ -21,8 +23,44 @@ function clampByte(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
 
+function rgbToGray(r: number, g: number, b: number): number {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function applySoftBinarization(value: number): number {
+  if (value < SOFT_THRESHOLD) {
+    return value * 0.5;
+  }
+  return 255 - (255 - value) * 0.32;
+}
+
+function boxBlurGray(gray: Float32Array, width: number, height: number): Float32Array {
+  const out = new Float32Array(gray.length);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      let count = 0;
+
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const ny = y + dy;
+          const nx = x + dx;
+          if (ny < 0 || ny >= height || nx < 0 || nx >= width) continue;
+          sum += gray[ny * width + nx];
+          count++;
+        }
+      }
+
+      out[y * width + x] = sum / count;
+    }
+  }
+
+  return out;
+}
+
 /**
- * Melhora legibilidade OCR: grayscale + contraste + binarização suave.
+ * Melhora legibilidade OCR: grayscale + contraste + nitidez + binarização suave.
  * Corre em JS puro (jpeg-js) — funciona em iOS/Android sem módulos nativos extra.
  */
 export function enhanceReceiptPixels(
@@ -30,31 +68,28 @@ export function enhanceReceiptPixels(
   width: number,
   height: number,
 ): Uint8Array {
-  const out = new Uint8Array(rgba.length);
   const pixelCount = width * height;
+  const gray = new Float32Array(pixelCount);
 
   for (let px = 0; px < pixelCount; px++) {
     const i = px * 4;
-    const r = rgba[i];
-    const g = rgba[i + 1];
-    const b = rgba[i + 2];
-    const a = rgba[i + 3];
+    gray[px] = rgbToGray(rgba[i], rgba[i + 1], rgba[i + 2]);
+  }
 
-    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    let value = (gray - 128) * CONTRAST_FACTOR + 128 + BRIGHTNESS_OFFSET;
+  const blurred = boxBlurGray(gray, width, height);
+  const out = new Uint8Array(rgba.length);
 
-    // Binarização suave: empurra pixels para preto/branco sem perder anti-aliasing
-    if (value < SOFT_THRESHOLD) {
-      value = value * 0.55;
-    } else {
-      value = 255 - (255 - value) * 0.35;
-    }
+  for (let px = 0; px < pixelCount; px++) {
+    const i = px * 4;
+    const sharpened = gray[px] + SHARPEN_AMOUNT * (gray[px] - blurred[px]);
+    let value = (sharpened - 128) * CONTRAST_FACTOR + 128 + BRIGHTNESS_OFFSET;
+    value = applySoftBinarization(value);
 
     const v = clampByte(value);
     out[i] = v;
     out[i + 1] = v;
     out[i + 2] = v;
-    out[i + 3] = a;
+    out[i + 3] = rgba[i + 3];
   }
 
   return out;
@@ -71,7 +106,7 @@ export async function applyContrastEnhancement(sourceUri: string): Promise<strin
   const enhanced = enhanceReceiptPixels(decoded.data, decoded.width, decoded.height);
   const encoded = jpeg.encode(
     { data: enhanced, width: decoded.width, height: decoded.height },
-    92,
+    93,
   );
 
   const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;

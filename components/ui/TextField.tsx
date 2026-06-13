@@ -12,17 +12,33 @@ import { Text } from './Text';
 type TextFieldProps = TextInputProps & {
   label: string;
   error?: string;
+  /** Destaque visual quando o valor veio do OCR e ainda não foi editado */
+  ocrHighlighted?: boolean;
 };
 
-export function TextField({ label, error, style, ...props }: TextFieldProps) {
+export function TextField({ label, error, ocrHighlighted, style, ...props }: TextFieldProps) {
   return (
     <View style={styles.wrapper}>
-      <Text variant="caption" color="textSecondary" style={styles.label}>
-        {label}
-      </Text>
+      <View style={styles.labelRow}>
+        <Text variant="caption" color="textSecondary" style={styles.label}>
+          {label}
+        </Text>
+        {ocrHighlighted ? (
+          <View style={styles.ocrBadge}>
+            <Text variant="caption" color="accent" style={styles.ocrBadgeText}>
+              OCR
+            </Text>
+          </View>
+        ) : null}
+      </View>
       <TextInput
         placeholderTextColor={colors.textMuted}
-        style={[styles.input, error && styles.inputError, style]}
+        style={[
+          styles.input,
+          ocrHighlighted && styles.inputOcr,
+          error && styles.inputError,
+          style,
+        ]}
         {...props}
       />
       {error ? (
@@ -38,8 +54,23 @@ const styles = StyleSheet.create({
   wrapper: {
     gap: spacing.xs,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   label: {
     fontWeight: '500',
+  },
+  ocrBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accentMuted,
+  },
+  ocrBadgeText: {
+    fontWeight: '600',
+    fontSize: 10,
   },
   input: {
     backgroundColor: colors.surface,
@@ -51,6 +82,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text,
     minHeight: 48,
+  },
+  inputOcr: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accentMuted,
   },
   inputError: {
     borderColor: colors.danger,

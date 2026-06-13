@@ -5,15 +5,39 @@ import type {
 } from './receipt.types';
 import { toIsoDateString } from '@/lib/utils/format';
 
-export function ocrToFormValues(ocr: ReceiptOcrResult | null): ReceiptFormValues {
+export function emptyReceiptFormValues(): ReceiptFormValues {
   return {
     type: 'expense',
-    merchantName: ocr?.merchantName ?? '',
-    amount: ocr?.totalAmount !== undefined ? String(ocr.totalAmount) : '',
-    category: ocr?.suggestedCategory ?? '',
-    description: ocr?.merchantName ?? '',
-    date: ocr?.date ?? toIsoDateString(),
+    merchantName: '',
+    amount: '',
+    category: '',
+    description: '',
+    date: toIsoDateString(),
   };
+}
+
+export function ocrToFormValues(ocr: ReceiptOcrResult | null): ReceiptFormValues {
+  if (!ocr) return emptyReceiptFormValues();
+
+  return {
+    type: 'expense',
+    merchantName: ocr.merchantName ?? '',
+    amount: ocr.totalAmount !== undefined ? String(ocr.totalAmount) : '',
+    category: ocr.suggestedCategory ?? '',
+    description: ocr.merchantName ?? '',
+    date: ocr.date ?? toIsoDateString(),
+  };
+}
+
+export function countOcrFilledFields(ocr: ReceiptOcrResult | null): number {
+  if (!ocr) return 0;
+
+  let count = 0;
+  if (ocr.merchantName) count++;
+  if (ocr.totalAmount !== undefined && ocr.totalAmount > 0) count++;
+  if (ocr.date) count++;
+  if (ocr.suggestedCategory) count++;
+  return count;
 }
 
 export function formValuesToConfirmation(

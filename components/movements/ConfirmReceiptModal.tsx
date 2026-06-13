@@ -13,12 +13,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, Text } from '@/components/ui';
 import {
+  countOcrFilledFields,
+  emptyReceiptFormValues,
   formValuesToConfirmation,
   ocrToFormValues,
 } from '@/lib/domain/receipt-confirmation';
 import { receiptConfirmationSchema } from '@/lib/domain/receipt-confirmation.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
 import { colors, radius, spacing } from '@/lib/theme';
 
 import { OcrResultCard } from './OcrResultCard';
@@ -31,6 +34,7 @@ type ConfirmReceiptModalProps = {
   onClose: () => void;
   onConfirm: (processed: ProcessedReceipt, values: ReceiptFormValues) => Promise<void>;
   onFillManually: (processed: ProcessedReceipt, values: ReceiptFormValues) => void;
+  onIgnoreOcr: (processed: ProcessedReceipt) => void;
   isSaving: boolean;
   phaseLabel?: string | null;
 };
@@ -40,25 +44,67 @@ function parseAmount(value: string): number {
   return Number(normalized);
 }
 
+function ocrStatusLabel(ocr: ProcessedReceipt['ocrResult']): {
+  title: string;
+  subtitle: string;
+  tone: 'success' | 'warning' | 'neutral';
+} {
+  if (!ocr) {
+    return {
+      title: 'OCR sem resultados',
+      subtitle: 'Preenche manualmente — o talão original fica guardado.',
+      tone: 'neutral',
+    };
+  }
+
+  const filled = countOcrFilledFields(ocr);
+  const confidence = ocr.confidence ?? 0;
+
+  if (filled >= 3 && confidence >= 0.65) {
+    return {
+      title: 'Dados detectados com boa confiança',
+      subtitle: 'Revê os campos destacados antes de guardar.',
+      tone: 'success',
+    };
+  }
+
+  if (filled >= 1) {
+    return {
+      title: 'Leitura parcial — confirma os dados',
+      subtitle: 'Alguns campos podem estar incorrectos. Edita o que precisares.',
+      tone: 'warning',
+    };
+  }
+
+  return {
+    title: 'OCR com poucos dados',
+    subtitle: 'Preenche manualmente ou ignora a leitura automática.',
+    tone: 'neutral',
+  };
+}
+
 export function ConfirmReceiptModal({
   visible,
   processed,
   onClose,
   onConfirm,
   onFillManually,
+  onIgnoreOcr,
   isSaving,
   phaseLabel,
 }: ConfirmReceiptModalProps) {
   const insets = useSafeAreaInsets();
-  const [values, setValues] = useState<ReceiptFormValues>(() => ocrToFormValues(null));
+  const [values, setValues] = useState<ReceiptFormValues>(() => emptyReceiptFormValues());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+  const [manualMode, setManualMode] = useState(false);
 
   useEffect(() => {
     if (!visible || !processed) return;
     setValues(ocrToFormValues(processed.ocrResult));
     setErrors({});
     setApiError(null);
+    setManualMode(false);
   }, [visible, processed]);
 
   if (!processed) return null;
@@ -88,7 +134,20 @@ export function ConfirmReceiptModal({
     }
   }
 
-  const hasOcr = processed.ocrResult !== null;
+  function handleIgnoreOcr() {
+    setValues(emptyReceiptFormValues());
+    setManualMode(true);
+    setErrors({});
+    onIgnoreOcr(processed!);
+  }
+
+  const hasOcr = processed.ocrResult !== null && !manualMode;
+  const status = ocrStatusLabel(manualMode ? null : processed.ocrResult);
+  const previewDraft = {
+    ...processed.draft,
+    localUri: getReceiptDisplayUri(processed.draft),
+    fileName: processed.draft.fileName.replace(/-ocr\.jpg$/i, '-original.jpg'),
+  };
 
   return (
     <Modal
@@ -105,7 +164,7 @@ export function ConfirmReceiptModal({
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            <Text variant="h2">Confirmar talão</Text>
+            <Text variant="h2">Rever e editar</Text>
             <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Fechar">
               <SymbolView
                 name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
@@ -119,21 +178,27 @@ export function ConfirmReceiptModal({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.content}>
-            <ReceiptPreview draft={processed.draft} />
+            <StatusBanner title={status.title} subtitle={status.subtitle} tone={status.tone} />
 
-            {hasOcr ? <OcrResultCard ocr={processed.ocrResult!} /> : (
+            <ReceiptPreview draft={previewDraft} />
+
+            {hasOcr ? <OcrResultCard ocr={processed.ocrResult!} /> : null}
+
+            {!hasOcr && !manualMode ? (
               <Card variant="outlined" style={styles.noOcr}>
                 <Text variant="caption" color="textMuted">
-                  O OCR não devolveu dados. Preenche os campos manualmente abaixo.
+                  O OCR não devolveu dados úteis. Preenche os campos abaixo — o talão
+                  original permanece anexado ao movimento.
                 </Text>
               </Card>
-            )}
+            ) : null}
 
             <ReceiptDataForm
               values={values}
               onChange={setValues}
-              ocrSnapshot={processed.ocrResult}
+              ocrSnapshot={manualMode ? null : processed.ocrResult}
               errors={errors}
+              manualMode={manualMode}
             />
 
             {apiError ? (
@@ -158,8 +223,18 @@ export function ConfirmReceiptModal({
               size="lg"
             />
 
+            {hasOcr ? (
+              <Button
+                label="Ignorar OCR e preencher manualmente"
+                variant="secondary"
+                onPress={handleIgnoreOcr}
+                disabled={isSaving}
+                fullWidth
+              />
+            ) : null}
+
             <Button
-              label="Voltar e preencher manualmente"
+              label="Voltar ao formulário principal"
               variant="ghost"
               onPress={() => onFillManually(processed, values)}
               disabled={isSaving}
@@ -169,6 +244,46 @@ export function ConfirmReceiptModal({
         </KeyboardAvoidingView>
       </View>
     </Modal>
+  );
+}
+
+function StatusBanner({
+  title,
+  subtitle,
+  tone,
+}: {
+  title: string;
+  subtitle: string;
+  tone: 'success' | 'warning' | 'neutral';
+}) {
+  const palette = {
+    success: { border: colors.success, bg: colors.successMuted, icon: colors.success },
+    warning: { border: colors.warning, bg: colors.accentMuted, icon: colors.warning },
+    neutral: { border: colors.border, bg: colors.surface, icon: colors.textMuted },
+  }[tone];
+
+  return (
+    <Card variant="outlined" style={[styles.statusCard, { borderColor: palette.border, backgroundColor: palette.bg }]}>
+      <View style={styles.statusRow}>
+        <SymbolView
+          name={{
+            ios: tone === 'success' ? 'checkmark.seal.fill' : 'info.circle.fill',
+            android: tone === 'success' ? 'verified' : 'info',
+            web: tone === 'success' ? 'verified' : 'info',
+          }}
+          tintColor={palette.icon}
+          size={20}
+        />
+        <View style={styles.statusText}>
+          <Text variant="caption" style={styles.statusTitle}>
+            {title}
+          </Text>
+          <Text variant="caption" color="textMuted">
+            {subtitle}
+          </Text>
+        </View>
+      </View>
+    </Card>
   );
 }
 
@@ -208,6 +323,21 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.lg,
     paddingBottom: spacing.xl,
+  },
+  statusCard: {
+    gap: spacing.xs,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  statusText: {
+    flex: 1,
+    gap: 2,
+  },
+  statusTitle: {
+    fontWeight: '600',
   },
   noOcr: {
     borderColor: colors.border,

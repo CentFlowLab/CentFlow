@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
 import type { ReceiptDraft } from '@/lib/domain/receipt.types';
+import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
 import { colors, radius, spacing } from '@/lib/theme';
 
 type ReceiptPreviewProps = {
@@ -11,9 +12,11 @@ type ReceiptPreviewProps = {
 };
 
 export function ReceiptPreview({ draft, onRemove }: ReceiptPreviewProps) {
+  const displayUri = getReceiptDisplayUri(draft);
+
   return (
     <View style={styles.container}>
-      <Image source={{ uri: draft.localUri }} style={styles.image} resizeMode="cover" />
+      <Image source={{ uri: displayUri }} style={styles.image} resizeMode="cover" />
 
       <View style={styles.meta}>
         <View style={styles.metaText}>

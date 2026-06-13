@@ -75,11 +75,13 @@ export async function createTransaction(
     receiptImage = upload.localUri ?? upload.url;
 
     options?.onPhase?.('processing_ocr');
-    try {
-      ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
-      ocrProcessed = ocrResult !== null;
-    } catch {
-      ocrProcessed = false;
+    if (!input.skipOcr) {
+      try {
+        ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
+        ocrProcessed = ocrResult !== null;
+      } catch {
+        ocrProcessed = false;
+      }
     }
   }
 

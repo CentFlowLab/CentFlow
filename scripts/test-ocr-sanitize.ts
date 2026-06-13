@@ -17,10 +17,18 @@ Data: 05-03-2026
 Gasóleo               65,00
 TOTAL: 65,00 EUR`,
 
-  `TOTAL ERRADO OCR
-item fantasma 999,99
-lixo 0,00
-TOTAL 18,75`,
+  `WORTEN ELECTRÓNICA
+NIF 502030712
+15/03/2026
+Cabo HDMI 2m           12,99
+TOTAL                  12,99`,
+
+  `MINIPREÇO
+Talão: 004521
+02-06-26
+Água 1.5L               0,39
+Iogurte natural         1,89
+TOTAL A PAGAR          15,40`,
 ];
 
 console.log('=== parseReceiptFromRawText ===\n');
