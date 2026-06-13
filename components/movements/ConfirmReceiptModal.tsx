@@ -36,7 +36,10 @@ function parseAmount(value: string): number {
   return Number(normalized);
 }
 
-function ocrStatusLabel(ocr: ProcessedReceipt['ocrResult']): {
+function ocrStatusLabel(
+  ocr: ProcessedReceipt['ocrResult'],
+  unavailableReason?: string,
+): {
   title: string;
   subtitle: string;
   tone: 'success' | 'warning' | 'neutral';
@@ -44,18 +47,28 @@ function ocrStatusLabel(ocr: ProcessedReceipt['ocrResult']): {
   if (!ocr) {
     return {
       title: 'OCR sem resultados',
-      subtitle: 'Preenche manualmente — o talão original fica guardado.',
+      subtitle: unavailableReason ?? 'Preenche manualmente — o talão original fica guardado.',
       tone: 'neutral',
     };
   }
 
   const filled = countOcrFilledFields(ocr);
   const confidence = ocr.confidence ?? 0;
+  const isDevice = ocr.source === 'device';
+  const isDemo = ocr.source === 'demo';
+
+  if (isDemo) {
+    return {
+      title: 'Dados de demonstração (não reais)',
+      subtitle: 'Estes valores são fictícios. Ignora o OCR e preenche manualmente.',
+      tone: 'warning',
+    };
+  }
 
   if (filled >= 3 && confidence >= 0.65) {
     return {
-      title: 'Dados detectados com boa confiança',
-      subtitle: 'Revê os campos destacados antes de guardar.',
+      title: isDevice ? 'Leitura no dispositivo — confirma os dados' : 'Dados detectados com boa confiança',
+      subtitle: 'Revê os campos destacados antes de guardar. O OCR pode errar em totais e datas.',
       tone: 'success',
     };
   }
@@ -133,7 +146,10 @@ export function ConfirmReceiptModal({
   }
 
   const hasOcr = processed.ocrResult !== null && !manualMode;
-  const status = ocrStatusLabel(manualMode ? null : processed.ocrResult);
+  const status = ocrStatusLabel(
+    manualMode ? null : processed.ocrResult,
+    processed.ocrUnavailableReason,
+  );
   const previewDraft = {
     ...processed.draft,
     localUri: getReceiptDisplayUri(processed.draft),
@@ -167,8 +183,8 @@ export function ConfirmReceiptModal({
       {!hasOcr && !manualMode ? (
         <Card variant="outlined" style={styles.noOcr}>
           <Text variant="caption" color="textMuted">
-            O OCR não devolveu dados úteis. Preenche os campos abaixo — o talão original
-            permanece anexado ao movimento.
+            {processed.ocrUnavailableReason ??
+              'O OCR não devolveu dados úteis. Preenche os campos abaixo — o talão original permanece anexado ao movimento.'}
           </Text>
         </Card>
       ) : null}

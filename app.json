@@ -51,7 +51,8 @@
           "photosPermission": "A CentFlow precisa de acesso às tuas fotos para anexar talões e faturas.",
           "cameraPermission": "A CentFlow precisa de acesso à câmara para digitalizar talões."
         }
-      ]
+      ],
+      "expo-ocr-kit"
     ],
     "experiments": {
       "typedRoutes": true

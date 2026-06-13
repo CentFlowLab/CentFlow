@@ -15,7 +15,8 @@ import type {
   ReceiptOcrResult,
   ReceiptUpload,
 } from '@/lib/domain/receipt.types';
-import { isMockAuthEnabled } from '@/lib/auth';
+import { isMockAuthEnabled, isMockOcrDemoEnabled } from '@/lib/auth';
+import { getClientOcrUnavailableMessage, runClientOcr } from '@/lib/receipt/client-ocr';
 import { sanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
 import { RECEIPT_PREPROCESS_VERSION } from '@/lib/receipt/receipt-image-preprocess';
 import type { RawReceiptOcrPayload, RawReceiptResponse } from '@/lib/types/receipt.api';
@@ -126,7 +127,7 @@ function createMockOcrResult(): ReceiptOcrResult {
       { name: 'Frango inteiro', total: 6.89 },
     ],
   };
-  return sanitizeOcrResult(raw) ?? raw;
+  return sanitizeOcrResult({ ...raw, source: 'demo' }) ?? { ...raw, source: 'demo' };
 }
 
 function isOcrStillProcessing(payload?: RawReceiptOcrPayload | null): boolean {
@@ -215,10 +216,31 @@ export async function processReceiptFlow(
   options?.onPhase?.('processing_ocr');
 
   let ocrResult: ReceiptOcrResult | null = null;
-  try {
-    ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
-  } catch {
-    ocrResult = null;
+  let ocrUnavailableReason: string | undefined;
+
+  if (isMockOcrDemoEnabled()) {
+    await delay(700);
+    ocrResult = createMockOcrResult();
+  } else if (isMockAuthEnabled()) {
+    const client = await runClientOcr(draft);
+    ocrResult = client.result;
+    if (!ocrResult) {
+      ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
+    }
+  } else {
+    try {
+      ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
+    } catch {
+      ocrResult = null;
+    }
+
+    if (!ocrResult) {
+      const client = await runClientOcr(draft);
+      ocrResult = client.result;
+      if (!ocrResult) {
+        ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
+      }
+    }
   }
 
   return {
@@ -226,6 +248,7 @@ export async function processReceiptFlow(
     receiptUrl: upload.url,
     receiptImage: upload.localUri ?? draft.originalLocalUri ?? draft.localUri,
     ocrResult,
+    ocrUnavailableReason,
     draft,
   };
 }
@@ -303,9 +326,13 @@ export async function processReceiptOcr(
     return sanitizeOcrResult(inlineResult);
   }
 
-  if (isMockAuthEnabled()) {
+  if (isMockOcrDemoEnabled()) {
     await delay(700);
     return createMockOcrResult();
+  }
+
+  if (isMockAuthEnabled()) {
+    return null;
   }
 
   let best: ReceiptOcrResult | null = null;

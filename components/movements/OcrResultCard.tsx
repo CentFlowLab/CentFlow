@@ -29,8 +29,14 @@ function confidenceTone(confidence?: number): {
   return { label: `${pct}% confiança — rever`, color: colors.danger, bg: colors.dangerMuted };
 }
 
+function sourceLabel(source?: ReceiptOcrResult['source']): string {
+  if (source === 'device') return 'Leitura no dispositivo';
+  if (source === 'demo') return 'Dados de demonstração';
+  return 'Leitura automática';
+}
+
 export function OcrResultCard({ ocr }: OcrResultCardProps) {
-  const tone = confidenceTone(ocr.confidence);
+  const tone = confidenceTone(ocr.source === 'demo' ? 40 : ocr.confidence);
   const items = ocr.items ?? [];
 
   return (
@@ -42,7 +48,7 @@ export function OcrResultCard({ ocr }: OcrResultCardProps) {
             tintColor={colors.accent}
             size={18}
           />
-          <Text variant="bodyMedium">Leitura automática</Text>
+          <Text variant="bodyMedium">{sourceLabel(ocr.source)}</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: tone.bg }]}>
           <Text variant="caption" style={[styles.badgeText, { color: tone.color }]}>

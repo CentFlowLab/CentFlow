@@ -16,10 +16,15 @@ import { toIsoDateString } from '@/lib/utils/format';
 
 const TOTAL_PATTERNS = [
   /(?:TOTAL\s*(?:EUR|€)?|VALOR\s*TOTAL|IMPORTE\s*TOTAL|TOTAL\s*A\s*PAGAR|A\s*PAGAR)\s*[:\s]*€?\s*(\d{1,6}[.,]\d{2})/i,
+  /(?:^|\n)\s*Total\s*[\r\n]+\s*(\d{1,6}[.,]\d{2})\s*(?:EUR|€)?/im,
+  /Total[^\d\n]{0,24}(\d{1,6}[.,]\d{2})\s*(?:EUR|€)?/i,
   /(?:^|\n)\s*TOTAL\s*[:\s]*(\d{1,6}[.,]\d{2})/im,
   /(?:^|\n)\s*€\s*(\d{1,6}[.,]\d{2})\s*$/im,
   /(\d{1,6}[.,]\d{2})\s*€\s*$/im,
 ];
+
+const RETAIL_BRAND =
+  /\b(lidl|continente|pingo\s*doce|auchan|worten|mediamarkt|ikea|decathlon|galp|minipreço|intermarche|aldi)\b/i;
 
 const DATE_PATTERNS = [
   /(\d{2})[./-](\d{2})[./-](\d{4})/,
@@ -85,17 +90,25 @@ export function parseReceiptFromRawText(text: string): Partial<ReceiptOcrResult>
     }
   }
 
-  const merchantName = lines.slice(0, 8).find(
-    (line) =>
-      line.length >= 3 &&
-      line.length <= 52 &&
-      !NOISE_LINE.test(line) &&
-      !ADDRESS_LINE.test(line) &&
-      !PRICE_IN_LINE.test(line) &&
-      !/^\d+[.,]\d{2}/.test(line) &&
-      !/^\d{2}[./-]\d{2}/.test(line) &&
-      !/^nif\b/i.test(line),
-  );
+  const merchantName =
+    lines.slice(0, 12).find(
+      (line) =>
+        RETAIL_BRAND.test(line) &&
+        line.length >= 3 &&
+        line.length <= 52 &&
+        !NOISE_LINE.test(line),
+    ) ??
+    lines.slice(0, 8).find(
+      (line) =>
+        line.length >= 3 &&
+        line.length <= 52 &&
+        !NOISE_LINE.test(line) &&
+        !ADDRESS_LINE.test(line) &&
+        !PRICE_IN_LINE.test(line) &&
+        !/^\d+[.,]\d{2}/.test(line) &&
+        !/^\d{2}[./-]\d{2}/.test(line) &&
+        !/^nif\b/i.test(line),
+    );
 
   const items: ReceiptOcrItem[] = [];
   for (const line of lines) {
@@ -198,6 +211,7 @@ export function sanitizeOcrResult(raw: ReceiptOcrResult | null): ReceiptOcrResul
     confidence: raw.confidence,
     rawText: raw.rawText ?? parsed.rawText,
     items: mergedItems,
+    source: raw.source,
   };
 
   const hasSignal =
@@ -215,5 +229,6 @@ function inferCategoryFromMerchant(merchant?: string): string | undefined {
     return 'food';
   }
   if (/galp|bp|repsol|prio|uber|bolt|cp|metro/.test(m)) return 'transport';
+  if (/worten|mediamarkt|fnac|pccomponentes|apple|samsung/.test(m)) return 'shopping';
   return undefined;
 }

@@ -42,6 +42,8 @@ export interface ReceiptOcrResult {
   confidence?: number;
   rawText?: string;
   items?: ReceiptOcrItem[];
+  /** Origem do OCR — útil para UI e debug */
+  source?: 'api' | 'device' | 'demo';
 }
 
 /** Talão já enviado + OCR processado — pronto para confirmação */
@@ -50,6 +52,8 @@ export interface ProcessedReceipt {
   receiptUrl: string;
   receiptImage: string;
   ocrResult: ReceiptOcrResult | null;
+  /** Mensagem quando OCR falhou (ex: PDF no dispositivo) */
+  ocrUnavailableReason?: string;
   draft: ReceiptDraft;
 }
 

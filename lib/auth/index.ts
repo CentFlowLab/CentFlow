@@ -1,6 +1,6 @@
 export { AuthProvider } from './auth.context';
 export { useAuth } from './useAuth';
-export { isMockAuthEnabled } from './mock-auth';
+export { isMockAuthEnabled, isMockOcrDemoEnabled } from './mock-auth';
 export * as authService from './auth.service';
 export { getAuthErrorMessage } from './errors';
 export { loginSchema, registerSchema, forgotPasswordSchema } from './schemas';

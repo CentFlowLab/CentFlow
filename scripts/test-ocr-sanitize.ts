@@ -29,6 +29,14 @@ Talão: 004521
 Água 1.5L               0,39
 Iogurte natural         1,89
 TOTAL A PAGAR          15,40`,
+
+  `LIDL & Cia - Porto de Mós
+FATURA
+2026-03-08
+SERUM FACIAL            4,49
+Aparelho Limp           99,99
+TOTAL
+100,75 EUR`,
 ];
 
 console.log('=== parseReceiptFromRawText ===\n');

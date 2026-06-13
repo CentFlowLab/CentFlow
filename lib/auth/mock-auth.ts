@@ -21,6 +21,11 @@ export function isMockAuthEnabled(): boolean {
   return __DEV__;
 }
 
+/** Dados OCR fictícios (Continente demo) — só com flag explícita */
+export function isMockOcrDemoEnabled(): boolean {
+  return process.env.EXPO_PUBLIC_MOCK_OCR === 'true';
+}
+
 export function createMockSession(
   credentials: LoginCredentials | RegisterCredentials,
 ): AuthSession {
