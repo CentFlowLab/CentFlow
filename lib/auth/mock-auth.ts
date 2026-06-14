@@ -9,15 +9,19 @@ function getInitials(name: string): string {
     .join('');
 }
 
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
+
 /**
  * Modo dev: permite testar a app sem backend.
  * - EXPO_PUBLIC_MOCK_AUTH=true  → força mock
  * - EXPO_PUBLIC_MOCK_AUTH=false → força API real
- * - Por defeito em __DEV__ → mock activo (web + Expo Go)
+ * - Beta / Produção → nunca mock (mesmo em __DEV__)
+ * - Development → mock activo por defeito em __DEV__
  */
 export function isMockAuthEnabled(): boolean {
   if (process.env.EXPO_PUBLIC_MOCK_AUTH === 'false') return false;
   if (process.env.EXPO_PUBLIC_MOCK_AUTH === 'true') return true;
+  if (isRealDataOnlyVariant()) return false;
   return __DEV__;
 }
 

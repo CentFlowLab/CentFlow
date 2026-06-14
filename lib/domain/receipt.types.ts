@@ -12,6 +12,8 @@ export interface ReceiptDraft {
   /** Imagem optimizada para OCR (expo-image-manipulator) */
   preprocessed?: boolean;
   preprocessVersion?: string;
+  /** Qual versão será usada no OCR/upload */
+  ocrImageSource?: 'digitized' | 'original';
   originalDimensions?: { width: number; height: number };
 }
 

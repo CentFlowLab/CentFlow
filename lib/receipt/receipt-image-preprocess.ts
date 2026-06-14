@@ -7,12 +7,12 @@ import { applyBestContrastEnhancement } from './receipt-image-enhance';
 import { getExifRotationDegrees } from './receipt-exif';
 
 /**
- * Pipeline de pré-processamento mobile para OCR de talões (v5).
+ * Pipeline de pré-processamento mobile para OCR de talões (v6).
  *
- * v5: largura ideal 1280px, histogram stretch, contraste/nitidez agressivos,
- * passagem dupla (standard vs binarização forte), EXIF + grayscale.
+ * v6: pré-visualização digitalizado vs original; EXIF + resize + contraste/nitidez
+ * (grayscale, histogram stretch, binarização suave) via jpeg-js.
  */
-export const RECEIPT_PREPROCESS_VERSION = '5';
+export const RECEIPT_PREPROCESS_VERSION = '6';
 
 const OCR_IDEAL_WIDTH = 1280;
 const OCR_MAX_WIDTH = 1400;
@@ -223,4 +223,37 @@ export async function preprocessReceiptImage(
 /** URI preferida para preview do utilizador (foto original, não a versão OCR). */
 export function getReceiptDisplayUri(draft: ReceiptDraft): string {
   return draft.originalLocalUri ?? draft.localUri;
+}
+
+/** URI da versão digitalizada (contraste / grayscale) para OCR. */
+export function getReceiptDigitizedUri(draft: ReceiptDraft): string {
+  if (draft.ocrImageSource === 'original') {
+    return draft.originalLocalUri ?? draft.localUri;
+  }
+  return draft.localUri;
+}
+
+/** URI efectiva enviada ao OCR / upload. */
+export function getReceiptOcrUri(draft: ReceiptDraft): string {
+  if (draft.ocrImageSource === 'original' && draft.originalLocalUri) {
+    return draft.originalLocalUri;
+  }
+  return draft.localUri;
+}
+
+export function hasDigitizedVariant(draft: ReceiptDraft): boolean {
+  if (isPdfReceipt(draft.mimeType, draft.fileName)) return false;
+  if (!draft.preprocessed) return false;
+  const original = draft.originalLocalUri ?? draft.localUri;
+  return draft.localUri !== original;
+}
+
+export function applyOcrImageSource(
+  draft: ReceiptDraft,
+  source: 'digitized' | 'original',
+): ReceiptDraft {
+  return {
+    ...draft,
+    ocrImageSource: source,
+  };
 }

@@ -9,8 +9,10 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
+        "EXPO_PUBLIC_APP_VARIANT": "development",
         "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
         "EXPO_PUBLIC_MOCK_AUTH": "true",
+        "EXPO_PUBLIC_USE_MOCK": "false",
         "EXPO_PUBLIC_MOCK_OCR": "false"
       },
       "ios": {
@@ -18,12 +20,20 @@
       }
     },
     "preview": {
+      "extends": "beta",
+      "channel": "preview"
+    },
+    "beta": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
+        "EXPO_PUBLIC_APP_VARIANT": "beta",
         "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
-        "EXPO_PUBLIC_MOCK_AUTH": "true",
-        "EXPO_PUBLIC_MOCK_OCR": "false"
+        "EXPO_PUBLIC_MOCK_AUTH": "false",
+        "EXPO_PUBLIC_USE_MOCK": "false",
+        "EXPO_PUBLIC_MOCK_OCR": "false",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oxhjfwmhcwadlltinlck.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_nY3Bqe4UcgbtIteavz6H1Q_kgquHcDQ"
       },
       "ios": {
         "simulator": false
@@ -33,21 +43,11 @@
       }
     },
     "preview-real": {
-      "extends": "preview",
-      "channel": "preview",
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
-        "EXPO_PUBLIC_MOCK_AUTH": "false",
-        "EXPO_PUBLIC_MOCK_OCR": "false",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://oxhjfwmhcwadlltinlck.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_nY3Bqe4UcgbtIteavz6H1Q_kgquHcDQ"
-      },
-      "android": {
-        "buildType": "apk"
-      }
+      "extends": "beta"
     },
     "preview-simulator": {
-      "extends": "preview",
+      "extends": "development",
+      "channel": "preview",
       "ios": {
         "simulator": true
       }
@@ -56,8 +56,10 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
+        "EXPO_PUBLIC_APP_VARIANT": "production",
         "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
         "EXPO_PUBLIC_MOCK_AUTH": "false",
+        "EXPO_PUBLIC_USE_MOCK": "false",
         "EXPO_PUBLIC_MOCK_OCR": "false",
         "EXPO_PUBLIC_SUPABASE_URL": "https://oxhjfwmhcwadlltinlck.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_nY3Bqe4UcgbtIteavz6H1Q_kgquHcDQ"

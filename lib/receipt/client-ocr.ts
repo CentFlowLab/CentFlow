@@ -1,5 +1,5 @@
 import type { ReceiptDraft, ReceiptOcrResult } from '@/lib/domain/receipt.types';
-import { isPdfReceipt } from '@/lib/receipt/receipt-image-preprocess';
+import { getReceiptOcrUri, isPdfReceipt } from '@/lib/receipt/receipt-image-preprocess';
 import { parseReceiptFromRawText, sanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
 
 export type ClientOcrOutcome = {
@@ -18,7 +18,7 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
 
   try {
     const { recognizeText } = await import('expo-ocr-kit');
-    const ocrImageUri = draft.localUri;
+    const ocrImageUri = getReceiptOcrUri(draft);
 
     const recognized = await recognizeText(ocrImageUri);
     const rawText = recognized.text?.trim() ?? '';

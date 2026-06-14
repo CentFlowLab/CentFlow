@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import type { ReceiptDraft } from '@/lib/domain/receipt.types';
+import { getReceiptOcrUri } from '@/lib/receipt/receipt-image-preprocess';
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = atob(base64);
@@ -17,7 +18,7 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
  * que lança "Creating blobs from ArrayBuffer/ArrayBufferView are not supported".
  */
 export async function readDraftFileBytes(draft: ReceiptDraft): Promise<ArrayBuffer> {
-  const uri = draft.localUri;
+  const uri = getReceiptOcrUri(draft);
 
   if (Platform.OS === 'web') {
     const response = await fetch(uri);
@@ -47,8 +48,9 @@ export type NativeUploadFile = {
 
 /** Objeto `{ uri, name, type }` aceite pelo FormData do React Native. */
 export function toNativeFormDataFile(draft: ReceiptDraft): NativeUploadFile {
+  const uri = getReceiptOcrUri(draft);
   return {
-    uri: draft.localUri,
+    uri,
     name: draft.fileName,
     type: draft.mimeType,
   };

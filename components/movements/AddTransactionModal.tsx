@@ -30,6 +30,7 @@ import { toIsoDateString } from '@/lib/utils/format';
 
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
 import { ReceiptAttachmentField } from './ReceiptAttachmentField';
+import { ReceiptDigitizePreview } from './ReceiptDigitizePreview';
 import { ReceiptOcrProcessingOverlay } from './ReceiptOcrProcessingOverlay';
 
 type AddTransactionModalProps = {
@@ -346,6 +347,21 @@ export function AddTransactionModal({
 
   return (
     <>
+      {receiptImage.pendingDraft ? (
+        <ReceiptDigitizePreview
+          visible
+          draft={receiptImage.pendingDraft}
+          selection={receiptImage.digitizeSelection}
+          onSelectionChange={receiptImage.setDigitizeSelection}
+          onConfirm={receiptImage.confirmPendingDraft}
+          onRetake={() => {
+            receiptImage.discardPendingDraft();
+            void receiptImage.showSourcePicker();
+          }}
+          onCancel={receiptImage.discardPendingDraft}
+        />
+      ) : null}
+
       <DraggableBottomSheet
         visible={visible}
         onClose={onClose}

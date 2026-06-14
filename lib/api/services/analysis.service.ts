@@ -10,8 +10,8 @@ import { fetchAssetsData } from '@/lib/api/services/assets.service';
 import { fetchDashboardData } from '@/lib/api/services/dashboard.service';
 import { fetchTransactions } from '@/lib/api/services/transaction.service';
 import { shouldUseMockData } from '@/lib/config/data-mode';
-import { buildMockDashboard } from '@/lib/data/mocks';
 import { buildMockAnalysisData } from '@/lib/data/analysis.mocks';
+import { buildMockDashboard } from '@/lib/data/mocks';
 import { composeAnalysisFromSources } from '@/lib/domain/analysis.compose';
 import type { AnalysisData } from '@/lib/domain/analysis.types';
 import type {
@@ -30,6 +30,16 @@ export type PatrimonyAllocationData = {
 
 async function fetchLocalAnalysisData(): Promise<AnalysisData> {
   const [dashboard, transactions, assets] = await Promise.all([
+    fetchDashboardData(),
+    fetchTransactions('all'),
+    fetchAssetsData(),
+  ]);
+
+  return composeAnalysisFromSources({ dashboard, transactions, assets });
+}
+
+async function fetchLocalAnalysisDataWithMockFallback(): Promise<AnalysisData> {
+  const [dashboard, transactions, assets] = await Promise.all([
     fetchDashboardData().catch(() => buildMockDashboard()),
     fetchTransactions('all'),
     fetchAssetsData(),
@@ -42,14 +52,14 @@ async function fetchLocalAnalysisData(): Promise<AnalysisData> {
  * Obtém dados de Análises.
  *
  * Estratégia:
- * 1. Mock / offline → compõe a partir de dashboard + transações + ativos locais
+ * 1. Modo mock → composição local com fallback de demonstração
  * 2. GET /analytics — resposta agregada (preferido)
- * 3. Fallback API parcial ou erro → composição local
+ * 3. Fallback API parcial → composição a partir de Supabase / REST
  */
 export async function fetchAnalysisData(): Promise<AnalysisData> {
   if (shouldUseMockData()) {
     try {
-      return await fetchLocalAnalysisData();
+      return await fetchLocalAnalysisDataWithMockFallback();
     } catch {
       return buildMockAnalysisData();
     }
@@ -76,18 +86,10 @@ export async function fetchAnalysisData(): Promise<AnalysisData> {
     }
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
-      try {
-        return await fetchAnalysisComposed();
-      } catch {
-        return fetchLocalAnalysisData();
-      }
+      return fetchAnalysisComposed();
     }
 
-    try {
-      return await fetchLocalAnalysisData();
-    } catch {
-      return buildMockAnalysisData();
-    }
+    return fetchLocalAnalysisData();
   }
 }
 
@@ -99,7 +101,7 @@ async function fetchAnalysisComposed(): Promise<AnalysisData> {
       API_ENDPOINTS.analyticsMetrics,
     ),
     fetchOptional<RawAnalysisInsight[]>(API_ENDPOINTS.analyticsInsights),
-    fetchTransactions('all').catch(() => [] as Awaited<ReturnType<typeof fetchTransactions>>),
+    fetchTransactions('all'),
     fetchAssetsData(),
   ]);
 

@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError } from '@/lib/api/client';
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 
 export type ScreenErrorContext =
   | 'dashboard'
@@ -80,6 +81,9 @@ function getNetworkMessage(): string {
     return 'Não foi possível ligar ao servidor local. No telemóvel, usa o IP do teu PC na mesma Wi‑Fi no ficheiro .env.';
   }
   if (isPlaceholderApiUrl()) {
+    if (isRealDataOnlyVariant()) {
+      return 'Não foi possível ligar ao servidor. Verifica a internet e tenta novamente.';
+    }
     return 'O servidor ainda não está disponível. Para testar offline, activa EXPO_PUBLIC_MOCK_AUTH=true.';
   }
   return 'Sem ligação ao servidor. Verifica a internet ou tenta mais tarde.';

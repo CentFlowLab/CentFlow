@@ -27,12 +27,15 @@ O `eas init` preenche `app.json` → `expo.extra.eas.projectId` e o URL de updat
 
 ## Perfis de build (`eas.json`)
 
-| Perfil | Uso | Canal OTA | Mock auth |
-|--------|-----|-----------|-----------|
+| Perfil | Uso | Canal OTA | Mock |
+|--------|-----|-----------|------|
 | `development` | Dev client + Metro | `development` | `true` |
-| `preview` | Testes internos (iPhone/Android) | `preview` | `true` |
-| `preview-simulator` | Simulador iOS (sem Apple ID no device) | `preview` | `true` |
+| `beta` | **Testes Beta (dados reais)** | `preview` | `false` |
+| `preview` | Alias de `beta` | `preview` | `false` |
+| `preview-simulator` | Simulador iOS (dev) | `preview` | `true` |
 | `production` | App Store / Play Store | `production` | `false` |
+
+Ver também: [docs/BETA.md](./BETA.md)
 
 ### Variáveis de ambiente nos builds
 
@@ -40,16 +43,19 @@ Definidas por perfil em `eas.json` → `env`:
 
 | Variável | Descrição |
 |----------|-----------|
-| `EXPO_PUBLIC_API_URL` | URL da API |
+| `EXPO_PUBLIC_APP_VARIANT` | `development` \| `beta` \| `production` |
+| `EXPO_PUBLIC_API_URL` | URL da API legacy |
 | `EXPO_PUBLIC_MOCK_AUTH` | `true` = login/movimentos sem backend |
-| `EXPO_PUBLIC_MOCK_OCR` | `true` = dados OCR fictícios (só demos) |
+| `EXPO_PUBLIC_USE_MOCK` | `true` = dados demo no Início (só dev) |
+| `EXPO_PUBLIC_MOCK_OCR` | `true` = OCR fictício (só demos) |
+| `EXPO_PUBLIC_SUPABASE_URL` | Backend principal (beta/production) |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Chave anon Supabase |
 
-Para um build pontual com valores diferentes:
+### Build Beta para testadores
 
 ```bash
-npx eas build --profile preview --platform ios \
-  --env EXPO_PUBLIC_MOCK_AUTH=false \
-  --env EXPO_PUBLIC_API_URL=https://sua-api.com
+npm run eas:build:beta:android
+npm run eas:build:beta:ios
 ```
 
 ---

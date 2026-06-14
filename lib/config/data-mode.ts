@@ -1,14 +1,16 @@
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 
 /**
- * Dados mock/demo para MVP quando o backend não está disponível.
- * - EXPO_PUBLIC_USE_MOCK=true  → força mock
- * - EXPO_PUBLIC_MOCK_AUTH=true → mock (comportamento dev existente)
- * - Por defeito em __DEV__ com mock auth activo
+ * Dados mock/demo — apenas em desenvolvimento.
+ * Beta e produção usam sempre dados reais (Supabase).
  */
 export function shouldUseMockData(): boolean {
-  if (process.env.EXPO_PUBLIC_USE_MOCK === 'true') return true;
+  if (process.env.EXPO_PUBLIC_USE_MOCK === 'true') {
+    return !isRealDataOnlyVariant();
+  }
   if (process.env.EXPO_PUBLIC_USE_MOCK === 'false') return false;
+  if (isRealDataOnlyVariant()) return false;
   return isMockAuthEnabled();
 }
 

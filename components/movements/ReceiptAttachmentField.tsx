@@ -43,7 +43,10 @@ export function ReceiptAttachmentField({
             </Text>
           ) : draft.preprocessed ? (
             <Text variant="caption" color="textMuted">
-              Foto original guardada · versão OCR {draft.width ?? '?'}×{draft.height ?? '?'}px
+              {draft.ocrImageSource === 'original'
+                ? 'A usar foto original para OCR'
+                : 'Versão digitalizada para OCR · foto original guardada'}
+              {draft.width && draft.height ? ` · ${draft.width}×${draft.height}px` : ''}
             </Text>
           ) : null}
         </>

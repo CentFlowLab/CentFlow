@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import { toNativeFormDataFile } from '@/lib/receipt/receipt-upload';
+import { getReceiptOcrUri } from '@/lib/receipt/receipt-image-preprocess';
 import type {
   ReceiptDraft,
   ReceiptOcrResult,
@@ -105,7 +106,7 @@ export async function buildReceiptFormData(draft: ReceiptDraft): Promise<FormDat
   const formData = new FormData();
 
   if (Platform.OS === 'web') {
-    const response = await fetch(draft.localUri);
+    const response = await fetch(getReceiptOcrUri(draft));
     const blob = await response.blob();
     formData.append('file', blob, draft.fileName);
     appendOcrUploadHints(formData, draft);
@@ -113,7 +114,7 @@ export async function buildReceiptFormData(draft: ReceiptDraft): Promise<FormDat
     return formData;
   }
 
-  const info = await FileSystem.getInfoAsync(draft.localUri);
+  const info = await FileSystem.getInfoAsync(getReceiptOcrUri(draft));
   if (!info.exists) {
     throw new Error('O ficheiro do talão não foi encontrado. Tenta seleccionar a imagem novamente.');
   }

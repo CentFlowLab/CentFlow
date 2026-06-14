@@ -15,15 +15,11 @@ export async function fetchHomeScreenData(): Promise<HomeScreenData> {
     return buildMockHomeScreenData();
   }
 
-  try {
-    const [dashboard, assets, transactions] = await Promise.all([
-      fetchDashboardData(),
-      fetchAssetsData(),
-      fetchTransactions('all'),
-    ]);
+  const [dashboard, assets, transactions] = await Promise.all([
+    fetchDashboardData(),
+    fetchAssetsData(),
+    fetchTransactions('all'),
+  ]);
 
-    return composeHomeScreenData(dashboard, assets, transactions, 'live');
-  } catch {
-    return buildMockHomeScreenData();
-  }
+  return composeHomeScreenData(dashboard, assets, transactions, 'live');
 }
