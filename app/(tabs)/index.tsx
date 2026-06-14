@@ -40,6 +40,7 @@ import {
   shouldPrioritizeGoals,
 } from '@/lib/onboarding/personalization';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
+import { colors, spacing } from '@/lib/theme';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
 export default function InicioScreen() {

@@ -13,7 +13,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { StartupErrorScreen } from '@/components/app';
+import { StartupErrorScreen, StartupShell } from '@/components/app';
 import { AuthLoadingScreen } from '@/components/auth';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -22,7 +22,15 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { PreferencesProvider } from '@/lib/preferences/PreferencesProvider';
 import { colors } from '@/lib/theme';
 
-SplashScreen.preventAutoHideAsync();
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
+void SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignora se o splash nativo já foi escondido (reload / OTA).
+});
+
+const SPLASH_MAX_MS = 5000;
 
 const CentFlowTheme = {
   ...DarkTheme,
@@ -40,11 +48,13 @@ const CentFlowTheme = {
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <SafeAreaProvider>
-      <StartupErrorScreen
-        error={error}
-        onRetry={retry}
-        message="Ocorreu um erro inesperado. Podes tentar abrir a app novamente."
-      />
+      <StartupShell>
+        <StartupErrorScreen
+          error={error}
+          onRetry={retry}
+          message="Ocorreu um erro inesperado. Podes tentar abrir a app novamente."
+        />
+      </StartupShell>
     </SafeAreaProvider>
   );
 }
@@ -52,18 +62,20 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ToastProvider>
-            <PreferencesProvider>
-              <ThemeProvider value={CentFlowTheme}>
-                <StatusBar style="light" />
-                <RootNavigator />
-              </ThemeProvider>
-            </PreferencesProvider>
-          </ToastProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <StartupShell>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <ToastProvider>
+              <PreferencesProvider>
+                <ThemeProvider value={CentFlowTheme}>
+                  <StatusBar style="light" />
+                  <RootNavigator />
+                </ThemeProvider>
+              </PreferencesProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </StartupShell>
     </SafeAreaProvider>
   );
 }
@@ -73,9 +85,17 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!isLoading) {
-      SplashScreen.hideAsync();
+      void SplashScreen.hideAsync().catch(() => {});
     }
   }, [isLoading]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void SplashScreen.hideAsync().catch(() => {});
+    }, SPLASH_MAX_MS);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   if (isLoading) {
     return <AuthLoadingScreen />;
@@ -93,14 +113,16 @@ function RootNavigator() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/*
-        Onboarding gate (OnboardingGateEffect):
-        - Sem onboarding concluído → redirecciona para /onboarding
-        - Protege (tabs), settings/* e deep links autenticados
-        - Bypass em dev: EXPO_PUBLIC_SKIP_ONBOARDING=true
-      */}
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="auth/callback" />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen
+          name="auth/callback"
+          options={{ presentation: 'modal', animation: 'fade' }}
+        />
 
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="onboarding" />

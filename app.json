@@ -25,8 +25,8 @@
     },
     "android": {
       "package": "com.everyft1me.centflow",
-      "softwareKeyboardLayoutMode": "pan",
-      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "edgeToEdgeEnabled": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundColor": "#0A0F18"
