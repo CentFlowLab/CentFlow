@@ -25,6 +25,7 @@
     },
     "android": {
       "package": "com.everyft1me.centflow",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#080C12",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

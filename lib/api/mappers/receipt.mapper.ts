@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
+import { toNativeFormDataFile } from '@/lib/receipt/receipt-upload';
 import type {
   ReceiptDraft,
   ReceiptOcrResult,
@@ -89,11 +90,14 @@ async function appendOriginalFile(formData: FormData, draft: ReceiptDraft) {
   if (!info.exists) return;
 
   const baseName = draft.fileName.replace(/-ocr\.jpg$/i, '');
-  formData.append('original', {
-    uri: originalUri,
-    name: `${baseName}-original.jpg`,
-    type: draft.mimeType,
-  } as unknown as Blob);
+  formData.append(
+    'original',
+    {
+      uri: originalUri,
+      name: `${baseName}-original.jpg`,
+      type: draft.mimeType,
+    } as unknown as Blob,
+  );
   formData.append('preserve_original', 'true');
 }
 
@@ -114,11 +118,7 @@ export async function buildReceiptFormData(draft: ReceiptDraft): Promise<FormDat
     throw new Error('O ficheiro do talão não foi encontrado. Tenta seleccionar a imagem novamente.');
   }
 
-  formData.append('file', {
-    uri: draft.localUri,
-    name: draft.fileName,
-    type: draft.mimeType,
-  } as unknown as Blob);
+  formData.append('file', toNativeFormDataFile(draft) as unknown as Blob);
 
   appendOcrUploadHints(formData, draft);
   await appendOriginalFile(formData, draft);

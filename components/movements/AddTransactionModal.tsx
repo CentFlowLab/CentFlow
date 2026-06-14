@@ -338,6 +338,8 @@ export function AddTransactionModal({
     setProcessedReceipt(processed);
   }
 
+  const showConfirm = confirmVisible && processedReceipt !== null;
+
   const hasReceipt = Boolean(receiptImage.draft);
   const showTransactionForm = !hasReceipt || manualFillMode;
   const isBusy = isProcessing || isSaving || isUploadingOnly;
@@ -345,22 +347,66 @@ export function AddTransactionModal({
   return (
     <>
       <DraggableBottomSheet
-        visible={visible && !confirmVisible}
+        visible={visible}
         onClose={onClose}
+        onBeforeClose={() => {
+          if (showConfirm) {
+            setConfirmVisible(false);
+            return true;
+          }
+          return false;
+        }}
         maxHeight="92%"
         scrollContentStyle={styles.form}
-        header={(requestClose) => (
-          <View style={styles.header}>
-            <Text variant="h2">Novo movimento</Text>
-            <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
-              <SymbolView
-                name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
-                tintColor={colors.textMuted}
-                size={28}
-              />
-            </Pressable>
-          </View>
-        )}>
+        header={(requestClose) =>
+          showConfirm ? (
+            <View style={styles.header}>
+              <View style={styles.confirmHeaderText}>
+                <Text variant="h2">Confirmar talão</Text>
+                <Text variant="caption" color="textMuted">
+                  Revê a foto e corrige os dados antes de guardar
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setConfirmVisible(false)}
+                hitSlop={12}
+                accessibilityLabel="Voltar">
+                <SymbolView
+                  name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+                  tintColor={colors.textMuted}
+                  size={28}
+                />
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.header}>
+              <Text variant="h2">Novo movimento</Text>
+              <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
+                <SymbolView
+                  name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+                  tintColor={colors.textMuted}
+                  size={28}
+                />
+              </Pressable>
+            </View>
+          )
+        }>
+        {showConfirm ? (
+          <ConfirmReceiptModal
+            embedded
+            visible
+            processed={processedReceipt}
+            onClose={() => setConfirmVisible(false)}
+            onConfirm={handleConfirmReceipt}
+            onFillManually={handleFillManually}
+            onIgnoreOcr={handleIgnoreOcr}
+            onRetakePhoto={handleRetakePhoto}
+            onDiscard={handleDiscardReceipt}
+            isSaving={isSaving}
+            phaseLabel={savePhaseLabel}
+          />
+        ) : (
+          <>
         <ReceiptAttachmentField
           draft={receiptImage.draft}
           isPicking={receiptImage.isPicking}
@@ -515,20 +561,9 @@ export function AddTransactionModal({
             }
           />
         ) : null}
+          </>
+        )}
       </DraggableBottomSheet>
-
-      <ConfirmReceiptModal
-        visible={confirmVisible}
-        processed={processedReceipt}
-        onClose={() => setConfirmVisible(false)}
-        onConfirm={handleConfirmReceipt}
-        onFillManually={handleFillManually}
-        onIgnoreOcr={handleIgnoreOcr}
-        onRetakePhoto={handleRetakePhoto}
-        onDiscard={handleDiscardReceipt}
-        isSaving={isSaving}
-        phaseLabel={savePhaseLabel}
-      />
     </>
   );
 }
@@ -539,6 +574,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
+  },
+  confirmHeaderText: {
+    flex: 1,
+    gap: spacing.xs,
+    paddingRight: spacing.md,
   },
   form: {
     gap: spacing.lg,

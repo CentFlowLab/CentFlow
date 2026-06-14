@@ -8,10 +8,10 @@ import type {
 import { getSupabaseClient } from './client';
 import {
   buildReceiptStoragePath,
-  draftToBlob,
   mapOcrResultRow,
   mapReceiptRow,
 } from './mappers';
+import { readDraftFileBytes } from '@/lib/receipt/receipt-upload';
 
 const RECEIPTS_BUCKET = 'receipts';
 const OCR_FUNCTION = 'process-receipt';
@@ -60,11 +60,11 @@ export async function uploadReceipt(draft: ReceiptDraft): Promise<ReceiptUpload>
     draft.fileName,
   );
 
-  const blob = await draftToBlob(draft);
+  const fileBytes = await readDraftFileBytes(draft);
 
   const { error: uploadError } = await supabase.storage
     .from(RECEIPTS_BUCKET)
-    .upload(storagePath, blob, {
+    .upload(storagePath, fileBytes, {
       contentType: draft.mimeType,
       upsert: false,
     });

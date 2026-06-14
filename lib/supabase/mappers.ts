@@ -163,15 +163,6 @@ export function buildReceiptStoragePath(
   return `${userId}/${receiptId}/${safeName}`;
 }
 
-export async function draftToBlob(draft: ReceiptDraft): Promise<Blob> {
-  const uri = draft.originalLocalUri ?? draft.localUri;
-  const response = await fetch(uri);
-  if (!response.ok) {
-    throw new Error('Não foi possível ler o ficheiro do talão');
-  }
-  return response.blob();
-}
-
 export function filterTransactions(
   transactions: Transaction[],
   filter: TransactionFilter,
