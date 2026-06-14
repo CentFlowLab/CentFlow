@@ -1,7 +1,9 @@
 /** @type {import('expo/config').ExpoConfig} */
 const appJson = require('./app.json');
 
-const variant = process.env.EXPO_PUBLIC_APP_VARIANT ?? (__DEV__ ? 'development' : 'production');
+const variant =
+  process.env.EXPO_PUBLIC_APP_VARIANT ??
+  (process.env.NODE_ENV === 'development' ? 'development' : 'production');
 const isBeta = variant === 'beta';
 
 module.exports = {
