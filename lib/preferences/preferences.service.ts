@@ -2,6 +2,7 @@ import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
 
 import { DEFAULT_PREFERENCES } from './config';
+import { normalizeCountryCode } from './locale.data';
 import { loadStoredPreferences, saveStoredPreferences } from './storage';
 import type { UserPreferences } from './types';
 
@@ -22,10 +23,18 @@ function mapRow(row: PreferencesRow): UserPreferences {
     warrantyAlerts: row.warranty_alerts,
     budgetAlerts: row.budget_alerts,
     weeklyDigest: row.weekly_digest,
-    region: row.region,
+    region: normalizeCountryCode(row.region),
     themeId: row.theme_id,
     biometricsEnabled: row.biometrics_enabled,
   };
+}
+
+function toSupabaseRegion(region: string): UserPreferences['region'] {
+  const code = normalizeCountryCode(region);
+  if (code === 'PT') return 'portugal';
+  if (code === 'BR') return 'brasil';
+  if (code === 'ES') return 'espanha';
+  return 'outro';
 }
 
 function toRow(userId: string, prefs: Partial<UserPreferences>) {
@@ -37,7 +46,7 @@ function toRow(userId: string, prefs: Partial<UserPreferences>) {
     ...(prefs.warrantyAlerts !== undefined && { warranty_alerts: prefs.warrantyAlerts }),
     ...(prefs.budgetAlerts !== undefined && { budget_alerts: prefs.budgetAlerts }),
     ...(prefs.weeklyDigest !== undefined && { weekly_digest: prefs.weeklyDigest }),
-    ...(prefs.region !== undefined && { region: prefs.region }),
+    ...(prefs.region !== undefined && { region: toSupabaseRegion(prefs.region) }),
     ...(prefs.themeId !== undefined && { theme_id: prefs.themeId }),
     ...(prefs.biometricsEnabled !== undefined && {
       biometrics_enabled: prefs.biometricsEnabled,

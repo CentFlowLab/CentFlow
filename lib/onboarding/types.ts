@@ -30,6 +30,8 @@ export type AmbitionId =
 
 export type WowActionId = 'first_receipt' | 'first_asset' | 'first_goal' | 'first_warranty';
 
+export type GenderId = 'male' | 'female' | 'neutral';
+
 export type OnboardingStepId =
   | 'name'
   | 'welcome'
@@ -42,6 +44,7 @@ export type OnboardingStepId =
 
 export type OnboardingAnswers = {
   displayName: string;
+  gender: GenderId | null;
   profileTags: ProfileTagId[];
   lifeAreas: LifeAreaId[];
   hasMonthlyIncome: IncomeAnswer | null;
@@ -57,6 +60,7 @@ export type OnboardingAnswers = {
 
 export const EMPTY_ONBOARDING_ANSWERS: OnboardingAnswers = {
   displayName: '',
+  gender: null,
   profileTags: [],
   lifeAreas: [],
   hasMonthlyIncome: null,

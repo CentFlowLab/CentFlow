@@ -5,7 +5,7 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Card, Text } from '@/components/ui';
 import { getCategoryById } from '@/lib/data/transaction-categories';
 import type { Transaction } from '@/lib/domain/transaction.types';
-import { colors, spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
 type SwipeableTransactionListItemProps = {
@@ -110,34 +110,6 @@ export function SwipeableTransactionListItem({
         </Text>
       </View>
 
-      <Pressable
-        onPress={() => onEdit(transaction)}
-        hitSlop={10}
-        style={styles.editButton}
-        accessibilityRole="button"
-        accessibilityLabel="Editar movimento">
-        <SymbolView
-          name={{ ios: 'square.and.pencil', android: 'edit', web: 'edit' }}
-          tintColor={colors.textMuted}
-          size={18}
-        />
-      </Pressable>
-
-      {Platform.OS === 'web' ? (
-        <Pressable
-          onPress={confirmDelete}
-          hitSlop={10}
-          style={styles.editButton}
-          accessibilityRole="button"
-          accessibilityLabel="Eliminar movimento">
-          <SymbolView
-            name={{ ios: 'trash', android: 'delete', web: 'delete' }}
-            tintColor={colors.danger}
-            size={18}
-          />
-        </Pressable>
-      ) : null}
-
       {hasReceipt ? (
         <SymbolView
           name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
@@ -198,13 +170,12 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
-  editButton: {
-    padding: spacing.xs,
-  },
   actions: {
     flexDirection: 'row',
     alignItems: 'stretch',
     marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
   },
   actionButton: {
     width: 76,
@@ -215,9 +186,13 @@ const styles = StyleSheet.create({
   },
   editAction: {
     backgroundColor: colors.primaryDark,
+    borderTopLeftRadius: radius.lg,
+    borderBottomLeftRadius: radius.lg,
   },
   deleteAction: {
     backgroundColor: colors.danger,
+    borderTopRightRadius: radius.lg,
+    borderBottomRightRadius: radius.lg,
   },
   actionLabel: {
     color: colors.textInverse,

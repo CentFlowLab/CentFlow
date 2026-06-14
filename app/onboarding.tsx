@@ -31,15 +31,17 @@ import {
   getPriorityFeatures,
   getWowActionCards,
 } from '@/lib/onboarding/personalization';
-import { saveOnboardingAnswersForUser } from '@/lib/onboarding/answers.service';
+import { saveOnboardingAnswersForUser, fetchOnboardingAnswers } from '@/lib/onboarding/answers.service';
 import type {
   AmbitionId,
+  GenderId,
   IncomeAnswer,
   LifeAreaId,
   OnboardingStepId,
   ProfileTagId,
   WowActionId,
 } from '@/lib/onboarding/types';
+import { GENDER_OPTIONS, getWelcomeMessages } from '@/lib/onboarding/welcome';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const STEPS: OnboardingStepId[] = [
@@ -70,7 +72,7 @@ export default function OnboardingScreen() {
   useAnalytics();
 
   const hasTrackedStart = useRef(false);
-  const hasSeededDisplayName = useRef(false);
+  const userEditedName = useRef(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [welcomeReady, setWelcomeReady] = useState(false);
   const [revealPhase, setRevealPhase] = useState<'loading' | 'summary'>('loading');
@@ -80,23 +82,40 @@ export default function OnboardingScreen() {
   const showProgress = stepIndex >= STEPS.indexOf('life_areas');
   const progress = STEP_PROGRESS[step] ?? 0;
 
-  const { answers, patch } = useOnboardingAnswersState(profile?.name ?? '');
+  const { answers, patch, setAnswers } = useOnboardingAnswersState();
 
   useEffect(() => {
-    if (hasSeededDisplayName.current || !profile?.name) return;
+    if (!userId) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      const saved = await fetchOnboardingAnswers(userId);
+      if (cancelled || saved.completed) return;
+
+      setAnswers((current) => ({
+        ...saved,
+        displayName: current.displayName || saved.displayName || '',
+        gender: current.gender ?? saved.gender,
+      }));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setAnswers, userId]);
+
+  useEffect(() => {
+    if (userEditedName.current || answers.displayName.trim()) return;
+    if (!profile?.name) return;
     patch({ displayName: profile.name });
-    hasSeededDisplayName.current = true;
-  }, [profile?.name, patch]);
+  }, [answers.displayName, patch, profile?.name]);
 
   const firstName = getFirstName(answers.displayName);
 
   const welcomeMessages = useMemo(
-    () => [
-      `Prazer, ${firstName} 👋`,
-      'Vou ajudá-lo a organizar o seu dinheiro com clareza e calma.',
-      'Mas primeiro preciso de conhecer um pouco melhor a sua realidade.',
-    ],
-    [firstName],
+    () => getWelcomeMessages(firstName, answers.gender),
+    [answers.gender, firstName],
   );
 
   const persistAnswers = useCallback(
@@ -131,7 +150,7 @@ export default function OnboardingScreen() {
 
   async function handleNameContinue() {
     const name = answers.displayName.trim();
-    if (!name) return;
+    if (!name || !answers.gender) return;
 
     if (profile && name !== profile.name) {
       try {
@@ -203,7 +222,7 @@ export default function OnboardingScreen() {
       profile_tags: answers.profileTags,
     });
 
-    router.replace('/(tabs)' as Href);
+    router.replace('/(tabs)/' as Href);
   }
 
   const insights = getOnboardingInsights(answers);
@@ -228,7 +247,7 @@ export default function OnboardingScreen() {
         return (
           <Animated.View entering={FadeIn.duration(300)} style={styles.step}>
             <Text variant="h1" style={styles.question}>
-              Como gostaria de ser tratado?
+              Como te chamas?
             </Text>
             <Text variant="body" color="textSecondary" style={styles.lead}>
               Usamos o seu nome para personalizar a experiência — nada de formalidades
@@ -237,11 +256,38 @@ export default function OnboardingScreen() {
             <TextField
               label="O seu nome"
               value={answers.displayName}
-              onChangeText={(value) => patch({ displayName: value })}
+              onChangeText={(value) => {
+                userEditedName.current = true;
+                patch({ displayName: value });
+              }}
               placeholder="Ex: Emanuel"
               autoCapitalize="words"
               autoFocus
             />
+
+            <View style={styles.genderBlock}>
+              <Text variant="bodyMedium" style={styles.smartLabel}>
+                Como gostaria de ser tratado?
+              </Text>
+              <View style={styles.smartOptions}>
+                {GENDER_OPTIONS.map((option) => {
+                  const selected = answers.gender === option.id;
+                  return (
+                    <Pressable
+                      key={option.id}
+                      onPress={() => patch({ gender: option.id as GenderId })}
+                      style={[styles.smartChip, selected && styles.smartChipSelected]}>
+                      <Text
+                        variant="caption"
+                        color={selected ? 'text' : 'textMuted'}
+                        style={selected ? styles.smartChipTextSelected : undefined}>
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
           </Animated.View>
         );
 
@@ -534,7 +580,7 @@ export default function OnboardingScreen() {
           <Button
             label="Continuar"
             onPress={() => void handleNameContinue()}
-            disabled={!answers.displayName.trim()}
+            disabled={!answers.displayName.trim() || !answers.gender}
             loading={updateProfile.isPending}
             fullWidth
             size="lg"
@@ -730,6 +776,9 @@ const styles = StyleSheet.create({
   },
   smartChipTextSelected: {
     fontWeight: '600',
+  },
+  genderBlock: {
+    gap: spacing.sm,
   },
   revealCenter: {
     flex: 1,

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useUserPreferences } from '@/hooks/queries/useUserPreferences';
-import { getLocaleForRegion } from '@/lib/preferences/config';
+import { getLocaleForCountry, normalizeCountryCode } from '@/lib/preferences/locale.data';
 import { setFormatContext } from '@/lib/utils/format';
 
 type PreferencesProviderProps = {
@@ -19,7 +19,7 @@ export function PreferencesProvider({ children }: PreferencesProviderProps) {
   useEffect(() => {
     setFormatContext({
       currency: profile?.currency ?? 'EUR',
-      locale: getLocaleForRegion(preferences?.region ?? 'portugal'),
+      locale: getLocaleForCountry(normalizeCountryCode(preferences?.region ?? 'PT')),
     });
   }, [profile?.currency, preferences?.region]);
 

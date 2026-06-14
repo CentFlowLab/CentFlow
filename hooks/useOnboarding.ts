@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/api/keys';
 import { useAuth } from '@/lib/auth';
@@ -17,33 +17,21 @@ export function useOnboarding() {
   const { user } = useAuth();
   const userId = user?.id;
   const queryClient = useQueryClient();
-  const [completed, setCompleted] = useState<boolean | null>(null);
+  const bypass = isOnboardingGateBypassed();
 
-  const refreshCompletion = useCallback(async () => {
-    if (!userId) {
-      setCompleted(null);
-      return;
-    }
-
-    if (isOnboardingGateBypassed()) {
-      setCompleted(true);
-      return;
-    }
-
-    try {
-      const value = await isOnboardingComplete(userId);
-      setCompleted(value);
-    } catch {
-      setCompleted(false);
-    }
-  }, [userId]);
+  const {
+    data: completed,
+    isPending,
+    refetch: refreshCompletion,
+  } = useQuery({
+    queryKey: queryKeys.onboardingStatus(userId ?? ''),
+    queryFn: () => isOnboardingComplete(userId!),
+    enabled: Boolean(userId) && !bypass,
+    staleTime: 0,
+  });
 
   useEffect(() => {
-    void refreshCompletion();
-  }, [refreshCompletion]);
-
-  useEffect(() => {
-    if (!userId || isOnboardingGateBypassed()) return;
+    if (!userId || bypass) return;
 
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
@@ -52,14 +40,13 @@ export function useOnboarding() {
     });
 
     return () => subscription.remove();
-  }, [refreshCompletion, userId]);
+  }, [bypass, refreshCompletion, userId]);
 
   const complete = useCallback(
     async (answers?: Partial<OnboardingAnswers>) => {
       if (!userId) return;
 
-      // Optimistic — evita race com OnboardingGateEffect ao navegar para tabs
-      setCompleted(true);
+      queryClient.setQueryData(queryKeys.onboardingStatus(userId), true);
 
       const current = await fetchOnboardingAnswers(userId);
       const next: OnboardingAnswers = {
@@ -71,23 +58,25 @@ export function useOnboarding() {
       };
 
       await saveOnboardingAnswersForUser(userId, next);
-      queryClient.invalidateQueries({ queryKey: queryKeys.onboardingAnswers });
+      queryClient.setQueryData(queryKeys.onboardingAnswers, next);
+      queryClient.setQueryData(queryKeys.onboardingStatus(userId), true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.onboardingAnswers });
     },
-    [userId, queryClient],
+    [queryClient, userId],
   );
 
   const reset = useCallback(async () => {
     if (!userId) return;
 
     await saveOnboardingAnswersForUser(userId, { ...EMPTY_ONBOARDING_ANSWERS });
-    setCompleted(false);
-    queryClient.invalidateQueries({ queryKey: queryKeys.onboardingAnswers });
-  }, [userId, queryClient]);
+    queryClient.setQueryData(queryKeys.onboardingStatus(userId), false);
+    queryClient.setQueryData(queryKeys.onboardingAnswers, EMPTY_ONBOARDING_ANSWERS);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.onboardingAnswers });
+  }, [queryClient, userId]);
 
   return {
-    completed,
-    isLoading:
-      !isOnboardingGateBypassed() && completed === null && Boolean(userId),
+    completed: bypass ? true : (completed ?? null),
+    isLoading: !bypass && Boolean(userId) && isPending,
     complete,
     reset,
     refreshCompletion,

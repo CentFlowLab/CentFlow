@@ -12,6 +12,7 @@ export const queryKeys = {
   profile: ['profile'] as const,
   preferences: ['preferences'] as const,
   onboardingAnswers: ['onboarding-answers'] as const,
+  onboardingStatus: (userId: string) => ['onboarding-status', userId] as const,
   financialProfile: ['financial-profile'] as const,
   assets: ['assets'] as const,
   prices: ['prices'] as const,

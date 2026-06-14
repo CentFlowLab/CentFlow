@@ -1,6 +1,8 @@
-export type SupportedCurrency = 'EUR' | 'USD' | 'GBP';
+/** Código ISO 4217 (ex.: EUR, USD). */
+export type SupportedCurrency = string;
 
-export type UserRegion = 'portugal' | 'brasil' | 'espanha' | 'outro';
+/** Código ISO 3166-1 alpha-2 (ex.: PT, BR). */
+export type UserRegion = string;
 
 export type ThemeId = 'dark-premium' | 'dark-classic';
 

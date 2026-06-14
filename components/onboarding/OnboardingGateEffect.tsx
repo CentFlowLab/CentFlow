@@ -37,7 +37,7 @@ export function OnboardingGateEffect() {
     if (bypass || isLoading || !onOnboarding) return;
 
     if (completed === true) {
-      router.replace('/(tabs)' as Href);
+      router.replace('/(tabs)/' as Href);
     }
   }, [bypass, completed, isLoading, onOnboarding, router]);
 

@@ -7,7 +7,6 @@ import type { Warranty } from '@/lib/domain/assets.types';
 import { getWarrantiesSummary, sortWarrantiesByUrgency } from '@/lib/domain/warranty.utils';
 import { colors, spacing } from '@/lib/theme';
 
-import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { SwipeableAssetRow } from './SwipeableAssetRow';
 import { WarrantiesEmptyState } from './WarrantiesEmptyState';
 import { WarrantyListItem } from './WarrantyListItem';
@@ -39,10 +38,6 @@ export function WarrantiesSection({
 
   return (
     <View style={styles.container}>
-      <AssetsTabToolbar
-        label={`${warranties.length} garantia${warranties.length === 1 ? '' : 's'}`}
-      />
-
       {summary.expiringSoon > 0 || summary.expired > 0 ? (
         <Card variant="outlined" style={styles.summaryCard}>
           <View style={styles.summaryRow}>

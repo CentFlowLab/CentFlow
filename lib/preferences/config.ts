@@ -1,33 +1,20 @@
-import type { SupportedCurrency, ThemeId, UserRegion } from './types';
+import type { ThemeId, UserPreferences } from './types';
+import {
+  getCountryLabel,
+  getCurrencyLabel,
+  getLocaleForCountry,
+  normalizeCountryCode,
+} from './locale.data';
 
 export const DEFAULT_PREFERENCES = {
   pushNotifications: true,
   warrantyAlerts: true,
   budgetAlerts: false,
   weeklyDigest: true,
-  region: 'portugal' as UserRegion,
+  region: 'PT',
   themeId: 'dark-premium' as ThemeId,
   biometricsEnabled: false,
 };
-
-export const CURRENCY_OPTIONS: Array<{
-  code: SupportedCurrency;
-  label: string;
-}> = [
-  { code: 'EUR', label: 'EUR (€)' },
-  { code: 'USD', label: 'USD ($)' },
-  { code: 'GBP', label: 'GBP (£)' },
-];
-
-export const REGION_OPTIONS: Array<{
-  id: UserRegion;
-  label: string;
-}> = [
-  { id: 'portugal', label: 'Portugal' },
-  { id: 'brasil', label: 'Brasil' },
-  { id: 'espanha', label: 'Espanha' },
-  { id: 'outro', label: 'Outro' },
-];
 
 export const THEME_OPTIONS: Array<{
   id: ThemeId;
@@ -52,21 +39,8 @@ export const THEME_OPTIONS: Array<{
   },
 ];
 
-const REGION_LOCALE: Record<UserRegion, string> = {
-  portugal: 'pt-PT',
-  brasil: 'pt-BR',
-  espanha: 'es-ES',
-  outro: 'en-US',
-};
-
-export function getLocaleForRegion(region: UserRegion): string {
-  return REGION_LOCALE[region] ?? 'pt-PT';
+export function getLocaleForRegion(region: string): string {
+  return getLocaleForCountry(normalizeCountryCode(region));
 }
 
-export function getCurrencyLabel(code: SupportedCurrency): string {
-  return CURRENCY_OPTIONS.find((item) => item.code === code)?.label ?? code;
-}
-
-export function getRegionLabel(region: UserRegion): string {
-  return REGION_OPTIONS.find((item) => item.id === region)?.label ?? region;
-}
+export { getCurrencyLabel, getCountryLabel, normalizeCountryCode };

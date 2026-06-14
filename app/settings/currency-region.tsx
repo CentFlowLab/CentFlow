@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import {
   SettingsHero,
-  SettingsOptionGroup,
   SettingsScreenLayout,
 } from '@/components/settings';
-import { Button, Card, LoadingSpinner } from '@/components/ui';
+import { Button, Card, LoadingSpinner, SearchableSelect } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useUpdateCurrency } from '@/hooks/mutations/useProfileMutations';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { useProfile } from '@/hooks/queries/useProfile';
-import { CURRENCY_OPTIONS, REGION_OPTIONS } from '@/lib/preferences/config';
+import {
+  getCountryOptions,
+  getCurrencyOptions,
+  normalizeCountryCode,
+} from '@/lib/preferences/locale.data';
 import type { SupportedCurrency, UserRegion } from '@/lib/preferences/types';
 import { spacing } from '@/lib/theme';
 
@@ -22,18 +25,21 @@ export default function CurrencyRegionScreen() {
   const updatePreferences = useUpdatePreferences();
   const { showToast } = useToast();
 
+  const currencyOptions = useMemo(() => getCurrencyOptions(), []);
+  const countryOptions = useMemo(() => getCountryOptions(), []);
+
   const [currency, setCurrency] = useState<SupportedCurrency>('EUR');
-  const [region, setRegion] = useState<UserRegion>('portugal');
+  const [region, setRegion] = useState<UserRegion>('PT');
 
   useEffect(() => {
     if (profile?.currency) {
-      setCurrency(profile.currency as SupportedCurrency);
+      setCurrency(profile.currency);
     }
   }, [profile?.currency]);
 
   useEffect(() => {
     if (preferences?.region) {
-      setRegion(preferences.region);
+      setRegion(normalizeCountryCode(preferences.region));
     }
   }, [preferences?.region]);
 
@@ -61,6 +67,9 @@ export default function CurrencyRegionScreen() {
   }
 
   const saving = updateCurrency.isPending || updatePreferences.isPending;
+  const hasChanges =
+    currency !== (profile?.currency ?? 'EUR') ||
+    region !== normalizeCountryCode(preferences?.region ?? 'PT');
 
   return (
     <SettingsScreenLayout
@@ -69,27 +78,35 @@ export default function CurrencyRegionScreen() {
       <SettingsHero
         icon={{ ios: 'eurosign.circle', android: 'euro', web: 'euro' }}
         title="Preferências regionais"
-        description="Define como os valores monetários e datas são apresentados em toda a app."
+        description="Escolhe qualquer moeda e país. Usa a pesquisa para filtrar rapidamente a lista."
       />
 
       <Card variant="elevated" style={styles.card}>
-        <SettingsOptionGroup
-          title="Moeda principal"
-          options={CURRENCY_OPTIONS.map((item) => ({ id: item.code, label: item.label }))}
+        <SearchableSelect
+          label="Moeda principal"
+          placeholder="Selecciona uma moeda"
           value={currency}
+          options={currencyOptions}
           onChange={setCurrency}
           disabled={saving}
         />
-        <SettingsOptionGroup
-          title="Região"
-          options={REGION_OPTIONS}
+        <SearchableSelect
+          label="País / região"
+          placeholder="Selecciona um país"
           value={region}
+          options={countryOptions}
           onChange={setRegion}
           disabled={saving}
         />
       </Card>
 
-      <Button label="Guardar preferências" onPress={handleSave} loading={saving} fullWidth />
+      <Button
+        label="Guardar preferências"
+        onPress={handleSave}
+        loading={saving}
+        disabled={!hasChanges || saving}
+        fullWidth
+      />
     </SettingsScreenLayout>
   );
 }

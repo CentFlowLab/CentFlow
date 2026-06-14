@@ -9,7 +9,6 @@ import { formatCurrency } from '@/lib/utils/format';
 
 import { ASSETS_EMPTY_CONFIG } from './assets.config';
 import { AssetsEmptyState } from './AssetsEmptyState';
-import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { InventoryListItem } from './InventoryListItem';
 import { SwipeableAssetRow } from './SwipeableAssetRow';
 
@@ -52,10 +51,6 @@ export function InventorySection({
 
   return (
     <View style={styles.container}>
-      <AssetsTabToolbar
-        label={`${inventory.length} item${inventory.length === 1 ? '' : 's'}`}
-      />
-
       <Card variant="outlined" style={styles.summaryCard}>
         <Text variant="caption" color="textMuted">
           Valor total estimado

@@ -6,7 +6,6 @@ import { getGoalsAggregate } from '@/lib/domain/goal.utils';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
-import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { GoalListItem } from './GoalListItem';
 import { GoalProgressBar } from './GoalProgressBar';
 import { GoalsEmptyState } from './GoalsEmptyState';
@@ -32,10 +31,6 @@ export function GoalsSection({ goals, onEdit, onLearnMore, onDelete }: GoalsSect
 
   return (
     <View style={styles.container}>
-      <AssetsTabToolbar
-        label={`${goals.length} objetivo${goals.length === 1 ? '' : 's'}`}
-      />
-
       <Card variant="outlined" style={styles.summaryCard}>
         <View style={styles.summaryRow}>
           <View>

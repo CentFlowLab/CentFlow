@@ -8,6 +8,7 @@ export { Skeleton, SkeletonGroup } from './Skeleton';
 export { SectionHeader } from './SectionHeader';
 export { ScreenContainer } from './ScreenContainer';
 export { TextField } from './TextField';
+export { SearchableSelect } from './SearchableSelect';
 export { ToastProvider, useToast } from './Toast';
 export { Text, Label } from './Text';
 export { ProfileSkeleton } from './skeletons/ProfileSkeleton';
