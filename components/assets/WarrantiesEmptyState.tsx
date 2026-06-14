@@ -9,18 +9,17 @@ import { colors, radius, spacing } from '@/lib/theme';
 const EXAMPLE_PRODUCTS = ['Portátil', 'Frigorífico', 'Telemóvel', 'Eletrodomésticos'];
 
 type WarrantiesEmptyStateProps = {
-  onCreate?: () => void;
   onLearnMore?: () => void;
 };
 
-export function WarrantiesEmptyState({ onCreate, onLearnMore }: WarrantiesEmptyStateProps) {
+export function WarrantiesEmptyState({ onLearnMore }: WarrantiesEmptyStateProps) {
   const { data: answers } = useOnboardingAnswers();
   const personalized = getPersonalizedEmptyStateCopy('garantias', answers ?? null);
 
   const title = personalized.title || 'Protege as tuas compras';
   const description =
     personalized.description ||
-    'Regista garantias com data de expiração, associa ao talão original e recebe alertas antes que expirem.';
+    'Regista garantias com data de expiração, associa ao talão original e recebe alertas antes que expirem. Usa o botão + no topo para adicionar.';
 
   return (
     <View style={styles.container}>
@@ -73,21 +72,6 @@ export function WarrantiesEmptyState({ onCreate, onLearnMore }: WarrantiesEmptyS
       </Card>
 
       <View style={styles.actions}>
-        {onCreate ? (
-          <Button
-            label="Adicionar primeira garantia"
-            onPress={onCreate}
-            fullWidth
-            size="lg"
-            icon={
-              <SymbolView
-                name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
-                tintColor={colors.textInverse}
-                size={20}
-              />
-            }
-          />
-        ) : null}
         {onLearnMore ? (
           <Button label="Porque registar garantias?" variant="ghost" onPress={onLearnMore} fullWidth />
         ) : null}

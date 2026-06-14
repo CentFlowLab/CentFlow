@@ -58,34 +58,23 @@ export function useOnboarding() {
     async (answers?: Partial<OnboardingAnswers>) => {
       if (!userId) return;
 
+      // Optimistic — evita race com OnboardingGateEffect ao navegar para tabs
+      setCompleted(true);
+
       const current = await fetchOnboardingAnswers(userId);
       const next: OnboardingAnswers = {
         ...current,
         ...answers,
         completed: true,
         completedAt: new Date().toISOString(),
+        skipped: false,
       };
 
       await saveOnboardingAnswersForUser(userId, next);
-      setCompleted(true);
       queryClient.invalidateQueries({ queryKey: queryKeys.onboardingAnswers });
     },
     [userId, queryClient],
   );
-
-  const skip = useCallback(async () => {
-    if (!userId) return;
-
-    const current = await fetchOnboardingAnswers(userId);
-    await saveOnboardingAnswersForUser(userId, {
-      ...current,
-      skipped: true,
-      completed: true,
-      completedAt: new Date().toISOString(),
-    });
-    setCompleted(true);
-    queryClient.invalidateQueries({ queryKey: queryKeys.onboardingAnswers });
-  }, [userId, queryClient]);
 
   const reset = useCallback(async () => {
     if (!userId) return;
@@ -100,7 +89,6 @@ export function useOnboarding() {
     isLoading:
       !isOnboardingGateBypassed() && completed === null && Boolean(userId),
     complete,
-    skip,
     reset,
     refreshCompletion,
     userId,

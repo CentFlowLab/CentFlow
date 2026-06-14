@@ -7,7 +7,7 @@ import { getPersonalizedEmptyStateCopy } from '@/lib/onboarding/personalization'
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
-import { ASSETS_EMPTY_CONFIG, ASSETS_SECTION_META } from './assets.config';
+import { ASSETS_EMPTY_CONFIG } from './assets.config';
 import { AssetsEmptyState } from './AssetsEmptyState';
 import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { InventoryListItem } from './InventoryListItem';
@@ -15,7 +15,6 @@ import { SwipeableAssetRow } from './SwipeableAssetRow';
 
 type InventorySectionProps = {
   inventory: InventoryItem[];
-  onAdd?: () => void;
   onEdit?: (item: InventoryItem) => void;
   onLearnMore?: () => void;
   onDelete?: (item: InventoryItem) => void;
@@ -23,12 +22,10 @@ type InventorySectionProps = {
 
 export function InventorySection({
   inventory,
-  onAdd,
   onEdit,
   onLearnMore,
   onDelete,
 }: InventorySectionProps) {
-  const meta = ASSETS_SECTION_META.inventario;
   const { data: answers } = useOnboardingAnswers();
   const personalized = getPersonalizedEmptyStateCopy('inventario', answers ?? null);
 
@@ -37,7 +34,7 @@ export function InventorySection({
     ...baseConfig,
     title: personalized.title || baseConfig.title,
     description: personalized.description || baseConfig.description,
-    actionLabel: personalized.actionLabel || baseConfig.actionLabel,
+    actionLabel: undefined,
   };
 
   const totalValue = inventory.reduce((sum, item) => sum + item.value, 0);
@@ -47,7 +44,6 @@ export function InventorySection({
       <View style={styles.container}>
         <AssetsEmptyState
           config={emptyConfig}
-          onPrimaryAction={onAdd}
           onSecondaryAction={onLearnMore}
         />
       </View>
@@ -58,8 +54,6 @@ export function InventorySection({
     <View style={styles.container}>
       <AssetsTabToolbar
         label={`${inventory.length} item${inventory.length === 1 ? '' : 's'}`}
-        addLabel={meta.addLabel}
-        onAdd={onAdd}
       />
 
       <Card variant="outlined" style={styles.summaryCard}>

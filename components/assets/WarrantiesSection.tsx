@@ -7,7 +7,6 @@ import type { Warranty } from '@/lib/domain/assets.types';
 import { getWarrantiesSummary, sortWarrantiesByUrgency } from '@/lib/domain/warranty.utils';
 import { colors, spacing } from '@/lib/theme';
 
-import { ASSETS_SECTION_META } from './assets.config';
 import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { SwipeableAssetRow } from './SwipeableAssetRow';
 import { WarrantiesEmptyState } from './WarrantiesEmptyState';
@@ -15,7 +14,6 @@ import { WarrantyListItem } from './WarrantyListItem';
 
 type WarrantiesSectionProps = {
   warranties: Warranty[];
-  onAdd?: () => void;
   onEdit?: (warranty: Warranty) => void;
   onLearnMore?: () => void;
   onDelete?: (warranty: Warranty) => void;
@@ -23,18 +21,16 @@ type WarrantiesSectionProps = {
 
 export function WarrantiesSection({
   warranties,
-  onAdd,
   onEdit,
   onLearnMore,
   onDelete,
 }: WarrantiesSectionProps) {
-  const meta = ASSETS_SECTION_META.garantias;
   const sortedWarranties = useMemo(() => sortWarrantiesByUrgency(warranties), [warranties]);
 
   if (warranties.length === 0) {
     return (
       <View style={styles.container}>
-        <WarrantiesEmptyState onCreate={onAdd} onLearnMore={onLearnMore} />
+        <WarrantiesEmptyState onLearnMore={onLearnMore} />
       </View>
     );
   }
@@ -45,8 +41,6 @@ export function WarrantiesSection({
     <View style={styles.container}>
       <AssetsTabToolbar
         label={`${warranties.length} garantia${warranties.length === 1 ? '' : 's'}`}
-        addLabel={meta.addLabel}
-        onAdd={onAdd}
       />
 
       {summary.expiringSoon > 0 || summary.expired > 0 ? (

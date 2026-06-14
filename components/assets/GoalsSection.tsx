@@ -6,7 +6,6 @@ import { getGoalsAggregate } from '@/lib/domain/goal.utils';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
-import { ASSETS_SECTION_META } from './assets.config';
 import { AssetsTabToolbar } from './AssetsTabToolbar';
 import { GoalListItem } from './GoalListItem';
 import { GoalProgressBar } from './GoalProgressBar';
@@ -15,19 +14,16 @@ import { SwipeableAssetRow } from './SwipeableAssetRow';
 
 type GoalsSectionProps = {
   goals: Goal[];
-  onAdd?: () => void;
   onEdit?: (goal: Goal) => void;
   onLearnMore?: () => void;
   onDelete?: (goal: Goal) => void;
 };
 
-export function GoalsSection({ goals, onAdd, onEdit, onLearnMore, onDelete }: GoalsSectionProps) {
-  const meta = ASSETS_SECTION_META.objetivos;
-
+export function GoalsSection({ goals, onEdit, onLearnMore, onDelete }: GoalsSectionProps) {
   if (goals.length === 0) {
     return (
       <View style={styles.container}>
-        <GoalsEmptyState onCreate={onAdd} onLearnMore={onLearnMore} />
+        <GoalsEmptyState onLearnMore={onLearnMore} />
       </View>
     );
   }
@@ -38,8 +34,6 @@ export function GoalsSection({ goals, onAdd, onEdit, onLearnMore, onDelete }: Go
     <View style={styles.container}>
       <AssetsTabToolbar
         label={`${goals.length} objetivo${goals.length === 1 ? '' : 's'}`}
-        addLabel={meta.addLabel}
-        onAdd={onAdd}
       />
 
       <Card variant="outlined" style={styles.summaryCard}>

@@ -3,14 +3,16 @@ import { StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { HomeAssetsSummary } from '@/lib/domain/home.types';
+import type { HomeAssetsTileHint } from '@/lib/onboarding/personalization';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
 type HomeAssetsSummaryCardProps = {
   summary: HomeAssetsSummary;
+  hints?: HomeAssetsTileHint;
 };
 
-export function HomeAssetsSummaryCard({ summary }: HomeAssetsSummaryCardProps) {
+export function HomeAssetsSummaryCard({ summary, hints = {} }: HomeAssetsSummaryCardProps) {
   return (
     <Card variant="outlined" style={styles.card}>
       <Text variant="label" color="textMuted">
@@ -21,21 +23,21 @@ export function HomeAssetsSummaryCard({ summary }: HomeAssetsSummaryCardProps) {
           icon={{ ios: 'target', android: 'flag', web: 'flag' }}
           label="Em objetivos"
           value={formatCurrency(summary.goalsSaved)}
-          hint={`${summary.goalsCount} activo${summary.goalsCount === 1 ? '' : 's'}`}
+          hint={hints.goals ?? `${summary.goalsCount} activo${summary.goalsCount === 1 ? '' : 's'}`}
           color={colors.primary}
         />
         <SummaryTile
           icon={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
           label="Garantias"
           value={String(summary.warrantiesCount)}
-          hint="registadas"
+          hint={hints.warranties ?? 'registadas'}
           color={colors.accent}
         />
         <SummaryTile
           icon={{ ios: 'archivebox.fill', android: 'inventory_2', web: 'inventory_2' }}
           label="Inventário"
           value={String(summary.inventoryCount)}
-          hint="itens"
+          hint={hints.inventory ?? 'itens'}
           color={colors.textSecondary}
         />
       </View>

@@ -10,6 +10,8 @@ import {
   DashboardSkeleton,
   DemoModeBadge,
   HomeAssetsSummaryCard,
+  HomeGoalHighlightCard,
+  HomePersonalizedInsightCard,
   HomeQuickActions,
   type RecommendedQuickAction,
   MetricCard,
@@ -20,7 +22,6 @@ import { AppHeader } from '@/components/layout';
 import { AddTransactionModal, TransactionListItem } from '@/components/movements';
 import { FinancialProfileDetailSheet, FinancialProfileProgress } from '@/components/profile';
 import {
-  EmptyState,
   ErrorState,
   RefetchingIndicator,
   ScreenContainer,
@@ -32,7 +33,11 @@ import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import {
   getContextualNoTransactionsMessage,
+  getHomeAssetsSummaryHints,
+  getHomePersonalizedInsight,
+  getPersonalizedFallbackSuggestions,
   getRecommendedHomeActions,
+  shouldPrioritizeGoals,
 } from '@/lib/onboarding/personalization';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
@@ -45,6 +50,7 @@ export default function InicioScreen() {
 
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
   const [addMovementVisible, setAddMovementVisible] = useState(false);
+  const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
 
   const header = <AppHeader leading={<DashboardHeaderLeading />} showBrand={false} />;
 
@@ -85,8 +91,36 @@ export default function InicioScreen() {
     suggestions,
     assetsSummary,
     recentTransactions,
+    featuredGoal,
     dataSource,
   } = data;
+
+  const openAddMovement = () => {
+    setStartWithReceiptPicker(false);
+    setAddMovementVisible(true);
+  };
+
+  const openReceiptScanner = () => {
+    setStartWithReceiptPicker(true);
+    setAddMovementVisible(true);
+  };
+
+  const closeAddMovement = () => {
+    setAddMovementVisible(false);
+    setStartWithReceiptPicker(false);
+  };
+
+  const assetsHints = getHomeAssetsSummaryHints(onboardingAnswers ?? null);
+  const homeInsight = getHomePersonalizedInsight(onboardingAnswers ?? null, {
+    goalsCount: assetsSummary.goalsCount,
+    warrantiesCount: assetsSummary.warrantiesCount,
+    hasFeaturedGoal: Boolean(featuredGoal),
+  });
+  const showGoalHighlight =
+    shouldPrioritizeGoals(onboardingAnswers ?? null) && featuredGoal !== null;
+  const showInsight = homeInsight && !showGoalHighlight;
+
+  const fallbackSuggestions = getPersonalizedFallbackSuggestions(onboardingAnswers ?? null);
 
   const netWorthChangeColor =
     netWorthChangeThisMonth > 0
@@ -102,7 +136,7 @@ export default function InicioScreen() {
       return {
         key: rec.key,
         label: rec.label,
-        onPress: () => setAddMovementVisible(true), // AddTransactionModal can start with picker via parent, but simple open for now
+        onPress: openReceiptScanner,
       };
     }
     if (rec.key === 'goal') {
@@ -129,9 +163,11 @@ export default function InicioScreen() {
     return {
       key: rec.key,
       label: rec.label,
-      onPress: () => setAddMovementVisible(true),
+      onPress: openAddMovement,
     };
   });
+
+  const hasGoalRecommendation = recommendedActions.some((action) => action.key === 'goal');
 
   const noTransactionsMessage = getContextualNoTransactionsMessage(
     onboardingAnswers ?? null,
@@ -160,7 +196,15 @@ export default function InicioScreen() {
 
           <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
 
-          <HomeAssetsSummaryCard summary={assetsSummary} />
+          {showGoalHighlight && featuredGoal ? (
+            <HomeGoalHighlightCard goal={featuredGoal} />
+          ) : null}
+
+          {showInsight && homeInsight ? (
+            <HomePersonalizedInsightCard insight={homeInsight} />
+          ) : null}
+
+          <HomeAssetsSummaryCard summary={assetsSummary} hints={assetsHints} />
 
           <FinancialProfileProgress
             profile={financialProfile}
@@ -264,28 +308,29 @@ export default function InicioScreen() {
                 <SuggestionCard key={suggestion.id} suggestion={suggestion} />
               ))
             ) : (
-              <EmptyState
-                icon={
-                  <SymbolView
-                    name={{
-                      ios: 'lightbulb.fill',
-                      android: 'lightbulb',
-                      web: 'lightbulb',
-                    }}
-                    tintColor={colors.primary}
-                    size={28}
-                  />
-                }
-                title="Tudo em ordem"
-                description="Quando tivermos mais dados, aparecerão aqui sugestões personalizadas para optimizar as tuas finanças."
-              />
+              fallbackSuggestions.map((suggestion) => (
+                <SuggestionCard
+                  key={suggestion.id}
+                  suggestion={{
+                    id: suggestion.id,
+                    title: suggestion.title,
+                    description: suggestion.description,
+                    type: suggestion.type,
+                    actionLabel: suggestion.actionLabel,
+                  }}
+                />
+              ))
             )}
           </View>
 
           <HomeQuickActions
-            onAddMovement={() => setAddMovementVisible(true)}
+            onAddMovement={openAddMovement}
             onViewMovements={() => router.push('/(tabs)/movimentos')}
-            onNewGoal={() => router.push('/(tabs)/ativos')}
+            onNewGoal={
+              !hasGoalRecommendation
+                ? () => router.push('/(tabs)/ativos?action=new-goal')
+                : undefined
+            }
             recommendedActions={recommendedActions}
           />
 
@@ -301,7 +346,8 @@ export default function InicioScreen() {
 
       <AddTransactionModal
         visible={addMovementVisible}
-        onClose={() => setAddMovementVisible(false)}
+        onClose={closeAddMovement}
+        startWithReceiptPicker={startWithReceiptPicker}
       />
     </View>
   );

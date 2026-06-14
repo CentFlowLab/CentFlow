@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   ASSETS_EMPTY_CONFIG,
-  ASSETS_SEGMENTS,
   AssetsOverviewCard,
   GoalFormModal,
   GoalsSection,
@@ -15,7 +14,7 @@ import {
   WarrantyFormModal,
   WarrantiesSection,
 } from '@/components/assets';
-import { AppHeader, SegmentedControl } from '@/components/layout';
+import { AppHeader } from '@/components/layout';
 import { ScreenContainer, ErrorState, AssetsSkeleton, RefetchingIndicator } from '@/components/ui';
 import {
   useAssets,
@@ -186,24 +185,17 @@ export default function AtivosScreen() {
             { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
           ]}>
           <ScreenContainer>
-            <AssetsOverviewCard
-              counts={counts}
-              activeTab={activeTab}
-              onTabPress={setActiveTab}
-            />
-
-            <View style={styles.segmentWrapper}>
-              <SegmentedControl
-                segments={ASSETS_SEGMENTS}
-                value={activeTab}
-                onChange={setActiveTab}
+            <View style={styles.overviewSection}>
+              <AssetsOverviewCard
+                counts={counts}
+                activeTab={activeTab}
+                onTabPress={setActiveTab}
               />
             </View>
 
             {activeTab === 'objetivos' ? (
               <GoalsSection
                 goals={assets.goals}
-                onAdd={openCreateGoal}
                 onEdit={openEditGoal}
                 onLearnMore={handleLearnMore}
                 onDelete={(goal) => deleteGoal.mutate(goal.id)}
@@ -213,7 +205,6 @@ export default function AtivosScreen() {
             {activeTab === 'garantias' ? (
               <WarrantiesSection
                 warranties={assets.warranties}
-                onAdd={openCreateWarranty}
                 onEdit={openEditWarranty}
                 onLearnMore={handleLearnMore}
                 onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
@@ -223,7 +214,6 @@ export default function AtivosScreen() {
             {activeTab === 'inventario' ? (
               <InventorySection
                 inventory={assets.inventory}
-                onAdd={openCreateInventory}
                 onEdit={openEditInventory}
                 onLearnMore={handleLearnMore}
                 onDelete={(item) => deleteInventory.mutate(item.id)}
@@ -260,8 +250,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  segmentWrapper: {
-    marginTop: spacing.lg,
+  overviewSection: {
     marginBottom: spacing['2xl'],
   },
   errorState: {

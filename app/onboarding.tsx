@@ -3,7 +3,6 @@ import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -63,7 +62,7 @@ function getFirstName(name: string): string {
 }
 
 export default function OnboardingScreen() {
-  const { complete, skip, userId } = useOnboarding();
+  const { complete, userId } = useOnboarding();
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
 
@@ -71,6 +70,7 @@ export default function OnboardingScreen() {
   useAnalytics();
 
   const hasTrackedStart = useRef(false);
+  const hasSeededDisplayName = useRef(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [welcomeReady, setWelcomeReady] = useState(false);
   const [revealPhase, setRevealPhase] = useState<'loading' | 'summary'>('loading');
@@ -83,10 +83,10 @@ export default function OnboardingScreen() {
   const { answers, patch } = useOnboardingAnswersState(profile?.name ?? '');
 
   useEffect(() => {
-    if (profile?.name && !answers.displayName) {
-      patch({ displayName: profile.name });
-    }
-  }, [profile?.name, answers.displayName, patch]);
+    if (hasSeededDisplayName.current || !profile?.name) return;
+    patch({ displayName: profile.name });
+    hasSeededDisplayName.current = true;
+  }, [profile?.name, patch]);
 
   const firstName = getFirstName(answers.displayName);
 
@@ -191,48 +191,19 @@ export default function OnboardingScreen() {
       ...answers,
       firstAction: action,
       completed: true,
+      skipped: false,
       completedAt: new Date().toISOString(),
     };
 
     await saveOnboardingAnswersForUser(userId!, finalAnswers);
     await complete(finalAnswers);
 
-    // Track successful completion (not skipped)
     track(AnalyticsEvents.ONBOARDING_COMPLETED, {
       skipped: false,
       profile_tags: answers.profileTags,
     });
 
-    const routes: Record<WowActionId, Href> = {
-      first_receipt: '/(tabs)/movimentos?action=receipt' as Href,
-      first_asset: '/(tabs)/ativos?action=new-asset' as Href,
-      first_goal: '/(tabs)/ativos?action=new-goal' as Href,
-      first_warranty: '/(tabs)/ativos?action=new-warranty' as Href,
-    };
-
-    router.replace(routes[action]);
-  }
-
-  function confirmSkip() {
-    Alert.alert(
-      'Saltar onboarding?',
-      'Podes completar mais tarde nas definições. A experiência será menos personalizada.',
-      [
-        { text: 'Continuar onboarding', style: 'cancel' },
-        {
-          text: 'Saltar',
-          style: 'destructive',
-          onPress: () => {
-            // Capture step before skipping
-            const stepAtSkip = stepIndex;
-            void skip().then(() => {
-              track(AnalyticsEvents.ONBOARDING_SKIPPED, { step: stepAtSkip });
-              router.replace('/(tabs)' as Href);
-            });
-          },
-        },
-      ],
-    );
+    router.replace('/(tabs)' as Href);
   }
 
   const insights = getOnboardingInsights(answers);
@@ -664,7 +635,6 @@ export default function OnboardingScreen() {
     <OnboardingShell
       showBack={stepIndex > 0 && step !== 'reveal'}
       onBack={goBack}
-      onSkip={step !== 'wow' ? confirmSkip : undefined}
       showProgress={showProgress}
       progress={progress}
       footer={renderFooter()}>

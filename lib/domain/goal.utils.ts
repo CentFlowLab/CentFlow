@@ -25,3 +25,18 @@ export function getGoalsAggregate(goals: Goal[]) {
 
   return { totalTarget, totalCurrent, percent, count: goals.length };
 }
+
+/** Objetivo em destaque para o ecrã Início (maior progresso entre os incompletos). */
+export function pickFeaturedGoal(goals: Goal[]): Goal | null {
+  if (goals.length === 0) return null;
+
+  const incomplete = goals.filter(
+    (goal) => goal.target > 0 && goal.current < goal.target,
+  );
+
+  if (incomplete.length === 0) return goals[0];
+
+  return [...incomplete].sort(
+    (a, b) => getGoalProgress(b).percent - getGoalProgress(a).percent,
+  )[0];
+}

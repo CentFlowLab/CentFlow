@@ -14,7 +14,7 @@ import {
  * Gate global de onboarding para rotas autenticadas.
  *
  * Protege tabs, settings e deep links. Só `/onboarding` fica acessível até
- * `completed` ou `skip`. Enquanto verifica o estado, mostra loading suave.
+ * `completed`. Enquanto verifica o estado, mostra loading suave.
  */
 export function OnboardingGateEffect() {
   const router = useRouter();

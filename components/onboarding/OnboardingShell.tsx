@@ -10,7 +10,6 @@ import { colors, spacing } from '@/lib/theme';
 type OnboardingShellProps = {
   children: ReactNode;
   onBack?: () => void;
-  onSkip?: () => void;
   showBack?: boolean;
   progress?: number;
   showProgress?: boolean;
@@ -20,7 +19,6 @@ type OnboardingShellProps = {
 export function OnboardingShell({
   children,
   onBack,
-  onSkip,
   showBack = false,
   progress = 0,
   showProgress = false,
@@ -51,15 +49,7 @@ export function OnboardingShell({
           CentFlow
         </Text>
 
-        {onSkip ? (
-          <Pressable onPress={onSkip} hitSlop={12}>
-            <Text variant="caption" color="textMuted">
-              Saltar
-            </Text>
-          </Pressable>
-        ) : (
-          <View style={styles.backPlaceholder} />
-        )}
+        <View style={styles.backPlaceholder} />
       </View>
 
       {showProgress ? (

@@ -66,7 +66,7 @@ function RootNavigator() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/*
         Onboarding gate (OnboardingGateEffect):
-        - Sem onboarding concluído/saltado → redirecciona para /onboarding
+        - Sem onboarding concluído → redirecciona para /onboarding
         - Protege (tabs), settings/* e deep links autenticados
         - Bypass em dev: EXPO_PUBLIC_SKIP_ONBOARDING=true
       */}
