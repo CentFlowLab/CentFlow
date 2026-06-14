@@ -4,6 +4,7 @@ import {
   openGoogleOAuthBrowser,
   parseGoogleOAuthCallbackUrl,
 } from '@/lib/auth/google-oauth';
+import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import { Platform } from 'react-native';
 
 import { getSupabaseClient } from './client';
@@ -101,6 +102,39 @@ export async function login(credentials: LoginCredentials): Promise<AuthSession>
 
 async function createSessionFromOAuthUrl(url: string): Promise<AuthSession> {
   const supabase = getSupabaseClient();
+  const { params, errorCode } = QueryParams.getQueryParams(url);
+
+  if (errorCode) {
+    throw new Error(String(errorCode));
+  }
+
+  if (params.error_description) {
+    throw new Error(String(params.error_description));
+  }
+
+  if (params.error) {
+    throw new Error(String(params.error));
+  }
+
+  // Supabase usa PKCE por defeito — o callback traz ?code=, não access_token.
+  if (params.code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(String(params.code));
+
+    if (error) throw new Error(error.message);
+    if (!data.session?.access_token || !data.session.user) {
+      throw new Error('Sessão Google inválida');
+    }
+
+    const user = await fetchProfileUser(
+      data.session.user.id,
+      data.session.user.email ?? '',
+      data.session.user.user_metadata,
+    );
+
+    return toAuthSession(data.session.access_token, user);
+  }
+
+  // Fallback: fluxo implícito (legado) com tokens no URL.
   const tokens = parseGoogleOAuthCallbackUrl(url);
 
   const { data, error } = await supabase.auth.setSession({
@@ -233,10 +267,23 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 export async function restoreSession(): Promise<AuthSession | null> {
-  const supabase = getSupabaseClient();
+  let supabase;
+  try {
+    supabase = getSupabaseClient();
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[supabase/auth] Cliente indisponível em restoreSession:', error);
+    }
+    return null;
+  }
 
   const { data, error } = await supabase.auth.getSession();
-  if (error) return null;
+  if (error) {
+    if (__DEV__) {
+      console.warn('[supabase/auth] getSession erro:', error.message);
+    }
+    return null;
+  }
 
   const session = data.session;
   if (!session?.access_token || !session.user) return null;

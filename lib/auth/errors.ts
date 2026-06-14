@@ -1,7 +1,9 @@
-import { API_BASE_URL, ApiError } from '@/lib/api/client';
+import { API_BASE_URL, ApiError, isLegacyPlaceholderApiUrl } from '@/lib/api/client';
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
+import { isSupabaseEnabled } from '@/lib/supabase';
 
 const AUTH_MESSAGES: Record<number, string> = {
-  400: 'Dados inválidos. Verifica os campos e tenta novamente.',
+  400: 'Pedido inválido. Verifica os dados e tenta novamente.',
   401: 'Email ou password incorretos.',
   403: 'Não tens permissão para aceder.',
   404: 'Conta não encontrada.',
@@ -33,13 +35,24 @@ function isNetworkFailure(error: unknown): boolean {
   return false;
 }
 
-function isPlaceholderApiUrl(): boolean {
-  return API_BASE_URL.includes('api.centflow.app');
-}
-
 /** Mensagens legíveis para erros comuns do Supabase Auth. */
 function mapSupabaseAuthMessage(message: string): string {
   const lower = message.toLowerCase();
+
+  if (
+    lower.includes('url de callback oauth em falta') ||
+    lower.includes('tokens oauth em falta')
+  ) {
+    return 'Não foi possível concluir o login com Google. Tenta novamente a partir do ecrã de entrada.';
+  }
+
+  if (lower.includes('login com google cancelado')) {
+    return 'Login com Google cancelado.';
+  }
+
+  if (lower.includes('login com google falhou')) {
+    return 'Não foi possível concluir o login com Google. Tenta outra vez.';
+  }
 
   if (lower.includes('email rate limit exceeded')) {
     return (
@@ -77,45 +90,59 @@ function mapSupabaseAuthMessage(message: string): string {
     lower.includes('unsupported provider')
   ) {
     return (
-      'Login com Google não está activo no servidor. No Supabase Dashboard, activa ' +
-      'Authentication → Providers → Google e configura o Client ID e Client Secret ' +
-      '(Google Cloud Console).'
+      'Login com Google não está activo no servidor. Contacta o suporte ou tenta entrar com email e password.'
+    );
+  }
+
+  if (
+    lower.includes('redirect_uri_mismatch') ||
+    lower.includes('redirect uri') ||
+    lower.includes('invalid redirect')
+  ) {
+    return 'Configuração OAuth incorrecta. Tenta entrar com email e password ou contacta o suporte.';
+  }
+
+  if (lower.includes('supabase não configurado')) {
+    return (
+      'Ligação ao servidor não configurada nesta versão da app. ' +
+      'Instala a build Beta mais recente ou contacta o suporte.'
     );
   }
 
   return message;
 }
 
+function getNetworkMessage(): string {
+  const isLocalhost = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
+
+  if (isLocalhost) {
+    return (
+      'Não foi possível ligar ao servidor. No telemóvel, usa o IP do teu PC na mesma Wi‑Fi no ficheiro .env.'
+    );
+  }
+
+  if (isSupabaseEnabled() || isRealDataOnlyVariant()) {
+    return 'Sem ligação ao servidor. Verifica a internet e tenta novamente.';
+  }
+
+  if (isLegacyPlaceholderApiUrl()) {
+    return 'O servidor ainda não está disponível. Para testar offline, activa EXPO_PUBLIC_MOCK_AUTH=true em desenvolvimento.';
+  }
+
+  return `Sem ligação ao servidor (${API_BASE_URL}). Verifica a internet e tenta novamente.`;
+}
+
 export function getAuthErrorMessage(error: unknown): string {
   if (isNetworkFailure(error)) {
-    const isLocalhost = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
-
-    if (isLocalhost) {
-      return (
-        'Não foi possível ligar à API. No telemóvel, localhost não funciona — ' +
-        'usa o IP do teu PC na mesma Wi‑Fi (ex: http://192.168.1.72:3000) no ficheiro .env.'
-      );
-    }
-
-    if (isPlaceholderApiUrl()) {
-      return (
-        'O servidor da API ainda não está disponível (api.centflow.app). ' +
-        'Para testar no telemóvel, gera um IPA com EXPO_PUBLIC_MOCK_AUTH=true no GitHub Actions.'
-      );
-    }
-
-    return (
-      `Não foi possível ligar ao servidor (${API_BASE_URL}). ` +
-      'Verifica a internet, se a API está online e se o URL está correcto no .env.'
-    );
+    return getNetworkMessage();
   }
 
   if (error instanceof ApiError) {
     const body = error.body as ErrorBody | undefined;
 
-    if (body?.message) return body.message;
-    if (body?.error) return body.error;
-    if (body?.errors?.[0]?.message) return body.errors[0].message;
+    if (body?.message) return mapSupabaseAuthMessage(body.message);
+    if (body?.error) return mapSupabaseAuthMessage(body.error);
+    if (body?.errors?.[0]?.message) return mapSupabaseAuthMessage(body.errors[0].message);
     if (AUTH_MESSAGES[error.status]) return AUTH_MESSAGES[error.status];
   }
 

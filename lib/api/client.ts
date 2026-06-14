@@ -1,7 +1,29 @@
 import { getAccessToken } from './token';
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
+import { getSupabaseUrl, isSupabaseEnabled } from '@/lib/supabase';
 
-export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? 'https://api.centflow.app';
+const LEGACY_PLACEHOLDER_API = 'https://api.centflow.app';
+
+function resolveApiBaseUrl(): string {
+  const configured = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+  if (configured && !configured.includes('api.centflow.app')) {
+    return configured;
+  }
+
+  if (isSupabaseEnabled() || isRealDataOnlyVariant()) {
+    const supabaseUrl = getSupabaseUrl();
+    if (supabaseUrl) return supabaseUrl;
+  }
+
+  return configured || LEGACY_PLACEHOLDER_API;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
+
+export function isLegacyPlaceholderApiUrl(): boolean {
+  return API_BASE_URL.includes('api.centflow.app');
+}
 
 export class ApiError extends Error {
   constructor(

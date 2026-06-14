@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api/client';
 import { loadMockProfileOverlay } from '@/lib/api/services/profile.service';
 import { getAccessToken, setAccessToken } from '@/lib/api/token';
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { isSupabaseEnabled, supabaseAuth } from '@/lib/supabase';
 
 import { AUTH_ENDPOINTS } from './constants';
@@ -67,10 +68,20 @@ async function persistSession(session: AuthSession): Promise<AuthSession> {
   return session;
 }
 
+function assertSupabaseAuthBackend(): void {
+  if (isRealDataOnlyVariant() && !isSupabaseEnabled()) {
+    throw new Error(
+      'Supabase não configurado. Define EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY na build Beta.',
+    );
+  }
+}
+
 export async function login(credentials: LoginCredentials): Promise<AuthSession> {
   if (isMockAuthEnabled()) {
     return persistSession(createMockSession(credentials));
   }
+
+  assertSupabaseAuthBackend();
 
   if (isSupabaseEnabled()) {
     return persistSession(await supabaseAuth.login(credentials));
@@ -91,6 +102,8 @@ export async function register(credentials: RegisterCredentials): Promise<AuthSe
   if (isMockAuthEnabled()) {
     return persistSession(createMockSession(credentials));
   }
+
+  assertSupabaseAuthBackend();
 
   if (isSupabaseEnabled()) {
     return persistSession(await supabaseAuth.register(credentials));
@@ -114,6 +127,8 @@ export async function loginWithGoogle(): Promise<GoogleSignInResult> {
   if (isMockAuthEnabled()) {
     return persistSession(createMockGoogleSession());
   }
+
+  assertSupabaseAuthBackend();
 
   if (isSupabaseEnabled()) {
     const result = await supabaseAuth.signInWithGoogle();
@@ -188,14 +203,22 @@ export async function requestPasswordReset(email: string): Promise<void> {
 /** Carrega token guardado e valida sessão. */
 export async function restoreSession(): Promise<AuthSession | null> {
   if (isSupabaseEnabled()) {
-    const session = await supabaseAuth.restoreSession();
-    if (!session) {
+    try {
+      const session = await supabaseAuth.restoreSession();
+      if (!session) {
+        await clearSession();
+        return null;
+      }
+      setAccessToken(session.token);
+      await saveToken(session.token);
+      return session;
+    } catch (error) {
+      if (__DEV__) {
+        console.warn('[auth] restoreSession (Supabase) falhou:', error);
+      }
       await clearSession();
       return null;
     }
-    setAccessToken(session.token);
-    await saveToken(session.token);
-    return session;
   }
 
   const token = await loadToken();

@@ -1,12 +1,19 @@
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import {
+  DarkTheme,
+  Stack,
+  ThemeProvider,
+  type ErrorBoundaryProps,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { StartupErrorScreen } from '@/components/app';
 import { AuthLoadingScreen } from '@/components/auth';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -14,8 +21,6 @@ import { queryClient } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { PreferencesProvider } from '@/lib/preferences/PreferencesProvider';
 import { colors } from '@/lib/theme';
-
-export { ErrorBoundary } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,25 +37,39 @@ const CentFlowTheme = {
   },
 };
 
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return (
+    <SafeAreaProvider>
+      <StartupErrorScreen
+        error={error}
+        onRetry={retry}
+        message="Ocorreu um erro inesperado. Podes tentar abrir a app novamente."
+      />
+    </SafeAreaProvider>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <PreferencesProvider>
-            <ThemeProvider value={CentFlowTheme}>
-              <StatusBar style="light" />
-              <RootNavigator />
-            </ThemeProvider>
-          </PreferencesProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ToastProvider>
+            <PreferencesProvider>
+              <ThemeProvider value={CentFlowTheme}>
+                <StatusBar style="light" />
+                <RootNavigator />
+              </ThemeProvider>
+            </PreferencesProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
 
 function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, startupError, retryBootstrap } = useAuth();
 
   useEffect(() => {
     if (!isLoading) {
@@ -60,6 +79,16 @@ function RootNavigator() {
 
   if (isLoading) {
     return <AuthLoadingScreen />;
+  }
+
+  if (startupError) {
+    return (
+      <StartupErrorScreen
+        message={startupError}
+        onRetry={retryBootstrap}
+        retryLoading={isLoading}
+      />
+    );
   }
 
   return (

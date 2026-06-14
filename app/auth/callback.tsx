@@ -5,38 +5,44 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { AuthLoadingScreen } from '@/components/auth';
 import { Button, Card, Text } from '@/components/ui';
-import { useAuth } from '@/lib/auth';
+import { getAuthErrorMessage, resolveOAuthCallbackUrl, useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
 export default function AuthCallbackScreen() {
   const { completeGoogleSignInFromCallback } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(true);
+  const deepLinkUrl = Linking.useURL();
 
   useEffect(() => {
     let mounted = true;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
     async function completeOAuth() {
       try {
-        const url =
+        const initialUrl =
           Platform.OS === 'web' && typeof window !== 'undefined'
             ? window.location.href
             : await Linking.getInitialURL();
 
-        if (!url) {
-          throw new Error('URL de callback OAuth em falta');
+        const callbackUrl = await resolveOAuthCallbackUrl(initialUrl, deepLinkUrl);
+
+        if (!callbackUrl) {
+          redirectTimer = setTimeout(() => {
+            if (mounted) router.replace('/(auth)/login');
+          }, 120);
+          return;
         }
 
-        await completeGoogleSignInFromCallback(url);
+        await completeGoogleSignInFromCallback(callbackUrl);
 
         if (!mounted) return;
         router.replace('/(tabs)');
       } catch (callbackError) {
         if (!mounted) return;
-        setError(
-          callbackError instanceof Error
-            ? callbackError.message
-            : 'Não foi possível concluir o login com Google',
-        );
+        setError(getAuthErrorMessage(callbackError));
+      } finally {
+        if (mounted) setIsResolving(false);
       }
     }
 
@@ -44,8 +50,13 @@ export default function AuthCallbackScreen() {
 
     return () => {
       mounted = false;
+      if (redirectTimer) clearTimeout(redirectTimer);
     };
-  }, [completeGoogleSignInFromCallback]);
+  }, [completeGoogleSignInFromCallback, deepLinkUrl]);
+
+  if (isResolving && !error) {
+    return <AuthLoadingScreen message="A concluir login com Google..." />;
+  }
 
   if (error) {
     return (
@@ -69,7 +80,7 @@ export default function AuthCallbackScreen() {
     );
   }
 
-  return <AuthLoadingScreen message="A concluir login com Google..." />;
+  return <AuthLoadingScreen message="A redirecionar..." />;
 }
 
 const styles = StyleSheet.create({

@@ -1,5 +1,10 @@
 export { isSupabaseEnabled, isGoogleSignInAvailable, getSupabaseUrl, getSupabaseAnonKey } from './config';
-export { getSupabaseClient, resetSupabaseClient } from './client';
+export {
+  getSupabaseClient,
+  getSupabaseInitError,
+  resetSupabaseClient,
+  tryGetSupabaseClient,
+} from './client';
 export * as supabaseAuth from './auth';
 export * as supabaseTransactions from './transactions';
 export * as supabaseReceipts from './receipts';

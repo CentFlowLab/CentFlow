@@ -14,6 +14,7 @@ import { buildMockAnalysisData } from '@/lib/data/analysis.mocks';
 import { buildMockDashboard } from '@/lib/data/mocks';
 import { composeAnalysisFromSources } from '@/lib/domain/analysis.compose';
 import type { AnalysisData } from '@/lib/domain/analysis.types';
+import { isSupabaseEnabled } from '@/lib/supabase';
 import type {
   RawAnalysisInsight,
   RawAnalysisMetric,
@@ -63,6 +64,10 @@ export async function fetchAnalysisData(): Promise<AnalysisData> {
     } catch {
       return buildMockAnalysisData();
     }
+  }
+
+  if (isSupabaseEnabled()) {
+    return fetchLocalAnalysisData();
   }
 
   try {

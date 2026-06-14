@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError } from '@/lib/api/client';
+import { API_BASE_URL, ApiError, isLegacyPlaceholderApiUrl } from '@/lib/api/client';
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 
 export type ScreenErrorContext =
@@ -73,7 +73,7 @@ function isLocalApiUrl(): boolean {
 }
 
 function isPlaceholderApiUrl(): boolean {
-  return API_BASE_URL.includes('api.centflow.app');
+  return isLegacyPlaceholderApiUrl();
 }
 
 function getNetworkMessage(): string {

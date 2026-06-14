@@ -35,7 +35,12 @@ async function fetchSupabaseAnswers(userId: string): Promise<OnboardingAnswers> 
     .eq('user_id', userId)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (__DEV__) {
+      console.warn('[onboarding] fetchSupabaseAnswers:', error.message);
+    }
+    throw new Error(error.message);
+  }
   if (!data) return { ...EMPTY_ONBOARDING_ANSWERS };
 
   return mapRow(data as OnboardingRow);

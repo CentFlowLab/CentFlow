@@ -22,12 +22,15 @@ export function useOnboarding() {
   const {
     data: completed,
     isPending,
+    isError,
     refetch: refreshCompletion,
   } = useQuery({
     queryKey: queryKeys.onboardingStatus(userId ?? ''),
     queryFn: () => isOnboardingComplete(userId!),
     enabled: Boolean(userId) && !bypass,
     staleTime: 0,
+    retry: 1,
+    throwOnError: false,
   });
 
   useEffect(() => {
@@ -75,8 +78,9 @@ export function useOnboarding() {
   }, [queryClient, userId]);
 
   return {
-    completed: bypass ? true : (completed ?? null),
+    completed: bypass ? true : isError ? true : (completed ?? null),
     isLoading: !bypass && Boolean(userId) && isPending,
+    isError,
     complete,
     reset,
     refreshCompletion,

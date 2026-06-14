@@ -83,12 +83,16 @@ O provider Google está **desactivado** no projecto Supabase. A app está correc
 3. Copia o **Client ID** e **Client Secret** do tipo **Web application** (Google Cloud Console → APIs & Services → Credentials)
 4. Guarda as alterações no Supabase
 
-#### Redirect URLs (obrigatório)
+### Redirect URLs (obrigatório)
 
 **Supabase** → Authentication → URL Configuration → Redirect URLs:
 
 - `centflow://auth/callback`
 - `centflow://**`
+
+**Google Cloud Console** → Credentials → Web client → Authorized redirect URIs:
+
+- `https://oxhjfwmhcwadlltinlck.supabase.co/auth/v1/callback`
 
 #### Android (SHA-1)
 

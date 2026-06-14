@@ -10,7 +10,6 @@
       "channel": "development",
       "env": {
         "EXPO_PUBLIC_APP_VARIANT": "development",
-        "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
         "EXPO_PUBLIC_MOCK_AUTH": "true",
         "EXPO_PUBLIC_USE_MOCK": "false",
         "EXPO_PUBLIC_MOCK_OCR": "false"
@@ -28,7 +27,6 @@
       "channel": "preview",
       "env": {
         "EXPO_PUBLIC_APP_VARIANT": "beta",
-        "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
         "EXPO_PUBLIC_MOCK_AUTH": "false",
         "EXPO_PUBLIC_USE_MOCK": "false",
         "EXPO_PUBLIC_MOCK_OCR": "false",
@@ -57,7 +55,6 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_APP_VARIANT": "production",
-        "EXPO_PUBLIC_API_URL": "https://api.centflow.app",
         "EXPO_PUBLIC_MOCK_AUTH": "false",
         "EXPO_PUBLIC_USE_MOCK": "false",
         "EXPO_PUBLIC_MOCK_OCR": "false",

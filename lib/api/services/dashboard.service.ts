@@ -6,6 +6,7 @@ import {
   mapDashboardResponse,
   mapNetWorth,
 } from '@/lib/api/mappers/dashboard.mapper';
+import { composeDashboardFromLocalSources } from '@/lib/domain/dashboard.compose';
 import type { DashboardData } from '@/lib/domain';
 import type {
   RawAttentionItem,
@@ -15,6 +16,10 @@ import type {
   RawSuggestion,
   RawTransactionsSummary,
 } from '@/lib/types';
+import { isSupabaseEnabled } from '@/lib/supabase';
+
+import { fetchAssetsData } from './assets.service';
+import { fetchTransactions } from './transaction.service';
 
 /**
  * Obtém dados do Dashboard.
@@ -26,6 +31,14 @@ import type {
  * Substituído: buildMockDashboard() — mocks removidos deste fluxo.
  */
 export async function fetchDashboardData(): Promise<DashboardData> {
+  if (isSupabaseEnabled()) {
+    const [transactions, assets] = await Promise.all([
+      fetchTransactions('all'),
+      fetchAssetsData(),
+    ]);
+    return composeDashboardFromLocalSources({ transactions, assets });
+  }
+
   try {
     const raw = await apiFetch<RawDashboardResponse>(API_ENDPOINTS.dashboard);
     return mapDashboardResponse(raw);
