@@ -8,6 +8,8 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
+const ACTION_ICON_COLOR = '#FFFFFF';
+
 type SwipeableTransactionListItemProps = {
   transaction: Transaction;
   onEdit: (transaction: Transaction) => void;
@@ -58,32 +60,34 @@ export function SwipeableTransactionListItem({
       <View style={styles.actions}>
         <Pressable
           onPress={() => onEdit(transaction)}
-          style={[styles.actionButton, styles.editAction]}
+          style={({ pressed }) => [
+            styles.actionButton,
+            styles.editAction,
+            pressed && styles.actionPressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel="Editar movimento">
           <SymbolView
             name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
-            tintColor={colors.textInverse}
-            size={20}
+            tintColor={ACTION_ICON_COLOR}
+            size={22}
           />
-          <Text variant="caption" style={styles.actionLabel}>
-            Editar
-          </Text>
         </Pressable>
 
         <Pressable
           onPress={confirmDelete}
-          style={[styles.actionButton, styles.deleteAction]}
+          style={({ pressed }) => [
+            styles.actionButton,
+            styles.deleteAction,
+            pressed && styles.actionPressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel="Eliminar movimento">
           <SymbolView
             name={{ ios: 'trash.fill', android: 'delete', web: 'delete' }}
-            tintColor={colors.textInverse}
-            size={20}
+            tintColor={ACTION_ICON_COLOR}
+            size={22}
           />
-          <Text variant="caption" style={styles.actionLabel}>
-            Eliminar
-          </Text>
         </Pressable>
       </View>
     );
@@ -96,33 +100,33 @@ export function SwipeableTransactionListItem({
       delayLongPress={320}
       style={({ pressed }) => [pressed && styles.rowPressed]}>
       <Card variant="elevated" style={styles.card}>
-      <View style={[styles.iconWrapper, isIncome ? styles.iconIncome : styles.iconExpense]}>
-        <SymbolView name={icon} tintColor={amountColor} size={20} />
-      </View>
+        <View style={[styles.iconWrapper, isIncome ? styles.iconIncome : styles.iconExpense]}>
+          <SymbolView name={icon} tintColor={amountColor} size={20} />
+        </View>
 
-      <View style={styles.content}>
-        <Text variant="bodyMedium" numberOfLines={1}>
-          {title}
+        <View style={styles.content}>
+          <Text variant="bodyMedium" numberOfLines={1}>
+            {title}
+          </Text>
+          <Text variant="caption" color="textMuted" numberOfLines={1}>
+            {transaction.categoryLabel} · {formatDateShort(transaction.date)}
+            {hasReceipt ? ' · Talão' : ''}
+          </Text>
+        </View>
+
+        {hasReceipt ? (
+          <SymbolView
+            name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
+            tintColor={colors.textMuted}
+            size={16}
+          />
+        ) : null}
+
+        <Text variant="bodyMedium" style={{ color: amountColor }}>
+          {prefix}
+          {formatCurrency(transaction.amount, transaction.currency)}
         </Text>
-        <Text variant="caption" color="textMuted" numberOfLines={1}>
-          {transaction.categoryLabel} · {formatDateShort(transaction.date)}
-          {hasReceipt ? ' · Talão' : ''}
-        </Text>
-      </View>
-
-      {hasReceipt ? (
-        <SymbolView
-          name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
-          tintColor={colors.textMuted}
-          size={16}
-        />
-      ) : null}
-
-      <Text variant="bodyMedium" style={{ color: amountColor }}>
-        {prefix}
-        {formatCurrency(transaction.amount, transaction.currency)}
-      </Text>
-    </Card>
+      </Card>
     </Pressable>
   );
 
@@ -135,6 +139,7 @@ export function SwipeableTransactionListItem({
       renderRightActions={renderRightActions}
       overshootRight={false}
       friction={2}
+      rightThreshold={40}
       containerStyle={styles.wrapper}>
       {row}
     </Swipeable>
@@ -152,6 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    minHeight: 72,
   },
   iconWrapper: {
     width: 40,
@@ -172,31 +178,27 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingLeft: spacing.sm,
     marginBottom: spacing.md,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
+    height: 72,
   },
   actionButton: {
-    width: 76,
+    width: 56,
+    height: 56,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
   },
   editAction: {
-    backgroundColor: colors.primaryDark,
-    borderTopLeftRadius: radius.lg,
-    borderBottomLeftRadius: radius.lg,
+    backgroundColor: colors.primary,
   },
   deleteAction: {
     backgroundColor: colors.danger,
-    borderTopRightRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
   },
-  actionLabel: {
-    color: colors.textInverse,
-    fontWeight: '600',
-    fontSize: 11,
+  actionPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.96 }],
   },
 });

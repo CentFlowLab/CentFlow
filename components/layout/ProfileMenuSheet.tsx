@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -18,7 +18,7 @@ type ProfileMenuSheetProps = {
 type MenuItem = {
   id: string;
   label: string;
-  icon: { ios: string; android: string; web: string };
+  icon: SymbolViewProps['name'];
   onPress: () => void;
   tone?: 'default' | 'danger';
 };
@@ -58,7 +58,7 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
       icon: { ios: 'person.circle', android: 'account_circle', web: 'account_circle' },
       onPress: () => {
         onClose();
-        router.push('/(tabs)/perfil');
+        router.push('/settings/personal-data');
       },
     },
     {

@@ -36,33 +36,35 @@ function buildTransactionRows(transactions: Transaction[]): string {
   }
 
   return `
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Descrição</th>
-          <th>Categoria</th>
-          <th>Data</th>
-          <th class="align-right">Valor</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${recent
-          .map((item) => {
-            const prefix = item.type === 'income' ? '+' : '−';
-            const tone = item.type === 'income' ? 'positive' : 'negative';
-            const title = escapeHtml(item.description?.trim() || item.categoryLabel);
-            return `
-              <tr>
-                <td>${title}</td>
-                <td>${escapeHtml(item.categoryLabel)}</td>
-                <td>${escapeHtml(formatDateShort(item.date))}</td>
-                <td class="align-right ${tone}">${prefix}${escapeHtml(formatCurrency(item.amount, item.currency))}</td>
-              </tr>
-            `;
-          })
-          .join('')}
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-desc">Descrição</th>
+            <th class="col-cat">Categoria</th>
+            <th class="col-date">Data</th>
+            <th class="col-value align-right">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${recent
+            .map((item) => {
+              const prefix = item.type === 'income' ? '+' : '−';
+              const tone = item.type === 'income' ? 'positive' : 'negative';
+              const title = escapeHtml(item.description?.trim() || item.categoryLabel);
+              return `
+                <tr>
+                  <td>${title}</td>
+                  <td>${escapeHtml(item.categoryLabel)}</td>
+                  <td>${escapeHtml(formatDateShort(item.date))}</td>
+                  <td class="align-right ${tone}">${prefix}${escapeHtml(formatCurrency(item.amount, item.currency))}</td>
+                </tr>
+              `;
+            })
+            .join('')}
+        </tbody>
+      </table>
+    </div>
   `;
 }
 
@@ -161,203 +163,316 @@ function buildPdfHtml(input: FinancialPdfInput): string {
     year: 'numeric',
   });
 
+  function section(title: string, body: string): string {
+    return `
+      <section class="section">
+        <div class="section-head">
+          <span class="section-accent"></span>
+          <h2 class="section-title">${escapeHtml(title)}</h2>
+        </div>
+        <div class="section-body">${body}</div>
+      </section>
+    `;
+  }
+
+  const patrimonioBody = `
+    <div class="hero-block">
+      <span class="label">Património líquido</span>
+      <div class="hero-value">${escapeHtml(netWorth)}</div>
+    </div>
+    <div class="grid-2">
+      <div class="stat-card">
+        <span class="label">Variação recente</span>
+        <span class="stat-value accent">${escapeHtml(change)}</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Este mês</span>
+        <span class="stat-value">${escapeHtml(monthlyChange)}</span>
+      </div>
+      <div class="stat-card wide">
+        <span class="label">Gastos da semana</span>
+        <span class="stat-value">${escapeHtml(weeklySpending)}</span>
+      </div>
+    </div>
+  `;
+
+  const perfilBody = `
+    <div class="grid-2">
+      <div class="stat-card">
+        <span class="label">Pontuação</span>
+        <span class="stat-value accent">${score}%</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Nível</span>
+        <span class="stat-value">${escapeHtml(level)}</span>
+      </div>
+    </div>
+  `;
+
   return `
     <html>
       <head>
         <meta charset="utf-8" />
         <style>
+          :root {
+            --bg: #05080E;
+            --surface: #101820;
+            --surface-deep: #0A1214;
+            --border: #1E2A33;
+            --border-soft: #162029;
+            --text: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --primary: #2DD4BF;
+            --primary-dark: #14B8A6;
+            --accent: #F0C14D;
+            --danger: #F87171;
+            --success: #34D399;
+            --radius: 14px;
+            --radius-sm: 10px;
+          }
+
           * { box-sizing: border-box; }
+
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: #F8FAFC;
-            background: #05080E;
+            color: var(--text);
+            background: var(--bg);
             margin: 0;
-            padding: 32px;
+            padding: 36px 32px 40px;
+            line-height: 1.45;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
-          .header {
-            border-bottom: 1px solid #1E2A33;
-            padding-bottom: 20px;
-            margin-bottom: 24px;
+
+          .page-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 22px;
+            margin-bottom: 28px;
           }
+
           .brand {
-            color: #2DD4BF;
-            font-size: 12px;
-            letter-spacing: 0.14em;
+            color: var(--primary);
+            font-size: 11px;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
             font-weight: 700;
           }
+
           h1 {
-            color: #F8FAFC;
-            font-size: 28px;
-            margin: 8px 0 4px;
+            color: var(--text);
+            font-size: 30px;
+            font-weight: 700;
+            margin: 10px 0 6px;
+            letter-spacing: -0.02em;
           }
-          .meta { color: #94A3B8; font-size: 13px; }
+
+          .meta {
+            color: var(--text-secondary);
+            font-size: 13px;
+          }
+
           .section {
-            background: #101820;
-            border: 1px solid #1E2A33;
-            border-radius: 16px;
-            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 18px;
+            overflow: hidden;
+          }
+
+          .section-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px 0;
+          }
+
+          .section-accent {
+            width: 4px;
+            height: 18px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+            flex-shrink: 0;
+          }
+
+          .section-title {
+            color: var(--accent);
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin: 0;
+            font-weight: 700;
+          }
+
+          .section-body {
+            padding: 14px 20px 20px;
+          }
+
+          .hero-block {
             margin-bottom: 16px;
           }
-          .section-title {
-            color: #F0C14D;
-            font-size: 12px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin: 0 0 14px;
-            font-weight: 700;
-          }
+
           .hero-value {
-            font-size: 34px;
+            font-size: 36px;
             font-weight: 700;
-            color: #2DD4BF;
-            margin: 4px 0 12px;
+            color: var(--primary);
+            margin: 6px 0 0;
+            letter-spacing: -0.02em;
           }
+
           .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
           }
-          .stat-card, .mini-card {
-            background: #0A1214;
-            border: 1px solid #1E2A33;
-            border-radius: 12px;
-            padding: 14px;
+
+          .stat-card,
+          .mini-card {
+            background: var(--surface-deep);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
           }
+
           .stat-card.wide { grid-column: 1 / -1; }
+
           .label {
             display: block;
-            color: #94A3B8;
-            font-size: 11px;
+            color: var(--text-secondary);
+            font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
             margin-bottom: 6px;
+            font-weight: 600;
           }
+
           .stat-value {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
-            color: #F8FAFC;
+            color: var(--text);
           }
-          .accent { color: #2DD4BF; }
-          .negative { color: #F87171; }
-          .positive { color: #34D399; }
-          .row-item, .mini-card-head {
+
+          .accent { color: var(--primary); }
+          .negative { color: var(--danger); }
+          .positive { color: var(--success); }
+
+          .row-item,
+          .mini-card-head {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
           }
+
           .row-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #1E2A33;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-soft);
+            font-size: 14px;
           }
+
           .row-item:last-child { border-bottom: none; }
+          .row-item span { color: var(--text-secondary); }
+
           .stack { display: grid; gap: 12px; }
           .stack.compact { gap: 0; }
-          .muted { color: #94A3B8; font-size: 13px; margin: 0; }
+
+          .muted {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin: 0;
+          }
+
+          .table-wrap {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--surface-deep);
+          }
+
           .table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            table-layout: fixed;
           }
+
+          .table thead {
+            background: rgba(45, 212, 191, 0.08);
+          }
+
           .table th {
             text-align: left;
-            color: #94A3B8;
-            font-size: 11px;
+            color: var(--text-secondary);
+            font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 0 0 10px;
-            border-bottom: 1px solid #1E2A33;
+            letter-spacing: 0.08em;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
           }
+
+          .table th.col-desc { width: 34%; }
+          .table th.col-cat { width: 24%; }
+          .table th.col-date { width: 18%; }
+          .table th.col-value { width: 24%; }
+
           .table td {
-            padding: 10px 8px 10px 0;
-            border-bottom: 1px solid #162029;
-            vertical-align: top;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-soft);
+            vertical-align: middle;
+            color: var(--text);
+            word-wrap: break-word;
           }
+
+          .table tbody tr:last-child td { border-bottom: none; }
+          .table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.015); }
+
           .align-right { text-align: right; }
+
           .progress-track {
             height: 8px;
-            background: #162029;
+            background: var(--border-soft);
             border-radius: 999px;
             overflow: hidden;
-            margin: 8px 0;
+            margin: 10px 0 8px;
           }
+
           .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #0F766E, #2DD4BF);
+            background: linear-gradient(90deg, var(--primary-dark), var(--primary));
             border-radius: 999px;
           }
+
           .footer {
-            margin-top: 28px;
-            color: #64748B;
+            margin-top: 8px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-muted);
             font-size: 11px;
-            line-height: 1.5;
+            line-height: 1.6;
+            text-align: center;
           }
         </style>
       </head>
       <body>
-        <div class="header">
+        <header class="page-header">
           <div class="brand">CentFlow</div>
           <h1>Relatório Financeiro</h1>
           <div class="meta">${escapeHtml(userName)} · ${escapeHtml(date)}</div>
-        </div>
+        </header>
 
-        <div class="section">
-          <p class="section-title">Património</p>
-          <span class="label">Património líquido</span>
-          <div class="hero-value">${escapeHtml(netWorth)}</div>
-          <div class="grid-2">
-            <div class="stat-card">
-              <span class="label">Variação recente</span>
-              <span class="stat-value accent">${escapeHtml(change)}</span>
-            </div>
-            <div class="stat-card">
-              <span class="label">Este mês</span>
-              <span class="stat-value">${escapeHtml(monthlyChange)}</span>
-            </div>
-            <div class="stat-card wide">
-              <span class="label">Gastos da semana</span>
-              <span class="stat-value">${escapeHtml(weeklySpending)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <p class="section-title">Composição</p>
-          ${buildBreakdownRows(dashboard)}
-        </div>
-
-        <div class="section">
-          <p class="section-title">Perfil financeiro</p>
-          <div class="grid-2">
-            <div class="stat-card">
-              <span class="label">Pontuação</span>
-              <span class="stat-value accent">${score}%</span>
-            </div>
-            <div class="stat-card">
-              <span class="label">Nível</span>
-              <span class="stat-value">${escapeHtml(level)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <p class="section-title">Movimentos recentes</p>
-          ${buildTransactionRows(transactions)}
-        </div>
-
-        <div class="section">
-          <p class="section-title">Objectivos</p>
-          ${buildGoalsSection(assets)}
-        </div>
-
-        <div class="section">
-          <p class="section-title">Ativos</p>
-          ${buildAssetsSummary(assets)}
-        </div>
+        ${section('Património', patrimonioBody)}
+        ${section('Composição', buildBreakdownRows(dashboard))}
+        ${section('Perfil financeiro', perfilBody)}
+        ${section('Movimentos recentes', buildTransactionRows(transactions))}
+        ${section('Objectivos', buildGoalsSection(assets))}
+        ${section('Ativos', buildAssetsSummary(assets))}
 
         <p class="footer">
-          Relatório gerado pela CentFlow. Os valores reflectem os dados disponíveis no momento da exportação.
+          Relatório gerado pela CentFlow · Design dark premium<br />
+          Os valores reflectem os dados disponíveis no momento da exportação.
         </p>
       </body>
     </html>
