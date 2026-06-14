@@ -10,6 +10,7 @@ import { fetchAssetsData } from '@/lib/api/services/assets.service';
 import { fetchDashboardData } from '@/lib/api/services/dashboard.service';
 import { fetchTransactions } from '@/lib/api/services/transaction.service';
 import { shouldUseMockData } from '@/lib/config/data-mode';
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { buildMockAnalysisData } from '@/lib/data/analysis.mocks';
 import { buildMockDashboard } from '@/lib/data/mocks';
 import { composeAnalysisFromSources } from '@/lib/domain/analysis.compose';
@@ -58,7 +59,7 @@ async function fetchLocalAnalysisDataWithMockFallback(): Promise<AnalysisData> {
  * 3. Fallback API parcial → composição a partir de Supabase / REST
  */
 export async function fetchAnalysisData(): Promise<AnalysisData> {
-  if (shouldUseMockData()) {
+  if (!isRealDataOnlyVariant() && shouldUseMockData()) {
     try {
       return await fetchLocalAnalysisDataWithMockFallback();
     } catch {

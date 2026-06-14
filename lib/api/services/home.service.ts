@@ -1,4 +1,5 @@
 import { shouldUseMockData } from '@/lib/config/data-mode';
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { composeDashboardFromLocalSources } from '@/lib/domain/dashboard.compose';
 import type { HomeScreenData } from '@/lib/domain/home.types';
 import { isSupabaseEnabled } from '@/lib/supabase';
@@ -13,7 +14,7 @@ import { fetchTransactions } from './transaction.service';
  * Beta/produção: compõe a partir do Supabase (sem API legacy).
  */
 export async function fetchHomeScreenData(): Promise<HomeScreenData> {
-  if (shouldUseMockData()) {
+  if (!isRealDataOnlyVariant() && shouldUseMockData()) {
     return buildMockHomeScreenData();
   }
 

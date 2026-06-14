@@ -6,11 +6,13 @@ import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
  * Beta e produção usam sempre dados reais (Supabase).
  */
 export function shouldUseMockData(): boolean {
+  if (isRealDataOnlyVariant()) return false;
+
   if (process.env.EXPO_PUBLIC_USE_MOCK === 'true') {
-    return !isRealDataOnlyVariant();
+    return true;
   }
   if (process.env.EXPO_PUBLIC_USE_MOCK === 'false') return false;
-  if (isRealDataOnlyVariant()) return false;
+
   return isMockAuthEnabled();
 }
 

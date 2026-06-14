@@ -74,6 +74,24 @@ O Supabase limita quantos emails de confirmação/recuperação pode enviar por 
 
 ### Login com Google
 
+#### Erro «redirect_uri_mismatch» (urgente)
+
+O Google rejeita o pedido porque falta o redirect URI do **Supabase** no client OAuth Web.
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**
+2. Abre o OAuth 2.0 Client ID do tipo **Web application** (o mesmo Client ID que está no Supabase)
+3. Em **Authorized redirect URIs**, adiciona **exactamente**:
+
+   `https://oxhjfwmhcwadlltinlck.supabase.co/auth/v1/callback`
+
+4. Guarda e aguarda 1–2 minutos
+
+No **Supabase** → Authentication → URL Configuration → Redirect URLs, adiciona também:
+
+- `https://oxhjfwmhcwadlltinlck.supabase.co/auth/v1/callback`
+- `centflow://auth/callback`
+- `centflow://**`
+
 #### Erro «Unsupported provider: provider is not enabled»
 
 O provider Google está **desactivado** no projecto Supabase. A app está correcta; falta configuração no dashboard:

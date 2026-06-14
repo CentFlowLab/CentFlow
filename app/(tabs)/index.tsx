@@ -39,7 +39,7 @@ import {
   getRecommendedHomeActions,
   shouldPrioritizeGoals,
 } from '@/lib/onboarding/personalization';
-import { colors, spacing } from '@/lib/theme';
+import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
 export default function InicioScreen() {
@@ -192,7 +192,7 @@ export default function InicioScreen() {
           { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
         ]}>
         <ScreenContainer>
-          {dataSource === 'mock' ? <DemoModeBadge /> : null}
+          {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
           <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
 

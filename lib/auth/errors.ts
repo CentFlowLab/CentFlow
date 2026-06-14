@@ -99,7 +99,10 @@ function mapSupabaseAuthMessage(message: string): string {
     lower.includes('redirect uri') ||
     lower.includes('invalid redirect')
   ) {
-    return 'Configuração OAuth incorrecta. Tenta entrar com email e password ou contacta o suporte.';
+    return (
+      'O login com Google não está configurado correctamente no servidor. ' +
+      'Tenta entrar com email e password ou contacta o suporte.'
+    );
   }
 
   if (lower.includes('supabase não configurado')) {

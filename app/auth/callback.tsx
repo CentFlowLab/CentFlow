@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { AuthLoadingScreen } from '@/components/auth';
@@ -8,31 +8,48 @@ import { Button, Card, Text } from '@/components/ui';
 import { getAuthErrorMessage, resolveOAuthCallbackUrl, useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
+const DEEP_LINK_ATTEMPTS = 12;
+const DEEP_LINK_POLL_MS = 150;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function AuthCallbackScreen() {
   const { completeGoogleSignInFromCallback } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(true);
   const deepLinkUrl = Linking.useURL();
+  const handledRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
-    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    async function readInitialUrl(): Promise<string | null> {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        return window.location.href;
+      }
+      return Linking.getInitialURL();
+    }
 
     async function completeOAuth() {
       try {
-        const initialUrl =
-          Platform.OS === 'web' && typeof window !== 'undefined'
-            ? window.location.href
-            : await Linking.getInitialURL();
+        const initialUrl = await readInitialUrl();
+        let callbackUrl: string | null = null;
 
-        const callbackUrl = await resolveOAuthCallbackUrl(initialUrl, deepLinkUrl);
+        for (let attempt = 0; attempt < DEEP_LINK_ATTEMPTS; attempt += 1) {
+          callbackUrl = await resolveOAuthCallbackUrl(initialUrl, deepLinkUrl);
+          if (callbackUrl) break;
+          await wait(DEEP_LINK_POLL_MS);
+        }
 
         if (!callbackUrl) {
-          redirectTimer = setTimeout(() => {
-            if (mounted) router.replace('/(auth)/login');
-          }, 120);
+          if (mounted) router.replace('/(auth)/login');
           return;
         }
+
+        if (handledRef.current) return;
+        handledRef.current = true;
 
         await completeGoogleSignInFromCallback(callbackUrl);
 
@@ -50,7 +67,6 @@ export default function AuthCallbackScreen() {
 
     return () => {
       mounted = false;
-      if (redirectTimer) clearTimeout(redirectTimer);
     };
   }, [completeGoogleSignInFromCallback, deepLinkUrl]);
 

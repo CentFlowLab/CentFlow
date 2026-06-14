@@ -2,6 +2,7 @@ export { AuthProvider } from './auth.context';
 export { useAuth } from './useAuth';
 export { isMockAuthEnabled, isMockOcrDemoEnabled } from './mock-auth';
 export { getGoogleAuthRedirectUri, getGoogleAuthRedirectAllowList } from './google-oauth.config';
+export { getSupabaseGoogleOAuthCallbackUrl } from './supabase-oauth.config';
 export {
   isOAuthCallbackUrl,
   openGoogleOAuthBrowser,
