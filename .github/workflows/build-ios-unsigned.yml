@@ -70,8 +70,17 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      - name: Verify Node/npm and lockfile
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          test -f package.json
+          test -f package-lock.json
+          node -e "JSON.parse(require('fs').readFileSync('package-lock.json','utf8'))"
+
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Patch expo-modules-jsi for Xcode 26
         run: bash scripts/patch-expo-modules-jsi-xcode26.sh
