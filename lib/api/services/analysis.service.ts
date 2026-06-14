@@ -6,6 +6,13 @@ import {
   mapAnalyticsResponse,
 } from '@/lib/api/mappers/analysis.mapper';
 import { mapNetWorth } from '@/lib/api/mappers/dashboard.mapper';
+import { fetchAssetsData } from '@/lib/api/services/assets.service';
+import { fetchDashboardData } from '@/lib/api/services/dashboard.service';
+import { fetchTransactions } from '@/lib/api/services/transaction.service';
+import { shouldUseMockData } from '@/lib/config/data-mode';
+import { buildMockDashboard } from '@/lib/data/mocks';
+import { buildMockAnalysisData } from '@/lib/data/analysis.mocks';
+import { composeAnalysisFromSources } from '@/lib/domain/analysis.compose';
 import type { AnalysisData } from '@/lib/domain/analysis.types';
 import type {
   RawAnalysisInsight,
@@ -21,41 +28,103 @@ export type PatrimonyAllocationData = {
   netWorth: number;
 };
 
+async function fetchLocalAnalysisData(): Promise<AnalysisData> {
+  const [dashboard, transactions, assets] = await Promise.all([
+    fetchDashboardData().catch(() => buildMockDashboard()),
+    fetchTransactions('all'),
+    fetchAssetsData(),
+  ]);
+
+  return composeAnalysisFromSources({ dashboard, transactions, assets });
+}
+
 /**
- * Obtém dados de Análises da API.
+ * Obtém dados de Análises.
  *
- * Estratégia (substitui buildMockAnalysisData):
- * 1. GET /analytics — resposta agregada (preferido)
- * 2. Se 404 → compõe: /net-worth + /analytics/metrics + /analytics/insights
- *
- * Invalidação futura: queryClient.invalidateQueries({ queryKey: queryKeys.analytics() })
+ * Estratégia:
+ * 1. Mock / offline → compõe a partir de dashboard + transações + ativos locais
+ * 2. GET /analytics — resposta agregada (preferido)
+ * 3. Fallback API parcial ou erro → composição local
  */
 export async function fetchAnalysisData(): Promise<AnalysisData> {
+  if (shouldUseMockData()) {
+    try {
+      return await fetchLocalAnalysisData();
+    } catch {
+      return buildMockAnalysisData();
+    }
+  }
+
   try {
     const raw = await apiFetch<RawAnalyticsResponse>(API_ENDPOINTS.analytics);
-    return mapAnalyticsResponse(raw);
+    const mapped = mapAnalyticsResponse(raw);
+
+    try {
+      const [dashboard, transactions, assets] = await Promise.all([
+        fetchDashboardData(),
+        fetchTransactions('all'),
+        fetchAssetsData(),
+      ]);
+      return composeAnalysisFromSources({
+        dashboard,
+        transactions,
+        assets,
+        periodLabel: mapped.periodLabel,
+      });
+    } catch {
+      return mapped;
+    }
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
-      return fetchAnalysisComposed();
+      try {
+        return await fetchAnalysisComposed();
+      } catch {
+        return fetchLocalAnalysisData();
+      }
     }
-    throw error;
+
+    try {
+      return await fetchLocalAnalysisData();
+    } catch {
+      return buildMockAnalysisData();
+    }
   }
 }
 
 /** Fallback quando GET /analytics não existe no backend. */
 async function fetchAnalysisComposed(): Promise<AnalysisData> {
-  const [netWorth, metrics, insights] = await Promise.all([
+  const [netWorth, metrics, insights, transactions, assets] = await Promise.all([
     apiFetch<RawNetWorthResponse>(API_ENDPOINTS.netWorth),
     fetchOptional<RawAnalysisMetric[] | RawAnalysisMetricsPayload>(
       API_ENDPOINTS.analyticsMetrics,
     ),
     fetchOptional<RawAnalysisInsight[]>(API_ENDPOINTS.analyticsInsights),
+    fetchTransactions('all').catch(() => [] as Awaited<ReturnType<typeof fetchTransactions>>),
+    fetchAssetsData(),
   ]);
 
-  return composeAnalysisData({
+  const composed = composeAnalysisData({
     netWorth,
     metrics: metrics ?? undefined,
     insights: insights ?? undefined,
+  });
+
+  const dashboard = {
+    netWorth: composed.netWorth,
+    previousMonthNetWorth: 0,
+    netWorthChangePercent: 0,
+    weeklySpending: 0,
+    netWorthChangeThisMonth: 0,
+    personalInflation: null,
+    attentionItems: [],
+    suggestions: [],
+  };
+
+  return composeAnalysisFromSources({
+    dashboard,
+    transactions,
+    assets,
+    periodLabel: composed.periodLabel,
   });
 }
 

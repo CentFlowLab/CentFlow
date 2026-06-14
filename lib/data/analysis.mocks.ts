@@ -94,6 +94,20 @@ export function buildMockAnalysisData(): AnalysisData {
     allocation: netWorth.assetsByCategory,
     metrics,
     insights,
+    trends: {
+      periodDays: 30,
+      totalIncome: 3200,
+      totalExpenses: 2480,
+      netCashflow: 720,
+      netWorthChangePercent: dashboard.netWorthChangePercent,
+      spendingByCategory: [
+        { key: 'food', label: 'Alimentação', amount: 620 },
+        { key: 'shopping', label: 'Compras', amount: 480 },
+        { key: 'transport', label: 'Transportes', amount: 310 },
+        { key: 'housing', label: 'Habitação', amount: 850 },
+        { key: 'entertainment', label: 'Lazer', amount: 220 },
+      ],
+    },
     periodLabel: 'Últimos 30 dias',
   };
 }

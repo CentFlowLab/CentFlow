@@ -2,6 +2,7 @@ import type {
   AnalysisData,
   AnalysisInsight,
   AnalysisMetric,
+  AnalysisTrends,
 } from '@/lib/domain/analysis.types';
 import type { NetWorthResult } from '@/lib/domain';
 import type {
@@ -60,6 +61,17 @@ function normalizeInsightType(
 function normalizeTrend(trend?: string): AnalysisMetric['trend'] {
   if (trend === 'up' || trend === 'down' || trend === 'neutral') return trend;
   return 'neutral';
+}
+
+function emptyTrends(netWorthChangePercent = 0): AnalysisTrends {
+  return {
+    periodDays: 30,
+    totalIncome: 0,
+    totalExpenses: 0,
+    netCashflow: 0,
+    netWorthChangePercent,
+    spendingByCategory: [],
+  };
 }
 
 // ─── Mappers ──────────────────────────────────────────────────────────────────
@@ -252,6 +264,7 @@ export function mapAnalyticsResponse(raw: RawAnalyticsResponse): AnalysisData {
     allocation: netWorth.assetsByCategory,
     metrics: resolveMetrics(payload, netWorth),
     insights,
+    trends: emptyTrends(),
     periodLabel: pick(payload.periodLabel, payload.period_label) ?? 'Últimos 30 dias',
   };
 }
@@ -276,6 +289,7 @@ export function composeAnalysisData(parts: {
     allocation: netWorth.assetsByCategory,
     metrics,
     insights: (parts.insights ?? []).map(mapAnalysisInsight),
+    trends: emptyTrends(),
     periodLabel: parts.periodLabel ?? 'Últimos 30 dias',
   };
 }

@@ -1,5 +1,20 @@
 import type { AssetCategoryBreakdown, NetWorthResult } from './types';
 
+export interface SpendingCategorySlice {
+  key: string;
+  label: string;
+  amount: number;
+}
+
+export interface AnalysisTrends {
+  periodDays: number;
+  totalIncome: number;
+  totalExpenses: number;
+  netCashflow: number;
+  netWorthChangePercent: number;
+  spendingByCategory: SpendingCategorySlice[];
+}
+
 export interface AnalysisMetric {
   id: string;
   label: string;
@@ -27,5 +42,6 @@ export interface AnalysisData {
   allocation: AssetCategoryBreakdown[];
   metrics: AnalysisMetric[];
   insights: AnalysisInsight[];
+  trends: AnalysisTrends;
   periodLabel: string;
 }

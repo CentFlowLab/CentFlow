@@ -5,6 +5,8 @@ import {
   AnalysisSkeleton,
   InsightsSection,
   PatrimonyAllocationCard,
+  SpendingCategoryCard,
+  TrendsSummaryCard,
 } from '@/components/analysis';
 import { AppHeader } from '@/components/layout';
 import {
@@ -49,6 +51,13 @@ export default function AnalisesScreen() {
           <PatrimonyAllocationCard
             allocation={data.allocation}
             totalAssets={data.netWorth.totalAssets}
+          />
+
+          <TrendsSummaryCard trends={data.trends} periodLabel={data.periodLabel} />
+
+          <SpendingCategoryCard
+            categories={data.trends.spendingByCategory}
+            periodLabel={data.periodLabel}
           />
 
           {/* Métricas principais */}
