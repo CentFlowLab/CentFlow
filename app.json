@@ -27,7 +27,7 @@
       "package": "com.everyft1me.centflow",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundColor": "#0A0F18"
       },
       "predictiveBackGestureEnabled": false,
@@ -57,7 +57,7 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#080C12"
+          "backgroundColor": "#0A0F18"
         }
       ],
       "expo-secure-store",
