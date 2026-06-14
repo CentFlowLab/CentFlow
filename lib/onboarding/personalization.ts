@@ -152,24 +152,52 @@ export function getWowActionCards(answers: OnboardingAnswers): WowCardConfig[] {
 export function getHomeContextualMessage(answers: OnboardingAnswers | null): string | null {
   if (!answers?.completed) return null;
 
-  if (answers.ambitions.includes('more_control') || answers.profileTags.includes('control_spending')) {
+  const tags = new Set(answers.profileTags);
+  const areas = new Set(answers.lifeAreas);
+  const ambitions = new Set(answers.ambitions);
+
+  // Highest priority: debt / credits focus
+  if (
+    answers.hasDebt ||
+    tags.has('credits_costs') ||
+    areas.has('credits') ||
+    ambitions.has('reduce_debt')
+  ) {
+    return 'Mantém os teus créditos e custos sob controlo.';
+  }
+
+  // Strong savings / goals signal
+  if (
+    ambitions.has('more_savings') ||
+    tags.has('financial_goals') ||
+    areas.has('savings_goals')
+  ) {
+    return 'Cada movimento conta para os teus objetivos.';
+  }
+
+  // Receipts & warranties as primary interest (very actionable)
+  if (
+    tags.has('receipts_warranties') ||
+    areas.has('keeps_receipts') ||
+    answers.firstAction === 'first_warranty' ||
+    answers.firstAction === 'first_receipt'
+  ) {
+    return 'Digitaliza talões para não perderes garantias.';
+  }
+
+  // Wealth tracking
+  if (tags.has('track_wealth') || areas.has('investments')) {
+    return 'Acompanha a evolução do teu património todos os dias.';
+  }
+
+  // Spending control
+  if (tags.has('control_spending') || ambitions.has('more_control')) {
     return 'Hoje é um bom dia para manter os gastos sob controlo.';
   }
 
-  if (answers.ambitions.includes('more_savings')) {
+  // Generic ambition based
+  if (ambitions.has('more_savings')) {
     return 'Cada pequeno passo conta para as tuas poupanças.';
-  }
-
-  if (answers.profileTags.includes('receipts_warranties')) {
-    return 'Não percas mais faturas — digitaliza o próximo talão.';
-  }
-
-  if (answers.profileTags.includes('track_wealth')) {
-    return 'Acompanha como o teu património evolui ao longo do tempo.';
-  }
-
-  if (answers.profileTags.includes('financial_goals')) {
-    return 'Os teus objetivos estão mais perto quando os vês todos os dias.';
   }
 
   if (answers.skipped) {
@@ -177,6 +205,30 @@ export function getHomeContextualMessage(answers: OnboardingAnswers | null): str
   }
 
   return 'A tua experiência foi personalizada — vamos começar.';
+}
+
+/**
+ * Returns a short, actionable subtitle for the Home "personalized for you" area.
+ */
+export function getPersonalizedHomeSubtitle(answers: OnboardingAnswers | null): string | null {
+  if (!answers?.completed) return null;
+
+  const tags = answers.profileTags;
+  const areas = answers.lifeAreas;
+
+  if (answers.hasDebt || tags.includes('credits_costs')) {
+    return 'Foco em visibilidade sobre dívidas e custos fixos.';
+  }
+  if (tags.includes('financial_goals') || areas.includes('savings_goals')) {
+    return 'Os teus objetivos de poupança guiam as sugestões.';
+  }
+  if (tags.includes('receipts_warranties') || areas.includes('keeps_receipts')) {
+    return 'Talões digitalizados = garantias + histórico automático.';
+  }
+  if (tags.includes('track_wealth')) {
+    return 'Património líquido atualizado em tempo real.';
+  }
+  return null;
 }
 
 export function shouldShowDebtFeatures(answers: OnboardingAnswers): boolean {
@@ -193,4 +245,180 @@ export function shouldShowSavingsFeatures(answers: OnboardingAnswers): boolean {
     answers.profileTags.includes('financial_goals') ||
     answers.lifeAreas.includes('savings_goals')
   );
+}
+
+/* ============================================================
+ * EMPTY STATE PERSONALIZATION (for Ativos tab + Home)
+ * ============================================================ */
+
+export type AssetsTabKey = 'objetivos' | 'garantias' | 'inventario';
+
+export function getPersonalizedEmptyStateCopy(
+  tab: AssetsTabKey,
+  answers: OnboardingAnswers | null,
+): { title: string; description: string; actionLabel?: string } {
+  if (!answers?.completed) {
+    // Fallback to generic (caller can use ASSETS_EMPTY_CONFIG)
+    return { title: '', description: '' };
+  }
+
+  const tags = new Set(answers.profileTags);
+  const areas = new Set(answers.lifeAreas);
+  const first = answers.firstAction;
+
+  if (tab === 'garantias') {
+    if (
+      tags.has('receipts_warranties') ||
+      areas.has('keeps_receipts') ||
+      first === 'first_warranty' ||
+      first === 'first_receipt'
+    ) {
+      return {
+        title: 'Ainda não tens garantias',
+        description:
+          'Digitaliza o teu primeiro talão para começares a guardar garantias automaticamente. Nunca mais percas uma.',
+        actionLabel: 'Digitalizar talão',
+      };
+    }
+    return {
+      title: 'Protege as tuas compras',
+      description:
+        'Regista garantias com data de expiração. Associa ao talão e recebe alertas antes de expirarem.',
+    };
+  }
+
+  if (tab === 'objetivos') {
+    if (
+      tags.has('financial_goals') ||
+      areas.has('savings_goals') ||
+      answers.ambitions.some((a) => ['more_savings', 'buy_home', 'buy_car', 'travel'].includes(a))
+    ) {
+      return {
+        title: 'Define o teu primeiro objetivo',
+        description:
+          'Tens objetivos de poupança — começa por criar uma meta concreta (fundo de emergência, viagem, etc.) e acompanha o progresso.',
+        actionLabel: 'Criar primeiro objetivo',
+      };
+    }
+    return {
+      title: 'Ainda sem objetivos',
+      description:
+        'Cria metas de poupança com valor alvo, data prevista e acompanha o progresso em tempo real.',
+    };
+  }
+
+  // inventario
+  if (tags.has('track_wealth') || areas.has('investments') || areas.has('own_home') || areas.has('car')) {
+    return {
+      title: 'Regista os teus bens',
+      description:
+        'Mantém o valor dos teus ativos físicos (electrónica, casa, carro...) para teres uma visão completa do património.',
+      actionLabel: 'Adicionar primeiro item',
+    };
+  }
+
+  return {
+    title: 'Inventaria os teus bens',
+    description:
+      'Mantém registo do valor dos teus ativos físicos — eletrónica, joias, equipamento.',
+  };
+}
+
+/** Used by Home screen "sem movimentos" empty block and movimentos tab */
+export function getContextualNoTransactionsMessage(
+  answers: OnboardingAnswers | null,
+  filter: 'all' | 'expense' | 'income' = 'all',
+): string {
+  if (filter !== 'all') {
+    if (filter === 'expense') return 'Não tens despesas registadas neste filtro.';
+    return 'Não tens receitas registadas neste filtro.';
+  }
+
+  if (!answers?.completed) {
+    return 'Adiciona a primeira transação ou digitaliza um talão para começares a ter histórico completo.';
+  }
+
+  const tags = new Set(answers.profileTags);
+  const areas = new Set(answers.lifeAreas);
+
+  if (tags.has('receipts_warranties') || areas.has('keeps_receipts') || answers.firstAction === 'first_receipt') {
+    return 'Digitaliza o teu primeiro talão e vê como o OCR preenche automaticamente os movimentos.';
+  }
+
+  if (tags.has('control_spending')) {
+    return 'Regista a tua primeira despesa para começares a controlar os gastos.';
+  }
+
+  return 'Adiciona a primeira transação ou digitaliza um talão para começares a ter histórico completo.';
+}
+
+/* ============================================================
+ * QUICK ACTIONS / HOME RECOMMENDATIONS
+ * ============================================================ */
+
+export type RecommendedAction = {
+  key: 'receipt' | 'goal' | 'warranty' | 'asset' | 'movement';
+  label: string;
+  description?: string;
+};
+
+export function getRecommendedHomeActions(answers: OnboardingAnswers | null): RecommendedAction[] {
+  if (!answers?.completed) {
+    return [
+      { key: 'receipt', label: 'Digitalizar talão' },
+      { key: 'movement', label: 'Adicionar movimento' },
+    ];
+  }
+
+  const tags = new Set(answers.profileTags);
+  const areas = new Set(answers.lifeAreas);
+  const ambitions = new Set(answers.ambitions);
+  const first = answers.firstAction;
+
+  const recs: RecommendedAction[] = [];
+
+  // Receipts / warranties first if that was their interest
+  if (
+    tags.has('receipts_warranties') ||
+    areas.has('keeps_receipts') ||
+    first === 'first_receipt' ||
+    first === 'first_warranty'
+  ) {
+    recs.push({ key: 'receipt', label: 'Digitalizar talão' });
+  }
+
+  // Goals high priority
+  if (
+    tags.has('financial_goals') ||
+    areas.has('savings_goals') ||
+    ambitions.has('more_savings') ||
+    first === 'first_goal'
+  ) {
+    recs.push({ key: 'goal', label: 'Criar objetivo' });
+  }
+
+  // Debt / credits visibility
+  if (tags.has('credits_costs') || areas.has('credits') || answers.hasDebt) {
+    recs.push({ key: 'movement', label: 'Registar pagamento de crédito' });
+  }
+
+  // Wealth / inventory
+  if (tags.has('track_wealth') || areas.has('investments') || first === 'first_asset') {
+    recs.push({ key: 'asset', label: 'Adicionar bem ao inventário' });
+  }
+
+  // Always have a safe default for adding movement / receipt
+  if (recs.length === 0) {
+    recs.push({ key: 'receipt', label: 'Digitalizar talão' });
+  }
+
+  // Ensure we don't duplicate and cap at 2 strong recommendations
+  const seen = new Set<string>();
+  const unique = recs.filter((r) => {
+    if (seen.has(r.key)) return false;
+    seen.add(r.key);
+    return true;
+  });
+
+  return unique.slice(0, 2);
 }

@@ -2,6 +2,8 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Text } from '@/components/ui';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import { getPersonalizedEmptyStateCopy } from '@/lib/onboarding/personalization';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const EXAMPLE_GOALS = [
@@ -17,6 +19,14 @@ type GoalsEmptyStateProps = {
 };
 
 export function GoalsEmptyState({ onCreate, onLearnMore }: GoalsEmptyStateProps) {
+  const { data: answers } = useOnboardingAnswers();
+  const personalized = getPersonalizedEmptyStateCopy('objetivos', answers ?? null);
+
+  const title = personalized.title || 'Ainda sem objetivos';
+  const description =
+    personalized.description ||
+    'Cria metas de poupança com valor alvo, data prevista e acompanha o progresso em tempo real.';
+
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
@@ -35,11 +45,10 @@ export function GoalsEmptyState({ onCreate, onLearnMore }: GoalsEmptyStateProps)
       </View>
 
       <Text variant="h2" align="center">
-        Ainda sem objetivos
+        {title}
       </Text>
       <Text variant="body" color="textSecondary" align="center" style={styles.description}>
-        Cria metas de poupança com valor alvo, data prevista e acompanha o progresso em tempo
-        real.
+        {description}
       </Text>
 
       <Card variant="outlined" style={styles.examplesCard}>

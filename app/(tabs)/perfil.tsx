@@ -17,6 +17,7 @@ import {
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
@@ -91,6 +92,9 @@ export default function PerfilScreen() {
   const { signOut } = useAuth();
   const { reset: resetOnboarding } = useOnboarding();
   const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
+
+  // Keeps analytics user context fresh when the user visits Profile
+  useAnalytics();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
   const [loggingOut, setLoggingOut] = useState(false);
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
@@ -119,6 +123,10 @@ export default function PerfilScreen() {
     if (route === '__redo_onboarding__') {
       handleRedoOnboarding();
       return;
+    }
+
+    if (route.startsWith('/settings')) {
+      track(AnalyticsEvents.SETTINGS_OPENED);
     }
 
     router.push(route as never);

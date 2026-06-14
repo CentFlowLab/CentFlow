@@ -10,6 +10,7 @@ import {
   useUpdateWarranty,
 } from '@/hooks/queries/useAssets';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { createWarrantySchema } from '@/lib/domain/assets.schema';
 import type { Warranty } from '@/lib/domain/assets.types';
@@ -31,6 +32,8 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
   const createWarranty = useCreateWarranty();
   const updateWarranty = useUpdateWarranty();
   const deleteWarranty = useDeleteWarranty();
+
+  useAnalytics();
   const { data: transactions = [], isLoading: isLoadingTransactions } = useTransactions('all');
 
   const [product, setProduct] = useState('');
@@ -119,6 +122,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
         await updateWarranty.mutateAsync({ id: warranty.id, input: result.data });
       } else {
         await createWarranty.mutateAsync(result.data);
+        track(AnalyticsEvents.WARRANTY_CREATED);
       }
       onClose();
     } catch (error) {

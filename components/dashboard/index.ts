@@ -1,7 +1,7 @@
 export { AttentionCard } from './AttentionCard';
 export { DemoModeBadge } from './DemoModeBadge';
 export { HomeAssetsSummaryCard } from './HomeAssetsSummaryCard';
-export { HomeQuickActions } from './HomeQuickActions';
+export { HomeQuickActions, type RecommendedQuickAction } from './HomeQuickActions';
 export { DashboardGreeting } from './DashboardGreeting';
 export { DashboardHeaderLeading } from './DashboardHeaderLeading';
 export { DashboardSkeleton } from './DashboardSkeleton';

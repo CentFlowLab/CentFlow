@@ -10,6 +10,7 @@ import {
   useDeleteInventoryItem,
   useUpdateInventoryItem,
 } from '@/hooks/queries/useAssets';
+import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { createInventoryItemSchema } from '@/lib/domain/assets.schema';
 import type { InventoryItem } from '@/lib/domain/types';
@@ -37,6 +38,8 @@ export function InventoryFormModal({
   const updateInventory = useUpdateInventoryItem();
   const deleteInventory = useDeleteInventoryItem();
   const meta = ASSETS_SECTION_META.inventario;
+
+  useAnalytics();
 
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
@@ -92,6 +95,9 @@ export function InventoryFormModal({
         await updateInventory.mutateAsync({ id: item.id, input: result.data });
       } else {
         await createInventory.mutateAsync(result.data);
+        track(AnalyticsEvents.ASSET_CREATED, {
+          category: result.data.category ?? undefined,
+        });
       }
       onClose();
     } catch (error) {

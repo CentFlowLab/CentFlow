@@ -1,6 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
@@ -11,11 +12,13 @@ import {
   getCreateTransactionPhaseLabel,
   useCreateTransaction,
 } from '@/hooks/queries/useTransactions';
+import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
+import { queryKeys } from '@/lib/api/keys';
 import { getCategoriesForType } from '@/lib/data/transaction-categories';
 import { formValuesToConfirmation } from '@/lib/domain/receipt-confirmation';
 import { createTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
-import type { TransactionType } from '@/lib/domain/transaction.types';
+import type { Transaction, TransactionType } from '@/lib/domain/transaction.types';
 import {
   getApiErrorMessage,
   getReceiptUploadErrorMessage,
@@ -55,7 +58,12 @@ export function AddTransactionModal({
   const createMutation = useCreateTransaction();
   const processReceipt = useProcessReceipt();
   const receiptImage = useReceiptImage();
+  const queryClient = useQueryClient();
   const { showToast } = useToast();
+
+  // Ensures identify is current right before the user can create transactions / scan receipts
+  useAnalytics();
+
   const didAutoPick = useRef(false);
   const retakeBaselineUri = useRef<string | null>(null);
 
@@ -234,7 +242,17 @@ export function AddTransactionModal({
             }),
       };
 
+      // Detect first transaction for analytics (best effort, before mutation invalidates cache)
+      const existingTxs =
+        queryClient.getQueryData<Transaction[]>(queryKeys.transactions({ filter: 'all' })) ?? [];
+      const isFirst = existingTxs.length === 0;
+
       await createMutation.mutateAsync(input);
+
+      if (isFirst) {
+        track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, { type: result.data.type });
+      }
+
       onClose();
     } catch (error) {
       if (error instanceof ReceiptUploadError) {
@@ -251,6 +269,11 @@ export function AddTransactionModal({
   ) {
     const confirmation = formValuesToConfirmation(values, parseAmount(values.amount));
 
+    // Detect first transaction before the mutation mutates caches
+    const existingTxs =
+      queryClient.getQueryData<Transaction[]>(queryKeys.transactions({ filter: 'all' })) ?? [];
+    const isFirst = existingTxs.length === 0;
+
     const outcome = await createMutation.mutateAsync({
       type: confirmation.type,
       amount: confirmation.amount,
@@ -265,10 +288,20 @@ export function AddTransactionModal({
       confirmation,
     });
 
+    // Analytics for receipt scan success (this is the "successful scan" moment)
+    const itemsCount = outcome.itemsSavedCount ?? 0;
+    track(AnalyticsEvents.RECEIPT_SCANNED, {
+      items_count: itemsCount,
+      has_ocr_items: itemsCount > 0,
+    });
+
+    if (isFirst) {
+      track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, { type: confirmation.type });
+    }
+
     setConfirmVisible(false);
     onClose();
 
-    const itemsCount = outcome.itemsSavedCount;
     if (itemsCount > 0) {
       showToast(
         `Movimento criado — ${itemsCount} ${itemsCount === 1 ? 'item do talão guardado' : 'itens do talão guardados'}.`,

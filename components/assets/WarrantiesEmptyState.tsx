@@ -2,6 +2,8 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Text } from '@/components/ui';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import { getPersonalizedEmptyStateCopy } from '@/lib/onboarding/personalization';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const EXAMPLE_PRODUCTS = ['Portátil', 'Frigorífico', 'Telemóvel', 'Eletrodomésticos'];
@@ -12,6 +14,14 @@ type WarrantiesEmptyStateProps = {
 };
 
 export function WarrantiesEmptyState({ onCreate, onLearnMore }: WarrantiesEmptyStateProps) {
+  const { data: answers } = useOnboardingAnswers();
+  const personalized = getPersonalizedEmptyStateCopy('garantias', answers ?? null);
+
+  const title = personalized.title || 'Protege as tuas compras';
+  const description =
+    personalized.description ||
+    'Regista garantias com data de expiração, associa ao talão original e recebe alertas antes que expirem.';
+
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
@@ -26,11 +36,10 @@ export function WarrantiesEmptyState({ onCreate, onLearnMore }: WarrantiesEmptyS
       </View>
 
       <Text variant="h2" align="center">
-        Protege as tuas compras
+        {title}
       </Text>
       <Text variant="body" color="textSecondary" align="center" style={styles.description}>
-        Regista garantias com data de expiração, associa ao talão original e recebe alertas antes
-        que expirem.
+        {description}
       </Text>
 
       <Card variant="outlined" style={styles.examplesCard}>

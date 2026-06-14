@@ -1,6 +1,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { queryClient } from '@/lib/api';
+import { identify, resetAnalytics } from '@/lib/analytics';
 import { isGoogleSignInAvailable } from '@/lib/supabase';
 
 import * as authService from './auth.service';
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const applySession = useCallback((session: AuthSession) => {
     setUser(session.user);
+    identify(session.user?.id ?? null);
   }, []);
 
   const signIn = useCallback(async (credentials: LoginCredentials) => {
@@ -103,6 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = useCallback(async () => {
     await authService.logout();
     setUser(null);
+    resetAnalytics();
     queryClient.clear();
   }, []);
 

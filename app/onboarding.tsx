@@ -1,6 +1,6 @@
 import { type Href, router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +20,7 @@ import { Button, Card, Text, TextField } from '@/components/ui';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useOnboarding, useOnboardingAnswersState } from '@/hooks/useOnboarding';
 import { useUpdateProfile } from '@/hooks/mutations/useProfileMutations';
+import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import {
   AMBITION_OPTIONS,
   LIFE_AREA_OPTIONS,
@@ -66,6 +67,10 @@ export default function OnboardingScreen() {
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
 
+  // Ensures user is identified for analytics as soon as they enter onboarding
+  useAnalytics();
+
+  const hasTrackedStart = useRef(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [welcomeReady, setWelcomeReady] = useState(false);
   const [revealPhase, setRevealPhase] = useState<'loading' | 'summary'>('loading');
@@ -192,6 +197,12 @@ export default function OnboardingScreen() {
     await saveOnboardingAnswersForUser(userId!, finalAnswers);
     await complete(finalAnswers);
 
+    // Track successful completion (not skipped)
+    track(AnalyticsEvents.ONBOARDING_COMPLETED, {
+      skipped: false,
+      profile_tags: answers.profileTags,
+    });
+
     const routes: Record<WowActionId, Href> = {
       first_receipt: '/(tabs)/movimentos?action=receipt' as Href,
       first_asset: '/(tabs)/ativos?action=new-asset' as Href,
@@ -212,7 +223,12 @@ export default function OnboardingScreen() {
           text: 'Saltar',
           style: 'destructive',
           onPress: () => {
-            void skip().then(() => router.replace('/(tabs)' as Href));
+            // Capture step before skipping
+            const stepAtSkip = stepIndex;
+            void skip().then(() => {
+              track(AnalyticsEvents.ONBOARDING_SKIPPED, { step: stepAtSkip });
+              router.replace('/(tabs)' as Href);
+            });
           },
         },
       ],
@@ -226,6 +242,14 @@ export default function OnboardingScreen() {
   const skipDebtQuestion =
     !answers.profileTags.includes('credits_costs') &&
     !answers.lifeAreas.includes('credits');
+
+  // Fire onboarding_started exactly once when the user lands on the flow
+  useEffect(() => {
+    if (!hasTrackedStart.current) {
+      hasTrackedStart.current = true;
+      track(AnalyticsEvents.ONBOARDING_STARTED);
+    }
+  }, []);
 
   function renderStep() {
     switch (step) {

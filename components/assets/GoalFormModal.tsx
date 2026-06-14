@@ -5,6 +5,7 @@ import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { useCreateGoal, useDeleteGoal, useUpdateGoal } from '@/hooks/queries/useAssets';
+import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import type { Goal } from '@/lib/domain/assets.types';
 import { createGoalSchema } from '@/lib/domain/assets.schema';
@@ -31,6 +32,8 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
   const createGoal = useCreateGoal();
   const updateGoal = useUpdateGoal();
   const deleteGoal = useDeleteGoal();
+
+  useAnalytics();
 
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
@@ -101,6 +104,10 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
         await updateGoal.mutateAsync({ id: goal.id, input: result.data });
       } else {
         await createGoal.mutateAsync(result.data);
+        // Analytics: only on successful creation (not edits)
+        track(AnalyticsEvents.GOAL_CREATED, {
+          target_amount: result.data.target,
+        });
       }
       onClose();
     } catch (error) {

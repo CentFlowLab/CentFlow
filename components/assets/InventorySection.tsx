@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import type { InventoryItem } from '@/lib/domain/types';
+import { getPersonalizedEmptyStateCopy } from '@/lib/onboarding/personalization';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -27,7 +29,17 @@ export function InventorySection({
   onDelete,
 }: InventorySectionProps) {
   const meta = ASSETS_SECTION_META.inventario;
-  const emptyConfig = ASSETS_EMPTY_CONFIG.inventario;
+  const { data: answers } = useOnboardingAnswers();
+  const personalized = getPersonalizedEmptyStateCopy('inventario', answers ?? null);
+
+  const baseConfig = ASSETS_EMPTY_CONFIG.inventario;
+  const emptyConfig = {
+    ...baseConfig,
+    title: personalized.title || baseConfig.title,
+    description: personalized.description || baseConfig.description,
+    actionLabel: personalized.actionLabel || baseConfig.actionLabel,
+  };
+
   const totalValue = inventory.reduce((sum, item) => sum + item.value, 0);
 
   if (inventory.length === 0) {

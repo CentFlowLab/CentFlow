@@ -18,6 +18,8 @@ import {
   useDeleteTransaction,
   useTransactions,
 } from '@/hooks/queries/useTransactions';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import { colors, spacing } from '@/lib/theme';
 
@@ -40,6 +42,7 @@ export default function MovimentosScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
   const deleteMutation = useDeleteTransaction();
+  const { data: onboardingAnswers } = useOnboardingAnswers();
   const { showToast } = useToast();
 
   const transactions = useMemo(() => data ?? [], [data]);
@@ -167,13 +170,7 @@ export default function MovimentosScreen() {
                 />
               }
               title="Ainda sem movimentos"
-              description={
-                filter === 'all'
-                  ? 'Adiciona a primeira transação ou digitaliza um talão para começares a ter histórico completo.'
-                  : filter === 'expense'
-                    ? 'Não tens despesas registadas neste filtro.'
-                    : 'Não tens receitas registadas neste filtro.'
-              }
+              description={getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter)}
               actionLabel="Nova transação"
               onAction={() => openAddModal(false)}
               secondaryActionLabel="Digitalizar talão"

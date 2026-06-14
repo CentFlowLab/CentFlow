@@ -11,6 +11,7 @@ import {
   DemoModeBadge,
   HomeAssetsSummaryCard,
   HomeQuickActions,
+  type RecommendedQuickAction,
   MetricCard,
   NetWorthHeroCard,
   SuggestionCard,
@@ -28,6 +29,11 @@ import {
 } from '@/components/ui';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import {
+  getContextualNoTransactionsMessage,
+  getRecommendedHomeActions,
+} from '@/lib/onboarding/personalization';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
@@ -35,6 +41,8 @@ export default function InicioScreen() {
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
+  const { data: onboardingAnswers } = useOnboardingAnswers();
+
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
   const [addMovementVisible, setAddMovementVisible] = useState(false);
 
@@ -87,6 +95,49 @@ export default function InicioScreen() {
         ? colors.danger
         : colors.textMuted;
 
+  // Personalized quick actions based on onboarding profile (receipts, goals, etc.)
+  const recommendedRaw = getRecommendedHomeActions(onboardingAnswers ?? null);
+  const recommendedActions: RecommendedQuickAction[] = recommendedRaw.map((rec) => {
+    if (rec.key === 'receipt') {
+      return {
+        key: rec.key,
+        label: rec.label,
+        onPress: () => setAddMovementVisible(true), // AddTransactionModal can start with picker via parent, but simple open for now
+      };
+    }
+    if (rec.key === 'goal') {
+      return {
+        key: rec.key,
+        label: rec.label,
+        onPress: () => router.push('/(tabs)/ativos?action=new-goal'),
+      };
+    }
+    if (rec.key === 'warranty') {
+      return {
+        key: rec.key,
+        label: rec.label,
+        onPress: () => router.push('/(tabs)/ativos?action=new-warranty'),
+      };
+    }
+    if (rec.key === 'asset') {
+      return {
+        key: rec.key,
+        label: rec.label,
+        onPress: () => router.push('/(tabs)/ativos?action=new-asset'),
+      };
+    }
+    return {
+      key: rec.key,
+      label: rec.label,
+      onPress: () => setAddMovementVisible(true),
+    };
+  });
+
+  const noTransactionsMessage = getContextualNoTransactionsMessage(
+    onboardingAnswers ?? null,
+    'all',
+  );
+
   return (
     <View style={styles.screen}>
       {header}
@@ -137,7 +188,7 @@ export default function InicioScreen() {
           ) : (
             <View style={styles.emptyTransactions}>
               <Text variant="body" color="textSecondary" align="center">
-                Ainda não há movimentos. Adiciona o primeiro abaixo.
+                {noTransactionsMessage}
               </Text>
             </View>
           )}
@@ -235,6 +286,7 @@ export default function InicioScreen() {
             onAddMovement={() => setAddMovementVisible(true)}
             onViewMovements={() => router.push('/(tabs)/movimentos')}
             onNewGoal={() => router.push('/(tabs)/ativos')}
+            recommendedActions={recommendedActions}
           />
 
           <RefetchingIndicator visible={isRefetching} />
