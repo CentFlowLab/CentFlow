@@ -78,6 +78,7 @@ jobs:
           test -f package.json
           test -f package-lock.json
           node -e "JSON.parse(require('fs').readFileSync('package-lock.json','utf8'))"
+          npm ci --dry-run --no-audit --fund=false
 
       - name: Install npm dependencies
         run: npm ci --no-audit --fund=false
