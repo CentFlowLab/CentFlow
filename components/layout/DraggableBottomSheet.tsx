@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BackHandler,
-  Keyboard,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -15,13 +13,12 @@ import {
   Gesture,
   GestureDetector,
   GestureHandlerRootView,
-  ScrollView,
 } from 'react-native-gesture-handler';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Animated, {
   Extrapolation,
   interpolate,
   runOnJS,
-  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -36,7 +33,6 @@ const DISMISS_VELOCITY = 850;
 const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 type DraggableBottomSheetProps = {
   visible: boolean;
@@ -66,7 +62,6 @@ export function DraggableBottomSheet({
   const scrollOffset = useSharedValue(0);
   const isClosingRef = useRef(false);
   const [isMounted, setIsMounted] = useState(visible);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const finishClose = useCallback(
     (notifyParent: boolean) => {
@@ -123,25 +118,6 @@ export function DraggableBottomSheet({
   useEffect(() => {
     if (!isMounted) return;
 
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-
-    const showSub = Keyboard.addListener(showEvent, (event) => {
-      setKeyboardHeight(event.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [isMounted]);
-
-  useEffect(() => {
-    if (!isMounted) return;
-
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       tryClose(true);
       return true;
@@ -149,12 +125,6 @@ export function DraggableBottomSheet({
 
     return () => subscription.remove();
   }, [isMounted, tryClose]);
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollOffset.value = event.contentOffset.y;
-    },
-  });
 
   const nativeScroll = Gesture.Native();
 
@@ -191,9 +161,6 @@ export function DraggableBottomSheet({
 
   if (!isMounted) return null;
 
-  const keyboardPadding =
-    keyboardHeight > 0 ? Math.max(0, keyboardHeight - insets.bottom) : 0;
-
   return (
     <Modal
       visible={isMounted}
@@ -227,27 +194,26 @@ export function DraggableBottomSheet({
 
               {typeof header === 'function' ? header(requestClose) : header}
 
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'android' ? insets.top : 0}
-                style={styles.keyboard}>
-                <GestureDetector gesture={nativeScroll}>
-                  <AnimatedScrollView
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
-                    bounces
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode="on-drag"
-                    contentContainerStyle={[
-                      styles.scrollContent,
-                      scrollContentStyle,
-                      keyboardPadding > 0 ? { paddingBottom: spacing.xl + keyboardPadding } : null,
-                    ]}>
-                    {children}
-                  </AnimatedScrollView>
-                </GestureDetector>
-              </KeyboardAvoidingView>
+              <GestureDetector gesture={nativeScroll}>
+                <KeyboardAwareScrollView
+                  enableOnAndroid
+                  enableAutomaticScroll
+                  extraScrollHeight={Platform.OS === 'android' ? 32 : 20}
+                  extraHeight={Platform.OS === 'android' ? 120 : 0}
+                  keyboardOpeningTime={0}
+                  onScroll={(event) => {
+                    scrollOffset.value = event.nativeEvent.contentOffset.y;
+                  }}
+                  scrollEventThrottle={16}
+                  bounces
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
+                  contentContainerStyle={[styles.scrollContent, scrollContentStyle]}
+                  style={styles.keyboard}>
+                  {children}
+                </KeyboardAwareScrollView>
+              </GestureDetector>
             </Animated.View>
           </GestureDetector>
         </View>
@@ -265,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.overlay,
   },
   sheet: {

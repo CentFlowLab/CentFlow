@@ -1,5 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { BackHandler, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SegmentedControl } from '@/components/layout';
@@ -38,6 +39,17 @@ export function ReceiptDigitizePreview({
   const insets = useSafeAreaInsets();
   const previewUri =
     selection === 'digitized' ? getReceiptDigitizedUri(draft) : getReceiptDisplayUri(draft);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      onCancel();
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [visible, onCancel]);
 
   return (
     <Modal
@@ -99,6 +111,13 @@ export function ReceiptDigitizePreview({
           <View style={styles.actions}>
             <Button label="Usar esta versão" onPress={onConfirm} fullWidth size="lg" />
             <Button label="Tirar outra foto" variant="secondary" onPress={onRetake} fullWidth />
+            <Button
+              label="Cancelar"
+              variant="ghost"
+              onPress={onCancel}
+              fullWidth
+              accessibilityLabel="Cancelar digitalização e voltar"
+            />
           </View>
         </View>
       </View>

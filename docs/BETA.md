@@ -72,12 +72,26 @@ O Supabase limita quantos emails de confirmação/recuperação pode enviar por 
 
 **Alternativa:** cria o utilizador manualmente em **Authentication → Users → Add user** (email + password) e usa **Entrar** na app.
 
-### Login com Google no Android
+### Login com Google
 
-1. **Supabase** → Authentication → URL Configuration → Redirect URLs:
-   - `centflow://auth/callback`
-   - `centflow://**`
-2. **Google Cloud Console** → OAuth → Android client com **SHA-1** do keystore EAS (`eas credentials`)
-3. **Supabase** → Authentication → Providers → Google (activar + Client ID/Secret Web)
+#### Erro «Unsupported provider: provider is not enabled»
 
-Sem o SHA-1 Android, o Google OAuth falha no telemóvel.
+O provider Google está **desactivado** no projecto Supabase. A app está correcta; falta configuração no dashboard:
+
+1. [Supabase Dashboard](https://supabase.com/dashboard) → **Authentication** → **Providers** → **Google**
+2. Activa o toggle **Enable Sign in with Google**
+3. Copia o **Client ID** e **Client Secret** do tipo **Web application** (Google Cloud Console → APIs & Services → Credentials)
+4. Guarda as alterações no Supabase
+
+#### Redirect URLs (obrigatório)
+
+**Supabase** → Authentication → URL Configuration → Redirect URLs:
+
+- `centflow://auth/callback`
+- `centflow://**`
+
+#### Android (SHA-1)
+
+**Google Cloud Console** → OAuth → Android client com **SHA-1** do keystore EAS (`eas credentials`).
+
+Sem o SHA-1 Android, o Google OAuth falha no telemóvel mesmo com o provider activo.

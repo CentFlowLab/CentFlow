@@ -72,6 +72,17 @@ function mapSupabaseAuthMessage(message: string): string {
     return 'Email inválido. Verifica o endereço e tenta novamente.';
   }
 
+  if (
+    lower.includes('provider is not enabled') ||
+    lower.includes('unsupported provider')
+  ) {
+    return (
+      'Login com Google não está activo no servidor. No Supabase Dashboard, activa ' +
+      'Authentication → Providers → Google e configura o Client ID e Client Secret ' +
+      '(Google Cloud Console).'
+    );
+  }
+
   return message;
 }
 
