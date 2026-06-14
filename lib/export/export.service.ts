@@ -12,6 +12,11 @@ import {
   formatPercent,
   getFormatContext,
 } from '@/lib/utils/format';
+import {
+  DEFAULT_PDF_SECTIONS,
+  normalizePdfSections,
+  type PdfSectionSelection,
+} from '@/lib/export/pdf-sections';
 
 export type FinancialPdfInput = {
   dashboard?: DashboardData;
@@ -19,6 +24,7 @@ export type FinancialPdfInput = {
   userName: string;
   transactions?: Transaction[];
   assets?: AssetsData;
+  sections?: PdfSectionSelection;
 };
 
 function escapeHtml(value: string): string {
@@ -149,7 +155,15 @@ function buildBreakdownRows(dashboard?: DashboardData): string {
 }
 
 function buildPdfHtml(input: FinancialPdfInput): string {
-  const { dashboard, profile, userName, transactions = [], assets } = input;
+  const {
+    dashboard,
+    profile,
+    userName,
+    transactions = [],
+    assets,
+    sections: rawSections,
+  } = input;
+  const sections = normalizePdfSections(rawSections ?? DEFAULT_PDF_SECTIONS);
   const { locale } = getFormatContext();
   const netWorth = formatCurrency(dashboard?.netWorth.netWorth ?? 0);
   const change = formatPercent(dashboard?.netWorthChangePercent ?? 0);
@@ -209,12 +223,24 @@ function buildPdfHtml(input: FinancialPdfInput): string {
     </div>
   `;
 
+  const sectionBlocks = [
+    sections.patrimonio ? section('Património', patrimonioBody) : '',
+    sections.composicao ? section('Composição', buildBreakdownRows(dashboard)) : '',
+    sections.perfil ? section('Perfil financeiro', perfilBody) : '',
+    sections.movimentos ? section('Movimentos recentes', buildTransactionRows(transactions)) : '',
+    sections.objetivos ? section('Objectivos', buildGoalsSection(assets)) : '',
+    sections.ativos ? section('Ativos', buildAssetsSummary(assets)) : '',
+  ].join('');
+
   return `
-    <html>
+    <!DOCTYPE html>
+    <html lang="pt" style="background-color:#05080E;color:#F8FAFC;">
       <head>
         <meta charset="utf-8" />
+        <meta name="color-scheme" content="dark" />
         <style>
           :root {
+            color-scheme: dark;
             --bg: #05080E;
             --surface: #101820;
             --surface-deep: #0A1214;
@@ -232,17 +258,42 @@ function buildPdfHtml(input: FinancialPdfInput): string {
             --radius-sm: 10px;
           }
 
-          * { box-sizing: border-box; }
+          @page {
+            size: A4;
+            margin: 18mm 14mm;
+            background-color: #05080E;
+          }
 
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: var(--text);
-            background: var(--bg);
-            margin: 0;
-            padding: 36px 32px 40px;
-            line-height: 1.45;
+          @media print {
+            html, body, .page-shell {
+              background-color: #05080E !important;
+              color: #F8FAFC !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          }
+
+          * {
+            box-sizing: border-box;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+          }
+
+          html,
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #F8FAFC;
+            background-color: #05080E;
+            margin: 0;
+            padding: 0;
+            line-height: 1.45;
+          }
+
+          .page-shell {
+            background-color: #05080E;
+            color: #F8FAFC;
+            min-height: 100%;
+            padding: 36px 32px 40px;
           }
 
           .page-header {
@@ -273,11 +324,13 @@ function buildPdfHtml(input: FinancialPdfInput): string {
           }
 
           .section {
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background-color: #101820;
+            border: 1px solid #1E2A33;
             border-radius: var(--radius);
             margin-bottom: 18px;
             overflow: hidden;
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
 
           .section-head {
@@ -328,8 +381,8 @@ function buildPdfHtml(input: FinancialPdfInput): string {
 
           .stat-card,
           .mini-card {
-            background: var(--surface-deep);
-            border: 1px solid var(--border);
+            background-color: #0A1214;
+            border: 1px solid #1E2A33;
             border-radius: var(--radius-sm);
             padding: 14px 16px;
           }
@@ -446,42 +499,45 @@ function buildPdfHtml(input: FinancialPdfInput): string {
           .footer {
             margin-top: 8px;
             padding: 16px 18px;
-            border: 1px solid var(--border);
+            border: 1px solid #1E2A33;
             border-radius: var(--radius-sm);
-            background: var(--surface);
-            color: var(--text-muted);
+            background-color: #101820;
+            color: #64748B;
             font-size: 11px;
             line-height: 1.6;
             text-align: center;
           }
         </style>
       </head>
-      <body>
+      <body style="background-color:#05080E;color:#F8FAFC;margin:0;padding:0;">
+        <div class="page-shell" style="background-color:#05080E;color:#F8FAFC;">
         <header class="page-header">
           <div class="brand">CentFlow</div>
           <h1>Relatório Financeiro</h1>
           <div class="meta">${escapeHtml(userName)} · ${escapeHtml(date)}</div>
         </header>
 
-        ${section('Património', patrimonioBody)}
-        ${section('Composição', buildBreakdownRows(dashboard))}
-        ${section('Perfil financeiro', perfilBody)}
-        ${section('Movimentos recentes', buildTransactionRows(transactions))}
-        ${section('Objectivos', buildGoalsSection(assets))}
-        ${section('Ativos', buildAssetsSummary(assets))}
+        ${sectionBlocks}
 
         <p class="footer">
           Relatório gerado pela CentFlow · Design dark premium<br />
           Os valores reflectem os dados disponíveis no momento da exportação.
         </p>
+        </div>
       </body>
     </html>
   `;
 }
 
 export async function exportFinancialPdf(input: FinancialPdfInput): Promise<void> {
-  const html = buildPdfHtml(input);
-  const { uri } = await Print.printToFileAsync({ html });
+  const html = buildPdfHtml({
+    ...input,
+    sections: normalizePdfSections(input.sections ?? DEFAULT_PDF_SECTIONS),
+  });
+  const { uri } = await Print.printToFileAsync({
+    html,
+    base64: false,
+  });
 
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(uri, {

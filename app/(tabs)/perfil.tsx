@@ -32,13 +32,8 @@ const MENU_SECTIONS: Array<{
   items: MenuItem[];
 }> = [
   {
-    title: 'Conta',
+    title: 'Notificações',
     items: [
-      {
-        icon: { ios: 'person.circle', android: 'account_circle', web: 'account_circle' },
-        label: 'Dados pessoais',
-        route: '/settings/personal-data',
-      },
       {
         icon: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
         label: 'Notificações',
