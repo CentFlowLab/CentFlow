@@ -187,16 +187,20 @@ export async function register(credentials: RegisterCredentials): Promise<AuthSe
     email,
     password: credentials.password,
     options: {
-      data: { name },
+      data: { name, full_name: name },
     },
   });
 
   if (error) throw new Error(error.message);
 
-  if (!data.session?.access_token || !data.user) {
+  if (data.user && !data.session) {
     throw new Error(
-      'Conta criada. Confirma o email no Supabase (ou desactiva confirmações no dashboard) antes de entrar.',
+      'Conta criada. Verifica o teu email para confirmar — ou desactiva «Confirm email» no Supabase para entrar logo após o registo.',
     );
+  }
+
+  if (!data.session?.access_token || !data.user) {
+    throw new Error('Não foi possível iniciar sessão após o registo. Tenta entrar com email e password.');
   }
 
   const user = await fetchProfileUser(data.user.id, data.user.email ?? email);

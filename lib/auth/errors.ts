@@ -37,6 +37,44 @@ function isPlaceholderApiUrl(): boolean {
   return API_BASE_URL.includes('api.centflow.app');
 }
 
+/** Mensagens legíveis para erros comuns do Supabase Auth. */
+function mapSupabaseAuthMessage(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (lower.includes('email rate limit exceeded')) {
+    return (
+      'Limite de emails do servidor atingido (muitas tentativas de registo ou recuperação de password). ' +
+      'Aguarda 30–60 minutos e tenta novamente, ou usa «Entrar» se a conta já foi criada.'
+    );
+  }
+
+  if (lower.includes('user already registered') || lower.includes('already been registered')) {
+    return 'Este email já está registado. Usa «Entrar» com a tua password.';
+  }
+
+  if (lower.includes('invalid login credentials')) {
+    return 'Email ou password incorretos.';
+  }
+
+  if (lower.includes('email not confirmed')) {
+    return 'Confirma o teu email antes de entrar (verifica a caixa de entrada e spam).';
+  }
+
+  if (lower.includes('signup is disabled')) {
+    return 'O registo de novas contas está temporariamente desactivado.';
+  }
+
+  if (lower.includes('password should be at least')) {
+    return 'A password deve ter pelo menos 6 caracteres.';
+  }
+
+  if (lower.includes('unable to validate email address')) {
+    return 'Email inválido. Verifica o endereço e tenta novamente.';
+  }
+
+  return message;
+}
+
 export function getAuthErrorMessage(error: unknown): string {
   if (isNetworkFailure(error)) {
     const isLocalhost = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
@@ -71,7 +109,7 @@ export function getAuthErrorMessage(error: unknown): string {
   }
 
   if (error instanceof Error && error.message && error.message !== 'NETWORK_ERROR') {
-    return error.message;
+    return mapSupabaseAuthMessage(error.message);
   }
 
   return 'Ocorreu um erro inesperado. Tenta novamente.';

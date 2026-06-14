@@ -57,3 +57,27 @@ npm run eas:update:preview -- "mensagem do update"
 ## O que acontece se o Supabase falhar
 
 Em Beta/Produção a app **não** mostra dados fictícios. Os ecrãs exibem estados de erro com opção de tentar novamente.
+
+## Autenticação (registo / Google)
+
+### Erro «email rate limit exceeded»
+
+O Supabase limita quantos emails de confirmação/recuperação pode enviar por hora (plano gratuito ≈ 2–4/hora).
+
+**Solução rápida para testes Beta:**
+
+1. [Supabase Dashboard](https://supabase.com/dashboard) → **Authentication** → **Providers** → **Email**
+2. Desactiva **«Confirm email»** — o registo passa a criar sessão imediata **sem enviar email**
+3. Aguarda 30–60 min se o limite ainda estiver activo
+
+**Alternativa:** cria o utilizador manualmente em **Authentication → Users → Add user** (email + password) e usa **Entrar** na app.
+
+### Login com Google no Android
+
+1. **Supabase** → Authentication → URL Configuration → Redirect URLs:
+   - `centflow://auth/callback`
+   - `centflow://**`
+2. **Google Cloud Console** → OAuth → Android client com **SHA-1** do keystore EAS (`eas credentials`)
+3. **Supabase** → Authentication → Providers → Google (activar + Client ID/Secret Web)
+
+Sem o SHA-1 Android, o Google OAuth falha no telemóvel.
