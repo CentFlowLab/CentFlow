@@ -1,6 +1,21 @@
 import type { InventoryItem } from './types';
+import type { Credit } from './types';
 
-export type AssetsTab = 'objetivos' | 'garantias' | 'inventario';
+export type AssetsTab =
+  | 'objetivos'
+  | 'garantias'
+  | 'inventario'
+  | 'creditos'
+  | 'subscricoes';
+
+export type Subscription = {
+  id: string;
+  name: string;
+  amount: number;
+  renewsAt?: string;
+  category?: string;
+  notes?: string;
+};
 
 export type Goal = {
   id: string;
@@ -30,10 +45,14 @@ export type AssetsData = {
   goals: Goal[];
   warranties: Warranty[];
   inventory: InventoryItem[];
+  credits: Credit[];
+  subscriptions: Subscription[];
 };
 
 export type AssetsCounts = {
   goals: number;
   warranties: number;
   inventory: number;
+  credits: number;
+  subscriptions: number;
 };

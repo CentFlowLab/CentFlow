@@ -36,7 +36,7 @@ export async function fetchAssetsData(): Promise<AssetsData> {
     return supabaseAssets.fetchAssets();
   }
 
-  return { goals: [], warranties: [], inventory: [] };
+  return { goals: [], warranties: [], inventory: [], credits: [], subscriptions: [] };
 }
 
 export async function createGoal(input: CreateGoalInput): Promise<Goal> {

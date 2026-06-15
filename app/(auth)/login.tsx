@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
 import { Button, Card, Text, TextField } from '@/components/ui';
-import { isMockAuthEnabled, loginSchema, useAuth } from '@/lib/auth';
+import { isMockAuthEnabled, loginSchema, useAuth, getAuthErrorMessage } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
 export default function LoginScreen() {
@@ -37,7 +37,7 @@ export default function LoginScreen() {
       await signIn(result.data);
       router.replace('/(tabs)');
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Erro ao iniciar sessão');
+      setApiError(getAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Erro ao iniciar sessão com Google');
+      setApiError(getAuthErrorMessage(error));
     } finally {
       setGoogleLoading(false);
     }

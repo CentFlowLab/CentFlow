@@ -64,7 +64,17 @@ export default function PrecosScreen() {
           </Card>
 
           <SectionHeader title="Variações recentes" />
-          {data.changes.map((item) => {
+          {data.changes.length === 0 ? (
+            <Card variant="outlined" style={styles.emptyCard}>
+              <Text variant="bodyMedium" align="center">
+                Ainda sem variações registadas
+              </Text>
+              <Text variant="caption" color="textSecondary" align="center">
+                Adiciona movimentos e subscrições para começares a acompanhar preços.
+              </Text>
+            </Card>
+          ) : (
+            data.changes.map((item) => {
             const isUp = item.changePercent > 0;
             return (
               <Card key={item.id} variant="outlined" style={styles.changeCard}>
@@ -78,7 +88,6 @@ export default function PrecosScreen() {
                   <Text
                     variant="bodyMedium"
                     color={isUp ? 'danger' : 'success'}>
-                    {isUp ? '+' : ''}
                     {formatPercent(item.changePercent)}
                   </Text>
                 </View>
@@ -89,8 +98,11 @@ export default function PrecosScreen() {
                 </View>
               </Card>
             );
-          })}
+          })
+          )}
 
+          {data.insights.length > 0 ? (
+            <>
           <SectionHeader title="Insights" />
           {data.insights.map((insight) => (
             <Card key={insight.id} variant="elevated" style={styles.insightCard}>
@@ -134,6 +146,8 @@ export default function PrecosScreen() {
               </View>
             </Card>
           ))}
+            </>
+          ) : null}
         </ScreenContainer>
       )}
     </View>
@@ -191,6 +205,11 @@ const styles = StyleSheet.create({
   changeCard: {
     marginBottom: spacing.sm,
     gap: spacing.xs,
+  },
+  emptyCard: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.xl,
   },
   changeHeader: {
     flexDirection: 'row',

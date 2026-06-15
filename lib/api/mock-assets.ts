@@ -52,6 +52,8 @@ export async function fetchMockAssets(): Promise<AssetsData> {
     goals: [...goalsStore],
     warranties: [...warrantiesStore],
     inventory: [...inventoryStore],
+    credits: [],
+    subscriptions: [],
   };
 }
 

@@ -18,7 +18,7 @@ import { getCategoriesForType } from '@/lib/data/transaction-categories';
 import { formValuesToConfirmation } from '@/lib/domain/receipt-confirmation';
 import { createTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
-import type { Transaction, TransactionType } from '@/lib/domain/transaction.types';
+import type { Transaction, TransactionFilter, TransactionType } from '@/lib/domain/transaction.types';
 import {
   getApiErrorMessage,
   getReceiptUploadErrorMessage,
@@ -33,10 +33,14 @@ import { ReceiptAttachmentField } from './ReceiptAttachmentField';
 import { ReceiptDigitizePreview } from './ReceiptDigitizePreview';
 import { ReceiptOcrProcessingOverlay } from './ReceiptOcrProcessingOverlay';
 
+export type TransactionModalPreset = TransactionFilter;
+
 type AddTransactionModalProps = {
   visible: boolean;
   onClose: () => void;
   startWithReceiptPicker?: boolean;
+  /** Filtro activo em Movimentos — define tipo inicial e se mostra selector. */
+  presetFilter?: TransactionModalPreset;
   onImportCsv?: () => void;
 };
 
@@ -54,6 +58,7 @@ export function AddTransactionModal({
   visible,
   onClose,
   startWithReceiptPicker = false,
+  presetFilter = 'all',
   onImportCsv,
 }: AddTransactionModalProps) {
   const createMutation = useCreateTransaction();
@@ -88,10 +93,14 @@ export function AddTransactionModal({
   const savePhaseLabel = getCreateTransactionPhaseLabel(createMutation.phase);
   const processPhaseLabel = processReceipt.phaseLabel;
 
+  const showTypePicker = presetFilter === 'all';
+  const lockedType: TransactionType | null =
+    presetFilter === 'expense' ? 'expense' : presetFilter === 'income' ? 'income' : null;
+
   useEffect(() => {
     if (!visible) return;
 
-    setType('expense');
+    setType(lockedType ?? 'expense');
     setAmount('');
     setCategory('');
     setDescription('');
@@ -107,7 +116,7 @@ export function AddTransactionModal({
     createMutation.reset();
     processReceipt.reset();
     didAutoPick.current = false;
-  }, [visible]);
+  }, [visible, lockedType]);
 
   useEffect(() => {
     setCategory('');
@@ -434,7 +443,18 @@ export function AddTransactionModal({
 
         {showTransactionForm ? (
           <>
-            <SegmentedControl segments={TYPE_SEGMENTS} value={type} onChange={setType} />
+            {showTypePicker ? (
+              <SegmentedControl segments={TYPE_SEGMENTS} value={type} onChange={setType} />
+            ) : (
+              <Card variant="outlined" padding="md" style={styles.lockedTypeCard}>
+                <Text variant="caption" color="textMuted">
+                  Tipo de movimento
+                </Text>
+                <Text variant="bodyMedium" color="primary">
+                  {type === 'income' ? 'Receita' : 'Despesa'}
+                </Text>
+              </Card>
+            )}
 
             <TextField
               label="Valor (€)"
@@ -598,6 +618,9 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: spacing.lg,
+  },
+  lockedTypeCard: {
+    borderColor: colors.border,
   },
   field: {
     gap: spacing.xs,

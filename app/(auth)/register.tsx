@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
 import { Button, Card, Text, TextField } from '@/components/ui';
-import { isMockAuthEnabled, registerSchema, useAuth } from '@/lib/auth';
+import { isMockAuthEnabled, registerSchema, useAuth, getAuthErrorMessage } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
 export default function RegisterScreen() {
@@ -48,7 +48,7 @@ export default function RegisterScreen() {
       });
       router.replace('/(tabs)');
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Erro ao criar conta');
+      setApiError(getAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export default function RegisterScreen() {
         router.replace('/(tabs)');
       }
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Erro ao iniciar sessão com Google');
+      setApiError(getAuthErrorMessage(error));
     } finally {
       setGoogleLoading(false);
     }

@@ -1,5 +1,5 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { AssetsCounts, AssetsTab } from '@/lib/domain/assets.types';
@@ -15,6 +15,8 @@ const TAB_COUNT_KEY: Record<AssetsTab, keyof AssetsCounts> = {
   objetivos: 'goals',
   garantias: 'warranties',
   inventario: 'inventory',
+  creditos: 'credits',
+  subscricoes: 'subscriptions',
 };
 
 const OVERVIEW_ITEMS: Array<{
@@ -45,6 +47,20 @@ const OVERVIEW_ITEMS: Array<{
     color: colors.success,
     bg: colors.successMuted,
   },
+  {
+    key: 'creditos',
+    label: 'Créditos',
+    icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
+    color: colors.warning,
+    bg: 'rgba(251, 191, 36, 0.12)',
+  },
+  {
+    key: 'subscricoes',
+    label: 'Subscrições',
+    icon: { ios: 'repeat.circle.fill', android: 'autorenew', web: 'autorenew' },
+    color: colors.danger,
+    bg: colors.dangerMuted,
+  },
 ];
 
 export function AssetsOverviewCard({
@@ -58,7 +74,10 @@ export function AssetsOverviewCard({
         Resumo dos ativos
       </Text>
 
-      <View style={styles.grid}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.grid}>
         {OVERVIEW_ITEMS.map((item) => {
           const count = counts[TAB_COUNT_KEY[item.key]];
           const isActive = activeTab === item.key;
@@ -85,7 +104,7 @@ export function AssetsOverviewCard({
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
     </Card>
   );
 }
@@ -97,9 +116,10 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     gap: spacing.sm,
+    paddingRight: spacing.xs,
   },
   tile: {
-    flex: 1,
+    width: 108,
     alignItems: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.md,

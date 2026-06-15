@@ -24,9 +24,9 @@ import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.ty
 import { colors, spacing } from '@/lib/theme';
 
 const FILTER_SEGMENTS = [
-  { key: 'all' as const, label: 'Todos' },
   { key: 'expense' as const, label: 'Despesas' },
   { key: 'income' as const, label: 'Receitas' },
+  { key: 'all' as const, label: 'Todos' },
 ];
 
 export default function MovimentosScreen() {
@@ -184,6 +184,7 @@ export default function MovimentosScreen() {
         visible={modalVisible}
         onClose={closeAddModal}
         startWithReceiptPicker={startWithReceiptPicker}
+        presetFilter={filter}
       />
 
       <ImportCsvModal

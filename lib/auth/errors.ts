@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, isLegacyPlaceholderApiUrl } from '@/lib/api/client';
+import { getSupabaseGoogleOAuthCallbackUrl } from '@/lib/auth/supabase-oauth.config';
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { isSupabaseEnabled } from '@/lib/supabase';
 
@@ -99,9 +100,10 @@ function mapSupabaseAuthMessage(message: string): string {
     lower.includes('redirect uri') ||
     lower.includes('invalid redirect')
   ) {
+    const callback = getSupabaseGoogleOAuthCallbackUrl();
     return (
-      'O login com Google não está configurado correctamente no servidor. ' +
-      'Tenta entrar com email e password ou contacta o suporte.'
+      'O login com Google precisa de configuração no Google Cloud Console. ' +
+      `Adiciona este URI em Authorized redirect URIs: ${callback}`
     );
   }
 

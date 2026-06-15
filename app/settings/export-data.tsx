@@ -31,6 +31,8 @@ export default function ExportDataScreen() {
         goals: [],
         warranties: [],
         inventory: [],
+        credits: [],
+        subscriptions: [],
       });
       showToast('Dados exportados com sucesso.', 'success');
     } catch (error) {

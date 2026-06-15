@@ -107,6 +107,8 @@ export async function fetchAssets(): Promise<AssetsData> {
     goals: (goalsRes.data ?? []).map((row) => mapGoalRow(row as GoalRow)),
     warranties: (warrantiesRes.data ?? []).map((row) => mapWarrantyRow(row as WarrantyRow)),
     inventory: (inventoryRes.data ?? []).map((row) => mapInventoryRow(row as InventoryRow)),
+    credits: [],
+    subscriptions: [],
   };
 }
 

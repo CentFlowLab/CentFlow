@@ -13,7 +13,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect } from '@/components/app';
+import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect } from '@/components/app';
 import { AuthLoadingScreen } from '@/components/auth';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -80,6 +80,7 @@ export default function RootLayout() {
               <PreferencesProvider>
                 <ThemeProvider value={CentFlowTheme}>
                   <StatusBar style="light" />
+                  <AndroidNavigationBarEffect />
                   <RootNavigator />
                 </ThemeProvider>
               </PreferencesProvider>
