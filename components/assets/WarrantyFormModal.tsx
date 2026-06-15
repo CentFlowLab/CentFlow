@@ -55,11 +55,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
       setExpiresAt(warranty.expiresAt);
       setPurchaseDate(warranty.purchaseDate ?? '');
       setStore(warranty.store ?? '');
-      setSelectedReceipt(
-        warranty.receiptTransactionId
-          ? transactions.find((tx) => tx.id === warranty.receiptTransactionId) ?? null
-          : null,
-      );
+      setSelectedReceipt(null);
     } else {
       setProduct('');
       setExpiresAt(toIsoDateString(new Date(Date.now() + 365 * 86400000)));
@@ -73,7 +69,14 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
     createWarranty.reset();
     updateWarranty.reset();
     deleteWarranty.reset();
-  }, [visible, warranty, transactions, createWarranty, updateWarranty, deleteWarranty]);
+  }, [visible, warranty?.id]);
+
+  const receiptId = warranty?.receiptTransactionId;
+
+  useEffect(() => {
+    if (!visible || !receiptId || transactions.length === 0) return;
+    setSelectedReceipt(transactions.find((tx) => tx.id === receiptId) ?? null);
+  }, [visible, receiptId, transactions]);
 
   const expiryPreview = useMemo(() => {
     if (!expiresAt || !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) return null;

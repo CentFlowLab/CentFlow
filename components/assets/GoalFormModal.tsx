@@ -65,7 +65,8 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
     createGoal.reset();
     updateGoal.reset();
     deleteGoal.reset();
-  }, [visible, goal, createGoal, updateGoal, deleteGoal]);
+    // Mutations mudam de referência a cada render — só re-inicializar ao abrir ou mudar item.
+  }, [visible, goal?.id]);
 
   const preview = useMemo(() => {
     const targetValue = parseGoalAmount(target);

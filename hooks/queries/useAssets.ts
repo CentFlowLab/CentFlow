@@ -29,6 +29,7 @@ export function invalidateAssetsQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: queryKeys.home });
   queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
   queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+  queryClient.invalidateQueries({ queryKey: queryKeys.netWorth });
 }
 
 export function useAssets() {

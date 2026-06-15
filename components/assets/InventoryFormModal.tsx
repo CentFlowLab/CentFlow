@@ -68,7 +68,7 @@ export function InventoryFormModal({
     createInventory.reset();
     updateInventory.reset();
     deleteInventory.reset();
-  }, [visible, item, createInventory, updateInventory, deleteInventory]);
+  }, [visible, item?.id]);
 
   async function handleSave() {
     setApiError(null);

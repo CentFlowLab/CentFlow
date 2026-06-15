@@ -13,7 +13,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { StartupErrorScreen, StartupShell } from '@/components/app';
+import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect } from '@/components/app';
 import { AuthLoadingScreen } from '@/components/auth';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -135,7 +135,12 @@ function RootNavigator() {
         </Stack.Protected>
       </Stack>
 
-      {isAuthenticated ? <OnboardingGateEffect /> : null}
+      {isAuthenticated ? (
+        <>
+          <OnboardingGateEffect />
+          <RemoteDataSyncEffect />
+        </>
+      ) : null}
     </GestureHandlerRootView>
   );
 }

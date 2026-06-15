@@ -33,11 +33,7 @@ export async function fetchAssetsData(): Promise<AssetsData> {
   }
 
   if (isSupabaseEnabled()) {
-    try {
-      return await supabaseAssets.fetchAssets();
-    } catch {
-      return { goals: [], warranties: [], inventory: [] };
-    }
+    return supabaseAssets.fetchAssets();
   }
 
   return { goals: [], warranties: [], inventory: [] };

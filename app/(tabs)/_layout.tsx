@@ -7,10 +7,15 @@ import { TabBarAnalisesIcon } from '@/components/layout';
 import { colors, typography } from '@/lib/theme';
 
 const TAB_BAR_CONTENT_HEIGHT = Platform.OS === 'ios' ? 56 : 52;
+/** Fallback quando edge-to-edge não reporta inset inferior (alguns Android). */
+const ANDROID_NAV_BAR_FALLBACK = 24;
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 8 : 0);
+  const bottomInset =
+    Platform.OS === 'android'
+      ? Math.max(insets.bottom, ANDROID_NAV_BAR_FALLBACK)
+      : insets.bottom;
 
   return (
     <Tabs
@@ -25,6 +30,9 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: typography.tabLabel,
         tabBarItemStyle: styles.tabBarItem,
+        sceneStyle: {
+          backgroundColor: colors.background,
+        },
       }}>
       <Tabs.Screen
         name="index"

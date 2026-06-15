@@ -39,6 +39,7 @@ export function invalidateTransactionQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
   queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
   queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
+  queryClient.invalidateQueries({ queryKey: queryKeys.netWorth });
 }
 
 export function useTransactions(filter: TransactionFilter = 'all') {
