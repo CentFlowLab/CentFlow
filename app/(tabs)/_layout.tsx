@@ -30,9 +30,6 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: typography.tabLabel,
         tabBarItemStyle: styles.tabBarItem,
-        sceneStyle: {
-          backgroundColor: colors.background,
-        },
       }}>
       <Tabs.Screen
         name="index"

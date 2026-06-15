@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/api/keys';
+import { invalidateAssetsQueries } from '@/lib/api/invalidate-queries';
 import {
   createGoal,
   createInventoryItem,
@@ -24,13 +25,7 @@ import type {
   UpdateWarrantyInput,
 } from '@/lib/domain/assets.schema';
 
-export function invalidateAssetsQueries(queryClient: QueryClient) {
-  queryClient.invalidateQueries({ queryKey: queryKeys.assets });
-  queryClient.invalidateQueries({ queryKey: queryKeys.home });
-  queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
-  queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
-  queryClient.invalidateQueries({ queryKey: queryKeys.netWorth });
-}
+export { invalidateAssetsQueries };
 
 export function useAssets() {
   const { isAuthenticated } = useAuth();

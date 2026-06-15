@@ -1,7 +1,10 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-import { invalidateAssetsQueries } from '@/hooks/queries/useAssets';
-import { invalidateTransactionQueries } from '@/hooks/queries/useTransactions';
+import {
+  invalidateAllRemoteData,
+  invalidateAssetsQueries,
+  invalidateTransactionQueries,
+} from '@/lib/api/invalidate-queries';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase/client';
 
 type SyncTable = 'transactions' | 'goals' | 'warranties' | 'inventory_items';
@@ -53,7 +56,4 @@ export function subscribeToUserDataSync(
   }
 }
 
-export function invalidateAllRemoteData(queryClient: QueryClient): void {
-  invalidateTransactionQueries(queryClient);
-  invalidateAssetsQueries(queryClient);
-}
+export { invalidateAllRemoteData };

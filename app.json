@@ -16,6 +16,10 @@
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     },
+    "androidNavigationBar": {
+      "backgroundColor": "#0A0F18",
+      "barStyle": "light-content"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.everyft1me.centflow",
@@ -26,7 +30,7 @@
     "android": {
       "package": "com.everyft1me.centflow",
       "softwareKeyboardLayoutMode": "resize",
-      "edgeToEdgeEnabled": true,
+      "edgeToEdgeEnabled": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundColor": "#0A0F18"

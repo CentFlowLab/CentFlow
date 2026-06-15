@@ -46,13 +46,24 @@ const CentFlowTheme = {
 };
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  if (__DEV__) {
+    console.error('[CentFlow] ErrorBoundary:', error);
+  }
+
+  const devHint =
+    __DEV__ && error instanceof Error && error.message
+      ? `\n\n(${error.message})`
+      : '';
+
   return (
     <SafeAreaProvider>
       <StartupShell>
         <StartupErrorScreen
           error={error}
           onRetry={retry}
-          message="Ocorreu um erro inesperado. Podes tentar abrir a app novamente."
+          message={
+            'Ocorreu um erro inesperado. Podes tentar abrir a app novamente.' + devHint
+          }
         />
       </StartupShell>
     </SafeAreaProvider>

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { useState } from 'react';
 
 import { queryKeys } from '@/lib/api/keys';
+import { invalidateTransactionQueries } from '@/lib/api/invalidate-queries';
 import {
   createTransaction,
   deleteTransaction,
@@ -33,14 +34,7 @@ export function patchTransactionCaches(
   );
 }
 
-export function invalidateTransactionQueries(queryClient: QueryClient) {
-  queryClient.invalidateQueries({ queryKey: ['transactions'] });
-  queryClient.invalidateQueries({ queryKey: queryKeys.home });
-  queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
-  queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
-  queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
-  queryClient.invalidateQueries({ queryKey: queryKeys.netWorth });
-}
+export { invalidateTransactionQueries };
 
 export function useTransactions(filter: TransactionFilter = 'all') {
   const { isAuthenticated } = useAuth();
