@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
-/** Fallback Beta — alinhado com eas.json / app.config.js (chaves públicas client-side). */
-const BETA_PUBLIC_DEFAULTS = {
+/** Supabase CentFlow — URL e anon key públicos (client-side). */
+const CENTFLOW_SUPABASE_DEFAULTS = {
   supabaseUrl: 'https://oxhjfwmhcwadlltinlck.supabase.co',
   supabaseAnonKey: 'sb_publishable_nY3Bqe4UcgbtIteavz6H1Q_kgquHcDQ',
   mockAuth: 'false',
@@ -23,26 +23,31 @@ function readVariantRaw(): string {
   return extra.appVariant?.trim() || process.env.EXPO_PUBLIC_APP_VARIANT?.trim() || '';
 }
 
-/** Detecta Beta sem depender de app-variant (evita ciclo de imports). */
-function isBetaRuntime(): boolean {
+/**
+ * Beta, produção ou release sem variant explícita (ex.: iOS TestFlight).
+ * Não aplica em development explícito.
+ */
+function isRealDataRuntime(): boolean {
   const variant = readVariantRaw();
-  if (variant === 'beta') return true;
-  if (variant === 'development' || variant === 'production') return false;
+  if (variant === 'beta' || variant === 'production') return true;
+  if (variant === 'development') return false;
 
   const appName = Constants.expoConfig?.name ?? '';
-  return appName.includes('Beta');
+  if (appName.includes('Beta')) return true;
+
+  return !__DEV__;
 }
 
-function betaFallback(name: string): string {
-  if (!isBetaRuntime()) return '';
+function realDataFallback(name: string): string {
+  if (!isRealDataRuntime()) return '';
 
   switch (name) {
     case 'EXPO_PUBLIC_SUPABASE_URL':
-      return BETA_PUBLIC_DEFAULTS.supabaseUrl;
+      return CENTFLOW_SUPABASE_DEFAULTS.supabaseUrl;
     case 'EXPO_PUBLIC_SUPABASE_ANON_KEY':
-      return BETA_PUBLIC_DEFAULTS.supabaseAnonKey;
+      return CENTFLOW_SUPABASE_DEFAULTS.supabaseAnonKey;
     case 'EXPO_PUBLIC_MOCK_AUTH':
-      return BETA_PUBLIC_DEFAULTS.mockAuth;
+      return CENTFLOW_SUPABASE_DEFAULTS.mockAuth;
     default:
       return '';
   }
@@ -50,31 +55,34 @@ function betaFallback(name: string): string {
 
 /**
  * Lê variáveis públicas embutidas na build nativa (`extra`) ou no bundle JS (`process.env`).
- * O `extra` da build nativa sobrevive melhor a OTA quando o export não traz env no EAS.
+ * Fallback para Supabase em builds release quando OTA/build não embutem env.
  */
 export function getRuntimePublicEnv(name: string): string {
   const extra = readExtra();
 
   switch (name) {
-    case 'EXPO_PUBLIC_APP_VARIANT':
-      return readVariantRaw() || (isBetaRuntime() ? 'beta' : '');
+    case 'EXPO_PUBLIC_APP_VARIANT': {
+      const value = readVariantRaw();
+      if (value) return value;
+      return isRealDataRuntime() && !__DEV__ ? 'production' : '';
+    }
     case 'EXPO_PUBLIC_SUPABASE_URL':
       return (
         extra.supabaseUrl?.trim() ||
         process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ||
-        betaFallback(name)
+        realDataFallback(name)
       );
     case 'EXPO_PUBLIC_SUPABASE_ANON_KEY':
       return (
         extra.supabaseAnonKey?.trim() ||
         process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
-        betaFallback(name)
+        realDataFallback(name)
       );
     case 'EXPO_PUBLIC_MOCK_AUTH':
       return (
         extra.mockAuth?.trim() ||
         process.env.EXPO_PUBLIC_MOCK_AUTH?.trim() ||
-        betaFallback(name)
+        realDataFallback(name)
       );
     default:
       return process.env[name]?.trim() || '';

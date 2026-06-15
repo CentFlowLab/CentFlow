@@ -1,8 +1,8 @@
 /** @type {import('expo/config').ExpoConfig} */
 const appJson = require('./app.json');
 
-/** Valores Beta — URL e anon key são públicos (client-side). */
-const BETA_SUPABASE = {
+/** Supabase CentFlow — URL e anon key públicos (client-side). */
+const CENTFLOW_SUPABASE = {
   url: 'https://oxhjfwmhcwadlltinlck.supabase.co',
   anonKey: 'sb_publishable_nY3Bqe4UcgbtIteavz6H1Q_kgquHcDQ',
 };
@@ -31,13 +31,14 @@ function resolveVariant() {
 const variant = resolveVariant();
 const isBeta = variant === 'beta';
 const isProduction = variant === 'production';
+const isRealData = isBeta || isProduction;
 
 const supabaseUrl =
   process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ||
-  (isBeta ? BETA_SUPABASE.url : '');
+  (isRealData ? CENTFLOW_SUPABASE.url : '');
 const supabaseAnonKey =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
-  (isBeta ? BETA_SUPABASE.anonKey : '');
+  (isRealData ? CENTFLOW_SUPABASE.anonKey : '');
 
 const mockAuth =
   process.env.EXPO_PUBLIC_MOCK_AUTH?.trim() ||
