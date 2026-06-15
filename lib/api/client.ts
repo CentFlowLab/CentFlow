@@ -1,11 +1,12 @@
 import { getAccessToken } from './token';
+import { getRuntimePublicEnv } from '@/lib/config/runtime-env';
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { getSupabaseUrl, isSupabaseEnabled } from '@/lib/supabase';
 
 const LEGACY_PLACEHOLDER_API = 'https://api.centflow.app';
 
 function resolveApiBaseUrl(): string {
-  const configured = process.env.EXPO_PUBLIC_API_URL?.trim();
+  const configured = getRuntimePublicEnv('EXPO_PUBLIC_API_URL');
 
   if (configured && !configured.includes('api.centflow.app')) {
     return configured;

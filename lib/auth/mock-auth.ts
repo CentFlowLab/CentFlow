@@ -10,6 +10,7 @@ function getInitials(name: string): string {
 }
 
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
+import { getRuntimePublicEnv } from '@/lib/config/runtime-env';
 
 /**
  * Modo dev: permite testar a app sem backend.
@@ -19,8 +20,9 @@ import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
  * - Development → mock activo por defeito em __DEV__
  */
 export function isMockAuthEnabled(): boolean {
-  if (process.env.EXPO_PUBLIC_MOCK_AUTH === 'false') return false;
-  if (process.env.EXPO_PUBLIC_MOCK_AUTH === 'true') return true;
+  const mockAuth = getRuntimePublicEnv('EXPO_PUBLIC_MOCK_AUTH');
+  if (mockAuth === 'false') return false;
+  if (mockAuth === 'true') return true;
   if (isRealDataOnlyVariant()) return false;
   return __DEV__;
 }

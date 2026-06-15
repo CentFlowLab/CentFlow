@@ -1,7 +1,8 @@
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
+import { getRuntimePublicEnv } from '@/lib/config/runtime-env';
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? '';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? '';
+const SUPABASE_URL = getRuntimePublicEnv('EXPO_PUBLIC_SUPABASE_URL');
+const SUPABASE_ANON_KEY = getRuntimePublicEnv('EXPO_PUBLIC_SUPABASE_ANON_KEY');
 
 /** Supabase activo quando há URL+key e mock auth está desligado */
 export function isSupabaseEnabled(): boolean {
