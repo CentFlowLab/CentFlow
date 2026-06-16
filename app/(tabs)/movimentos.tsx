@@ -1,26 +1,43 @@
 import { SymbolView } from 'expo-symbols';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  CreditFormModal,
+  CreditsSection,
+  SubscriptionFormModal,
+  SubscriptionsSection,
+} from '@/components/assets';
 import { AppHeader, SegmentedControl } from '@/components/layout';
 import {
   AddTransactionModal,
   EditTransactionModal,
-  ImportCsvModal,
+  MOVEMENTS_VIEW_SEGMENTS,
+  MOVEMENTS_EMPTY_CONFIG,
+  PendingSubscriptionModal,
   SwipeableTransactionListItem,
   TransactionsSkeleton,
 } from '@/components/movements';
 import { EmptyState, ErrorState } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import {
+  useDeleteCredit,
+  useDeleteSubscription,
+  useLiabilities,
+  useSaveSubscription,
+} from '@/hooks/queries/useLiabilities';
+import {
   useDeleteTransaction,
   useTransactions,
 } from '@/hooks/queries/useTransactions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useSubscriptionDetection } from '@/hooks/useSubscriptionDetection';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
+import type { MovementsView, Subscription } from '@/lib/domain/assets.types';
+import type { Credit } from '@/lib/domain/types';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import { colors, spacing } from '@/lib/theme';
 
@@ -32,13 +49,17 @@ const FILTER_SEGMENTS = [
 
 export default function MovimentosScreen() {
   const insets = useSafeAreaInsets();
-  const { action } = useLocalSearchParams<{ action?: string }>();
+  const { action, view } = useLocalSearchParams<{ action?: string; view?: string }>();
   const handledAction = useRef(false);
+  const [activeView, setActiveView] = useState<MovementsView>('movimentos');
   const [filter, setFilter] = useState<TransactionFilter>('all');
   const [modalVisible, setModalVisible] = useState(false);
-  const [csvModalVisible, setCsvModalVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [creditFormVisible, setCreditFormVisible] = useState(false);
+  const [editingCredit, setEditingCredit] = useState<Credit | null>(null);
+  const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
@@ -47,8 +68,30 @@ export default function MovimentosScreen() {
   const { data: onboardingAnswers } = useOnboardingAnswers();
   const { showToast } = useToast();
 
+  const {
+    data: liabilities,
+    refetch: refetchLiabilities,
+    isRefetching: isRefetchingLiabilities,
+  } = useLiabilities();
+  const deleteCredit = useDeleteCredit();
+  const deleteSubscription = useDeleteSubscription();
+  const saveSubscription = useSaveSubscription();
+  const {
+    activeDetection,
+    dismissCurrent,
+    confirmHandled,
+  } = useSubscriptionDetection();
+
+  const credits = liabilities?.credits ?? [];
+  const subscriptions = liabilities?.subscriptions ?? [];
   const transactions = useMemo(() => data ?? [], [data]);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
+
+  useEffect(() => {
+    if (view === 'creditos' || view === 'subscricoes' || view === 'movimentos') {
+      setActiveView(view);
+    }
+  }, [view]);
 
   function openAddModal(withReceipt = false) {
     setStartWithReceiptPicker(withReceipt);
@@ -63,6 +106,7 @@ export default function MovimentosScreen() {
   useEffect(() => {
     if (handledAction.current || action !== 'receipt') return;
     handledAction.current = true;
+    setActiveView('movimentos');
     openAddModal(true);
     showToast('Digitaliza o teu primeiro talão!', 'info');
   }, [action, showToast]);
@@ -82,24 +126,63 @@ export default function MovimentosScreen() {
     });
   }
 
+  function handlePrimaryAdd() {
+    if (activeView === 'movimentos') {
+      openAddModal(false);
+      return;
+    }
+    if (activeView === 'creditos') {
+      setEditingCredit(null);
+      setCreditFormVisible(true);
+      return;
+    }
+    setEditingSubscription(null);
+    setSubscriptionFormVisible(true);
+  }
+
+  function handleLearnMore() {
+    if (activeView === 'creditos') {
+      const config = MOVEMENTS_EMPTY_CONFIG.creditos;
+      Alert.alert(config.title, config.highlights.join('\n\n• '));
+      return;
+    }
+    if (activeView === 'subscricoes') {
+      const config = MOVEMENTS_EMPTY_CONFIG.subscricoes;
+      Alert.alert(config.title, config.highlights.join('\n\n• '));
+    }
+  }
+
+  async function handleConfirmDetection() {
+    if (!activeDetection) return;
+
+    try {
+      await saveSubscription.mutateAsync({
+        name: activeDetection.name,
+        amount: activeDetection.amount,
+        billingInterval: activeDetection.billingInterval,
+        notes: `Detetada automaticamente (${activeDetection.transactionIds.length} movimentos)`,
+      });
+      showToast('Subscrição adicionada.', 'success');
+      confirmHandled();
+    } catch {
+      showToast('Não foi possível guardar a subscrição.', 'error');
+    }
+  }
+
+  async function handleRefreshAll() {
+    await Promise.all([refetch(), refetchLiabilities()]);
+  }
+
+  const addAccessibilityLabel =
+    activeView === 'movimentos'
+      ? 'Adicionar movimento'
+      : activeView === 'creditos'
+        ? 'Adicionar crédito'
+        : 'Adicionar subscrição';
+
   return (
     <View style={styles.screen}>
       <AppHeader
-        secondaryAction={{
-          icon: (
-            <SymbolView
-              name={{
-                ios: 'square.and.arrow.down',
-                android: 'upload_file',
-                web: 'upload_file',
-              }}
-              tintColor={colors.primary}
-              size={20}
-            />
-          ),
-          onPress: () => setCsvModalVisible(true),
-          accessibilityLabel: 'Importar CSV',
-        }}
         action={{
           icon: (
             <SymbolView
@@ -108,78 +191,137 @@ export default function MovimentosScreen() {
               size={22}
             />
           ),
-          onPress: () => openAddModal(false),
-          accessibilityLabel: 'Adicionar movimento',
+          onPress: handlePrimaryAdd,
+          accessibilityLabel: addAccessibilityLabel,
         }}
       />
 
-      <View style={styles.filters}>
+      <View style={styles.viewFilters}>
         <SegmentedControl
-          segments={FILTER_SEGMENTS}
-          value={filter}
-          onChange={setFilter}
+          segments={MOVEMENTS_VIEW_SEGMENTS}
+          value={activeView}
+          onChange={setActiveView}
         />
       </View>
 
-      {isLoading ? (
-        <View style={styles.listPadding}>
-          <TransactionsSkeleton />
-        </View>
-      ) : isError ? (
-        <View style={styles.centered}>
-          <ErrorState
-            context="movements"
-            error={error}
-            onRetry={() => refetch()}
-            retryLoading={isRefetching}
-          />
-        </View>
-      ) : (
-        <FlatList
-          data={transactions}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <SwipeableTransactionListItem
-              transaction={item}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+      {activeView === 'movimentos' ? (
+        <>
+          <View style={styles.filters}>
+            <SegmentedControl
+              segments={FILTER_SEGMENTS}
+              value={filter}
+              onChange={setFilter}
             />
-          )}
-          contentContainerStyle={[
-            styles.listContent,
-            isEmpty && styles.listContentEmpty,
-            { paddingBottom: Math.max(insets.bottom, spacing.lg) },
-          ]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-            />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon={
-                <SymbolView
-                  name={{
-                    ios: 'list.bullet.rectangle',
-                    android: 'receipt_long',
-                    web: 'receipt_long',
-                  }}
+          </View>
+
+          {isLoading ? (
+            <View style={styles.listPadding}>
+              <TransactionsSkeleton />
+            </View>
+          ) : isError ? (
+            <View style={styles.centered}>
+              <ErrorState
+                context="movements"
+                error={error}
+                onRetry={() => refetch()}
+                retryLoading={isRefetching}
+              />
+            </View>
+          ) : (
+            <FlatList
+              data={transactions}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <SwipeableTransactionListItem
+                  transaction={item}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              )}
+              contentContainerStyle={[
+                styles.listContent,
+                isEmpty && styles.listContentEmpty,
+                { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+              ]}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
                   tintColor={colors.primary}
-                  size={32}
                 />
               }
-              title="Ainda sem movimentos"
-              description={getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter)}
-              actionLabel="Nova transação"
-              onAction={() => openAddModal(false)}
-              secondaryActionLabel="Digitalizar talão"
-              onSecondaryAction={() => openAddModal(true)}
+              ListEmptyComponent={
+                <EmptyState
+                  icon={
+                    <SymbolView
+                      name={{
+                        ios: 'list.bullet.rectangle',
+                        android: 'receipt_long',
+                        web: 'receipt_long',
+                      }}
+                      tintColor={colors.primary}
+                      size={32}
+                    />
+                  }
+                  title="Ainda sem movimentos"
+                  description={getContextualNoTransactionsMessage(
+                    onboardingAnswers ?? null,
+                    filter,
+                  )}
+                  actionLabel="Nova transação"
+                  onAction={() => openAddModal(false)}
+                  secondaryActionLabel="Digitalizar talão"
+                  onSecondaryAction={() => openAddModal(true)}
+                />
+              }
             />
-          }
-        />
+          )}
+        </>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.sectionContent,
+            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingLiabilities}
+              onRefresh={handleRefreshAll}
+              tintColor={colors.primary}
+            />
+          }>
+          {activeView === 'creditos' ? (
+            <CreditsSection
+              credits={credits}
+              onCreate={() => {
+                setEditingCredit(null);
+                setCreditFormVisible(true);
+              }}
+              onEdit={(credit) => {
+                setEditingCredit(credit);
+                setCreditFormVisible(true);
+              }}
+              onLearnMore={handleLearnMore}
+              onDelete={(credit) => deleteCredit.mutate(credit.id)}
+            />
+          ) : (
+            <SubscriptionsSection
+              subscriptions={subscriptions}
+              onCreate={() => {
+                setEditingSubscription(null);
+                setSubscriptionFormVisible(true);
+              }}
+              onEdit={(subscription) => {
+                setEditingSubscription(subscription);
+                setSubscriptionFormVisible(true);
+              }}
+              onLearnMore={handleLearnMore}
+              onDelete={(item) => deleteSubscription.mutate(item.id)}
+            />
+          )}
+        </ScrollView>
       )}
 
       <AddTransactionModal
@@ -189,15 +331,36 @@ export default function MovimentosScreen() {
         presetFilter={filter}
       />
 
-      <ImportCsvModal
-        visible={csvModalVisible}
-        onClose={() => setCsvModalVisible(false)}
-      />
-
       <EditTransactionModal
         visible={editingTransaction !== null}
         transaction={editingTransaction}
         onClose={() => setEditingTransaction(null)}
+      />
+
+      <CreditFormModal
+        visible={creditFormVisible}
+        credit={editingCredit}
+        onClose={() => {
+          setCreditFormVisible(false);
+          setEditingCredit(null);
+        }}
+      />
+
+      <SubscriptionFormModal
+        visible={subscriptionFormVisible}
+        subscription={editingSubscription}
+        onClose={() => {
+          setSubscriptionFormVisible(false);
+          setEditingSubscription(null);
+        }}
+      />
+
+      <PendingSubscriptionModal
+        visible={activeDetection !== null}
+        detection={activeDetection}
+        onConfirm={handleConfirmDetection}
+        onDismiss={dismissCurrent}
+        isSaving={saveSubscription.isPending}
       />
     </View>
   );
@@ -207,6 +370,10 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  viewFilters: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   filters: {
     paddingHorizontal: spacing.lg,
@@ -223,6 +390,10 @@ const styles = StyleSheet.create({
   listContentEmpty: {
     flex: 1,
     justifyContent: 'center',
+  },
+  sectionContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
   },
   centered: {
     flex: 1,

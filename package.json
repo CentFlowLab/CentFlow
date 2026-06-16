@@ -45,6 +45,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^22.19.21",
     "@types/react": "~19.2.2",
     "eas-cli": "^20.1.0",
     "tsx": "^4.20.3",
@@ -57,6 +58,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "handoff": "tsx scripts/generate-handoff.ts",
+    "test": "tsx --test lib/**/*.test.ts",
     "test:ocr": "tsx scripts/test-ocr-sanitize.ts",
     "supabase:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts",
     "eas:init": "eas init",

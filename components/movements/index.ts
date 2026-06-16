@@ -1,7 +1,8 @@
 export { AddTransactionModal } from './AddTransactionModal';
 export { ConfirmReceiptModal } from './ConfirmReceiptModal';
 export { EditTransactionModal } from './EditTransactionModal';
-export { ImportCsvModal } from './ImportCsvModal';
+export { MOVEMENTS_EMPTY_CONFIG, MOVEMENTS_VIEW_SEGMENTS } from './movements.config';
+export { PendingSubscriptionModal } from './PendingSubscriptionModal';
 export { OcrDetectionSummary } from './OcrDetectionSummary';
 export { OcrFailureCard, OcrFieldBadge, OcrFieldsChecklist } from './ocr';
 export { OcrResultCard } from './OcrResultCard';

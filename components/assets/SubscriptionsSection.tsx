@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { ASSETS_EMPTY_CONFIG } from '@/components/assets/assets.config';
+import { MOVEMENTS_EMPTY_CONFIG } from '@/components/movements/movements.config';
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
 import { Card, Text } from '@/components/ui';
 import type { Subscription } from '@/lib/domain/assets.types';
+import { subscriptionToMonthlyAmount } from '@/lib/subscriptions/subscription-utils';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
@@ -27,7 +28,7 @@ export function SubscriptionsSection({
     return (
       <View style={styles.container}>
         <AssetsEmptyState
-          config={ASSETS_EMPTY_CONFIG.subscricoes}
+          config={MOVEMENTS_EMPTY_CONFIG.subscricoes}
           onPrimaryAction={onCreate}
           onSecondaryAction={onLearnMore}
         />
@@ -35,7 +36,17 @@ export function SubscriptionsSection({
     );
   }
 
-  const monthlyTotal = subscriptions.reduce((sum, item) => sum + item.amount, 0);
+  const monthlyTotal = subscriptions.reduce(
+    (sum, item) =>
+      sum + subscriptionToMonthlyAmount(item.amount, item.billingInterval ?? 'monthly'),
+    0,
+  );
+
+  const intervalLabel = (interval?: Subscription['billingInterval']) => {
+    if (interval === 'quarterly') return 'trimestre';
+    if (interval === 'annual') return 'ano';
+    return 'mês';
+  };
 
   return (
     <View style={styles.container}>
@@ -58,7 +69,7 @@ export function SubscriptionsSection({
               <Card variant="elevated" style={styles.itemCard}>
                 <Text variant="bodyMedium">{subscription.name}</Text>
                 <Text variant="caption" color="textMuted">
-                  {formatCurrency(subscription.amount)}/mês
+                  {formatCurrency(subscription.amount)}/{intervalLabel(subscription.billingInterval)}
                 </Text>
                 {subscription.renewsAt ? (
                   <Text variant="caption" color="textSecondary">

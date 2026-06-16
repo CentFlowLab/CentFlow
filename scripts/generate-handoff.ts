@@ -92,8 +92,8 @@ function listScreens(): string[] {
   if (!fs.existsSync(tabsDir)) return [];
   return fs
     .readdirSync(tabsDir)
-    .filter((f) => f.endsWith('.tsx') && f !== '_layout.tsx')
-    .map((f) => f.replace('.tsx', ''));
+    .filter((f: string) => f.endsWith('.tsx') && f !== '_layout.tsx')
+    .map((f: string) => f.replace('.tsx', ''));
 }
 
 function listDomainExports(): string[] {

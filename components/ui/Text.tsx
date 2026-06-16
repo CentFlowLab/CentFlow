@@ -2,11 +2,22 @@ import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-nati
 
 import { colors, typography, TypographyKey } from '@/lib/theme';
 
+type TextColorKey = Exclude<keyof typeof colors, 'gradientPrimary' | 'gradientAccent' | 'gradientSurface'>;
+
 type TextProps = RNTextProps & {
   variant?: TypographyKey;
-  color?: keyof typeof colors | string;
+  color?: TextColorKey | (string & {});
   align?: 'left' | 'center' | 'right';
 };
+
+function resolveTextColor(color: TextProps['color']): string {
+  if (!color) return colors.text;
+  if (color in colors) {
+    const value = colors[color as keyof typeof colors];
+    return typeof value === 'string' ? value : colors.text;
+  }
+  return color;
+}
 
 export function Text({
   variant = 'body',
@@ -15,7 +26,7 @@ export function Text({
   style,
   ...props
 }: TextProps) {
-  const textColor = color in colors ? colors[color as keyof typeof colors] : color;
+  const textColor = resolveTextColor(color);
 
   return (
     <RNText

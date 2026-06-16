@@ -15,8 +15,6 @@ const TAB_COUNT_KEY: Record<AssetsTab, keyof AssetsCounts> = {
   objetivos: 'goals',
   garantias: 'warranties',
   inventario: 'inventory',
-  creditos: 'credits',
-  subscricoes: 'subscriptions',
 };
 
 const OVERVIEW_ITEMS: Array<{
@@ -47,20 +45,6 @@ const OVERVIEW_ITEMS: Array<{
     color: colors.success,
     bg: colors.successMuted,
   },
-  {
-    key: 'creditos',
-    label: 'Créditos',
-    icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
-    color: colors.warning,
-    bg: 'rgba(251, 191, 36, 0.12)',
-  },
-  {
-    key: 'subscricoes',
-    label: 'Subscrições',
-    icon: { ios: 'repeat.circle.fill', android: 'autorenew', web: 'autorenew' },
-    color: colors.danger,
-    bg: colors.dangerMuted,
-  },
 ];
 
 export function AssetsOverviewCard({
@@ -83,26 +67,17 @@ export function AssetsOverviewCard({
             <Pressable
               key={item.key}
               onPress={() => onTabPress?.(item.key)}
-              style={[
-                styles.tile,
-                { backgroundColor: item.bg },
-                isActive && styles.tileActive,
-              ]}
+              style={[styles.item, isActive && styles.itemActive]}
               accessibilityRole="button"
-              accessibilityLabel={`${item.label}, ${count} registados`}
               accessibilityState={{ selected: isActive }}>
-              <SymbolView name={item.icon} tintColor={item.color} size={13} />
-              <Text variant="bodyMedium" style={[styles.count, { color: item.color }]}>
-                {count}
-              </Text>
-              <Text
-                variant="caption"
-                color="textMuted"
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-                style={styles.label}>
+              <View style={[styles.iconWrap, { backgroundColor: item.bg }]}>
+                <SymbolView name={item.icon} tintColor={item.color} size={20} />
+              </View>
+              <Text variant="caption" color={isActive ? 'primary' : 'textSecondary'}>
                 {item.label}
+              </Text>
+              <Text variant="label" color={isActive ? 'primary' : 'textMuted'}>
+                {count}
               </Text>
             </Pressable>
           );
@@ -118,32 +93,26 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
-  tile: {
+  item: {
     flex: 1,
-    minWidth: 0,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: 2,
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'transparent',
   },
-  tileActive: {
+  itemActive: {
     borderColor: colors.primary,
-    borderWidth: 1.5,
+    backgroundColor: colors.primaryMuted,
   },
-  count: {
-    fontWeight: '700',
-    fontSize: 15,
-    lineHeight: 18,
-  },
-  label: {
-    textAlign: 'center',
-    fontSize: 9,
-    lineHeight: 11,
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

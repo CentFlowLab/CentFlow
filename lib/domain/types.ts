@@ -29,6 +29,8 @@ export interface RecurringInvestment {
   currentValue: number;
 }
 
+export type CreditType = 'personal' | 'mortgage' | 'auto' | 'student' | 'other';
+
 /** Crédito / passivo com saldo em dívida. */
 export interface Credit {
   id: string;
@@ -36,6 +38,26 @@ export interface Credit {
   outstandingBalance: number;
   nextPaymentDate?: string;
   nextPaymentAmount?: number;
+  /** Montante original contratado. */
+  originalAmount?: number;
+  /** TAEG anual (%). */
+  interestRateAnnual?: number;
+  /** Spread sobre indexante (%). */
+  spread?: number;
+  /** Indexante (ex.: Euribor 12M %). */
+  indexRate?: number;
+  /** Prazo total em meses. */
+  termMonths?: number;
+  /** Prestação mensal (capital + juros). */
+  monthlyPayment?: number;
+  /** Seguro mensal associado. */
+  insuranceMonthly?: number;
+  creditType?: CreditType;
+  lender?: string;
+  startDate?: string;
+  /** Rendimento mensal líquido para taxa de esforço. */
+  monthlyIncome?: number;
+  notes?: string;
 }
 
 export type AssetCategoryKey = 'accounts' | 'inventory' | 'investments';

@@ -7,14 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ASSETS_EMPTY_CONFIG,
   AssetsOverviewCard,
-  CreditFormModal,
-  CreditsSection,
   GoalFormModal,
   GoalsSection,
   InventoryFormModal,
   InventorySection,
-  SubscriptionFormModal,
-  SubscriptionsSection,
   WarrantyFormModal,
   WarrantiesSection,
 } from '@/components/assets';
@@ -26,13 +22,8 @@ import {
   useDeleteInventoryItem,
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
-import {
-  useDeleteCredit,
-  useDeleteSubscription,
-  useLiabilities,
-} from '@/hooks/queries/useLiabilities';
-import type { AssetsTab, Goal, Subscription, Warranty } from '@/lib/domain/assets.types';
-import type { Credit, InventoryItem } from '@/lib/domain/types';
+import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
+import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 
 export default function AtivosScreen() {
@@ -46,22 +37,11 @@ export default function AtivosScreen() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [inventoryFormVisible, setInventoryFormVisible] = useState(false);
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
-  const [creditFormVisible, setCreditFormVisible] = useState(false);
-  const [editingCredit, setEditingCredit] = useState<Credit | null>(null);
-  const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
-  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
-  const {
-    data: liabilities,
-    refetch: refetchLiabilities,
-    isRefetching: isRefetchingLiabilities,
-  } = useLiabilities();
   const deleteGoal = useDeleteGoal();
   const deleteWarranty = useDeleteWarranty();
   const deleteInventory = useDeleteInventoryItem();
-  const deleteCredit = useDeleteCredit();
-  const deleteSubscription = useDeleteSubscription();
 
   const assets = data ?? {
     goals: [],
@@ -70,18 +50,14 @@ export default function AtivosScreen() {
     credits: [],
     subscriptions: [],
   };
-  const credits = liabilities?.credits ?? [];
-  const subscriptions = liabilities?.subscriptions ?? [];
 
   const counts = useMemo(
     () => ({
       goals: assets.goals.length,
       warranties: assets.warranties.length,
       inventory: assets.inventory.length,
-      credits: credits.length,
-      subscriptions: subscriptions.length,
     }),
-    [assets, credits.length, subscriptions.length],
+    [assets],
   );
 
   function handleLearnMore() {
@@ -159,36 +135,6 @@ export default function AtivosScreen() {
     setEditingInventory(null);
   }
 
-  function openCreateCredit() {
-    setEditingCredit(null);
-    setCreditFormVisible(true);
-  }
-
-  function openEditCredit(credit: Credit) {
-    setEditingCredit(credit);
-    setCreditFormVisible(true);
-  }
-
-  function closeCreditForm() {
-    setCreditFormVisible(false);
-    setEditingCredit(null);
-  }
-
-  function openCreateSubscription() {
-    setEditingSubscription(null);
-    setSubscriptionFormVisible(true);
-  }
-
-  function openEditSubscription(subscription: Subscription) {
-    setEditingSubscription(subscription);
-    setSubscriptionFormVisible(true);
-  }
-
-  function closeSubscriptionForm() {
-    setSubscriptionFormVisible(false);
-    setEditingSubscription(null);
-  }
-
   function handleAdd() {
     if (activeTab === 'objetivos') {
       openCreateGoal();
@@ -200,19 +146,7 @@ export default function AtivosScreen() {
     }
     if (activeTab === 'inventario') {
       openCreateInventory();
-      return;
     }
-    if (activeTab === 'creditos') {
-      openCreateCredit();
-      return;
-    }
-    if (activeTab === 'subscricoes') {
-      openCreateSubscription();
-    }
-  }
-
-  async function handleRefresh() {
-    await Promise.all([refetch(), refetchLiabilities()]);
   }
 
   return (
@@ -249,8 +183,8 @@ export default function AtivosScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={isRefetching || isRefetchingLiabilities}
-              onRefresh={handleRefresh}
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
               tintColor={colors.primary}
             />
           }
@@ -258,7 +192,7 @@ export default function AtivosScreen() {
             styles.scrollContent,
             { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
           ]}>
-          <ScreenContainer>
+          <ScreenContainer scrollable={false}>
             <View style={styles.overviewSection}>
               <AssetsOverviewCard
                 counts={counts}
@@ -294,27 +228,7 @@ export default function AtivosScreen() {
               />
             ) : null}
 
-            {activeTab === 'creditos' ? (
-              <CreditsSection
-                credits={credits}
-                onCreate={openCreateCredit}
-                onEdit={openEditCredit}
-                onLearnMore={handleLearnMore}
-                onDelete={(credit) => deleteCredit.mutate(credit.id)}
-              />
-            ) : null}
-
-            {activeTab === 'subscricoes' ? (
-              <SubscriptionsSection
-                subscriptions={subscriptions}
-                onCreate={openCreateSubscription}
-                onEdit={openEditSubscription}
-                onLearnMore={handleLearnMore}
-                onDelete={(item) => deleteSubscription.mutate(item.id)}
-              />
-            ) : null}
-
-            <RefetchingIndicator visible={(isRefetching || isRefetchingLiabilities) && !isLoading} />
+            <RefetchingIndicator visible={isRefetching && !isLoading} />
           </ScreenContainer>
         </ScrollView>
       )}
@@ -332,18 +246,6 @@ export default function AtivosScreen() {
         item={editingInventory}
         onClose={closeInventoryForm}
       />
-
-      <CreditFormModal
-        visible={creditFormVisible}
-        credit={editingCredit}
-        onClose={closeCreditForm}
-      />
-
-      <SubscriptionFormModal
-        visible={subscriptionFormVisible}
-        subscription={editingSubscription}
-        onClose={closeSubscriptionForm}
-      />
     </View>
   );
 }
@@ -354,7 +256,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    flexGrow: 1,
+    paddingBottom: spacing.lg,
   },
   overviewSection: {
     marginBottom: spacing['2xl'],

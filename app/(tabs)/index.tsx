@@ -1,9 +1,6 @@
-import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -12,11 +9,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  AttentionCard,
   DashboardHeaderLeading,
   DashboardSkeleton,
   DemoModeBadge,
   HomeAssetsSummaryCard,
+  HomeAttentionSheet,
+  HomeChangesSheet,
   HomeGoalHighlightCard,
   HomeIntroOverlay,
   HomePersonalizedInsightCard,
@@ -24,13 +22,12 @@ import {
   HomeStoriesRow,
   type HomeStoryId,
   type RecommendedQuickAction,
-  MetricCard,
-  NetWorthHeroCard,
   SuggestionCard,
+  NetWorthHeroCard,
 } from '@/components/dashboard';
 import { AppHeader } from '@/components/layout';
 import { AddTransactionModal, TransactionListItem } from '@/components/movements';
-import { FinancialProfileDetailSheet, FinancialProfileProgress } from '@/components/profile';
+import { FinancialProfileDetailSheet } from '@/components/profile';
 import {
   ErrorState,
   RefetchingIndicator,
@@ -41,6 +38,7 @@ import {
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import { useHomeStoryNotifications } from '@/hooks/useHomeStoryNotifications';
 import {
   getContextualNoTransactionsMessage,
   getHomeAssetsSummaryHints,
@@ -51,31 +49,53 @@ import {
 } from '@/lib/onboarding/personalization';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import { colors, spacing } from '@/lib/theme';
-import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
 export default function InicioScreen() {
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
-  const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
+  const { data: financialProfile } = useFinancialProfile();
   const { data: onboardingAnswers } = useOnboardingAnswers();
 
+  const profileScore = financialProfile?.score ?? 0;
+  const profilePendingCount = financialProfile?.pendingDimensions.length ?? 0;
+  const weeklySpendingPreview = data?.weeklySpending ?? 0;
+  const netWorthChangePreview = data?.netWorthChangeThisMonth ?? 0;
+  const personalInflationPreview = data?.personalInflation ?? null;
+  const attentionIdsPreview = data?.attentionItems.map((item) => item.id) ?? [];
+
+  const { hasUnread, markStorySeen } = useHomeStoryNotifications({
+    profileScore,
+    profilePendingCount,
+    weeklySpending: weeklySpendingPreview,
+    netWorthChangeThisMonth: netWorthChangePreview,
+    personalInflation: personalInflationPreview,
+    attentionIds: attentionIdsPreview,
+  });
+
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
+  const [changesSheetVisible, setChangesSheetVisible] = useState(false);
+  const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [introDone, setIntroDone] = useState(false);
 
-  const scrollRef = useRef<ScrollView>(null);
-  const sectionOffsets = useRef({ changes: 0, attention: 0 });
-
-  const handleStoryPress = useCallback((id: HomeStoryId) => {
-    if (id === 'profile') {
-      setProfileDetailVisible(true);
-      return;
-    }
-
-    const y = id === 'changes' ? sectionOffsets.current.changes : sectionOffsets.current.attention;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
-  }, []);
+  const handleStoryPress = useCallback(
+    (id: HomeStoryId) => {
+      if (id === 'profile') {
+        setProfileDetailVisible(true);
+        void markStorySeen('profile');
+        return;
+      }
+      if (id === 'changes') {
+        setChangesSheetVisible(true);
+        void markStorySeen('changes');
+        return;
+      }
+      setAttentionSheetVisible(true);
+      void markStorySeen('attention');
+    },
+    [markStorySeen],
+  );
 
   const header = <AppHeader leading={<DashboardHeaderLeading />} showBrand={false} />;
 
@@ -147,14 +167,21 @@ export default function InicioScreen() {
 
   const fallbackSuggestions = getPersonalizedFallbackSuggestions(onboardingAnswers ?? null);
 
-  const netWorthChangeColor =
-    netWorthChangeThisMonth > 0
-      ? colors.success
-      : netWorthChangeThisMonth < 0
-        ? colors.danger
-        : colors.textMuted;
+  const closeProfileSheet = () => {
+    setProfileDetailVisible(false);
+    void markStorySeen('profile');
+  };
 
-  // Personalized quick actions based on onboarding profile (receipts, goals, etc.)
+  const closeChangesSheet = () => {
+    setChangesSheetVisible(false);
+    void markStorySeen('changes');
+  };
+
+  const closeAttentionSheet = () => {
+    setAttentionSheetVisible(false);
+    void markStorySeen('attention');
+  };
+
   const recommendedRaw = getRecommendedHomeActions(onboardingAnswers ?? null);
   const recommendedActions: RecommendedQuickAction[] = recommendedRaw.map((rec) => {
     if (rec.key === 'receipt') {
@@ -203,37 +230,22 @@ export default function InicioScreen() {
     <View style={styles.screen}>
       {header}
 
-      <HomeStoriesRow
-        attentionCount={attentionItems.length}
-        profileNeedsAttention={(financialProfile?.score ?? 0) < 60}
-        hasRecentChanges={
-          Math.abs(netWorthChangeThisMonth) > 0 ||
-          weeklySpending > 0 ||
-          (personalInflation !== null && personalInflation !== 0)
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.primary}
+          />
         }
-        onStoryPress={handleStoryPress}
-      />
-
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 72 : 0}>
-        <ScrollView
-          ref={scrollRef}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
-              tintColor={colors.primary}
-            />
-          }
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
-          ]}>
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+        ]}>
         <ScreenContainer scrollable={false}>
+          <HomeStoriesRow unread={hasUnread} onStoryPress={handleStoryPress} />
+
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
           <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
@@ -247,14 +259,6 @@ export default function InicioScreen() {
           ) : null}
 
           <HomeAssetsSummaryCard summary={assetsSummary} hints={assetsHints} />
-
-          <FinancialProfileProgress
-            profile={financialProfile}
-            isLoading={isProfileScoreLoading}
-            variant="compact"
-            style={styles.profileProgress}
-            onPress={() => setProfileDetailVisible(true)}
-          />
 
           <SectionHeader
             title="Últimos movimentos"
@@ -278,79 +282,6 @@ export default function InicioScreen() {
               </Text>
             </View>
           )}
-
-          <View
-            onLayout={(event) => {
-              sectionOffsets.current.changes = event.nativeEvent.layout.y;
-            }}>
-            <SectionHeader title="O que mudou?" subtitle="Resumo rápido do período" />
-            <View style={styles.metricsGrid}>
-            <MetricCard
-              label="Gastos"
-              value={formatCurrency(weeklySpending)}
-              subtitle="esta semana"
-              icon={{
-                ios: 'cart.fill',
-                android: 'shopping_cart',
-                web: 'shopping_cart',
-              }}
-              iconColor={colors.danger}
-              valueColor={colors.text}
-            />
-            <MetricCard
-              label="Património"
-              value={formatCompactChange(netWorthChangeThisMonth)}
-              subtitle="este mês"
-              icon={{
-                ios: 'chart.line.uptrend.xyaxis',
-                android: 'trending_up',
-                web: 'trending_up',
-              }}
-              iconColor={netWorthChangeColor}
-              valueColor={netWorthChangeColor}
-            />
-            <MetricCard
-              label="Inflação"
-              value={
-                personalInflation !== null ? formatPercent(personalInflation) : '—'
-              }
-              subtitle="pessoal"
-              icon={{
-                ios: 'percent',
-                android: 'percent',
-                web: 'percent',
-              }}
-              iconColor={colors.accent}
-              valueColor={
-                personalInflation !== null && personalInflation > 0
-                  ? colors.warning
-                  : colors.text
-              }
-            />
-          </View>
-          </View>
-
-          <View
-            style={styles.section}
-            onLayout={(event) => {
-              sectionOffsets.current.attention = event.nativeEvent.layout.y;
-            }}>
-            <SectionHeader
-              title="O que precisa da minha atenção?"
-              subtitle={
-                attentionItems.length > 0
-                  ? `${attentionItems.length} alerta${attentionItems.length > 1 ? 's' : ''}`
-                  : undefined
-              }
-            />
-            {attentionItems.length > 0 ? (
-              attentionItems.slice(0, 4).map((item) => (
-                <AttentionCard key={item.id} item={item} />
-              ))
-            ) : (
-              <CardEmptyAttention />
-            )}
-          </View>
 
           <View style={styles.section}>
             <SectionHeader title="O que devo fazer?" subtitle="Sugestões para ti" />
@@ -387,15 +318,28 @@ export default function InicioScreen() {
 
           <RefetchingIndicator visible={isRefetching} />
         </ScreenContainer>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </ScrollView>
 
       {!introDone ? <HomeIntroOverlay onComplete={() => setIntroDone(true)} /> : null}
 
       <FinancialProfileDetailSheet
         visible={profileDetailVisible}
         profile={financialProfile}
-        onClose={() => setProfileDetailVisible(false)}
+        onClose={closeProfileSheet}
+      />
+
+      <HomeChangesSheet
+        visible={changesSheetVisible}
+        onClose={closeChangesSheet}
+        weeklySpending={weeklySpending}
+        netWorthChangeThisMonth={netWorthChangeThisMonth}
+        personalInflation={personalInflation}
+      />
+
+      <HomeAttentionSheet
+        visible={attentionSheetVisible}
+        onClose={closeAttentionSheet}
+        items={attentionItems}
       />
 
       <AddTransactionModal
@@ -407,39 +351,13 @@ export default function InicioScreen() {
   );
 }
 
-function CardEmptyAttention() {
-  return (
-    <View style={styles.emptyAttention}>
-      <SymbolView
-        name={{ ios: 'checkmark.seal.fill', android: 'verified', web: 'verified' }}
-        tintColor={colors.success}
-        size={28}
-      />
-      <Text variant="bodyMedium" align="center">
-        Nada urgente por agora
-      </Text>
-      <Text variant="caption" color="textSecondary" align="center">
-        Garantias, créditos e subscrições estão sob controlo. Bom trabalho!
-      </Text>
-    </View>
-  );
-}
-
-function formatCompactChange(value: number): string {
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${formatCurrency(value)}`;
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  flex: {
-    flex: 1,
-  },
   scrollContent: {
-    flexGrow: 1,
+    paddingBottom: spacing.lg,
   },
   centered: {
     flex: 1,
@@ -447,30 +365,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing['2xl'],
-  },
-  profileProgress: {
-    marginBottom: spacing['2xl'],
-  },
   section: {
     marginBottom: spacing['2xl'],
   },
   emptyTransactions: {
     paddingVertical: spacing.lg,
     marginBottom: spacing.lg,
-  },
-  emptyAttention: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing['2xl'],
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
 });

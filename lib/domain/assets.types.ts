@@ -1,17 +1,17 @@
 import type { InventoryItem } from './types';
 import type { Credit } from './types';
 
-export type AssetsTab =
-  | 'objetivos'
-  | 'garantias'
-  | 'inventario'
-  | 'creditos'
-  | 'subscricoes';
+export type AssetsTab = 'objetivos' | 'garantias' | 'inventario';
+
+export type MovementsView = 'movimentos' | 'creditos' | 'subscricoes';
+
+export type SubscriptionBillingInterval = 'monthly' | 'quarterly' | 'annual';
 
 export type Subscription = {
   id: string;
   name: string;
   amount: number;
+  billingInterval?: SubscriptionBillingInterval;
   renewsAt?: string;
   category?: string;
   notes?: string;
@@ -53,6 +53,4 @@ export type AssetsCounts = {
   goals: number;
   warranties: number;
   inventory: number;
-  credits: number;
-  subscriptions: number;
 };

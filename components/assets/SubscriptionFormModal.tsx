@@ -6,7 +6,7 @@ import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { useDeleteSubscription, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { getApiErrorMessage } from '@/lib/api/errors';
-import type { Subscription } from '@/lib/domain/assets.types';
+import type { Subscription, SubscriptionBillingInterval } from '@/lib/domain/assets.types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
 import { DATE_INPUT_PLACEHOLDER, formatInputDate, inputDateToIso } from '@/lib/utils/format';
@@ -16,6 +16,12 @@ type SubscriptionFormModalProps = {
   onClose: () => void;
   subscription?: Subscription | null;
 };
+
+const INTERVALS: Array<{ key: SubscriptionBillingInterval; label: string }> = [
+  { key: 'monthly', label: 'Mensal' },
+  { key: 'quarterly', label: 'Trimestral' },
+  { key: 'annual', label: 'Anual' },
+];
 
 export function SubscriptionFormModal({
   visible,
@@ -28,6 +34,7 @@ export function SubscriptionFormModal({
 
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
+  const [billingInterval, setBillingInterval] = useState<SubscriptionBillingInterval>('monthly');
   const [renewsAt, setRenewsAt] = useState('');
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -40,10 +47,12 @@ export function SubscriptionFormModal({
     if (subscription) {
       setName(subscription.name);
       setAmount(String(subscription.amount));
+      setBillingInterval(subscription.billingInterval ?? 'monthly');
       setRenewsAt(formatInputDate(subscription.renewsAt));
     } else {
       setName('');
       setAmount('');
+      setBillingInterval('monthly');
       setRenewsAt('');
     }
 
@@ -61,7 +70,7 @@ export function SubscriptionFormModal({
       return;
     }
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-      setApiError('Valor mensal inválido.');
+      setApiError('Valor inválido.');
       return;
     }
 
@@ -76,6 +85,7 @@ export function SubscriptionFormModal({
         id: subscription?.id,
         name: name.trim(),
         amount: parsedAmount,
+        billingInterval,
         renewsAt: parsedRenewsAt,
       });
       onClose();
@@ -123,8 +133,28 @@ export function SubscriptionFormModal({
       )}>
       <View style={styles.form}>
         <TextField label="Nome" value={name} onChangeText={setName} placeholder="Ex.: Netflix" />
+        <Text variant="label" color="textMuted">
+          Periodicidade
+        </Text>
+        <View style={styles.intervalRow}>
+          {INTERVALS.map((interval) => (
+            <Pressable
+              key={interval.key}
+              onPress={() => setBillingInterval(interval.key)}
+              style={[
+                styles.intervalChip,
+                billingInterval === interval.key && styles.intervalChipActive,
+              ]}>
+              <Text
+                variant="caption"
+                color={billingInterval === interval.key ? 'primary' : 'textMuted'}>
+                {interval.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
         <TextField
-          label="Valor mensal"
+          label={`Valor ${billingInterval === 'monthly' ? 'mensal' : billingInterval === 'quarterly' ? 'trimestral' : 'anual'}`}
           value={amount}
           onChangeText={setAmount}
           keyboardType="decimal-pad"
@@ -177,6 +207,22 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: spacing.lg,
+  },
+  intervalRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  intervalChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  intervalChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
   },
   errorCard: {
     borderColor: colors.danger,

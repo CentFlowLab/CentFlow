@@ -5,15 +5,28 @@ import {
   invalidateAssetsQueries,
   invalidateTransactionQueries,
 } from '@/lib/api/invalidate-queries';
-import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase/client';
+import { getSupabaseClient } from '@/lib/supabase/client';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
 
-type SyncTable = 'transactions' | 'goals' | 'warranties' | 'inventory_items';
+type SyncTable = 'transactions' | 'goals' | 'warranties' | 'inventory_items' | 'credits' | 'subscriptions';
 
-const SYNC_TABLES: SyncTable[] = ['transactions', 'goals', 'warranties', 'inventory_items'];
+const SYNC_TABLES: SyncTable[] = [
+  'transactions',
+  'goals',
+  'warranties',
+  'inventory_items',
+  'credits',
+  'subscriptions',
+];
 
 function invalidateForTable(table: SyncTable, queryClient: QueryClient): void {
   if (table === 'transactions') {
     invalidateTransactionQueries(queryClient);
+    return;
+  }
+  if (table === 'credits' || table === 'subscriptions') {
+    invalidateAssetsQueries(queryClient);
+    void queryClient.invalidateQueries({ queryKey: ['liabilities'] });
     return;
   }
   invalidateAssetsQueries(queryClient);

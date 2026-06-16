@@ -5,10 +5,12 @@ import { invalidateAssetsQueries } from '@/lib/api/invalidate-queries';
 import type { Subscription } from '@/lib/domain/assets.types';
 import type { Credit } from '@/lib/domain/types';
 import {
-  loadLiabilities,
-  saveCredits,
-  saveSubscriptions,
-} from '@/lib/storage/liabilities-storage';
+  deleteCreditForUser,
+  deleteSubscriptionForUser,
+  fetchLiabilitiesForUser,
+  saveCreditForUser,
+  saveSubscriptionForUser,
+} from '@/lib/liabilities/liabilities.service';
 import { useAuth } from '@/lib/auth';
 
 function randomId(prefix: string): string {
@@ -21,7 +23,7 @@ export function useLiabilities() {
 
   return useQuery({
     queryKey: queryKeys.liabilities(userId),
-    queryFn: () => loadLiabilities(userId),
+    queryFn: () => fetchLiabilitiesForUser(userId),
     enabled: isAuthenticated && Boolean(userId),
     staleTime: 1000 * 60,
   });
@@ -34,21 +36,27 @@ export function useSaveCredit() {
 
   return useMutation({
     mutationFn: async (input: Omit<Credit, 'id'> & { id?: string }) => {
-      const current = await loadLiabilities(userId);
       const credit: Credit = {
         id: input.id ?? randomId('credit'),
         name: input.name,
         outstandingBalance: input.outstandingBalance,
         nextPaymentDate: input.nextPaymentDate,
         nextPaymentAmount: input.nextPaymentAmount,
+        originalAmount: input.originalAmount,
+        interestRateAnnual: input.interestRateAnnual,
+        indexRate: input.indexRate,
+        spread: input.spread,
+        termMonths: input.termMonths,
+        monthlyPayment: input.monthlyPayment,
+        insuranceMonthly: input.insuranceMonthly,
+        creditType: input.creditType,
+        lender: input.lender,
+        startDate: input.startDate,
+        monthlyIncome: input.monthlyIncome,
+        notes: input.notes,
       };
 
-      const credits = input.id
-        ? current.credits.map((item) => (item.id === input.id ? credit : item))
-        : [...current.credits, credit];
-
-      await saveCredits(userId, credits);
-      return credit;
+      return saveCreditForUser(userId, credit);
     },
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);
@@ -64,11 +72,7 @@ export function useDeleteCredit() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const current = await loadLiabilities(userId);
-      await saveCredits(
-        userId,
-        current.credits.filter((item) => item.id !== id),
-      );
+      await deleteCreditForUser(userId, id);
     },
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);
@@ -84,22 +88,17 @@ export function useSaveSubscription() {
 
   return useMutation({
     mutationFn: async (input: Omit<Subscription, 'id'> & { id?: string }) => {
-      const current = await loadLiabilities(userId);
       const subscription: Subscription = {
         id: input.id ?? randomId('sub'),
         name: input.name,
         amount: input.amount,
+        billingInterval: input.billingInterval ?? 'monthly',
         renewsAt: input.renewsAt,
         category: input.category,
         notes: input.notes,
       };
 
-      const subscriptions = input.id
-        ? current.subscriptions.map((item) => (item.id === input.id ? subscription : item))
-        : [...current.subscriptions, subscription];
-
-      await saveSubscriptions(userId, subscriptions);
-      return subscription;
+      return saveSubscriptionForUser(userId, subscription);
     },
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);
@@ -115,11 +114,7 @@ export function useDeleteSubscription() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const current = await loadLiabilities(userId);
-      await saveSubscriptions(
-        userId,
-        current.subscriptions.filter((item) => item.id !== id),
-      );
+      await deleteSubscriptionForUser(userId, id);
     },
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);

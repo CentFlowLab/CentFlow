@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { ASSETS_EMPTY_CONFIG } from '@/components/assets/assets.config';
+import { MOVEMENTS_EMPTY_CONFIG } from '@/components/movements/movements.config';
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
 import { Card, Text } from '@/components/ui';
@@ -27,7 +27,7 @@ export function CreditsSection({
     return (
       <View style={styles.container}>
         <AssetsEmptyState
-          config={ASSETS_EMPTY_CONFIG.creditos}
+          config={MOVEMENTS_EMPTY_CONFIG.creditos}
           onPrimaryAction={onCreate}
           onSecondaryAction={onLearnMore}
         />
@@ -60,6 +60,11 @@ export function CreditsSection({
                 <Text variant="caption" color="textMuted">
                   Saldo: {formatCurrency(credit.outstandingBalance)}
                 </Text>
+        {credit.interestRateAnnual !== undefined ? (
+                  <Text variant="caption" color="textSecondary">
+                    TAEG: {credit.interestRateAnnual.toFixed(2)}%
+                  </Text>
+                ) : null}
                 {credit.nextPaymentDate || credit.nextPaymentAmount ? (
                   <Text variant="caption" color="textSecondary">
                     Próximo:{' '}

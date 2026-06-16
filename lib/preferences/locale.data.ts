@@ -173,7 +173,9 @@ export function getCurrencyOptions(locale = 'pt-PT'): LocaleOption[] {
 export function getCountryOptions(locale = 'pt-PT'): LocaleOption[] {
   const codes =
     typeof Intl.supportedValuesOf === 'function'
-      ? Intl.supportedValuesOf('region').filter((code) => /^[A-Z]{2}$/.test(code))
+      ? (Intl.supportedValuesOf as (key: string) => string[])('region').filter((code) =>
+          /^[A-Z]{2}$/.test(code),
+        )
       : FALLBACK_COUNTRY_CODES;
 
   const displayNames = getDisplayNames(locale, 'region');

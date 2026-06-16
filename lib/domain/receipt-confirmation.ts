@@ -79,25 +79,25 @@ export function formItemsToConfirmedItems(
   items: ReceiptFormItem[],
   defaultCategory?: string,
 ): ReceiptConfirmedItem[] {
-  const confirmed = items
-    .map((item, index) => {
-      const name = item.name.trim();
-      const totalPrice = parseItemAmount(item.amount);
-      if (!name || totalPrice === null) return null;
+  const confirmed: ReceiptConfirmedItem[] = [];
 
-      const quantity = parseOptionalNumber(item.quantity);
-      const unitPrice = parseOptionalNumber(item.unitPrice);
+  for (const [index, item] of items.entries()) {
+    const name = item.name.trim();
+    const totalPrice = parseItemAmount(item.amount);
+    if (!name || totalPrice === null) continue;
 
-      return {
-        id: item.id || createItemId('item', index),
-        name,
-        quantity,
-        unitPrice,
-        totalPrice,
-        category: defaultCategory,
-      } satisfies ReceiptConfirmedItem;
-    })
-    .filter((item): item is ReceiptConfirmedItem => item !== null);
+    const quantity = parseOptionalNumber(item.quantity);
+    const unitPrice = parseOptionalNumber(item.unitPrice);
+
+    confirmed.push({
+      id: item.id || createItemId('item', index),
+      name,
+      quantity,
+      unitPrice,
+      totalPrice,
+      category: defaultCategory,
+    });
+  }
 
   const parsed = receiptConfirmedItemsSchema.safeParse(
     confirmed.map(({ id: _id, ...rest }) => rest),

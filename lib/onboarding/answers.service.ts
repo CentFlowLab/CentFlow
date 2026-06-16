@@ -43,7 +43,7 @@ async function fetchSupabaseAnswers(userId: string): Promise<OnboardingAnswers> 
   }
   if (!data) return { ...EMPTY_ONBOARDING_ANSWERS };
 
-  return mapRow(data as OnboardingRow);
+  return mapRow(data as unknown as OnboardingRow);
 }
 
 async function upsertSupabaseAnswers(
@@ -67,7 +67,7 @@ async function upsertSupabaseAnswers(
     .single();
 
   if (error) throw new Error(error.message);
-  return mapRow(data as OnboardingRow);
+  return mapRow(data as unknown as OnboardingRow);
 }
 
 export async function fetchOnboardingAnswers(userId: string): Promise<OnboardingAnswers> {

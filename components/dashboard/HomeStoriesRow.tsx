@@ -16,25 +16,18 @@ type HomeStoryItem = {
 };
 
 type HomeStoriesRowProps = {
-  attentionCount: number;
-  profileNeedsAttention: boolean;
-  hasRecentChanges: boolean;
+  unread: Record<HomeStoryId, boolean>;
   onStoryPress: (id: HomeStoryId) => void;
 };
 
-export function HomeStoriesRow({
-  attentionCount,
-  profileNeedsAttention,
-  hasRecentChanges,
-  onStoryPress,
-}: HomeStoriesRowProps) {
+export function HomeStoriesRow({ unread, onStoryPress }: HomeStoriesRowProps) {
   const stories: HomeStoryItem[] = [
     {
       id: 'profile',
       label: 'Perfil financeiro',
       icon: { ios: 'chart.bar.fill', android: 'bar_chart', web: 'bar_chart' },
       gradient: [colors.primaryDark, colors.primary],
-      hasNotification: profileNeedsAttention,
+      hasNotification: unread.profile,
     },
     {
       id: 'changes',
@@ -45,7 +38,7 @@ export function HomeStoriesRow({
         web: 'sync',
       },
       gradient: ['#1E3A5F', '#2563EB'],
-      hasNotification: hasRecentChanges,
+      hasNotification: unread.changes,
     },
     {
       id: 'attention',
@@ -56,7 +49,7 @@ export function HomeStoriesRow({
         web: 'error',
       },
       gradient: ['#7C2D12', colors.warning],
-      hasNotification: attentionCount > 0,
+      hasNotification: unread.attention,
     },
   ];
 

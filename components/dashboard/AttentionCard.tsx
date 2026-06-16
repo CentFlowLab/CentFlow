@@ -1,8 +1,9 @@
+import { router } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
-import type { AttentionItem } from '@/lib/domain';
+import type { AttentionItem, AttentionType } from '@/lib/domain';
 import { daysUntil, formatCurrency, formatRelativeDays } from '@/lib/utils/format';
 import { colors, radius, spacing } from '@/lib/theme';
 
@@ -30,6 +31,13 @@ const PRIORITY_BORDER: Record<AttentionItem['priority'], string> = {
   low: colors.borderStrong,
 };
 
+function getAttentionRoute(type: AttentionType): string | null {
+  if (type === 'credit') return '/(tabs)/movimentos?view=creditos';
+  if (type === 'subscription') return '/(tabs)/movimentos?view=subscricoes';
+  if (type === 'warranty') return '/(tabs)/ativos';
+  return null;
+}
+
 type AttentionCardProps = {
   item: AttentionItem;
 };
@@ -37,11 +45,10 @@ type AttentionCardProps = {
 export function AttentionCard({ item }: AttentionCardProps) {
   const config = TYPE_CONFIG[item.type];
   const days = item.dueDate ? daysUntil(item.dueDate) : null;
+  const route = getAttentionRoute(item.type);
 
-  return (
-    <Card
-      variant="outlined"
-      style={[styles.card, { borderLeftColor: PRIORITY_BORDER[item.priority] }]}>
+  const content = (
+    <>
       <View style={[styles.iconBox, { backgroundColor: `${config.color}18` }]}>
         <SymbolView name={config.icon} tintColor={config.color} size={20} />
       </View>
@@ -68,7 +75,30 @@ export function AttentionCard({ item }: AttentionCardProps) {
           </Text>
         )}
       </View>
-    </Card>
+    </>
+  );
+
+  if (!route) {
+    return (
+      <Card
+        variant="outlined"
+        style={[styles.card, { borderLeftColor: PRIORITY_BORDER[item.priority] }]}>
+        {content}
+      </Card>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={() => router.push(route as never)}
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir ${item.title}`}>
+      <Card
+        variant="outlined"
+        style={[styles.card, { borderLeftColor: PRIORITY_BORDER[item.priority] }]}>
+        {content}
+      </Card>
+    </Pressable>
   );
 }
 
