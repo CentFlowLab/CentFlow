@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 
@@ -58,7 +58,12 @@ export function OnboardingShell({
         </View>
       ) : null}
 
-      <View style={styles.body}>{children}</View>
+      <KeyboardAvoidingView
+        style={styles.body}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={insets.top + 56}>
+        {children}
+      </KeyboardAvoidingView>
 
       {footer ? <View style={styles.footer}>{footer}</View> : null}
     </View>

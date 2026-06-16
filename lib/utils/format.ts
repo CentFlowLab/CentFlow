@@ -47,6 +47,62 @@ export function formatCompactCurrency(value: number, currency = activeCurrency):
   return formatCurrency(value, currency);
 }
 
+export const DATE_INPUT_PLACEHOLDER = 'DD-MM-AAAA';
+
+const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const PT_INPUT_DATE_RE = /^(\d{2})-(\d{2})-(\d{4})$/;
+
+/** ISO (YYYY-MM-DD) → DD-MM-AAAA para campos de texto. */
+export function isoToInputDate(iso: string): string {
+  if (!iso) return '';
+  const match = iso.match(ISO_DATE_RE);
+  if (!match) return iso;
+  const [, year, month, day] = match;
+  return `${day}-${month}-${year}`;
+}
+
+/** Converte ISO ou DD-MM-AAAA para apresentação em inputs. */
+export function formatInputDate(value?: string | Date | null): string {
+  if (value == null || value === '') return '';
+  if (value instanceof Date) return isoToInputDate(toIsoDateString(value));
+  if (ISO_DATE_RE.test(value)) return isoToInputDate(value);
+  return value;
+}
+
+/** DD-MM-AAAA (ou ISO legado) → YYYY-MM-DD para armazenamento/API. */
+export function inputDateToIso(input: string): string | undefined {
+  const trimmed = input.trim();
+  if (!trimmed) return undefined;
+
+  const pt = trimmed.match(PT_INPUT_DATE_RE);
+  if (pt) {
+    const [, day, month, year] = pt;
+    return `${year}-${month}-${day}`;
+  }
+
+  if (ISO_DATE_RE.test(trimmed)) return trimmed;
+
+  return undefined;
+}
+
+export function isValidInputDate(input: string): boolean {
+  const iso = inputDateToIso(input);
+  if (!iso) return false;
+
+  const [year, month, day] = iso.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+}
+
+export function todayInputDate(): string {
+  return formatInputDate(new Date());
+}
+
 export function formatDateShort(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;

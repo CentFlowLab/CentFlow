@@ -9,6 +9,11 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 import type { Credit } from '@/lib/domain/types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
+import {
+  DATE_INPUT_PLACEHOLDER,
+  formatInputDate,
+  inputDateToIso,
+} from '@/lib/utils/format';
 
 type CreditFormModalProps = {
   visible: boolean;
@@ -37,7 +42,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
       setName(credit.name);
       setBalance(String(credit.outstandingBalance));
       setNextAmount(credit.nextPaymentAmount ? String(credit.nextPaymentAmount) : '');
-      setNextDate(credit.nextPaymentDate ?? '');
+      setNextDate(formatInputDate(credit.nextPaymentDate));
     } else {
       setName('');
       setBalance('');
@@ -65,6 +70,12 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
 
     const nextPaymentAmount = nextAmount ? parseGoalAmount(nextAmount) : undefined;
 
+    const parsedNextDate = nextDate.trim() ? inputDateToIso(nextDate.trim()) : undefined;
+    if (nextDate.trim() && !parsedNextDate) {
+      setApiError('Data do próximo pagamento inválida.');
+      return;
+    }
+
     try {
       await saveCredit.mutateAsync({
         id: credit?.id,
@@ -74,7 +85,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
           nextPaymentAmount !== undefined && !Number.isNaN(nextPaymentAmount)
             ? nextPaymentAmount
             : undefined,
-        nextPaymentDate: nextDate.trim() || undefined,
+        nextPaymentDate: parsedNextDate,
       });
       onClose();
     } catch (error) {
@@ -139,7 +150,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
           label="Data do próximo pagamento (opcional)"
           value={nextDate}
           onChangeText={setNextDate}
-          placeholder="AAAA-MM-DD"
+          placeholder={DATE_INPUT_PLACEHOLDER}
         />
 
         {apiError ? (

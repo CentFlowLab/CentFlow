@@ -17,7 +17,7 @@ import type { Warranty } from '@/lib/domain/assets.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { getWarrantyExpiryInfo } from '@/lib/domain/warranty.utils';
 import { colors, spacing } from '@/lib/theme';
-import { toIsoDateString } from '@/lib/utils/format';
+import { DATE_INPUT_PLACEHOLDER, formatInputDate, inputDateToIso, isValidInputDate } from '@/lib/utils/format';
 
 import { WarrantyReceiptPicker } from './WarrantyReceiptPicker';
 
@@ -52,13 +52,13 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
 
     if (warranty) {
       setProduct(warranty.product);
-      setExpiresAt(warranty.expiresAt);
-      setPurchaseDate(warranty.purchaseDate ?? '');
+      setExpiresAt(formatInputDate(warranty.expiresAt));
+      setPurchaseDate(formatInputDate(warranty.purchaseDate));
       setStore(warranty.store ?? '');
       setSelectedReceipt(null);
     } else {
       setProduct('');
-      setExpiresAt(toIsoDateString(new Date(Date.now() + 365 * 86400000)));
+      setExpiresAt(formatInputDate(new Date(Date.now() + 365 * 86400000)));
       setPurchaseDate('');
       setStore('');
       setSelectedReceipt(null);
@@ -79,8 +79,10 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
   }, [visible, receiptId, transactions]);
 
   const expiryPreview = useMemo(() => {
-    if (!expiresAt || !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) return null;
-    return getWarrantyExpiryInfo(expiresAt);
+    if (!expiresAt || !isValidInputDate(expiresAt)) return null;
+    const iso = inputDateToIso(expiresAt);
+    if (!iso) return null;
+    return getWarrantyExpiryInfo(iso);
   }, [expiresAt]);
 
   function handleSelectReceipt(transaction: Transaction | null) {
@@ -197,7 +199,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
             label="Data de expiração"
             value={expiresAt}
             onChangeText={setExpiresAt}
-            placeholder="AAAA-MM-DD"
+            placeholder={DATE_INPUT_PLACEHOLDER}
             error={errors.expiresAt}
           />
         </View>
@@ -206,7 +208,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
             label="Data de compra"
             value={purchaseDate}
             onChangeText={setPurchaseDate}
-            placeholder="AAAA-MM-DD"
+            placeholder={DATE_INPUT_PLACEHOLDER}
             error={errors.purchaseDate}
           />
         </View>

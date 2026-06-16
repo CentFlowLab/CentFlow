@@ -7,6 +7,7 @@ import { getCategoriesForType } from '@/lib/data/transaction-categories';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { TransactionType } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
+import { DATE_INPUT_PLACEHOLDER } from '@/lib/utils/format';
 
 type TransactionFormProps = {
   values: TransactionFormValues;
@@ -96,7 +97,7 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
         label="Data"
         value={values.date}
         onChangeText={(date) => update('date', date)}
-        placeholder="AAAA-MM-DD"
+        placeholder={DATE_INPUT_PLACEHOLDER}
         error={errors?.date}
       />
     </View>

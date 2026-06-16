@@ -9,6 +9,7 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 import type { Subscription } from '@/lib/domain/assets.types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
+import { DATE_INPUT_PLACEHOLDER, formatInputDate, inputDateToIso } from '@/lib/utils/format';
 
 type SubscriptionFormModalProps = {
   visible: boolean;
@@ -39,7 +40,7 @@ export function SubscriptionFormModal({
     if (subscription) {
       setName(subscription.name);
       setAmount(String(subscription.amount));
-      setRenewsAt(subscription.renewsAt ?? '');
+      setRenewsAt(formatInputDate(subscription.renewsAt));
     } else {
       setName('');
       setAmount('');
@@ -64,12 +65,18 @@ export function SubscriptionFormModal({
       return;
     }
 
+    const parsedRenewsAt = renewsAt.trim() ? inputDateToIso(renewsAt.trim()) : undefined;
+    if (renewsAt.trim() && !parsedRenewsAt) {
+      setApiError('Data de renovação inválida.');
+      return;
+    }
+
     try {
       await saveSubscription.mutateAsync({
         id: subscription?.id,
         name: name.trim(),
         amount: parsedAmount,
-        renewsAt: renewsAt.trim() || undefined,
+        renewsAt: parsedRenewsAt,
       });
       onClose();
     } catch (error) {
@@ -127,7 +134,7 @@ export function SubscriptionFormModal({
           label="Renova em (opcional)"
           value={renewsAt}
           onChangeText={setRenewsAt}
-          placeholder="AAAA-MM-DD"
+          placeholder={DATE_INPUT_PLACEHOLDER}
         />
 
         {apiError ? (

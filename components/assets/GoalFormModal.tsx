@@ -16,7 +16,7 @@ import {
 } from '@/lib/domain/goal-form.utils';
 import { getGoalProgress } from '@/lib/domain/goal.utils';
 import { colors, radius, spacing } from '@/lib/theme';
-import { formatCurrency, toIsoDateString } from '@/lib/utils/format';
+import { formatCurrency, DATE_INPUT_PLACEHOLDER, formatInputDate } from '@/lib/utils/format';
 
 import { GoalProgressBar } from './GoalProgressBar';
 
@@ -52,7 +52,7 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
       setName(goal.name);
       setTarget(formatGoalAmount(goal.target));
       setCurrent(formatGoalAmount(goal.current));
-      setDeadline(goal.deadline ?? '');
+      setDeadline(formatInputDate(goal.deadline));
     } else {
       setName('');
       setTarget('');
@@ -205,7 +205,7 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
         label="Data prevista"
         value={deadline}
         onChangeText={setDeadline}
-        placeholder="AAAA-MM-DD"
+        placeholder={DATE_INPUT_PLACEHOLDER}
         error={errors.deadline}
       />
       <Text variant="caption" color="textMuted" style={styles.helper}>
@@ -213,7 +213,9 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
       </Text>
 
       <Pressable
-        onPress={() => setDeadline(toIsoDateString(new Date(Date.now() + 180 * 86400000)))}
+        onPress={() =>
+          setDeadline(formatInputDate(new Date(Date.now() + 180 * 86400000)))
+        }
         style={styles.quickDate}>
         <Text variant="caption" color="primary">
           +6 meses

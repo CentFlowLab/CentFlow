@@ -1,4 +1,5 @@
 import { Platform, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTabBarBottomInset } from '@/hooks/useTabBarBottomInset';
 import { colors } from '@/lib/theme';
@@ -20,17 +21,16 @@ type CentFlowTabBarProps = {
 };
 
 /**
- * Tab bar com espaço inferior garantido no Android (acima da barra do sistema).
+ * Tab bar com safe area inferior garantida.
+ * Android: fallback generoso (edge-to-edge). iOS: inset nativo do dispositivo.
  */
 export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const bottomInset = useTabBarBottomInset();
-
-  if (Platform.OS !== 'android') {
-    return <BottomTabBar {...props} />;
-  }
+  const insets = useSafeAreaInsets();
+  const paddingBottom = Platform.OS === 'android' ? bottomInset : insets.bottom;
 
   return (
-    <View style={{ backgroundColor: colors.tabBar, paddingBottom: bottomInset }}>
+    <View style={{ backgroundColor: colors.tabBar, paddingBottom }}>
       <BottomTabBar
         {...props}
         insets={{ ...props.insets, bottom: 0 }}

@@ -26,7 +26,7 @@ import {
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { colors, radius, spacing } from '@/lib/theme';
-import { toIsoDateString } from '@/lib/utils/format';
+import { DATE_INPUT_PLACEHOLDER, todayInputDate } from '@/lib/utils/format';
 
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
 import { ReceiptAttachmentField } from './ReceiptAttachmentField';
@@ -83,7 +83,7 @@ export function AddTransactionModal({
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(toIsoDateString());
+  const [date, setDate] = useState(todayInputDate());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -104,7 +104,7 @@ export function AddTransactionModal({
     setAmount('');
     setCategory('');
     setDescription('');
-    setDate(toIsoDateString());
+    setDate(todayInputDate());
     setErrors({});
     setApiError(null);
     setProcessedReceipt(null);
@@ -511,7 +511,7 @@ export function AddTransactionModal({
               label="Data"
               value={date}
               onChangeText={setDate}
-              placeholder="AAAA-MM-DD"
+              placeholder={DATE_INPUT_PLACEHOLDER}
               error={errors.date}
             />
           </>

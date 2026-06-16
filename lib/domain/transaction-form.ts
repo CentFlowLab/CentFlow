@@ -1,4 +1,5 @@
 import type { Transaction, TransactionType } from './transaction.types';
+import { formatInputDate } from '@/lib/utils/format';
 
 export type TransactionFormValues = {
   type: TransactionType;
@@ -19,7 +20,7 @@ export function transactionToFormValues(transaction: Transaction): TransactionFo
     amount: String(transaction.amount),
     category: transaction.category,
     description: transaction.description ?? '',
-    date: transaction.date,
+    date: formatInputDate(transaction.date),
   };
 }
 

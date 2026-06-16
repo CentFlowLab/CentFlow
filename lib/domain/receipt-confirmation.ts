@@ -6,7 +6,7 @@ import type {
   ReceiptOcrResult,
 } from './receipt.types';
 import { receiptConfirmedItemsSchema } from './receipt-items.schema';
-import { toIsoDateString } from '@/lib/utils/format';
+import { formatInputDate, inputDateToIso, todayInputDate, toIsoDateString } from '@/lib/utils/format';
 
 function createItemId(prefix: string, index: number): string {
   return `${prefix}-${index}`;
@@ -40,7 +40,7 @@ export function emptyReceiptFormValues(): ReceiptFormValues {
     amount: '',
     category: '',
     description: '',
-    date: toIsoDateString(),
+    date: todayInputDate(),
     items: [],
   };
 }
@@ -69,7 +69,7 @@ export function ocrToFormValues(ocr: ReceiptOcrResult | null): ReceiptFormValues
     amount: ocr.totalAmount !== undefined ? String(ocr.totalAmount) : '',
     category: ocr.suggestedCategory ?? '',
     description: ocr.merchantName ?? '',
-    date: ocr.date ?? toIsoDateString(),
+    date: formatInputDate(ocr.date ?? toIsoDateString()),
     items: ocrItemsToFormItems(ocr),
   };
 }
@@ -133,7 +133,7 @@ export function formValuesToConfirmation(
     amount,
     category: values.category,
     description: values.description.trim() || undefined,
-    date: values.date,
+    date: inputDateToIso(values.date) ?? values.date,
     items,
   };
 }
@@ -183,7 +183,11 @@ export function isOcrFieldUnchanged(
     case 'amount':
       return current.amount === original.amount && original.amount !== '';
     case 'date':
-      return current.date === original.date && original.date !== '';
+      return (
+        (inputDateToIso(current.date) ?? current.date) ===
+          (inputDateToIso(original.date) ?? original.date) &&
+        original.date !== ''
+      );
     case 'category':
       return current.category === original.category && original.category !== '';
     case 'description':

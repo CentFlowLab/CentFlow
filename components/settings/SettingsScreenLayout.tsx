@@ -1,6 +1,7 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/layout';
@@ -29,14 +30,19 @@ export function SettingsScreenLayout({
         showBack
         showAvatar={false}
       />
-      <ScrollView
+      <KeyboardAwareScrollView
+        enableOnAndroid
+        enableAutomaticScroll
+        extraScrollHeight={Platform.OS === 'ios' ? 48 : 24}
+        extraHeight={100}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
         ]}>
         {children}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

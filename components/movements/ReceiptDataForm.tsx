@@ -15,6 +15,7 @@ import {
   getOcrFieldTone,
 } from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
+import { DATE_INPUT_PLACEHOLDER } from '@/lib/utils/format';
 
 import { OcrFieldBadge } from './ocr/OcrFieldBadge';
 import { ReceiptItemsEditor } from './ReceiptItemsEditor';
@@ -108,7 +109,7 @@ export function ReceiptDataForm({
               label="Data"
               value={values.date}
               onChangeText={(v) => update('date', v)}
-              placeholder="AAAA-MM-DD"
+              placeholder={DATE_INPUT_PLACEHOLDER}
               error={errors?.date}
               ocrHighlighted={isOcr('date')}
               ocrEdited={isEdited('date')}
