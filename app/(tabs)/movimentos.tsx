@@ -12,12 +12,13 @@ import {
   SwipeableTransactionListItem,
   TransactionsSkeleton,
 } from '@/components/movements';
-import { EmptyState, ErrorState, RefetchingIndicator } from '@/components/ui';
+import { EmptyState, ErrorState } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import {
   useDeleteTransaction,
   useTransactions,
 } from '@/hooks/queries/useTransactions';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
@@ -41,6 +42,7 @@ export default function MovimentosScreen() {
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
+  const { refreshing, onRefresh } = usePullToRefresh(refetch);
   const deleteMutation = useDeleteTransaction();
   const { data: onboardingAnswers } = useOnboardingAnswers();
   const { showToast } = useToast();
@@ -151,8 +153,8 @@ export default function MovimentosScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
               tintColor={colors.primary}
             />
           }

@@ -1,14 +1,63 @@
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 
+import { useAnalisesTabIconReplay } from '@/lib/analises-tab-icon/analises-tab-icon.context';
 import { colors } from '@/lib/theme';
+
+const VIDEO_SOURCE = require('@/assets/videos/analises-tab-icon.mp4');
 
 type TabBarAnalisesIconProps = {
   focused: boolean;
 };
 
 export function TabBarAnalisesIcon({ focused }: TabBarAnalisesIconProps) {
+  const { replayToken } = useAnalisesTabIconReplay();
+  const [useFallback, setUseFallback] = useState(Platform.OS === 'web');
+
+  const player = useVideoPlayer(VIDEO_SOURCE, (videoPlayer) => {
+    videoPlayer.loop = false;
+    videoPlayer.muted = true;
+  });
+
+  useEffect(() => {
+    const subscription = player.addListener('statusChange', ({ error }) => {
+      if (error) {
+        setUseFallback(true);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [player]);
+
+  useEffect(() => {
+    if (useFallback) return;
+
+    player.currentTime = 0;
+    player.play();
+  }, [focused, replayToken, player, useFallback]);
+
+  if (useFallback) {
+    return <AnalisesIconFallback focused={focused} />;
+  }
+
+  return (
+    <View style={styles.wrapper}>
+      <View style={[styles.circle, focused && styles.circleFocused]}>
+        <VideoView
+          player={player}
+          style={styles.video}
+          contentFit="cover"
+          nativeControls={false}
+        />
+      </View>
+    </View>
+  );
+}
+
+function AnalisesIconFallback({ focused }: { focused: boolean }) {
   return (
     <View style={styles.wrapper}>
       <LinearGradient
@@ -39,6 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -18,
+    overflow: 'visible',
   },
   circle: {
     width: 56,
@@ -48,6 +98,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: colors.tabBar,
+    overflow: 'hidden',
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -57,5 +108,9 @@ const styles = StyleSheet.create({
   circleFocused: {
     borderColor: colors.background,
     shadowOpacity: 0.4,
+  },
+  video: {
+    width: 56,
+    height: 56,
   },
 });

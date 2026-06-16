@@ -4,7 +4,6 @@ import {
   AnalysisMetricCard,
   AnalysisSkeleton,
   InsightsSection,
-  PatrimonyAllocationCard,
   SpendingCategoryCard,
   TrendsSummaryCard,
 } from '@/components/analysis';
@@ -14,11 +13,9 @@ import {
   RefetchingIndicator,
   ScreenContainer,
   SectionHeader,
-  Text,
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
-import { formatCurrency } from '@/lib/utils/format';
-import { colors, spacing } from '@/lib/theme';
+import { spacing, colors } from '@/lib/theme';
 
 export default function AnalisesScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
@@ -42,50 +39,34 @@ export default function AnalisesScreen() {
         </View>
       ) : (
         <ScreenContainer>
-          {/* Resumo património */}
           <SectionHeader
-            title="Património"
-            subtitle={`Líquido: ${formatCurrency(data.netWorth.netWorth)}`}
+            title="Análises"
+            subtitle={data.periodLabel}
           />
 
-          <PatrimonyAllocationCard
-            allocation={data.allocation}
-            totalAssets={data.netWorth.totalAssets}
+          <TrendsSummaryCard
+            trends={data.trends}
+            periodLabel={data.periodLabel}
+            showNetWorthChange={false}
           />
-
-          <TrendsSummaryCard trends={data.trends} periodLabel={data.periodLabel} />
 
           <SpendingCategoryCard
             categories={data.trends.spendingByCategory}
             periodLabel={data.periodLabel}
           />
 
-          {/* Métricas principais */}
           <SectionHeader
             title="Métricas"
             subtitle="Indicadores chave do período"
           />
           <View style={styles.metricsGrid}>
-            {data.metrics.map((metric) => (
-              <AnalysisMetricCard key={metric.id} metric={metric} />
-            ))}
+            {data.metrics
+              .filter((metric) => !isPatrimonyMetric(metric.id))
+              .map((metric) => (
+                <AnalysisMetricCard key={metric.id} metric={metric} />
+              ))}
           </View>
 
-          {/* Variação resumo */}
-          <View style={styles.summaryRow}>
-            <SummaryPill
-              label="Passivos"
-              value={formatCurrency(data.netWorth.totalLiabilities)}
-              color={colors.danger}
-            />
-            <SummaryPill
-              label="Ativos"
-              value={formatCurrency(data.netWorth.totalAssets)}
-              color={colors.success}
-            />
-          </View>
-
-          {/* CentFlow Brain */}
           <InsightsSection insights={data.insights} />
 
           <RefetchingIndicator visible={isRefetching} />
@@ -95,24 +76,12 @@ export default function AnalisesScreen() {
   );
 }
 
-function SummaryPill({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: string;
-}) {
+function isPatrimonyMetric(id: string): boolean {
   return (
-    <View style={[styles.pill, { borderColor: `${color}40` }]}>
-      <Text variant="caption" color="textMuted">
-        {label}
-      </Text>
-      <Text variant="bodyMedium" style={{ color }}>
-        {value}
-      </Text>
-    </View>
+    id === 'debt-ratio' ||
+    id === 'investment-share' ||
+    id === 'liquidity' ||
+    id === 'inventory-share'
   );
 }
 
@@ -132,18 +101,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.md,
     marginBottom: spacing['2xl'],
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing['2xl'],
-  },
-  pill: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: spacing.md,
-    gap: spacing.xs,
   },
 });

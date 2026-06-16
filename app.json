@@ -75,7 +75,8 @@
       ],
       "expo-ocr-kit",
       "expo-updates",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

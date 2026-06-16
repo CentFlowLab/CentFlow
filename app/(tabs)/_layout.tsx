@@ -1,28 +1,47 @@
 import { Tabs } from 'expo-router';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet, type PressableProps } from 'react-native';
 
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
+import { AnalisesTabIconProvider, useAnalisesTabIconReplay } from '@/lib/analises-tab-icon/analises-tab-icon.context';
 import { colors, typography } from '@/lib/theme';
 
 const TAB_BAR_CONTENT_HEIGHT = Platform.OS === 'ios' ? 56 : 52;
 
 export default function TabLayout() {
   return (
+    <AnalisesTabIconProvider>
+      <TabLayoutInner />
+    </AnalisesTabIconProvider>
+  );
+}
+
+function TabLayoutInner() {
+  const keyboardVisible = useKeyboardVisible();
+  const { requestReplay } = useAnalisesTabIconReplay();
+
+  return (
     <Tabs
-      tabBar={(props) => <CentFlowTabBar {...props} />}
+      tabBar={(props) => <CentFlowTabBar {...props} hidden={keyboardVisible} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          ...styles.tabBar,
-          height: TAB_BAR_CONTENT_HEIGHT,
-          paddingBottom: 0,
-        },
+        tabBarStyle: keyboardVisible
+          ? styles.tabBarHidden
+          : {
+              ...styles.tabBar,
+              minHeight: TAB_BAR_CONTENT_HEIGHT,
+              paddingBottom: 0,
+              overflow: 'visible' as const,
+            },
         tabBarLabelStyle: typography.tabLabel,
         tabBarItemStyle: styles.tabBarItem,
+        tabBarButton: Platform.OS === 'android'
+          ? (props) => <TabBarButtonAndroid {...(props as PressableProps)} />
+          : undefined,
       }}>
       <Tabs.Screen
         name="index"
@@ -65,6 +84,11 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
           tabBarLabelStyle: [typography.tabLabel, styles.analisesLabel],
           tabBarItemStyle: [styles.tabBarItem, styles.analisesItem],
+        }}
+        listeners={{
+          tabPress: () => {
+            requestReplay();
+          },
         }}
       />
       <Tabs.Screen
@@ -111,6 +135,22 @@ export default function TabLayout() {
   );
 }
 
+function TabBarButtonAndroid(props: PressableProps) {
+  const { style, ...rest } = props;
+
+  return (
+    <Pressable
+      {...rest}
+      android_ripple={{
+        color: `${colors.primary}33`,
+        borderless: true,
+        radius: 28,
+      }}
+      style={(state) => [typeof style === 'function' ? style(state) : style, { overflow: 'visible' }]}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.tabBar,
@@ -120,11 +160,18 @@ const styles = StyleSheet.create({
     elevation: 0,
     shadowOpacity: 0,
   },
+  tabBarHidden: {
+    display: 'none',
+    height: 0,
+    overflow: 'hidden',
+  },
   tabBarItem: {
     paddingTop: 4,
+    overflow: 'visible',
   },
   analisesItem: {
     marginTop: -8,
+    overflow: 'visible',
   },
   analisesLabel: {
     marginTop: 4,

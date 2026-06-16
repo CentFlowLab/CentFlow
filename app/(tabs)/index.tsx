@@ -1,7 +1,14 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -11,8 +18,11 @@ import {
   DemoModeBadge,
   HomeAssetsSummaryCard,
   HomeGoalHighlightCard,
+  HomeIntroOverlay,
   HomePersonalizedInsightCard,
   HomeQuickActions,
+  HomeStoriesRow,
+  type HomeStoryId,
   type RecommendedQuickAction,
   MetricCard,
   NetWorthHeroCard,
@@ -52,6 +62,20 @@ export default function InicioScreen() {
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionOffsets = useRef({ changes: 0, attention: 0 });
+
+  const handleStoryPress = useCallback((id: HomeStoryId) => {
+    if (id === 'profile') {
+      setProfileDetailVisible(true);
+      return;
+    }
+
+    const y = id === 'changes' ? sectionOffsets.current.changes : sectionOffsets.current.attention;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+  }, []);
 
   const header = <AppHeader leading={<DashboardHeaderLeading />} showBrand={false} />;
 
@@ -179,20 +203,37 @@ export default function InicioScreen() {
     <View style={styles.screen}>
       {header}
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={colors.primary}
-          />
+      <HomeStoriesRow
+        attentionCount={attentionItems.length}
+        profileNeedsAttention={(financialProfile?.score ?? 0) < 60}
+        hasRecentChanges={
+          Math.abs(netWorthChangeThisMonth) > 0 ||
+          weeklySpending > 0 ||
+          (personalInflation !== null && personalInflation !== 0)
         }
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
-        ]}>
-        <ScreenContainer>
+        onStoryPress={handleStoryPress}
+      />
+
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 72 : 0}>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={colors.primary}
+            />
+          }
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+          ]}>
+        <ScreenContainer scrollable={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
           <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
@@ -238,8 +279,12 @@ export default function InicioScreen() {
             </View>
           )}
 
-          <SectionHeader title="O que mudou?" subtitle="Resumo rápido do período" />
-          <View style={styles.metricsGrid}>
+          <View
+            onLayout={(event) => {
+              sectionOffsets.current.changes = event.nativeEvent.layout.y;
+            }}>
+            <SectionHeader title="O que mudou?" subtitle="Resumo rápido do período" />
+            <View style={styles.metricsGrid}>
             <MetricCard
               label="Gastos"
               value={formatCurrency(weeklySpending)}
@@ -283,8 +328,13 @@ export default function InicioScreen() {
               }
             />
           </View>
+          </View>
 
-          <View style={styles.section}>
+          <View
+            style={styles.section}
+            onLayout={(event) => {
+              sectionOffsets.current.attention = event.nativeEvent.layout.y;
+            }}>
             <SectionHeader
               title="O que precisa da minha atenção?"
               subtitle={
@@ -337,7 +387,10 @@ export default function InicioScreen() {
 
           <RefetchingIndicator visible={isRefetching} />
         </ScreenContainer>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {!introDone ? <HomeIntroOverlay onComplete={() => setIntroDone(true)} /> : null}
 
       <FinancialProfileDetailSheet
         visible={profileDetailVisible}
@@ -381,6 +434,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,

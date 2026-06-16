@@ -198,9 +198,10 @@ export function DraggableBottomSheet({
                 <KeyboardAwareScrollView
                   enableOnAndroid
                   enableAutomaticScroll
-                  extraScrollHeight={Platform.OS === 'ios' ? 56 : 32}
-                  extraHeight={120}
+                  extraScrollHeight={Platform.OS === 'ios' ? 72 : 48}
+                  extraHeight={140}
                   keyboardOpeningTime={0}
+                  enableResetScrollToCoords={false}
                   onScroll={(event) => {
                     scrollOffset.value = event.nativeEvent.contentOffset.y;
                   }}

@@ -8,9 +8,14 @@ import { formatCurrency, formatPercent } from '@/lib/utils/format';
 type TrendsSummaryCardProps = {
   trends: AnalysisTrends;
   periodLabel: string;
+  showNetWorthChange?: boolean;
 };
 
-export function TrendsSummaryCard({ trends, periodLabel }: TrendsSummaryCardProps) {
+export function TrendsSummaryCard({
+  trends,
+  periodLabel,
+  showNetWorthChange = true,
+}: TrendsSummaryCardProps) {
   const maxValue = Math.max(trends.totalIncome, trends.totalExpenses, 1);
   const incomeWidth = `${Math.round((trends.totalIncome / maxValue) * 100)}%`;
   const expenseWidth = `${Math.round((trends.totalExpenses / maxValue) * 100)}%`;
@@ -47,18 +52,20 @@ export function TrendsSummaryCard({ trends, periodLabel }: TrendsSummaryCardProp
         <BarRow label="Gastos" width={expenseWidth} color={colors.danger} />
       </View>
 
-      <View style={styles.netWorthRow}>
-        <Text variant="caption" color="textMuted">
-          Evolução do património
-        </Text>
-        <Text
-          variant="bodyMedium"
-          style={{
-            color: trends.netWorthChangePercent >= 0 ? colors.success : colors.danger,
-          }}>
-          {formatPercent(trends.netWorthChangePercent, 1, true)}
-        </Text>
-      </View>
+      {showNetWorthChange ? (
+        <View style={styles.netWorthRow}>
+          <Text variant="caption" color="textMuted">
+            Evolução do património
+          </Text>
+          <Text
+            variant="bodyMedium"
+            style={{
+              color: trends.netWorthChangePercent >= 0 ? colors.success : colors.danger,
+            }}>
+            {formatPercent(trends.netWorthChangePercent, 1, true)}
+          </Text>
+        </View>
+      ) : null}
     </Card>
   );
 }
