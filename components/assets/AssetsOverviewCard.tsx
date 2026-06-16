@@ -1,5 +1,5 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { AssetsCounts, AssetsTab } from '@/lib/domain/assets.types';
@@ -74,10 +74,7 @@ export function AssetsOverviewCard({
         Resumo dos ativos
       </Text>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.grid}>
+      <View style={styles.grid}>
         {OVERVIEW_ITEMS.map((item) => {
           const count = counts[TAB_COUNT_KEY[item.key]];
           const isActive = activeTab === item.key;
@@ -94,17 +91,23 @@ export function AssetsOverviewCard({
               accessibilityRole="button"
               accessibilityLabel={`${item.label}, ${count} registados`}
               accessibilityState={{ selected: isActive }}>
-              <SymbolView name={item.icon} tintColor={item.color} size={18} />
-              <Text variant="h3" style={{ color: item.color }}>
+              <SymbolView name={item.icon} tintColor={item.color} size={13} />
+              <Text variant="bodyMedium" style={[styles.count, { color: item.color }]}>
                 {count}
               </Text>
-              <Text variant="caption" color="textMuted" numberOfLines={1}>
+              <Text
+                variant="caption"
+                color="textMuted"
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+                style={styles.label}>
                 {item.label}
               </Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </Card>
   );
 }
@@ -115,21 +118,32 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    paddingRight: spacing.xs,
+    gap: spacing.xs,
   },
   tile: {
-    width: 108,
+    flex: 1,
+    minWidth: 0,
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.lg,
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 2,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
   },
   tileActive: {
     borderColor: colors.primary,
     borderWidth: 1.5,
+  },
+  count: {
+    fontWeight: '700',
+    fontSize: 15,
+    lineHeight: 18,
+  },
+  label: {
+    textAlign: 'center',
+    fontSize: 9,
+    lineHeight: 11,
   },
 });

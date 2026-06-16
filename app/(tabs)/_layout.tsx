@@ -1,33 +1,25 @@
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
 import { colors, typography } from '@/lib/theme';
 
 const TAB_BAR_CONTENT_HEIGHT = Platform.OS === 'ios' ? 56 : 52;
-/** Inset inferior Android — evita sobreposição da barra de navegação do sistema. */
-const ANDROID_NAV_BAR_FALLBACK = 48;
 
 export default function TabLayout() {
-  const insets = useSafeAreaInsets();
-  const bottomInset =
-    Platform.OS === 'android'
-      ? Math.max(insets.bottom, ANDROID_NAV_BAR_FALLBACK)
-      : Math.max(insets.bottom, 0);
-
   return (
     <Tabs
-      safeAreaInsets={{ bottom: bottomInset }}
+      tabBar={(props) => <CentFlowTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           ...styles.tabBar,
-          height: TAB_BAR_CONTENT_HEIGHT + bottomInset,
-          paddingBottom: bottomInset,
+          height: TAB_BAR_CONTENT_HEIGHT,
+          paddingBottom: 0,
         },
         tabBarLabelStyle: typography.tabLabel,
         tabBarItemStyle: styles.tabBarItem,
