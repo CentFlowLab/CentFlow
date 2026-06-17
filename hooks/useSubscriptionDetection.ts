@@ -41,21 +41,39 @@ export function useSubscriptionDetection() {
     setActiveDetection(pending[0]);
   }, [pending, activeDetection]);
 
-  async function dismissCurrent() {
-    if (!userId || !activeDetection) return;
-    const next = await dismissSubscriptionDetection(userId, activeDetection.id);
-    setDismissed(next);
+  function resolveDetection(detectionId: string) {
     setActiveDetection(null);
+    setDismissed((prev) => (prev.includes(detectionId) ? prev : [...prev, detectionId]));
   }
 
-  function confirmHandled() {
-    setActiveDetection(null);
+  async function persistDismissedDetection(detectionId: string) {
+    if (!userId) return;
+    try {
+      const next = await dismissSubscriptionDetection(userId, detectionId);
+      setDismissed(next);
+    } catch {
+      // Mantém estado optimista em memória se o SecureStore falhar.
+    }
+  }
+
+  async function dismissCurrent() {
+    if (!activeDetection) return;
+    const id = activeDetection.id;
+    resolveDetection(id);
+    await persistDismissedDetection(id);
+  }
+
+  function markCurrentConfirmed() {
+    if (!activeDetection) return;
+    const id = activeDetection.id;
+    resolveDetection(id);
+    void persistDismissedDetection(id);
   }
 
   return {
     activeDetection,
     pendingCount: pending.length,
     dismissCurrent,
-    confirmHandled,
+    markCurrentConfirmed,
   };
 }

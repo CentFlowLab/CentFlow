@@ -68,7 +68,7 @@ export default function MovimentosScreen() {
   const {
     activeDetection,
     dismissCurrent,
-    confirmHandled,
+    markCurrentConfirmed,
   } = useSubscriptionDetection();
 
   const subscriptions = liabilities?.subscriptions ?? [];
@@ -158,7 +158,7 @@ export default function MovimentosScreen() {
         notes: `Detetada automaticamente (${activeDetection.transactionIds.length} movimentos)`,
       });
       showToast('Subscrição adicionada.', 'success');
-      confirmHandled();
+      markCurrentConfirmed();
     } catch {
       showToast('Não foi possível guardar a subscrição.', 'error');
     }
