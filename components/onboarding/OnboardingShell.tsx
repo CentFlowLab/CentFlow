@@ -12,6 +12,7 @@ type OnboardingShellProps = {
   onBack?: () => void;
   showBack?: boolean;
   progress?: number;
+  progressLabel?: string;
   showProgress?: boolean;
   footer?: ReactNode;
 };
@@ -21,6 +22,7 @@ export function OnboardingShell({
   onBack,
   showBack = false,
   progress = 0,
+  progressLabel,
   showProgress = false,
   footer,
 }: OnboardingShellProps) {
@@ -54,7 +56,7 @@ export function OnboardingShell({
 
       {showProgress ? (
         <View style={styles.progressWrap}>
-          <OnboardingProgressBar progress={progress} />
+          <OnboardingProgressBar progress={progress} label={progressLabel} />
         </View>
       ) : null}
 

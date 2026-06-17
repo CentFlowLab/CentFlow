@@ -11,9 +11,11 @@ import {
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import {
-  AnimatedAssistantMessage,
+  FeatureAreaCard,
   OnboardingShell,
+  OnboardingStepHeader,
   SelectableCard,
+  ValuePromiseSection,
 } from '@/components/onboarding';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { useProfile } from '@/hooks/queries/useProfile';
@@ -23,13 +25,18 @@ import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import {
   AMBITION_OPTIONS,
   LIFE_AREA_OPTIONS,
+  PRIMARY_OBJECTIVE_OPTIONS,
   PROFILE_OPTIONS,
   STEP_PROGRESS,
 } from '@/lib/onboarding/constants';
 import {
+  enrichOnboardingAnswers,
+  getFeatureRevealCards,
+  hintsFromPrimaryObjective,
+} from '@/lib/onboarding/features';
+import {
   getOnboardingInsights,
-  getPriorityFeatures,
-  getWowActionCards,
+  getVictoryActionCards,
 } from '@/lib/onboarding/personalization';
 import { saveOnboardingAnswersForUser, fetchOnboardingAnswers } from '@/lib/onboarding/answers.service';
 import type {
@@ -38,19 +45,21 @@ import type {
   IncomeAnswer,
   LifeAreaId,
   OnboardingStepId,
+  PrimaryObjectiveId,
   ProfileTagId,
   WowActionId,
 } from '@/lib/onboarding/types';
-import { GENDER_OPTIONS, getWelcomeMessages } from '@/lib/onboarding/welcome';
+import { GENDER_OPTIONS, getValuePromiseMessages } from '@/lib/onboarding/welcome';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const STEPS: OnboardingStepId[] = [
   'name',
   'welcome',
+  'primary_objective',
   'profile',
   'life_areas',
-  'smart_config',
   'ambition',
+  'smart_config',
   'reveal',
   'wow',
 ];
@@ -75,12 +84,19 @@ export default function OnboardingScreen() {
   const userEditedName = useRef(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [welcomeReady, setWelcomeReady] = useState(false);
+  const [showGenderOptions, setShowGenderOptions] = useState(false);
   const [revealPhase, setRevealPhase] = useState<'loading' | 'summary'>('loading');
   const [selectedWow, setSelectedWow] = useState<WowActionId | null>(null);
 
   const step = STEPS[stepIndex];
-  const showProgress = stepIndex >= STEPS.indexOf('life_areas');
+  const showProgress = stepIndex >= STEPS.indexOf('welcome');
   const progress = STEP_PROGRESS[step] ?? 0;
+  const progressLabel =
+    progress >= 90
+      ? 'Quase pronto'
+      : progress >= 50
+        ? 'A personalizar a tua experiência'
+        : 'A criar o teu espaço financeiro';
 
   const { answers, patch, setAnswers } = useOnboardingAnswersState();
 
@@ -96,7 +112,10 @@ export default function OnboardingScreen() {
       setAnswers((current) => ({
         ...saved,
         displayName: current.displayName || saved.displayName || '',
-        gender: current.gender ?? saved.gender,
+        gender: current.gender ?? saved.gender ?? 'neutral',
+        primaryObjective: saved.primaryObjective ?? current.primaryObjective,
+        enabledFeatures: saved.enabledFeatures ?? [],
+        smartConfigSkipped: saved.smartConfigSkipped ?? false,
       }));
     })();
 
@@ -113,15 +132,17 @@ export default function OnboardingScreen() {
 
   const firstName = getFirstName(answers.displayName);
 
-  const welcomeMessages = useMemo(
-    () => getWelcomeMessages(firstName, answers.gender),
-    [answers.gender, firstName],
+  const valuePromiseMessages = useMemo(
+    () => getValuePromiseMessages(firstName),
+    [firstName],
   );
+
+  const enrichedAnswers = useMemo(() => enrichOnboardingAnswers(answers), [answers]);
 
   const persistAnswers = useCallback(
     async (partial = answers) => {
       if (!userId) return;
-      await saveOnboardingAnswersForUser(userId, partial);
+      await saveOnboardingAnswersForUser(userId, enrichOnboardingAnswers(partial));
     },
     [userId, answers],
   );
@@ -138,6 +159,14 @@ export default function OnboardingScreen() {
   }, [step]);
 
   useEffect(() => {
+    if (step !== 'welcome') return;
+
+    setWelcomeReady(false);
+    const timer = setTimeout(() => setWelcomeReady(true), 3200);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  useEffect(() => {
     if (step !== 'reveal') return;
 
     setRevealPhase('loading');
@@ -150,7 +179,9 @@ export default function OnboardingScreen() {
 
   async function handleNameContinue() {
     const name = answers.displayName.trim();
-    if (!name || !answers.gender) return;
+    if (!name) return;
+
+    const gender = answers.gender ?? 'neutral';
 
     if (profile && name !== profile.name) {
       try {
@@ -160,8 +191,19 @@ export default function OnboardingScreen() {
       }
     }
 
-    await persistAnswers({ ...answers, displayName: name });
+    await persistAnswers({ ...answers, displayName: name, gender });
     goNext();
+  }
+
+  async function handlePrimaryObjectiveContinue() {
+    if (!answers.primaryObjective) return;
+    await persistAnswers();
+    goNext();
+  }
+
+  function handleSelectPrimaryObjective(objective: PrimaryObjectiveId) {
+    const hints = hintsFromPrimaryObjective(objective, answers);
+    patch({ ...hints, primaryObjective: objective });
   }
 
   async function handleProfileContinue() {
@@ -178,16 +220,31 @@ export default function OnboardingScreen() {
 
   async function handleSmartConfigContinue() {
     const debtOk = skipDebtQuestion || answers.hasDebt !== null;
-    if (answers.hasMonthlyIncome === null || answers.hasSavings === null || !debtOk) {
-      return;
+    if (!answers.smartConfigSkipped) {
+      if (answers.hasMonthlyIncome === null || answers.hasSavings === null || !debtOk) {
+        return;
+      }
     }
 
     const payload = skipDebtQuestion
-      ? { ...answers, hasDebt: false }
+      ? { ...answers, hasDebt: answers.smartConfigSkipped ? answers.hasDebt : false }
       : answers;
 
     await persistAnswers(payload);
-    if (skipDebtQuestion) patch({ hasDebt: false });
+    if (skipDebtQuestion && !answers.smartConfigSkipped) patch({ hasDebt: false });
+    goNext();
+  }
+
+  async function handleSmartConfigSkip() {
+    const payload = {
+      ...answers,
+      smartConfigSkipped: true,
+      hasMonthlyIncome: answers.hasMonthlyIncome ?? 'prefer_not',
+      hasSavings: answers.hasSavings,
+      hasDebt: skipDebtQuestion ? false : answers.hasDebt,
+    };
+    patch(payload);
+    await persistAnswers(payload);
     goNext();
   }
 
@@ -206,13 +263,13 @@ export default function OnboardingScreen() {
   }
 
   async function handleWowFinish(action: WowActionId) {
-    const finalAnswers = {
+    const finalAnswers = enrichOnboardingAnswers({
       ...answers,
       firstAction: action,
       completed: true,
       skipped: false,
       completedAt: new Date().toISOString(),
-    };
+    });
 
     await saveOnboardingAnswersForUser(userId!, finalAnswers);
     await complete(finalAnswers);
@@ -225,9 +282,9 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)/' as Href);
   }
 
-  const insights = getOnboardingInsights(answers);
-  const features = getPriorityFeatures(answers);
-  const wowCards = getWowActionCards(answers);
+  const insights = getOnboardingInsights(enrichedAnswers);
+  const featureCards = getFeatureRevealCards(enrichedAnswers);
+  const wowCards = getVictoryActionCards(enrichedAnswers);
 
   const skipDebtQuestion =
     !answers.profileTags.includes('credits_costs') &&
@@ -246,15 +303,12 @@ export default function OnboardingScreen() {
       case 'name':
         return (
           <Animated.View entering={FadeIn.duration(300)} style={styles.step}>
-            <Text variant="h1" style={styles.question}>
-              Como te chamas?
-            </Text>
-            <Text variant="body" color="textSecondary" style={styles.lead}>
-              Usamos o seu nome para personalizar a experiência — nada de formalidades
-              desnecessárias.
-            </Text>
+            <OnboardingStepHeader
+              title="Vamos criar o teu espaço financeiro"
+              lead="Como queres que te chamemos? Usamos o teu nome para personalizar a experiência."
+            />
             <TextField
-              label="O seu nome"
+              label="O teu nome"
               value={answers.displayName}
               onChangeText={(value) => {
                 userEditedName.current = true;
@@ -265,40 +319,71 @@ export default function OnboardingScreen() {
               autoFocus
             />
 
-            <View style={styles.genderBlock}>
-              <Text variant="bodyMedium" style={styles.smartLabel}>
-                Como gostaria de ser tratado?
-              </Text>
-              <View style={styles.smartOptions}>
-                {GENDER_OPTIONS.map((option) => {
-                  const selected = answers.gender === option.id;
-                  return (
-                    <Pressable
-                      key={option.id}
-                      onPress={() => patch({ gender: option.id as GenderId })}
-                      style={[styles.smartChip, selected && styles.smartChipSelected]}>
-                      <Text
-                        variant="caption"
-                        color={selected ? 'text' : 'textMuted'}
-                        style={selected ? styles.smartChipTextSelected : undefined}>
-                        {option.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+            {showGenderOptions ? (
+              <View style={styles.genderBlock}>
+                <Text variant="bodyMedium" style={styles.smartLabel}>
+                  Tratamento preferido
+                </Text>
+                <View style={styles.smartOptions}>
+                  {GENDER_OPTIONS.map((option) => {
+                    const selected = (answers.gender ?? 'neutral') === option.id;
+                    return (
+                      <Pressable
+                        key={option.id}
+                        onPress={() => patch({ gender: option.id as GenderId })}
+                        style={[styles.smartChip, selected && styles.smartChipSelected]}>
+                        <Text
+                          variant="caption"
+                          color={selected ? 'text' : 'textMuted'}
+                          style={selected ? styles.smartChipTextSelected : undefined}>
+                          {option.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
+            ) : (
+              <Pressable onPress={() => setShowGenderOptions(true)} hitSlop={8}>
+                <Text variant="caption" color="textMuted" style={styles.genderToggle}>
+                  Preferes personalizar o tratamento?
+                </Text>
+              </Pressable>
+            )}
           </Animated.View>
         );
 
       case 'welcome':
         return (
           <Animated.View entering={FadeIn.duration(300)} style={styles.step}>
-            <AnimatedAssistantMessage
-              messages={welcomeMessages}
-              onComplete={() => setWelcomeReady(true)}
-            />
+            <ValuePromiseSection messages={valuePromiseMessages} />
           </Animated.View>
+        );
+
+      case 'primary_objective':
+        return (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollStep}>
+            <OnboardingStepHeader
+              title="Qual é o teu principal objetivo?"
+              lead="Escolhe o foco principal — adaptamos a CentFlow ao que mais importa para ti."
+            />
+            <View style={styles.cardList}>
+              {PRIMARY_OBJECTIVE_OPTIONS.map((option, index) => (
+                <SelectableCard
+                  key={option.id}
+                  emoji={option.emoji}
+                  label={option.label}
+                  description={option.description}
+                  selected={answers.primaryObjective === option.id}
+                  index={index}
+                  size="large"
+                  onPress={() => handleSelectPrimaryObjective(option.id)}
+                />
+              ))}
+            </View>
+          </ScrollView>
         );
 
       case 'profile':
@@ -306,13 +391,11 @@ export default function OnboardingScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollStep}>
-            <Text variant="h2" style={styles.question}>
-              Qual destas frases o descreve melhor?
-            </Text>
-            <Text variant="body" color="textSecondary" style={styles.lead}>
-              Pode escolher mais do que uma — isto ajuda-nos a priorizar o que importa
-              para si.
-            </Text>
+            <OnboardingStepHeader
+              title="Ajuda-nos a perceber onde estás agora"
+              lead="Escolhe tudo o que se aplica — usamos isto para adaptar a CentFlow ao que realmente precisas."
+              context="Podes alterar estas preferências mais tarde."
+            />
             <View style={styles.cardList}>
               {PROFILE_OPTIONS.map((option, index) => (
                 <SelectableCard
@@ -337,13 +420,10 @@ export default function OnboardingScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollStep}>
-            <Text variant="h2" style={styles.question}>
-              {firstName}, quais destas áreas fazem parte da sua vida actualmente?
-            </Text>
-            <Text variant="body" color="textSecondary" style={styles.lead}>
-              Seleccione tudo o que se aplica — usamos isto para mostrar as secções mais
-              relevantes.
-            </Text>
+            <OnboardingStepHeader
+              title={`${firstName}, o que faz parte da tua vida hoje?`}
+              lead="Selecciona as áreas relevantes — mostramos primeiro o que interessa."
+            />
             <View style={styles.cardList}>
               {LIFE_AREA_OPTIONS.map((option, index) => (
                 <SelectableCard
@@ -368,27 +448,25 @@ export default function OnboardingScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollStep}>
-            <Text variant="h2" style={styles.question}>
-              Só o essencial
-            </Text>
-            <Text variant="body" color="textSecondary" style={styles.lead}>
-              Três perguntas rápidas para calibrar a sua experiência — sem formulários
-              longos.
-            </Text>
+            <OnboardingStepHeader
+              title="Só o essencial"
+              lead="Três perguntas rápidas para calibrar a tua experiência."
+              context="Isto é opcional — podes alterar ou saltar por agora."
+            />
 
             <SmartQuestion
-              label="Tem rendimento mensal?"
+              label="Tens rendimento mensal?"
               value={answers.hasMonthlyIncome}
               options={[
                 { key: 'yes', label: 'Sim' },
                 { key: 'no', label: 'Não' },
-                { key: 'prefer_not', label: 'Prefiro não responder' },
+                { key: 'prefer_not', label: 'Prefiro não dizer' },
               ]}
               onChange={(value) => patch({ hasMonthlyIncome: value as IncomeAnswer })}
             />
 
             <SmartQuestion
-              label="Tem poupanças actualmente?"
+              label="Tens poupanças actualmente?"
               value={answers.hasSavings}
               options={[
                 { key: true, label: 'Sim' },
@@ -399,7 +477,7 @@ export default function OnboardingScreen() {
 
             {!skipDebtQuestion ? (
               <SmartQuestion
-                label="Tem créditos ou dívidas?"
+                label="Tens créditos ou dívidas?"
                 value={answers.hasDebt}
                 options={[
                   { key: true, label: 'Sim' },
@@ -410,7 +488,7 @@ export default function OnboardingScreen() {
             ) : (
               <Card variant="outlined" style={styles.hintCard}>
                 <Text variant="caption" color="textMuted">
-                  Como não indicou créditos, omitimos perguntas sobre dívidas por agora.
+                  Como não indicaste créditos, omitimos perguntas sobre dívidas por agora.
                 </Text>
               </Card>
             )}
@@ -422,12 +500,10 @@ export default function OnboardingScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollStep}>
-            <Text variant="h2" style={styles.question}>
-              O que gostaria que fosse diferente daqui a 12 meses?
-            </Text>
-            <Text variant="body" color="textSecondary" style={styles.lead}>
-              Escolha uma ou mais ambições — isto orienta as sugestões no seu painel.
-            </Text>
+            <OnboardingStepHeader
+              title="O que queres que seja diferente daqui a 12 meses?"
+              lead="Escolhe uma ou mais ambições — orientam as sugestões no teu painel."
+            />
             <View style={styles.cardList}>
               {AMBITION_OPTIONS.map((option, index) => (
                 <SelectableCard
@@ -446,7 +522,7 @@ export default function OnboardingScreen() {
             </View>
             {answers.ambitions.includes('other') ? (
               <TextField
-                label="Descreva a sua ambição"
+                label="Descreve a tua ambição"
                 value={answers.ambitionOther}
                 onChangeText={(value) => patch({ ambitionOther: value })}
                 placeholder="Ex: Criar um fundo de emergência"
@@ -461,10 +537,10 @@ export default function OnboardingScreen() {
             <View style={styles.revealCenter}>
               <ActivityIndicator color={colors.primary} size="large" />
               <Text variant="h3" style={styles.revealTitle}>
-                A analisar o seu perfil...
+                A criar o teu espaço...
               </Text>
               <Text variant="body" color="textSecondary" align="center">
-                Estamos a preparar uma experiência à sua medida.
+                Estamos a activar as funcionalidades certas para ti.
               </Text>
             </View>
           );
@@ -476,15 +552,15 @@ export default function OnboardingScreen() {
             contentContainerStyle={styles.scrollStep}>
             <Animated.View entering={FadeInDown.duration(400)}>
               <Text variant="h1" style={styles.question}>
-                Olá {firstName} 👋
+                O teu espaço está pronto ✨
               </Text>
               <Text variant="body" color="textSecondary" style={styles.lead}>
-                Com base nas suas respostas:
+                Olá {firstName} — com base nas tuas escolhas criámos:
               </Text>
             </Animated.View>
 
             <Card variant="outlined" style={styles.insightsCard}>
-              {insights.map((insight, index) => (
+              {insights.map((insight) => (
                 <View key={insight} style={styles.insightRow}>
                   <Text variant="bodyMedium" color="success">
                     ✓
@@ -497,20 +573,12 @@ export default function OnboardingScreen() {
             </Card>
 
             <Text variant="bodyMedium" style={styles.personalizedLine}>
-              A sua experiência CentFlow foi personalizada.
+              Funcionalidades activadas
             </Text>
 
-            <Text variant="caption" color="textMuted" style={styles.featuresTitle}>
-              Funcionalidades prioritárias activadas:
-            </Text>
-            <View style={styles.featureGrid}>
-              {features.map((feature) => (
-                <View key={feature.label} style={styles.featureChip}>
-                  <Text style={styles.featureEmoji}>{feature.emoji}</Text>
-                  <Text variant="caption" color="textSecondary">
-                    {feature.label}
-                  </Text>
-                </View>
+            <View style={styles.featureList}>
+              {featureCards.map((feature, index) => (
+                <FeatureAreaCard key={feature.id} feature={feature} index={index} />
               ))}
             </View>
           </ScrollView>
@@ -521,12 +589,10 @@ export default function OnboardingScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollStep}>
-            <Text variant="h2" style={styles.question}>
-              Qual queres adicionar primeiro?
-            </Text>
-            <Text variant="body" color="textSecondary" style={styles.lead}>
-              Escolhe um primeiro passo concreto — nós guiamo-te a partir daí.
-            </Text>
+            <OnboardingStepHeader
+              title="Vamos criar a tua primeira vitória"
+              lead="Escolhe um primeiro passo concreto — guiamo-te a partir daí."
+            />
             <View style={styles.cardList}>
               {wowCards.map((card, index) => (
                 <Animated.View key={card.id} entering={FadeInDown.delay(index * 60)}>
@@ -559,8 +625,8 @@ export default function OnboardingScreen() {
               <Animated.View entering={FadeIn.duration(300)}>
                 <Card variant="outlined" style={styles.encourageCard}>
                   <Text variant="body" color="textSecondary">
-                    Excelente escolha, {firstName}! Vamos começar pelo que mais importa
-                    para ti.
+                    Excelente, {firstName}! Este é o caminho certo para começares com
+                    impacto.
                   </Text>
                 </Card>
               </Animated.View>
@@ -580,7 +646,7 @@ export default function OnboardingScreen() {
           <Button
             label="Continuar"
             onPress={() => void handleNameContinue()}
-            disabled={!answers.displayName.trim() || !answers.gender}
+            disabled={!answers.displayName.trim()}
             loading={updateProfile.isPending}
             fullWidth
             size="lg"
@@ -590,9 +656,20 @@ export default function OnboardingScreen() {
       case 'welcome':
         return (
           <Button
-            label="Continuar"
+            label="Vamos começar"
             onPress={goNext}
             disabled={!welcomeReady}
+            fullWidth
+            size="lg"
+          />
+        );
+
+      case 'primary_objective':
+        return (
+          <Button
+            label="Continuar"
+            onPress={() => void handlePrimaryObjectiveContinue()}
+            disabled={!answers.primaryObjective}
             fullWidth
             size="lg"
           />
@@ -622,17 +699,28 @@ export default function OnboardingScreen() {
 
       case 'smart_config':
         return (
-          <Button
-            label="Continuar"
-            onPress={() => void handleSmartConfigContinue()}
-            disabled={
-              answers.hasMonthlyIncome === null ||
-              answers.hasSavings === null ||
-              (skipDebtQuestion ? false : answers.hasDebt === null)
-            }
-            fullWidth
-            size="lg"
-          />
+          <View style={styles.footerStack}>
+            <Button
+              label="Continuar"
+              onPress={() => void handleSmartConfigContinue()}
+              disabled={
+                answers.smartConfigSkipped
+                  ? false
+                  : answers.hasMonthlyIncome === null ||
+                    answers.hasSavings === null ||
+                    (skipDebtQuestion ? false : answers.hasDebt === null)
+              }
+              fullWidth
+              size="lg"
+            />
+            <Button
+              label="Saltar por agora"
+              variant="ghost"
+              onPress={() => void handleSmartConfigSkip()}
+              fullWidth
+              size="lg"
+            />
+          </View>
         );
 
       case 'ambition':
@@ -683,6 +771,7 @@ export default function OnboardingScreen() {
       onBack={goBack}
       showProgress={showProgress}
       progress={progress}
+      progressLabel={progressLabel}
       footer={renderFooter()}>
       {renderStep()}
     </OnboardingShell>
@@ -779,6 +868,15 @@ const styles = StyleSheet.create({
   },
   genderBlock: {
     gap: spacing.sm,
+  },
+  genderToggle: {
+    textDecorationLine: 'underline',
+  },
+  footerStack: {
+    gap: spacing.sm,
+  },
+  featureList: {
+    gap: spacing.md,
   },
   revealCenter: {
     flex: 1,

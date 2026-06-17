@@ -11,6 +11,7 @@ type SelectableCardProps = {
   selected: boolean;
   onPress: () => void;
   index?: number;
+  size?: 'default' | 'large';
 };
 
 export function SelectableCard({
@@ -20,21 +21,27 @@ export function SelectableCard({
   selected,
   onPress,
   index = 0,
+  size = 'default',
 }: SelectableCardProps) {
+  const isLarge = size === 'large';
+
   return (
     <Animated.View entering={FadeInDown.delay(index * 40).duration(320)}>
       <Pressable
         onPress={onPress}
         style={({ pressed }) => [
           styles.card,
+          isLarge && styles.cardLarge,
           selected && styles.cardSelected,
           pressed && styles.cardPressed,
         ]}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: selected }}>
-        <Text style={styles.emoji}>{emoji}</Text>
+        <Text style={[styles.emoji, isLarge && styles.emojiLarge]}>{emoji}</Text>
         <View style={styles.text}>
-          <Text variant="bodyMedium" style={selected ? styles.labelSelected : undefined}>
+          <Text
+            variant={isLarge ? 'bodyMedium' : 'bodyMedium'}
+            style={[selected ? styles.labelSelected : undefined, isLarge && styles.labelLarge]}>
             {label}
           </Text>
           {description ? (
@@ -66,6 +73,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
+  cardLarge: {
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    minHeight: 88,
+  },
   cardSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryMuted,
@@ -77,6 +89,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     width: 32,
     textAlign: 'center',
+  },
+  emojiLarge: {
+    fontSize: 32,
+    width: 40,
+  },
+  labelLarge: {
+    fontSize: 17,
+    lineHeight: 24,
   },
   text: {
     flex: 1,

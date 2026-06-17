@@ -28,30 +28,58 @@ export type AmbitionId =
   | 'more_control'
   | 'other';
 
-export type WowActionId = 'first_receipt' | 'first_asset' | 'first_goal' | 'first_warranty';
+export type WowActionId =
+  | 'first_receipt'
+  | 'first_asset'
+  | 'first_goal'
+  | 'first_warranty'
+  | 'first_movement'
+  | 'first_subscription';
 
 export type GenderId = 'male' | 'female' | 'neutral';
+
+/** Objetivo principal escolhido no início da personalização. */
+export type PrimaryObjectiveId =
+  | 'control_spending'
+  | 'save_more'
+  | 'track_wealth'
+  | 'receipts_warranties'
+  | 'subscriptions'
+  | 'organize_credits';
+
+/** Áreas funcionais activadas com base no perfil (sem bloquear a app). */
+export type FeatureAreaId =
+  | 'spending'
+  | 'goals'
+  | 'wealth'
+  | 'receipts'
+  | 'subscriptions'
+  | 'credits';
 
 export type OnboardingStepId =
   | 'name'
   | 'welcome'
+  | 'primary_objective'
   | 'profile'
   | 'life_areas'
-  | 'smart_config'
   | 'ambition'
+  | 'smart_config'
   | 'reveal'
   | 'wow';
 
 export type OnboardingAnswers = {
   displayName: string;
   gender: GenderId | null;
+  primaryObjective: PrimaryObjectiveId | null;
   profileTags: ProfileTagId[];
   lifeAreas: LifeAreaId[];
   hasMonthlyIncome: IncomeAnswer | null;
   hasSavings: boolean | null;
   hasDebt: boolean | null;
+  smartConfigSkipped: boolean;
   ambitions: AmbitionId[];
   ambitionOther: string;
+  enabledFeatures: FeatureAreaId[];
   firstAction: WowActionId | null;
   completed: boolean;
   completedAt: string | null;
@@ -60,14 +88,17 @@ export type OnboardingAnswers = {
 
 export const EMPTY_ONBOARDING_ANSWERS: OnboardingAnswers = {
   displayName: '',
-  gender: null,
+  gender: 'neutral',
+  primaryObjective: null,
   profileTags: [],
   lifeAreas: [],
   hasMonthlyIncome: null,
   hasSavings: null,
   hasDebt: null,
+  smartConfigSkipped: false,
   ambitions: [],
   ambitionOther: '',
+  enabledFeatures: [],
   firstAction: null,
   completed: false,
   completedAt: null,

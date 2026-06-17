@@ -1,11 +1,14 @@
 import {
   AMBITION_OPTIONS,
+  FEATURE_AREA_CONFIG,
   PROFILE_OPTIONS,
   WOW_ACTION_CONFIG,
   type WowCardConfig,
 } from './constants';
+import { computeEnabledFeatures } from './features';
 import type {
   AmbitionId,
+  FeatureAreaId,
   OnboardingAnswers,
   ProfileTagId,
   WowActionId,
@@ -58,7 +61,14 @@ export type PriorityFeature = {
 };
 
 export function getPriorityFeatures(answers: OnboardingAnswers): PriorityFeature[] {
-  const features: PriorityFeature[] = [];
+  const enabled = computeEnabledFeatures(answers);
+  const features: PriorityFeature[] = enabled.slice(0, 4).map((id) => {
+    const config = FEATURE_AREA_CONFIG[id];
+    return { emoji: config.emoji, label: config.label };
+  });
+
+  if (features.length > 0) return features;
+
   const tags = new Set(answers.profileTags);
   const areas = new Set(answers.lifeAreas);
 
@@ -100,23 +110,46 @@ export function getPriorityFeatures(answers: OnboardingAnswers): PriorityFeature
   return features.slice(0, 4);
 }
 
+export function getVictoryActionCards(answers: OnboardingAnswers): WowCardConfig[] {
+  return getWowActionCards(answers);
+}
+
 export function getWowActionCards(answers: OnboardingAnswers): WowCardConfig[] {
   const scores: Record<WowActionId, number> = {
     first_receipt: 0,
+    first_movement: 0,
     first_asset: 0,
     first_goal: 0,
     first_warranty: 0,
+    first_subscription: 0,
   };
 
   const tags = answers.profileTags;
   const areas = answers.lifeAreas;
+  const objective = answers.primaryObjective;
+
+  if (objective === 'control_spending') {
+    scores.first_movement += 5;
+    scores.first_receipt += 2;
+  }
+  if (objective === 'save_more') scores.first_goal += 5;
+  if (objective === 'track_wealth') scores.first_asset += 5;
+  if (objective === 'receipts_warranties') {
+    scores.first_receipt += 5;
+    scores.first_warranty += 3;
+  }
+  if (objective === 'subscriptions') scores.first_subscription += 5;
+  if (objective === 'organize_credits') scores.first_movement += 3;
 
   if (tags.includes('receipts_warranties') || areas.includes('keeps_receipts')) {
     scores.first_receipt += 3;
     scores.first_warranty += 2;
   }
 
-  if (tags.includes('control_spending')) scores.first_receipt += 2;
+  if (tags.includes('control_spending')) {
+    scores.first_movement += 3;
+    scores.first_receipt += 1;
+  }
 
   if (tags.includes('track_wealth') || areas.includes('investments')) {
     scores.first_asset += 3;
@@ -130,13 +163,17 @@ export function getWowActionCards(answers: OnboardingAnswers): WowCardConfig[] {
     scores.first_goal += 3;
   }
 
+  if (areas.includes('subscriptions')) {
+    scores.first_subscription += 3;
+  }
+
   if (areas.includes('own_home') || areas.includes('car')) {
     scores.first_asset += 2;
     scores.first_warranty += 1;
   }
 
   if (tags.includes('credits_costs') || areas.includes('credits')) {
-    scores.first_asset += 1;
+    scores.first_movement += 1;
   }
 
   scores.first_receipt += 1;
@@ -146,7 +183,9 @@ export function getWowActionCards(answers: OnboardingAnswers): WowCardConfig[] {
     .slice(0, 4)
     .map((id) => WOW_ACTION_CONFIG[id]);
 
-  return ranked.length > 0 ? ranked : [WOW_ACTION_CONFIG.first_receipt, WOW_ACTION_CONFIG.first_goal];
+  return ranked.length > 0
+    ? ranked
+    : [WOW_ACTION_CONFIG.first_movement, WOW_ACTION_CONFIG.first_goal];
 }
 
 export function getHomeContextualMessage(answers: OnboardingAnswers | null): string | null {

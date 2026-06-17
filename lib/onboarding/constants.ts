@@ -1,4 +1,11 @@
-import type { AmbitionId, LifeAreaId, ProfileTagId, WowActionId } from './types';
+import type {
+  AmbitionId,
+  FeatureAreaId,
+  LifeAreaId,
+  PrimaryObjectiveId,
+  ProfileTagId,
+  WowActionId,
+} from './types';
 
 export type SelectOption<T extends string> = {
   id: T;
@@ -6,6 +13,107 @@ export type SelectOption<T extends string> = {
   label: string;
   description?: string;
 };
+
+export const PRIMARY_OBJECTIVE_OPTIONS: SelectOption<PrimaryObjectiveId>[] = [
+  {
+    id: 'control_spending',
+    emoji: '💳',
+    label: 'Controlar gastos',
+    description: 'Movimentos, categorias e análises',
+  },
+  {
+    id: 'save_more',
+    emoji: '🎯',
+    label: 'Poupar mais',
+    description: 'Objetivos, progresso e poupança',
+  },
+  {
+    id: 'track_wealth',
+    emoji: '📈',
+    label: 'Acompanhar património',
+    description: 'Ativos, inventário e valor patrimonial',
+  },
+  {
+    id: 'receipts_warranties',
+    emoji: '🧾',
+    label: 'Guardar compras e garantias',
+    description: 'Scanner, OCR e alertas',
+  },
+  {
+    id: 'subscriptions',
+    emoji: '📱',
+    label: 'Gerir subscrições',
+    description: 'Custos mensais e renovações',
+  },
+  {
+    id: 'organize_credits',
+    emoji: '🏦',
+    label: 'Organizar créditos',
+    description: 'Créditos, custos fixos e prestações',
+  },
+];
+
+export type FeatureAreaConfig = {
+  id: FeatureAreaId;
+  emoji: string;
+  label: string;
+  description: string;
+  activateHint: string;
+};
+
+export const FEATURE_AREA_CONFIG: Record<FeatureAreaId, FeatureAreaConfig> = {
+  spending: {
+    id: 'spending',
+    emoji: '💳',
+    label: 'Gastos',
+    description: 'Movimentos, categorias e insights',
+    activateHint: 'Activa para perceberes para onde vai o dinheiro',
+  },
+  goals: {
+    id: 'goals',
+    emoji: '🎯',
+    label: 'Objetivos',
+    description: 'Metas de poupança e progresso',
+    activateHint: 'Activa para acompanhar as tuas metas',
+  },
+  wealth: {
+    id: 'wealth',
+    emoji: '📈',
+    label: 'Património',
+    description: 'Ativos, inventário e valor total',
+    activateHint: 'Activa para acompanhar os teus bens',
+  },
+  receipts: {
+    id: 'receipts',
+    emoji: '🧾',
+    label: 'Garantias',
+    description: 'Talões digitalizados e alertas',
+    activateHint: 'Activa para nunca perderes uma garantia',
+  },
+  subscriptions: {
+    id: 'subscriptions',
+    emoji: '📱',
+    label: 'Subscrições',
+    description: 'Custos recorrentes e renovações',
+    activateHint: 'Activa para controlar subscrições',
+  },
+  credits: {
+    id: 'credits',
+    emoji: '🏦',
+    label: 'Créditos',
+    description: 'Prestações e custos fixos',
+    activateHint: 'Activa para ter visibilidade sobre dívidas',
+  },
+};
+
+export const ALL_FEATURE_AREAS: FeatureAreaId[] = [
+  'spending',
+  'goals',
+  'wealth',
+  'receipts',
+  'subscriptions',
+  'credits',
+];
 
 export const PROFILE_OPTIONS: SelectOption<ProfileTagId>[] = [
   {
@@ -73,36 +181,49 @@ export const WOW_ACTION_CONFIG: Record<WowActionId, WowCardConfig> = {
   first_receipt: {
     id: 'first_receipt',
     emoji: '📄',
-    title: 'Primeiro talão',
-    subtitle: 'Digitaliza uma fatura e vê a magia do OCR',
+    title: 'Digitalizar primeiro talão',
+    subtitle: 'O OCR preenche o movimento automaticamente',
+  },
+  first_movement: {
+    id: 'first_movement',
+    emoji: '💳',
+    title: 'Adicionar primeira despesa',
+    subtitle: 'Começa a ver para onde vai o teu dinheiro',
   },
   first_asset: {
     id: 'first_asset',
     emoji: '🏠',
-    title: 'Primeiro ativo',
+    title: 'Adicionar primeiro ativo',
     subtitle: 'Regista algo que possuis ou valorizas',
   },
   first_goal: {
     id: 'first_goal',
     emoji: '🎯',
-    title: 'Primeiro objetivo',
+    title: 'Criar primeiro objetivo',
     subtitle: 'Define uma meta de poupança concreta',
   },
   first_warranty: {
     id: 'first_warranty',
     emoji: '🛡️',
-    title: 'Primeira garantia',
+    title: 'Registar primeira garantia',
     subtitle: 'Guarda uma garantia para não a perder',
+  },
+  first_subscription: {
+    id: 'first_subscription',
+    emoji: '📱',
+    title: 'Adicionar primeira subscrição',
+    subtitle: 'Acompanha custos e renovações',
   },
 };
 
 export const STEP_PROGRESS: Record<string, number> = {
-  name: 0,
-  welcome: 12,
-  profile: 25,
-  life_areas: 40,
-  smart_config: 55,
-  ambition: 70,
-  reveal: 85,
-  wow: 95,
+  name: 8,
+  welcome: 18,
+  primary_objective: 30,
+  profile: 42,
+  life_areas: 54,
+  ambition: 66,
+  smart_config: 78,
+  reveal: 90,
+  wow: 98,
 };

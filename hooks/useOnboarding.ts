@@ -10,6 +10,7 @@ import {
   saveOnboardingAnswersForUser,
 } from '@/lib/onboarding/answers.service';
 import { isOnboardingGateBypassed } from '@/lib/onboarding/gate';
+import { enrichOnboardingAnswers } from '@/lib/onboarding/features';
 import type { OnboardingAnswers } from '@/lib/onboarding/types';
 import { EMPTY_ONBOARDING_ANSWERS } from '@/lib/onboarding/types';
 
@@ -52,13 +53,13 @@ export function useOnboarding() {
       queryClient.setQueryData(queryKeys.onboardingStatus(userId), true);
 
       const current = await fetchOnboardingAnswers(userId);
-      const next: OnboardingAnswers = {
+      const next: OnboardingAnswers = enrichOnboardingAnswers({
         ...current,
         ...answers,
         completed: true,
         completedAt: new Date().toISOString(),
         skipped: false,
-      };
+      });
 
       await saveOnboardingAnswersForUser(userId, next);
       queryClient.setQueryData(queryKeys.onboardingAnswers, next);

@@ -1,23 +1,34 @@
 import type { GenderId } from './types';
 
 export function getWelcomeMessages(firstName: string, gender: GenderId | null): string[] {
-  const helpLine =
-    gender === 'female'
-      ? 'Vou ajudá-la a organizar o seu dinheiro com clareza e calma.'
-      : gender === 'male'
-        ? 'Vou ajudá-lo a organizar o seu dinheiro com clareza e calma.'
-        : 'Vou ajudar-te a organizar o teu dinheiro com clareza e calma.';
+  return getValuePromiseMessages(firstName);
+}
 
-  const contextLine =
-    gender === 'neutral'
-      ? 'Mas primeiro preciso de conhecer melhor a tua realidade.'
-      : 'Mas primeiro preciso de conhecer um pouco melhor a sua realidade.';
+export type ValuePromiseBullet = {
+  emoji: string;
+  text: string;
+};
 
-  return [`Prazer, ${firstName} 👋`, helpLine, contextLine];
+export function getValuePromiseMessages(firstName: string): string[] {
+  return [
+    `Olá ${firstName} 👋`,
+    'Sou a CentFlow.',
+    'Vou ajudar-te a ter uma visão clara da tua vida financeira.',
+    'Vamos preparar tudo em menos de 1 minuto.',
+  ];
+}
+
+export function getValuePromiseBullets(): ValuePromiseBullet[] {
+  return [
+    { emoji: '✓', text: 'Perceber para onde vai o teu dinheiro' },
+    { emoji: '✓', text: 'Acompanhar objetivos de poupança' },
+    { emoji: '✓', text: 'Organizar compras e garantias' },
+    { emoji: '✓', text: 'Ter controlo sobre créditos e subscrições' },
+  ];
 }
 
 export const GENDER_OPTIONS: Array<{ id: GenderId; label: string }> = [
+  { id: 'neutral', label: 'Neutro (predefinição)' },
   { id: 'male', label: 'Masculino' },
   { id: 'female', label: 'Feminino' },
-  { id: 'neutral', label: 'Prefiro não dizer' },
 ];
