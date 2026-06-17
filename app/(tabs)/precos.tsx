@@ -1,180 +1,108 @@
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppHeader } from '@/components/layout';
-import {
-  Card,
-  ErrorState,
-  PricesSkeleton,
-  ScreenContainer,
-  SectionHeader,
-  Text,
-} from '@/components/ui';
-import { usePricesData } from '@/hooks/queries/usePricesData';
-import { colors, radius, spacing } from '@/lib/theme';
-import { formatCurrency, formatPercent } from '@/lib/utils/format';
+import { CreditFormModal, CreditsSection } from '@/components/assets';
+import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
+import { ErrorState, ScreenContainer } from '@/components/ui';
+import { useDeleteCredit, useLiabilities } from '@/hooks/queries/useLiabilities';
+import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import type { Credit } from '@/lib/domain/types';
+import { colors, spacing } from '@/lib/theme';
 
 export default function PrecosScreen() {
-  const { data, isLoading, isError, error, refetch, isRefetching } = usePricesData();
+  const insets = useSafeAreaInsets();
+  const [editingCredit, setEditingCredit] = useState<Credit | null>(null);
+  const [creditFormVisible, setCreditFormVisible] = useState(false);
+  const [quickAddVisible, setQuickAddVisible] = useState(false);
+
+  const { data, isError, error, refetch, isRefetching } = useLiabilities();
+  const deleteCredit = useDeleteCredit();
+  const credits = data?.credits ?? [];
+
+  const handleQuickAdd = useQuickAddActions({
+    onGoal: undefined,
+    onMovement: undefined,
+    onProduct: undefined,
+    onSubscription: undefined,
+  });
+
+  function openNewCredit() {
+    setEditingCredit(null);
+    setCreditFormVisible(true);
+  }
 
   return (
     <View style={styles.screen}>
-      <AppHeader />
+      <AppHeader
+        title="Créditos"
+        subtitle="Dívida, próximos pagamentos e análise"
+        action={{
+          icon: (
+            <SymbolView
+              name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
+              tintColor={colors.primary}
+              size={26}
+            />
+          ),
+          onPress: openNewCredit,
+          accessibilityLabel: 'Adicionar crédito',
+        }}
+      />
 
-      {isLoading ? (
-        <ScreenContainer>
-          <PricesSkeleton />
-        </ScreenContainer>
-      ) : isError || !data ? (
+      {isError ? (
         <View style={styles.centered}>
           <ErrorState
-            context="prices"
+            context="assets"
             error={error}
             onRetry={() => refetch()}
             retryLoading={isRefetching}
           />
         </View>
       ) : (
-        <ScreenContainer>
-          <View style={styles.metricsRow}>
-            <MetricTile
-              label="Inflação pessoal"
-              value={formatPercent(data.personalInflationPercent)}
-              tone="warning"
-              icon={{ ios: 'chart.line.uptrend.xyaxis', android: 'trending_up', web: 'trending_up' }}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor={colors.primary}
             />
-            <MetricTile
-              label="Cesto médio"
-              value={formatPercent(data.basketAverageChange)}
-              tone="neutral"
-              icon={{ ios: 'basket.fill', android: 'shopping_basket', web: 'shopping_basket' }}
+          }>
+          <ScreenContainer scrollable={false}>
+            <CreditsSection
+              credits={credits}
+              onCreate={openNewCredit}
+              onEdit={(credit) => {
+                setEditingCredit(credit);
+                setCreditFormVisible(true);
+              }}
+              onDelete={(credit) => deleteCredit.mutate(credit.id)}
             />
-          </View>
-
-          <Card variant="elevated" style={styles.trackedCard}>
-            <Text variant="label" color="textMuted">
-              Produtos monitorizados
-            </Text>
-            <Text variant="h1" color="primary">
-              {data.trackedProducts}
-            </Text>
-            <Text variant="caption" color="textSecondary">
-              Com base nos teus talões e subscrições
-            </Text>
-          </Card>
-
-          <SectionHeader title="Variações recentes" />
-          {data.changes.length === 0 ? (
-            <Card variant="outlined" style={styles.emptyCard}>
-              <Text variant="bodyMedium" align="center">
-                Ainda sem variações registadas
-              </Text>
-              <Text variant="caption" color="textSecondary" align="center">
-                Adiciona movimentos e subscrições para começares a acompanhar preços.
-              </Text>
-            </Card>
-          ) : (
-            data.changes.map((item) => {
-            const isUp = item.changePercent > 0;
-            return (
-              <Card key={item.id} variant="outlined" style={styles.changeCard}>
-                <View style={styles.changeHeader}>
-                  <View style={styles.changeInfo}>
-                    <Text variant="bodyMedium">{item.product}</Text>
-                    <Text variant="caption" color="textMuted">
-                      {item.category} · {item.store}
-                    </Text>
-                  </View>
-                  <Text
-                    variant="bodyMedium"
-                    color={isUp ? 'danger' : 'success'}>
-                    {formatPercent(item.changePercent)}
-                  </Text>
-                </View>
-                <View style={styles.priceRow}>
-                  <Text variant="caption" color="textMuted">
-                    {formatCurrency(item.previousPrice)} → {formatCurrency(item.currentPrice)}
-                  </Text>
-                </View>
-              </Card>
-            );
-          })
-          )}
-
-          {data.insights.length > 0 ? (
-            <>
-          <SectionHeader title="Insights" />
-          {data.insights.map((insight) => (
-            <Card key={insight.id} variant="elevated" style={styles.insightCard}>
-              <View style={styles.insightRow}>
-                <SymbolView
-                  name={{
-                    ios:
-                      insight.tone === 'warning'
-                        ? 'exclamationmark.triangle.fill'
-                        : insight.tone === 'success'
-                          ? 'checkmark.seal.fill'
-                          : 'info.circle.fill',
-                    android:
-                      insight.tone === 'warning'
-                        ? 'warning'
-                        : insight.tone === 'success'
-                          ? 'verified'
-                          : 'info',
-                    web:
-                      insight.tone === 'warning'
-                        ? 'warning'
-                        : insight.tone === 'success'
-                          ? 'verified'
-                          : 'info',
-                  }}
-                  tintColor={
-                    insight.tone === 'warning'
-                      ? colors.warning
-                      : insight.tone === 'success'
-                        ? colors.success
-                        : colors.textSecondary
-                  }
-                  size={20}
-                />
-                <View style={styles.insightText}>
-                  <Text variant="bodyMedium">{insight.title}</Text>
-                  <Text variant="caption" color="textSecondary">
-                    {insight.description}
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          ))}
-            </>
-          ) : null}
-        </ScreenContainer>
+          </ScreenContainer>
+        </ScrollView>
       )}
+
+      <CreditFormModal
+        visible={creditFormVisible}
+        credit={editingCredit}
+        onClose={() => {
+          setCreditFormVisible(false);
+          setEditingCredit(null);
+        }}
+      />
+
+      <QuickAddMenuSheet
+        visible={quickAddVisible}
+        onClose={() => setQuickAddVisible(false)}
+        onSelect={handleQuickAdd}
+      />
     </View>
-  );
-}
-
-type MetricTileProps = {
-  label: string;
-  value: string;
-  tone: 'warning' | 'neutral' | 'success';
-  icon: SymbolViewProps['name'];
-};
-
-function MetricTile({ label, value, tone, icon }: MetricTileProps) {
-  const toneColor =
-    tone === 'warning' ? colors.warning : tone === 'success' ? colors.success : colors.primary;
-
-  return (
-    <Card variant="elevated" style={styles.metricTile}>
-      <SymbolView name={icon} tintColor={toneColor} size={20} />
-      <Text variant="caption" color="textMuted">
-        {label}
-      </Text>
-      <Text variant="h2" style={{ color: toneColor }}>
-        {value}
-      </Text>
-    </Card>
   );
 }
 
@@ -189,54 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  metricTile: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  trackedCard: {
-    gap: spacing.xs,
-    marginBottom: spacing['2xl'],
-  },
-  changeCard: {
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  emptyCard: {
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.xl,
-  },
-  changeHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  changeInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  priceRow: {
-    marginTop: spacing.xs,
-  },
-  insightsHeader: {
-    marginTop: spacing.lg,
-  },
-  insightCard: {
-    marginBottom: spacing.sm,
-  },
-  insightRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  insightText: {
-    flex: 1,
-    gap: spacing.xs,
+  content: {
+    paddingBottom: spacing.lg,
   },
 });

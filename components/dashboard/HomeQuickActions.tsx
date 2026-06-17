@@ -49,7 +49,7 @@ export function HomeQuickActions({
       )}
 
       <Button
-        label="+ Movimento"
+        label="Adicionar"
         onPress={onAddMovement}
         fullWidth
         size="lg"

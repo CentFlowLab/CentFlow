@@ -21,8 +21,8 @@ export const colors = {
   accentMuted: 'rgba(240, 193, 77, 0.14)',
 
   text: '#F8FAFC',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
+  textSecondary: '#A8B4C4',
+  textMuted: '#78859A',
   textInverse: '#05080E',
 
   success: '#34D399',

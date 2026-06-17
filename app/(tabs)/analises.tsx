@@ -4,6 +4,7 @@ import {
   AnalysisMetricCard,
   AnalysisSkeleton,
   InsightsSection,
+  PricesInsightsSection,
   SpendingCategoryCard,
   TrendsSummaryCard,
 } from '@/components/analysis';
@@ -15,10 +16,13 @@ import {
   SectionHeader,
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
+import { usePricesData } from '@/hooks/queries/usePricesData';
+import { router } from 'expo-router';
 import { spacing, colors } from '@/lib/theme';
 
 export default function AnalisesScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
+  const { data: pricesData } = usePricesData();
 
   return (
     <View style={styles.screen}>
@@ -39,10 +43,7 @@ export default function AnalisesScreen() {
         </View>
       ) : (
         <ScreenContainer>
-          <SectionHeader
-            title="Análises"
-            subtitle={data.periodLabel}
-          />
+          <SectionHeader title="Análises" subtitle={data.periodLabel} />
 
           <TrendsSummaryCard
             trends={data.trends}
@@ -68,6 +69,13 @@ export default function AnalisesScreen() {
           </View>
 
           <InsightsSection insights={data.insights} />
+
+          {pricesData ? (
+            <PricesInsightsSection
+              prices={pricesData}
+              onAddMovement={() => router.push('/(tabs)/movimentos?action=new-movement')}
+            />
+          ) : null}
 
           <RefetchingIndicator visible={isRefetching} />
         </ScreenContainer>

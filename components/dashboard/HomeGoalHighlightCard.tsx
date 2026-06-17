@@ -21,7 +21,7 @@ export function HomeGoalHighlightCard({ goal }: HomeGoalHighlightCardProps) {
       <Card variant="outlined" style={styles.card}>
         <View style={styles.header}>
           <Text variant="label" color="textMuted">
-            Objetivo em foco
+            Objetivo
           </Text>
           <Text variant="caption" color="primary">
             {goal.percent}%
@@ -30,8 +30,8 @@ export function HomeGoalHighlightCard({ goal }: HomeGoalHighlightCardProps) {
         <Text variant="bodyMedium">{goal.name}</Text>
         <GoalProgressBar percent={goal.percent} height={8} />
         <View style={styles.footer}>
-          <Text variant="caption" color="textSecondary">
-            {formatCurrency(goal.current)} de {formatCurrency(goal.target)}
+          <Text variant="bodyMedium" color="primary">
+            {formatCurrency(goal.current)}/{formatCurrency(goal.target)}
           </Text>
           <Text variant="caption" color="textMuted">
             Faltam {formatCurrency(remaining)}
@@ -45,7 +45,7 @@ export function HomeGoalHighlightCard({ goal }: HomeGoalHighlightCardProps) {
 const styles = StyleSheet.create({
   card: {
     gap: spacing.sm,
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
     backgroundColor: colors.backgroundElevated,
     borderColor: colors.primary,
   },

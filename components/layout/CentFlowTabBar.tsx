@@ -39,6 +39,8 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
     backgroundColor: colors.tabBar,
     paddingBottom,
     overflow: 'visible',
+    borderTopWidth: 1,
+    borderTopColor: colors.tabBarBorder,
   };
 
   return (

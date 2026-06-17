@@ -3,13 +3,13 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useDeleteSubscription, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import type { Subscription, SubscriptionBillingInterval } from '@/lib/domain/assets.types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
-import { DATE_INPUT_PLACEHOLDER, formatInputDate, inputDateToIso } from '@/lib/utils/format';
+import { formatInputDate, inputDateToIso } from '@/lib/utils/format';
 
 type SubscriptionFormModalProps = {
   visible: boolean;
@@ -160,11 +160,10 @@ export function SubscriptionFormModal({
           keyboardType="decimal-pad"
           placeholder="0,00"
         />
-        <TextField
+        <DatePickerField
           label="Renova em (opcional)"
           value={renewsAt}
-          onChangeText={setRenewsAt}
-          placeholder={DATE_INPUT_PLACEHOLDER}
+          onChange={setRenewsAt}
         />
 
         {apiError ? (

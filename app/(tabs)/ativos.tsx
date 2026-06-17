@@ -14,7 +14,7 @@ import {
   WarrantyFormModal,
   WarrantiesSection,
 } from '@/components/assets';
-import { AppHeader } from '@/components/layout';
+import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { ScreenContainer, ErrorState, AssetsSkeleton, RefetchingIndicator } from '@/components/ui';
 import {
   useAssets,
@@ -22,6 +22,7 @@ import {
   useDeleteInventoryItem,
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
+import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
 import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
@@ -37,6 +38,7 @@ export default function AtivosScreen() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [inventoryFormVisible, setInventoryFormVisible] = useState(false);
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
+  const [quickAddVisible, setQuickAddVisible] = useState(false);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
   const deleteGoal = useDeleteGoal();
@@ -135,19 +137,9 @@ export default function AtivosScreen() {
     setEditingInventory(null);
   }
 
-  function handleAdd() {
-    if (activeTab === 'objetivos') {
-      openCreateGoal();
-      return;
-    }
-    if (activeTab === 'garantias') {
-      openCreateWarranty();
-      return;
-    }
-    if (activeTab === 'inventario') {
-      openCreateInventory();
-    }
-  }
+  const handleQuickAdd = useQuickAddActions({
+    onGoal: openCreateGoal,
+  });
 
   return (
     <View style={styles.screen}>
@@ -155,13 +147,13 @@ export default function AtivosScreen() {
         action={{
           icon: (
             <SymbolView
-              name={{ ios: 'plus', android: 'add', web: 'add' }}
+              name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
               tintColor={colors.primary}
-              size={22}
+              size={26}
             />
           ),
-          onPress: handleAdd,
-          accessibilityLabel: 'Adicionar ativo',
+          onPress: () => setQuickAddVisible(true),
+          accessibilityLabel: 'Adicionar',
         }}
       />
 
@@ -245,6 +237,12 @@ export default function AtivosScreen() {
         visible={inventoryFormVisible}
         item={editingInventory}
         onClose={closeInventoryForm}
+      />
+
+      <QuickAddMenuSheet
+        visible={quickAddVisible}
+        onClose={() => setQuickAddVisible(false)}
+        onSelect={handleQuickAdd}
       />
     </View>
   );

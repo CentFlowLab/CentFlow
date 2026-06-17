@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useDeleteCredit, useSaveCredit } from '@/hooks/queries/useLiabilities';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { analyzeCredit } from '@/lib/credit/credit-analysis';
@@ -11,7 +11,6 @@ import type { Credit, CreditType } from '@/lib/domain/types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
 import {
-  DATE_INPUT_PLACEHOLDER,
   formatCurrency,
   formatInputDate,
   formatPercent,
@@ -346,17 +345,15 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
             keyboardType="decimal-pad"
             placeholder="0,00"
           />
-          <TextField
+          <DatePickerField
             label="Data do próximo pagamento (opcional)"
             value={nextDate}
-            onChangeText={setNextDate}
-            placeholder={DATE_INPUT_PLACEHOLDER}
+            onChange={setNextDate}
           />
-          <TextField
+          <DatePickerField
             label="Data de início (opcional)"
             value={startDate}
-            onChangeText={setStartDate}
-            placeholder={DATE_INPUT_PLACEHOLDER}
+            onChange={setStartDate}
           />
           <TextField
             label="Simular amortização antecipada (opcional)"

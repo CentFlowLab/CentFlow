@@ -1,6 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { MOVEMENTS_EMPTY_CONFIG } from '@/components/movements/movements.config';
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
 import { Card, Text } from '@/components/ui';
@@ -27,7 +26,19 @@ export function CreditsSection({
     return (
       <View style={styles.container}>
         <AssetsEmptyState
-          config={MOVEMENTS_EMPTY_CONFIG.creditos}
+          config={{
+            icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
+            title: 'Simula e regista créditos',
+            description:
+              'Adiciona um crédito para controlar dívida, próximos pagamentos e esforço financeiro.',
+            actionLabel: 'Novo crédito',
+            secondaryActionLabel: 'Como funciona',
+            highlights: [
+              'Simulador com taxa de esforço',
+              'Próximos pagamentos em destaque',
+              'Integrado no teu património',
+            ],
+          }}
           onPrimaryAction={onCreate}
           onSecondaryAction={onLearnMore}
         />

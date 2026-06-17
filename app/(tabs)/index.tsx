@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useCallback, useState } from 'react';
 import {
   RefreshControl,
@@ -10,13 +11,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   DashboardHeaderLeading,
+  DashboardFinancialSnapshot,
   DashboardSkeleton,
   DemoModeBadge,
-  HomeAssetsSummaryCard,
   HomeAttentionSheet,
   HomeChangesSheet,
   HomeGoalHighlightCard,
-  HomeIntroOverlay,
   HomePersonalizedInsightCard,
   HomeQuickActions,
   HomeStoriesRow,
@@ -25,7 +25,7 @@ import {
   SuggestionCard,
   NetWorthHeroCard,
 } from '@/components/dashboard';
-import { AppHeader } from '@/components/layout';
+import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal, TransactionListItem } from '@/components/movements';
 import { FinancialProfileDetailSheet } from '@/components/profile';
 import {
@@ -33,19 +33,19 @@ import {
   RefetchingIndicator,
   ScreenContainer,
   SectionHeader,
-  Text,
+  EmptyState,
 } from '@/components/ui';
+import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useHomeStoryNotifications } from '@/hooks/useHomeStoryNotifications';
+import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import {
   getContextualNoTransactionsMessage,
-  getHomeAssetsSummaryHints,
   getHomePersonalizedInsight,
   getPersonalizedFallbackSuggestions,
   getRecommendedHomeActions,
-  shouldPrioritizeGoals,
 } from '@/lib/onboarding/personalization';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import { colors, spacing } from '@/lib/theme';
@@ -53,6 +53,7 @@ import { colors, spacing } from '@/lib/theme';
 export default function InicioScreen() {
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
+  const { data: analysisData } = useAnalysisData();
   const { data: financialProfile } = useFinancialProfile();
   const { data: onboardingAnswers } = useOnboardingAnswers();
 
@@ -77,7 +78,7 @@ export default function InicioScreen() {
   const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
-  const [introDone, setIntroDone] = useState(false);
+  const [quickAddVisible, setQuickAddVisible] = useState(false);
 
   const handleStoryPress = useCallback(
     (id: HomeStoryId) => {
@@ -97,7 +98,23 @@ export default function InicioScreen() {
     [markStorySeen],
   );
 
-  const header = <AppHeader leading={<DashboardHeaderLeading />} showBrand={false} />;
+  const header = (
+    <AppHeader
+      leading={<DashboardHeaderLeading />}
+      showBrand={false}
+      action={{
+        icon: (
+          <SymbolView
+            name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
+            tintColor={colors.primary}
+            size={26}
+          />
+        ),
+        onPress: () => setQuickAddVisible(true),
+        accessibilityLabel: 'Adicionar',
+      }}
+    />
+  );
 
   if (isLoading) {
     return (
@@ -145,6 +162,10 @@ export default function InicioScreen() {
     setAddMovementVisible(true);
   };
 
+  const handleQuickAdd = useQuickAddActions({
+    onMovement: openAddMovement,
+  });
+
   const openReceiptScanner = () => {
     setStartWithReceiptPicker(true);
     setAddMovementVisible(true);
@@ -155,15 +176,19 @@ export default function InicioScreen() {
     setStartWithReceiptPicker(false);
   };
 
-  const assetsHints = getHomeAssetsSummaryHints(onboardingAnswers ?? null);
   const homeInsight = getHomePersonalizedInsight(onboardingAnswers ?? null, {
     goalsCount: assetsSummary.goalsCount,
     warrantiesCount: assetsSummary.warrantiesCount,
     hasFeaturedGoal: Boolean(featuredGoal),
   });
-  const showGoalHighlight =
-    shouldPrioritizeGoals(onboardingAnswers ?? null) && featuredGoal !== null;
+  const showGoalHighlight = featuredGoal !== null;
   const showInsight = homeInsight && !showGoalHighlight;
+
+  const hasActivity =
+    recentTransactions.length > 0 ||
+    assetsSummary.goalsCount > 0 ||
+    assetsSummary.warrantiesCount > 0 ||
+    assetsSummary.inventoryCount > 0;
 
   const fallbackSuggestions = getPersonalizedFallbackSuggestions(onboardingAnswers ?? null);
 
@@ -244,21 +269,22 @@ export default function InicioScreen() {
           { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
         ]}>
         <ScreenContainer scrollable={false}>
-          <HomeStoriesRow unread={hasUnread} onStoryPress={handleStoryPress} />
-
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
-          <NetWorthHeroCard netWorth={netWorth} changePercent={netWorthChangePercent} />
+          <NetWorthHeroCard
+            netWorth={netWorth}
+            changePercent={netWorthChangePercent}
+            monthlyChange={netWorthChangeThisMonth}
+            weeklySpending={weeklySpending}
+            hasActivity={hasActivity}
+            onAddMovement={openAddMovement}
+          />
 
-          {showGoalHighlight && featuredGoal ? (
-            <HomeGoalHighlightCard goal={featuredGoal} />
-          ) : null}
+          <DashboardFinancialSnapshot trends={analysisData?.trends ?? null} />
 
           {showInsight && homeInsight ? (
             <HomePersonalizedInsightCard insight={homeInsight} />
           ) : null}
-
-          <HomeAssetsSummaryCard summary={assetsSummary} hints={assetsHints} />
 
           <SectionHeader
             title="Últimos movimentos"
@@ -276,12 +302,30 @@ export default function InicioScreen() {
               <TransactionListItem key={transaction.id} transaction={transaction} />
             ))
           ) : (
-            <View style={styles.emptyTransactions}>
-              <Text variant="body" color="textSecondary" align="center">
-                {noTransactionsMessage}
-              </Text>
-            </View>
+            <EmptyState
+              icon={
+                <SymbolView
+                  name={{
+                    ios: 'list.bullet.rectangle',
+                    android: 'receipt_long',
+                    web: 'receipt_long',
+                  }}
+                  tintColor={colors.primary}
+                  size={32}
+                />
+              }
+              title="Sem movimentos recentes"
+              description={noTransactionsMessage}
+              actionLabel="Adicionar movimento"
+              onAction={openAddMovement}
+            />
           )}
+
+          {showGoalHighlight && featuredGoal ? (
+            <HomeGoalHighlightCard goal={featuredGoal} />
+          ) : null}
+
+          <HomeStoriesRow unread={hasUnread} onStoryPress={handleStoryPress} />
 
           <View style={styles.section}>
             <SectionHeader title="O que devo fazer?" subtitle="Sugestões para ti" />
@@ -306,7 +350,7 @@ export default function InicioScreen() {
           </View>
 
           <HomeQuickActions
-            onAddMovement={openAddMovement}
+            onAddMovement={() => setQuickAddVisible(true)}
             onViewMovements={() => router.push('/(tabs)/movimentos')}
             onNewGoal={
               !hasGoalRecommendation
@@ -320,7 +364,6 @@ export default function InicioScreen() {
         </ScreenContainer>
       </ScrollView>
 
-      {!introDone ? <HomeIntroOverlay onComplete={() => setIntroDone(true)} /> : null}
 
       <FinancialProfileDetailSheet
         visible={profileDetailVisible}
@@ -347,6 +390,12 @@ export default function InicioScreen() {
         onClose={closeAddMovement}
         startWithReceiptPicker={startWithReceiptPicker}
       />
+
+      <QuickAddMenuSheet
+        visible={quickAddVisible}
+        onClose={() => setQuickAddVisible(false)}
+        onSelect={handleQuickAdd}
+      />
     </View>
   );
 }
@@ -366,10 +415,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   section: {
-    marginBottom: spacing['2xl'],
-  },
-  emptyTransactions: {
-    paddingVertical: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
 });

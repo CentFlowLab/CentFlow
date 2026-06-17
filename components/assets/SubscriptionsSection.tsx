@@ -6,7 +6,7 @@ import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
 import { Card, Text } from '@/components/ui';
 import type { Subscription } from '@/lib/domain/assets.types';
 import { subscriptionToMonthlyAmount } from '@/lib/subscriptions/subscription-utils';
-import { colors, spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
 type SubscriptionsSectionProps = {
@@ -16,6 +16,24 @@ type SubscriptionsSectionProps = {
   onLearnMore?: () => void;
   onDelete?: (subscription: Subscription) => void;
 };
+
+function getRenewalStatus(renewsAt?: string): { label: string; tone: 'default' | 'warning' | 'danger' } {
+  if (!renewsAt) {
+    return { label: 'Activa', tone: 'default' };
+  }
+
+  const renewDate = new Date(renewsAt);
+  const now = new Date();
+  const diffDays = Math.ceil((renewDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { label: 'Renova em breve', tone: 'warning' };
+  }
+  if (diffDays <= 7) {
+    return { label: `Renova em ${diffDays}d`, tone: 'warning' };
+  }
+  return { label: 'Activa', tone: 'default' };
+}
 
 export function SubscriptionsSection({
   subscriptions,
@@ -51,35 +69,66 @@ export function SubscriptionsSection({
   return (
     <View style={styles.container}>
       <Card variant="outlined" style={styles.summaryCard}>
-        <Text variant="caption" color="textMuted">
-          Total mensal estimado
-        </Text>
-        <Text variant="h3" color="primary">
-          {formatCurrency(monthlyTotal)}
-        </Text>
+        <View style={styles.summaryRow}>
+          <View>
+            <Text variant="caption" color="textMuted">
+              Total mensal em subscrições
+            </Text>
+            <Text variant="h2" color="primary">
+              {formatCurrency(monthlyTotal)}
+            </Text>
+          </View>
+          <View style={styles.countBadge}>
+            <Text variant="caption" color="textSecondary">
+              {subscriptions.length} activa{subscriptions.length === 1 ? '' : 's'}
+            </Text>
+          </View>
+        </View>
       </Card>
 
       <View style={styles.list}>
-        {subscriptions.map((subscription) => (
-          <SwipeableAssetRow
-            key={subscription.id}
-            label={subscription.name}
-            onDelete={() => onDelete?.(subscription)}>
-            <Pressable onPress={() => onEdit?.(subscription)} disabled={!onEdit}>
-              <Card variant="elevated" style={styles.itemCard}>
-                <Text variant="bodyMedium">{subscription.name}</Text>
-                <Text variant="caption" color="textMuted">
-                  {formatCurrency(subscription.amount)}/{intervalLabel(subscription.billingInterval)}
-                </Text>
-                {subscription.renewsAt ? (
-                  <Text variant="caption" color="textSecondary">
-                    Renova {formatDateShort(subscription.renewsAt)}
-                  </Text>
-                ) : null}
-              </Card>
-            </Pressable>
-          </SwipeableAssetRow>
-        ))}
+        {subscriptions.map((subscription) => {
+          const status = getRenewalStatus(subscription.renewsAt);
+          const statusColor =
+            status.tone === 'warning' ? colors.warning : colors.success;
+
+          return (
+            <SwipeableAssetRow
+              key={subscription.id}
+              label={subscription.name}
+              onDelete={() => onDelete?.(subscription)}>
+              <Pressable onPress={() => onEdit?.(subscription)} disabled={!onEdit}>
+                <Card variant="elevated" style={styles.itemCard}>
+                  <View style={styles.itemHeader}>
+                    <Text variant="bodyMedium" style={styles.itemName}>
+                      {subscription.name}
+                    </Text>
+                    <View style={[styles.statusBadge, { borderColor: statusColor }]}>
+                      <Text variant="caption" style={{ color: statusColor, fontWeight: '600' }}>
+                        {status.label}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.priceRow}>
+                    <Text variant="h3">{formatCurrency(subscription.amount)}</Text>
+                    <Text variant="caption" color="textMuted">
+                      /{intervalLabel(subscription.billingInterval)}
+                    </Text>
+                  </View>
+                  {subscription.renewsAt ? (
+                    <Text variant="caption" color="textSecondary">
+                      Renova {formatDateShort(subscription.renewsAt)}
+                    </Text>
+                  ) : (
+                    <Text variant="caption" color="textMuted">
+                      Sem data de renovação definida
+                    </Text>
+                  )}
+                </Card>
+              </Pressable>
+            </SwipeableAssetRow>
+          );
+        })}
       </View>
     </View>
   );
@@ -90,7 +139,21 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   summaryCard: {
-    gap: spacing.xs,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  countBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.backgroundElevated,
+    borderWidth: 1,
     borderColor: colors.border,
   },
   list: {
@@ -98,5 +161,27 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     gap: spacing.xs,
+    padding: spacing.md,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  itemName: {
+    flex: 1,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.xs,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    backgroundColor: colors.backgroundElevated,
   },
 });

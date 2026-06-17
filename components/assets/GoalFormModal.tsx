@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useCreateGoal, useDeleteGoal, useUpdateGoal } from '@/hooks/queries/useAssets';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
@@ -16,7 +16,7 @@ import {
 } from '@/lib/domain/goal-form.utils';
 import { getGoalProgress } from '@/lib/domain/goal.utils';
 import { colors, radius, spacing } from '@/lib/theme';
-import { formatCurrency, DATE_INPUT_PLACEHOLDER, formatInputDate } from '@/lib/utils/format';
+import { formatCurrency, formatInputDate } from '@/lib/utils/format';
 
 import { GoalProgressBar } from './GoalProgressBar';
 
@@ -201,11 +201,10 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
         </View>
       </View>
 
-      <TextField
+      <DatePickerField
         label="Data prevista"
         value={deadline}
-        onChangeText={setDeadline}
-        placeholder={DATE_INPUT_PLACEHOLDER}
+        onChange={setDeadline}
         error={errors.deadline}
       />
       <Text variant="caption" color="textMuted" style={styles.helper}>

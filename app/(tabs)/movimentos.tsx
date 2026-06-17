@@ -1,16 +1,11 @@
 import { SymbolView } from 'expo-symbols';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  CreditFormModal,
-  CreditsSection,
-  SubscriptionFormModal,
-  SubscriptionsSection,
-} from '@/components/assets';
-import { AppHeader, SegmentedControl } from '@/components/layout';
+import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
+import { AppHeader, QuickAddMenuSheet, SegmentedControl } from '@/components/layout';
 import {
   AddTransactionModal,
   EditTransactionModal,
@@ -23,7 +18,6 @@ import {
 import { EmptyState, ErrorState } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import {
-  useDeleteCredit,
   useDeleteSubscription,
   useLiabilities,
   useSaveSubscription,
@@ -34,10 +28,8 @@ import {
 } from '@/hooks/queries/useTransactions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useSubscriptionDetection } from '@/hooks/useSubscriptionDetection';
-import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
-import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
+import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import type { MovementsView, Subscription } from '@/lib/domain/assets.types';
-import type { Credit } from '@/lib/domain/types';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import { colors, spacing } from '@/lib/theme';
 
@@ -56,16 +48,14 @@ export default function MovimentosScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [creditFormVisible, setCreditFormVisible] = useState(false);
-  const [editingCredit, setEditingCredit] = useState<Credit | null>(null);
   const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
+  const [quickAddVisible, setQuickAddVisible] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
   const { refreshing, onRefresh } = usePullToRefresh(refetch);
   const deleteMutation = useDeleteTransaction();
-  const { data: onboardingAnswers } = useOnboardingAnswers();
   const { showToast } = useToast();
 
   const {
@@ -73,7 +63,6 @@ export default function MovimentosScreen() {
     refetch: refetchLiabilities,
     isRefetching: isRefetchingLiabilities,
   } = useLiabilities();
-  const deleteCredit = useDeleteCredit();
   const deleteSubscription = useDeleteSubscription();
   const saveSubscription = useSaveSubscription();
   const {
@@ -82,13 +71,16 @@ export default function MovimentosScreen() {
     confirmHandled,
   } = useSubscriptionDetection();
 
-  const credits = liabilities?.credits ?? [];
   const subscriptions = liabilities?.subscriptions ?? [];
   const transactions = useMemo(() => data ?? [], [data]);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
 
   useEffect(() => {
-    if (view === 'creditos' || view === 'subscricoes' || view === 'movimentos') {
+    if (view === 'creditos') {
+      router.replace('/(tabs)/precos');
+      return;
+    }
+    if (view === 'subscricoes' || view === 'movimentos') {
       setActiveView(view);
     }
   }, [view]);
@@ -111,6 +103,28 @@ export default function MovimentosScreen() {
     showToast('Digitaliza o teu primeiro talão!', 'info');
   }, [action, showToast]);
 
+  useEffect(() => {
+    if (action === 'new-movement') {
+      setActiveView('movimentos');
+      openAddModal(false);
+      return;
+    }
+    if (action === 'new-subscription') {
+      setActiveView('subscricoes');
+      setEditingSubscription(null);
+      setSubscriptionFormVisible(true);
+    }
+  }, [action]);
+
+  const handleQuickAdd = useQuickAddActions({
+    onMovement: () => openAddModal(false),
+    onSubscription: () => {
+      setActiveView('subscricoes');
+      setEditingSubscription(null);
+      setSubscriptionFormVisible(true);
+    },
+  });
+
   function handleEdit(transaction: Transaction) {
     setEditingTransaction(transaction);
   }
@@ -126,26 +140,7 @@ export default function MovimentosScreen() {
     });
   }
 
-  function handlePrimaryAdd() {
-    if (activeView === 'movimentos') {
-      openAddModal(false);
-      return;
-    }
-    if (activeView === 'creditos') {
-      setEditingCredit(null);
-      setCreditFormVisible(true);
-      return;
-    }
-    setEditingSubscription(null);
-    setSubscriptionFormVisible(true);
-  }
-
   function handleLearnMore() {
-    if (activeView === 'creditos') {
-      const config = MOVEMENTS_EMPTY_CONFIG.creditos;
-      Alert.alert(config.title, config.highlights.join('\n\n• '));
-      return;
-    }
     if (activeView === 'subscricoes') {
       const config = MOVEMENTS_EMPTY_CONFIG.subscricoes;
       Alert.alert(config.title, config.highlights.join('\n\n• '));
@@ -173,13 +168,6 @@ export default function MovimentosScreen() {
     await Promise.all([refetch(), refetchLiabilities()]);
   }
 
-  const addAccessibilityLabel =
-    activeView === 'movimentos'
-      ? 'Adicionar movimento'
-      : activeView === 'creditos'
-        ? 'Adicionar crédito'
-        : 'Adicionar subscrição';
-
   return (
     <View style={styles.screen}>
       <AppHeader
@@ -191,8 +179,8 @@ export default function MovimentosScreen() {
               size={22}
             />
           ),
-          onPress: handlePrimaryAdd,
-          accessibilityLabel: addAccessibilityLabel,
+          onPress: () => setQuickAddVisible(true),
+          accessibilityLabel: 'Adicionar',
         }}
       />
 
@@ -264,12 +252,9 @@ export default function MovimentosScreen() {
                       size={32}
                     />
                   }
-                  title="Ainda sem movimentos"
-                  description={getContextualNoTransactionsMessage(
-                    onboardingAnswers ?? null,
-                    filter,
-                  )}
-                  actionLabel="Nova transação"
+                  title="O teu histórico começa aqui"
+                  description="Regista o teu primeiro movimento para começares a acompanhar os teus gastos."
+                  actionLabel="Adicionar movimento"
                   onAction={() => openAddModal(false)}
                   secondaryActionLabel="Digitalizar talão"
                   onSecondaryAction={() => openAddModal(true)}
@@ -292,35 +277,19 @@ export default function MovimentosScreen() {
               tintColor={colors.primary}
             />
           }>
-          {activeView === 'creditos' ? (
-            <CreditsSection
-              credits={credits}
-              onCreate={() => {
-                setEditingCredit(null);
-                setCreditFormVisible(true);
-              }}
-              onEdit={(credit) => {
-                setEditingCredit(credit);
-                setCreditFormVisible(true);
-              }}
-              onLearnMore={handleLearnMore}
-              onDelete={(credit) => deleteCredit.mutate(credit.id)}
-            />
-          ) : (
-            <SubscriptionsSection
-              subscriptions={subscriptions}
-              onCreate={() => {
-                setEditingSubscription(null);
-                setSubscriptionFormVisible(true);
-              }}
-              onEdit={(subscription) => {
-                setEditingSubscription(subscription);
-                setSubscriptionFormVisible(true);
-              }}
-              onLearnMore={handleLearnMore}
-              onDelete={(item) => deleteSubscription.mutate(item.id)}
-            />
-          )}
+          <SubscriptionsSection
+            subscriptions={subscriptions}
+            onCreate={() => {
+              setEditingSubscription(null);
+              setSubscriptionFormVisible(true);
+            }}
+            onEdit={(subscription) => {
+              setEditingSubscription(subscription);
+              setSubscriptionFormVisible(true);
+            }}
+            onLearnMore={handleLearnMore}
+            onDelete={(item) => deleteSubscription.mutate(item.id)}
+          />
         </ScrollView>
       )}
 
@@ -335,15 +304,6 @@ export default function MovimentosScreen() {
         visible={editingTransaction !== null}
         transaction={editingTransaction}
         onClose={() => setEditingTransaction(null)}
-      />
-
-      <CreditFormModal
-        visible={creditFormVisible}
-        credit={editingCredit}
-        onClose={() => {
-          setCreditFormVisible(false);
-          setEditingCredit(null);
-        }}
       />
 
       <SubscriptionFormModal
@@ -361,6 +321,12 @@ export default function MovimentosScreen() {
         onConfirm={handleConfirmDetection}
         onDismiss={dismissCurrent}
         isSaving={saveSubscription.isPending}
+      />
+
+      <QuickAddMenuSheet
+        visible={quickAddVisible}
+        onClose={() => setQuickAddVisible(false)}
+        onSelect={handleQuickAdd}
       />
     </View>
   );

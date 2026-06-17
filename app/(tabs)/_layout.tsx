@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Platform, Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, type PressableProps } from 'react-native';
 
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
@@ -38,6 +38,18 @@ function TabLayoutInner() {
               overflow: 'visible' as const,
             },
         tabBarLabelStyle: typography.tabLabel,
+        tabBarLabel: ({ focused, color, children }) => (
+          <Text
+            style={[
+              typography.tabLabel,
+              {
+                color,
+                fontWeight: focused ? '600' : '400',
+              },
+            ]}>
+            {children}
+          </Text>
+        ),
         tabBarItemStyle: styles.tabBarItem,
         tabBarButton: Platform.OS === 'android'
           ? (props) => <TabBarButtonAndroid {...(props as PressableProps)} />
@@ -94,13 +106,13 @@ function TabLayoutInner() {
       <Tabs.Screen
         name="precos"
         options={{
-          title: 'Preços',
+          title: 'Créditos',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               name={{
-                ios: 'tag.fill',
-                android: 'sell',
-                web: 'sell',
+                ios: 'creditcard.fill',
+                android: 'credit_card',
+                web: 'credit_card',
               }}
               color={color}
               size={focused ? 26 : 24}

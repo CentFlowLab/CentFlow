@@ -7,26 +7,28 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/lib/theme';
+import { markIntroCompletedThisSession } from '@/lib/app/intro-session';
 
-const INTRO_VIDEO = require('@/assets/videos/app-intro.mp4');
+const INTRO_VIDEO = require('@/assets/videos/centflow-launch-intro.mp4');
 const LOGO_FALLBACK = require('@/assets/brand/logo-mark-transparent.png');
 
-/** Máximo antes de fechar a intro (fallback se o evento de fim falhar). */
-const INTRO_MAX_MS = 8000;
+/** Fallback de segurança se o evento de fim do vídeo falhar. */
+const INTRO_MAX_MS = 20000;
+const FALLBACK_LOGO_MS = 1600;
+const FADE_MS = 420;
 
-let introDoneThisSession = false;
-
-type HomeIntroOverlayProps = {
+type AppIntroSplashProps = {
   onComplete: () => void;
 };
 
 /**
- * Intro em vídeo ao abrir o Início (uma vez por sessão da app).
+ * Splash de lançamento em ecrã inteiro — montado fora da navegação principal.
+ * Sem interação durante a reprodução; fade out ao terminar.
  */
-export function HomeIntroOverlay({ onComplete }: HomeIntroOverlayProps) {
-  const [visible, setVisible] = useState(!introDoneThisSession);
+export function AppIntroSplash({ onComplete }: AppIntroSplashProps) {
+  const insets = useSafeAreaInsets();
   const [useFallback, setUseFallback] = useState(Platform.OS === 'web');
   const finishedRef = useRef(false);
   const overlayOpacity = useSharedValue(1);
@@ -39,13 +41,12 @@ export function HomeIntroOverlay({ onComplete }: HomeIntroOverlayProps) {
   const finish = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    introDoneThisSession = true;
-    setVisible(false);
+    markIntroCompletedThisSession();
     onComplete();
   }, [onComplete]);
 
   const dismissWithFade = useCallback(() => {
-    overlayOpacity.value = withTiming(0, { duration: 380 }, (done) => {
+    overlayOpacity.value = withTiming(0, { duration: FADE_MS }, (done) => {
       if (done) {
         runOnJS(finish)();
       }
@@ -53,13 +54,8 @@ export function HomeIntroOverlay({ onComplete }: HomeIntroOverlayProps) {
   }, [finish, overlayOpacity]);
 
   useEffect(() => {
-    if (introDoneThisSession) {
-      onComplete();
-      return;
-    }
-
     if (useFallback) {
-      const timer = setTimeout(dismissWithFade, 1400);
+      const timer = setTimeout(dismissWithFade, FALLBACK_LOGO_MS);
       return () => clearTimeout(timer);
     }
 
@@ -86,28 +82,42 @@ export function HomeIntroOverlay({ onComplete }: HomeIntroOverlayProps) {
       statusSub.remove();
       endSub.remove();
     };
-  }, [dismissWithFade, onComplete, player, useFallback]);
+  }, [dismissWithFade, player, useFallback]);
 
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: overlayOpacity.value,
   }));
 
-  if (!visible) return null;
-
   return (
-    <Animated.View pointerEvents="none" style={[styles.overlay, overlayStyle]}>
-      {useFallback ? (
-        <View style={styles.center}>
-          <Image source={LOGO_FALLBACK} style={styles.logoFallback} resizeMode="contain" />
-        </View>
-      ) : (
-        <VideoView
-          player={player}
-          style={styles.video}
-          contentFit="cover"
-          nativeControls={false}
-        />
-      )}
+    <Animated.View
+      style={[styles.overlay, overlayStyle]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      pointerEvents="auto">
+      <View
+        style={[
+          styles.content,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          },
+        ]}>
+        {useFallback ? (
+          <View style={styles.center}>
+            <Image source={LOGO_FALLBACK} style={styles.logoFallback} resizeMode="contain" />
+          </View>
+        ) : (
+          <VideoView
+            player={player}
+            style={styles.video}
+            contentFit="cover"
+            nativeControls={false}
+            allowsPictureInPicture={false}
+          />
+        )}
+      </View>
     </Animated.View>
   );
 }
@@ -115,8 +125,13 @@ export function HomeIntroOverlay({ onComplete }: HomeIntroOverlayProps) {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.background,
-    zIndex: 50,
+    backgroundColor: '#000000',
+    zIndex: 9999,
+    elevation: 9999,
+  },
+  content: {
+    flex: 1,
+    backgroundColor: '#000000',
   },
   video: {
     flex: 1,
@@ -129,7 +144,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoFallback: {
-    width: 120,
-    height: 120,
+    width: 128,
+    height: 128,
   },
 });

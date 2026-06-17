@@ -103,6 +103,22 @@ export function todayInputDate(): string {
   return formatInputDate(new Date());
 }
 
+/** DD-MM-AAAA ou ISO → Date local (meia-noite). */
+export function inputDateToDate(input: string): Date | null {
+  const iso = inputDateToIso(input);
+  if (!iso) return null;
+
+  const [year, month, day] = iso.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date;
+}
+
+export function dateToInputDate(date: Date): string {
+  return formatInputDate(date);
+}
+
 export function formatDateShort(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;

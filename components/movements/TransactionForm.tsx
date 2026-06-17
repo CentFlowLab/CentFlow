@@ -2,12 +2,11 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SegmentedControl } from '@/components/layout';
-import { Text, TextField } from '@/components/ui';
+import { DatePickerField, Text, TextField } from '@/components/ui';
 import { getCategoriesForType } from '@/lib/data/transaction-categories';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { TransactionType } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
-import { DATE_INPUT_PLACEHOLDER } from '@/lib/utils/format';
 
 type TransactionFormProps = {
   values: TransactionFormValues;
@@ -93,11 +92,10 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
         maxLength={200}
       />
 
-      <TextField
+      <DatePickerField
         label="Data"
         value={values.date}
-        onChangeText={(date) => update('date', date)}
-        placeholder={DATE_INPUT_PLACEHOLDER}
+        onChange={(date) => update('date', date)}
         error={errors?.date}
       />
     </View>

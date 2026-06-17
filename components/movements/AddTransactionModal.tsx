@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useProcessReceipt } from '@/hooks/useProcessReceipt';
 import { useReceiptImage } from '@/hooks/useReceiptImage';
@@ -26,7 +26,7 @@ import {
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { colors, radius, spacing } from '@/lib/theme';
-import { DATE_INPUT_PLACEHOLDER, todayInputDate } from '@/lib/utils/format';
+import { todayInputDate } from '@/lib/utils/format';
 
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
 import { ReceiptAttachmentField } from './ReceiptAttachmentField';
@@ -507,11 +507,10 @@ export function AddTransactionModal({
               maxLength={200}
             />
 
-            <TextField
+            <DatePickerField
               label="Data"
               value={date}
-              onChangeText={setDate}
-              placeholder={DATE_INPUT_PLACEHOLDER}
+              onChange={setDate}
               error={errors.date}
             />
           </>

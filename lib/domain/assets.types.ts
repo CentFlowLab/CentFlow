@@ -3,7 +3,7 @@ import type { Credit } from './types';
 
 export type AssetsTab = 'objetivos' | 'garantias' | 'inventario';
 
-export type MovementsView = 'movimentos' | 'creditos' | 'subscricoes';
+export type MovementsView = 'movimentos' | 'subscricoes';
 
 export type SubscriptionBillingInterval = 'monthly' | 'quarterly' | 'annual';
 

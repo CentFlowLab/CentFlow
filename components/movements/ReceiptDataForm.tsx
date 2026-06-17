@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SegmentedControl } from '@/components/layout';
-import { Card, Text, TextField } from '@/components/ui';
+import { Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { getCategoriesForType } from '@/lib/data/transaction-categories';
 import {
   isOcrFieldUnchanged,
@@ -15,7 +15,6 @@ import {
   getOcrFieldTone,
 } from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
-import { DATE_INPUT_PLACEHOLDER } from '@/lib/utils/format';
 
 import { OcrFieldBadge } from './ocr/OcrFieldBadge';
 import { ReceiptItemsEditor } from './ReceiptItemsEditor';
@@ -105,11 +104,10 @@ export function ReceiptDataForm({
             />
           </View>
           <View style={styles.dateField}>
-            <TextField
+            <DatePickerField
               label="Data"
               value={values.date}
-              onChangeText={(v) => update('date', v)}
-              placeholder={DATE_INPUT_PLACEHOLDER}
+              onChange={(v) => update('date', v)}
               error={errors?.date}
               ocrHighlighted={isOcr('date')}
               ocrEdited={isEdited('date')}

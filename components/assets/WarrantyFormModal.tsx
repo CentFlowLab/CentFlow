@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import {
   useCreateWarranty,
   useDeleteWarranty,
@@ -17,7 +17,7 @@ import type { Warranty } from '@/lib/domain/assets.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { getWarrantyExpiryInfo } from '@/lib/domain/warranty.utils';
 import { colors, spacing } from '@/lib/theme';
-import { DATE_INPUT_PLACEHOLDER, formatInputDate, inputDateToIso, isValidInputDate } from '@/lib/utils/format';
+import { formatInputDate, inputDateToIso, isValidInputDate } from '@/lib/utils/format';
 
 import { WarrantyReceiptPicker } from './WarrantyReceiptPicker';
 
@@ -195,20 +195,18 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
 
       <View style={styles.row}>
         <View style={styles.halfField}>
-          <TextField
+          <DatePickerField
             label="Data de expiração"
             value={expiresAt}
-            onChangeText={setExpiresAt}
-            placeholder={DATE_INPUT_PLACEHOLDER}
+            onChange={setExpiresAt}
             error={errors.expiresAt}
           />
         </View>
         <View style={styles.halfField}>
-          <TextField
+          <DatePickerField
             label="Data de compra"
             value={purchaseDate}
-            onChangeText={setPurchaseDate}
-            placeholder={DATE_INPUT_PLACEHOLDER}
+            onChange={setPurchaseDate}
             error={errors.purchaseDate}
           />
         </View>

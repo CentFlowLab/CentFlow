@@ -9,11 +9,12 @@ import {
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect } from '@/components/app';
+import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect, AppIntroSplash } from '@/components/app';
 import { AuthLoadingScreen } from '@/components/auth';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -21,6 +22,7 @@ import { queryClient } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { PreferencesProvider } from '@/lib/preferences/PreferencesProvider';
 import { colors } from '@/lib/theme';
+import { hasIntroCompletedThisSession } from '@/lib/app/intro-session';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -94,6 +96,7 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { isAuthenticated, isLoading, startupError, retryBootstrap } = useAuth();
+  const [introReady, setIntroReady] = useState(() => hasIntroCompletedThisSession());
 
   useEffect(() => {
     if (!isLoading) {
@@ -120,6 +123,14 @@ function RootNavigator() {
         onRetry={retryBootstrap}
         retryLoading={isLoading}
       />
+    );
+  }
+
+  if (isAuthenticated && !introReady) {
+    return (
+      <GestureHandlerRootView style={styles.introRoot}>
+        <AppIntroSplash onComplete={() => setIntroReady(true)} />
+      </GestureHandlerRootView>
     );
   }
 
@@ -156,3 +167,10 @@ function RootNavigator() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  introRoot: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+});

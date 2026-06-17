@@ -1,47 +1,97 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Text } from '@/components/ui';
 import type { NetWorthResult } from '@/lib/domain';
-import { formatCurrency, formatPercent } from '@/lib/utils/format';
+import { getSmartSummaryMessage, getTrendLabel } from '@/lib/home/smart-summary';
 import { colors, radius, spacing } from '@/lib/theme';
+import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
 type NetWorthHeroCardProps = {
   netWorth: NetWorthResult;
   changePercent: number;
+  monthlyChange?: number;
+  weeklySpending?: number;
+  hasActivity?: boolean;
+  onAddMovement?: () => void;
 };
 
 function getNetWorthColor(value: number): string {
   if (value > 0) return colors.success;
   if (value < 0) return colors.danger;
-  return colors.textSecondary;
+  return colors.text;
 }
 
 function getChangeColor(percent: number): string {
   if (percent > 0) return colors.success;
   if (percent < 0) return colors.danger;
-  return colors.textMuted;
+  return colors.textSecondary;
 }
 
-export function NetWorthHeroCard({ netWorth, changePercent }: NetWorthHeroCardProps) {
+export function NetWorthHeroCard({
+  netWorth,
+  changePercent,
+  monthlyChange = 0,
+  weeklySpending = 0,
+  hasActivity = true,
+  onAddMovement,
+}: NetWorthHeroCardProps) {
   const netWorthColor = getNetWorthColor(netWorth.netWorth);
   const changeColor = getChangeColor(changePercent);
+  const trendLabel = getTrendLabel(changePercent);
+  const smartMessage = getSmartSummaryMessage({
+    hasActivity,
+    netWorth: netWorth.netWorth,
+    changePercent,
+    monthlyChange,
+    weeklySpending,
+  });
+
+  if (!hasActivity) {
+    return (
+      <Card variant="elevated" style={styles.card}>
+          <View style={styles.emptyIcon}>
+            <SymbolView
+              name={{ ios: 'chart.line.uptrend.xyaxis', android: 'trending_up', web: 'trending_up' }}
+              tintColor={colors.primary}
+              size={28}
+            />
+          </View>
+          <Text variant="h3" style={styles.emptyTitle}>
+            Começa por adicionar o teu primeiro movimento
+          </Text>
+          <Text variant="body" color="textSecondary" style={styles.emptyDescription}>
+            Em segundos vês saldo, evolução e insights personalizados sobre os teus gastos.
+          </Text>
+          {onAddMovement ? (
+            <Button
+              label="Adicionar movimento"
+              onPress={onAddMovement}
+              fullWidth
+              style={styles.emptyButton}
+            />
+          ) : null}
+      </Card>
+    );
+  }
 
   return (
-    <Card variant="elevated" padding={0} style={styles.card}>
-      <LinearGradient
-        colors={[colors.surfaceElevated, colors.surface]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}>
-        <View style={styles.header}>
-          <Text variant="label" color="textMuted">
-            Onde estou?
-          </Text>
-          <Text variant="caption" color="textMuted">
-            Património líquido
-          </Text>
+    <Card variant="elevated" style={styles.card}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text variant="label" color="textMuted">
+              Saldo total
+            </Text>
+            <Text variant="caption" color="textSecondary">
+              Património líquido actual
+            </Text>
+          </View>
+          <View style={[styles.trendBadge, { borderColor: changeColor }]}>
+            <Text variant="caption" style={{ color: changeColor, fontWeight: '600' }}>
+              {trendLabel}
+            </Text>
+          </View>
         </View>
 
         <Text variant="display" style={[styles.value, { color: netWorthColor }]}>
@@ -52,8 +102,23 @@ export function NetWorthHeroCard({ netWorth, changePercent }: NetWorthHeroCardPr
           <Text variant="bodyMedium" style={{ color: changeColor }}>
             {formatPercent(changePercent)}
           </Text>
-          <Text variant="caption" color="textMuted">
+          <Text variant="caption" color="textSecondary">
             vs. mês anterior
+          </Text>
+          {monthlyChange !== 0 ? (
+            <Text variant="caption" color="textMuted">
+              · {monthlyChange > 0 ? '+' : ''}
+              {formatCurrency(monthlyChange)} este mês
+            </Text>
+          ) : null}
+        </View>
+
+        <View style={styles.insightBox}>
+          <Text variant="caption" color="textMuted" style={styles.insightLabel}>
+            Leitura rápida
+          </Text>
+          <Text variant="caption" color="textSecondary">
+            {smartMessage}
           </Text>
         </View>
 
@@ -68,13 +133,12 @@ export function NetWorthHeroCard({ netWorth, changePercent }: NetWorthHeroCardPr
         </View>
 
         <Button
-          label="Ver detalhe"
+          label="Ver análises"
           variant="secondary"
           size="sm"
           onPress={() => router.push('/(tabs)/analises')}
           style={styles.button}
         />
-      </LinearGradient>
     </Card>
   );
 }
@@ -102,32 +166,50 @@ function BreakdownItem({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: spacing['2xl'],
-    overflow: 'hidden',
+    marginBottom: spacing.xl,
+    gap: spacing.md,
   },
-  gradient: {
-    padding: spacing.xl,
-    borderRadius: radius.lg,
-  },
-  header: {
-    gap: spacing.xs,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  trendBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    backgroundColor: colors.backgroundElevated,
   },
   value: {
     marginBottom: spacing.sm,
   },
   changeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  insightBox: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  insightLabel: {
+    marginBottom: spacing.xs,
   },
   breakdown: {
     flexDirection: 'row',
-    backgroundColor: colors.backgroundElevated,
+    backgroundColor: colors.surface,
     borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -142,5 +224,24 @@ const styles = StyleSheet.create({
   },
   button: {
     alignSelf: 'flex-start',
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    marginBottom: spacing.sm,
+  },
+  emptyDescription: {
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  emptyButton: {
+    marginTop: spacing.xs,
   },
 });

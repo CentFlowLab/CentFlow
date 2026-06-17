@@ -29,7 +29,7 @@ export function SpendingCategoryCard({ categories, periodLabel }: SpendingCatego
           Gastos por categoria
         </Text>
         <Text variant="body" color="textSecondary" align="center" style={styles.emptyText}>
-          Regista despesas nos últimos 30 dias para ver a distribuição por categoria.
+          Regista despesas para veres onde vai o teu dinheiro — categorias e percentagens aparecem aqui.
         </Text>
       </Card>
     );

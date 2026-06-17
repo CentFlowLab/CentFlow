@@ -48,6 +48,10 @@ module.exports = {
   expo: {
     ...appJson.expo,
     name: isBeta ? 'CentFlow Beta' : appJson.expo.name,
+    plugins: [
+      ...(appJson.expo.plugins ?? []),
+      '@react-native-community/datetimepicker',
+    ],
     extra: {
       ...appJson.expo.extra,
       appVariant: variant,

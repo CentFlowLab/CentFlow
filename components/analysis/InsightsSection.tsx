@@ -1,5 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { Card, EmptyState, SectionHeader, Text } from '@/components/ui';
 import type { AnalysisInsight } from '@/lib/domain/analysis.types';
@@ -30,32 +31,38 @@ const INSIGHT_CONFIG = {
 
 type InsightsSectionProps = {
   insights: AnalysisInsight[];
+  onAddMovement?: () => void;
 };
 
-export function InsightsSection({ insights }: InsightsSectionProps) {
+export function InsightsSection({ insights, onAddMovement }: InsightsSectionProps) {
+  const handleEmptyAction = () => {
+    if (onAddMovement) {
+      onAddMovement();
+      return;
+    }
+    router.push('/(tabs)/movimentos?action=new-movement');
+  };
+
   return (
     <View style={styles.container}>
-      <SectionHeader
-        title="CentFlow Brain"
-        subtitle="Insights inteligentes"
-      />
+      <SectionHeader title="Insights" subtitle="Análise inteligente dos teus dados" />
 
       {insights.length === 0 ? (
         <EmptyState
           icon={
             <SymbolView
-              name={{ ios: 'brain.head.profile', android: 'psychology', web: 'psychology' }}
-              tintColor={colors.accent}
+              name={{ ios: 'chart.bar.fill', android: 'bar_chart', web: 'bar_chart' }}
+              tintColor={colors.primary}
               size={32}
             />
           }
-          title="Insights em preparação"
-          description="À medida que registas movimentos e atualizas o património, o CentFlow Brain vai sugerir oportunidades e alertas personalizados."
+          title="Vamos criar o teu histórico financeiro"
+          description="Regista movimentos nas próximas semanas e os insights aparecem automaticamente — tendências, categorias e oportunidades de poupança."
+          actionLabel="Adicionar movimento"
+          onAction={handleEmptyAction}
         />
       ) : (
-        insights.map((insight) => (
-          <InsightCard key={insight.id} insight={insight} />
-        ))
+        insights.map((insight) => <InsightCard key={insight.id} insight={insight} />)
       )}
     </View>
   );
@@ -76,11 +83,13 @@ function InsightCard({ insight }: { insight: AnalysisInsight }) {
         <Text variant="caption" color="textSecondary">
           {insight.description}
         </Text>
-        {insight.actionLabel && (
-          <Text variant="caption" color="primary" style={styles.action}>
-            {insight.actionLabel} →
-          </Text>
-        )}
+        {insight.actionLabel ? (
+          <Pressable accessibilityRole="button">
+            <Text variant="caption" color="primary" style={styles.action}>
+              {insight.actionLabel} →
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </Card>
   );
@@ -88,7 +97,7 @@ function InsightCard({ insight }: { insight: AnalysisInsight }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   insightCard: {
     flexDirection: 'row',
