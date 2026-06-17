@@ -4,6 +4,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CreditFormModal, CreditsSection } from '@/components/assets';
+import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { ErrorState, ScreenContainer } from '@/components/ui';
 import { useDeleteCredit, useLiabilities } from '@/hooks/queries/useLiabilities';
@@ -75,15 +76,17 @@ export default function PrecosScreen() {
             />
           }>
           <ScreenContainer scrollable={false}>
-            <CreditsSection
-              credits={credits}
-              onCreate={openNewCredit}
-              onEdit={(credit) => {
-                setEditingCredit(credit);
-                setCreditFormVisible(true);
-              }}
-              onDelete={(credit) => deleteCredit.mutate(credit.id)}
-            />
+            <FeatureAreaGate feature="credits">
+              <CreditsSection
+                credits={credits}
+                onCreate={openNewCredit}
+                onEdit={(credit) => {
+                  setEditingCredit(credit);
+                  setCreditFormVisible(true);
+                }}
+                onDelete={(credit) => deleteCredit.mutate(credit.id)}
+              />
+            </FeatureAreaGate>
           </ScreenContainer>
         </ScrollView>
       )}

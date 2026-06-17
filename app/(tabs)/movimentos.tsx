@@ -5,6 +5,7 @@ import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'r
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
+import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet, SegmentedControl } from '@/components/layout';
 import {
   AddTransactionModal,
@@ -277,19 +278,21 @@ export default function MovimentosScreen() {
               tintColor={colors.primary}
             />
           }>
-          <SubscriptionsSection
-            subscriptions={subscriptions}
-            onCreate={() => {
-              setEditingSubscription(null);
-              setSubscriptionFormVisible(true);
-            }}
-            onEdit={(subscription) => {
-              setEditingSubscription(subscription);
-              setSubscriptionFormVisible(true);
-            }}
-            onLearnMore={handleLearnMore}
-            onDelete={(item) => deleteSubscription.mutate(item.id)}
-          />
+          <FeatureAreaGate feature="subscriptions">
+            <SubscriptionsSection
+              subscriptions={subscriptions}
+              onCreate={() => {
+                setEditingSubscription(null);
+                setSubscriptionFormVisible(true);
+              }}
+              onEdit={(subscription) => {
+                setEditingSubscription(subscription);
+                setSubscriptionFormVisible(true);
+              }}
+              onLearnMore={handleLearnMore}
+              onDelete={(item) => deleteSubscription.mutate(item.id)}
+            />
+          </FeatureAreaGate>
         </ScrollView>
       )}
 

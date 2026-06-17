@@ -133,10 +133,35 @@ export function isFeatureActive(
   answers: OnboardingAnswers | null | undefined,
   feature: FeatureAreaId,
 ): boolean {
-  if (!answers) return true;
+  if (!answers?.completed) return true;
   const features =
     answers.enabledFeatures.length > 0
       ? answers.enabledFeatures
       : computeEnabledFeatures(answers);
   return features.includes(feature);
 }
+
+export function withActivatedFeature(
+  answers: OnboardingAnswers,
+  feature: FeatureAreaId,
+): OnboardingAnswers {
+  const current = new Set<FeatureAreaId>(
+    answers.enabledFeatures.length > 0
+      ? answers.enabledFeatures
+      : computeEnabledFeatures(answers),
+  );
+  current.add(feature);
+
+  return {
+    ...answers,
+    enabledFeatures: ALL_FEATURE_AREAS.filter((id) => current.has(id)),
+  };
+}
+
+export const TAB_FEATURE_MAP = {
+  credits: 'credits' as FeatureAreaId,
+  subscriptions: 'subscriptions' as FeatureAreaId,
+  goals: 'goals' as FeatureAreaId,
+  warranties: 'receipts' as FeatureAreaId,
+  inventory: 'wealth' as FeatureAreaId,
+};

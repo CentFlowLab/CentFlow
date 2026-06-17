@@ -14,6 +14,7 @@ import {
   WarrantyFormModal,
   WarrantiesSection,
 } from '@/components/assets';
+import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { ScreenContainer, ErrorState, AssetsSkeleton, RefetchingIndicator } from '@/components/ui';
 import {
@@ -194,30 +195,36 @@ export default function AtivosScreen() {
             </View>
 
             {activeTab === 'objetivos' ? (
-              <GoalsSection
-                goals={assets.goals}
-                onEdit={openEditGoal}
-                onLearnMore={handleLearnMore}
-                onDelete={(goal) => deleteGoal.mutate(goal.id)}
-              />
+              <FeatureAreaGate feature="goals">
+                <GoalsSection
+                  goals={assets.goals}
+                  onEdit={openEditGoal}
+                  onLearnMore={handleLearnMore}
+                  onDelete={(goal) => deleteGoal.mutate(goal.id)}
+                />
+              </FeatureAreaGate>
             ) : null}
 
             {activeTab === 'garantias' ? (
-              <WarrantiesSection
-                warranties={assets.warranties}
-                onEdit={openEditWarranty}
-                onLearnMore={handleLearnMore}
-                onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
-              />
+              <FeatureAreaGate feature="receipts">
+                <WarrantiesSection
+                  warranties={assets.warranties}
+                  onEdit={openEditWarranty}
+                  onLearnMore={handleLearnMore}
+                  onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
+                />
+              </FeatureAreaGate>
             ) : null}
 
             {activeTab === 'inventario' ? (
-              <InventorySection
-                inventory={assets.inventory}
-                onEdit={openEditInventory}
-                onLearnMore={handleLearnMore}
-                onDelete={(item) => deleteInventory.mutate(item.id)}
-              />
+              <FeatureAreaGate feature="wealth">
+                <InventorySection
+                  inventory={assets.inventory}
+                  onEdit={openEditInventory}
+                  onLearnMore={handleLearnMore}
+                  onDelete={(item) => deleteInventory.mutate(item.id)}
+                />
+              </FeatureAreaGate>
             ) : null}
 
             <RefetchingIndicator visible={isRefetching && !isLoading} />

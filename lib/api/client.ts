@@ -1,6 +1,7 @@
 import { getAccessToken } from './token';
 import { getRuntimePublicEnv } from '@/lib/config/runtime-env';
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
+import { logAppError } from '@/lib/diagnostics';
 import { getSupabaseUrl, isSupabaseEnabled } from '@/lib/supabase';
 
 const LEGACY_PLACEHOLDER_API = 'https://api.centflow.app';
@@ -97,13 +98,12 @@ export async function apiFetch<T>(
           error.message.includes('Network request failed')));
 
     if (isNetworkError) {
-      throw new ApiError(
-        'NETWORK_ERROR',
-        0,
-        { url, baseUrl: API_BASE_URL },
-      );
+      const apiError = new ApiError('NETWORK_ERROR', 0, { url, baseUrl: API_BASE_URL });
+      logAppError('api-fetch', apiError, { url, method: init.method ?? 'GET' });
+      throw apiError;
     }
 
+    logAppError('api-fetch', error, { url, method: init.method ?? 'GET' });
     throw error;
   }
 
@@ -115,11 +115,13 @@ export async function apiFetch<T>(
       body = undefined;
     }
 
-    throw new ApiError(
+    const apiError = new ApiError(
       `API error: ${response.status} ${response.statusText}`,
       response.status,
       body,
     );
+    logAppError('api-fetch', apiError, { url, status: response.status });
+    throw apiError;
   }
 
   if (response.status === 204) {

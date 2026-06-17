@@ -19,6 +19,7 @@ import { useProfile } from '@/hooks/queries/useProfile';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
+import { isDiagnosticsEnabled } from '@/lib/diagnostics';
 import { colors, spacing } from '@/lib/theme';
 
 type MenuItem = {
@@ -82,6 +83,23 @@ const MENU_SECTIONS: Array<{
     ],
   },
 ];
+
+function getMenuSections() {
+  const sections = [...MENU_SECTIONS];
+  if (isDiagnosticsEnabled()) {
+    sections.push({
+      title: 'Testes',
+      items: [
+        {
+          icon: { ios: 'ladybug.fill', android: 'bug_report', web: 'bug_report' },
+          label: 'Log de diagnóstico',
+          route: '/settings/diagnostics',
+        },
+      ],
+    });
+  }
+  return sections;
+}
 
 export default function PerfilScreen() {
   const { signOut } = useAuth();
@@ -183,7 +201,7 @@ export default function PerfilScreen() {
             </View>
           </Card>
 
-          {MENU_SECTIONS.map((section) => (
+          {getMenuSections().map((section) => (
             <View key={section.title} style={styles.section}>
               <SectionHeader title={section.title} />
               <Card variant="outlined" padding="sm">

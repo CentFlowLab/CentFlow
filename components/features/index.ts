@@ -1,0 +1,1 @@
+export { FeatureAreaGate } from './FeatureAreaGate';

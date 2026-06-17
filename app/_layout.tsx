@@ -14,11 +14,13 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect } from '@/components/app';
+import { DiagnosticsBootstrap, DiagnosticOverlay } from '@/components/diagnostics';
 import { AuthLoadingScreen } from '@/components/auth';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
 import { queryClient } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { logAppError } from '@/lib/diagnostics';
 import { PreferencesProvider } from '@/lib/preferences/PreferencesProvider';
 import { colors } from '@/lib/theme';
 export const unstable_settings = {
@@ -45,9 +47,7 @@ const CentFlowTheme = {
 };
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
-  if (__DEV__) {
-    console.error('[CentFlow] ErrorBoundary:', error);
-  }
+  logAppError('error-boundary', error);
 
   const devHint =
     __DEV__ && error instanceof Error && error.message
@@ -79,8 +79,10 @@ export default function RootLayout() {
               <PreferencesProvider>
                 <ThemeProvider value={CentFlowTheme}>
                   <StatusBar style="light" />
+                  <DiagnosticsBootstrap />
                   <AndroidNavigationBarEffect />
                   <RootNavigator />
+                  <DiagnosticOverlay />
                 </ThemeProvider>
               </PreferencesProvider>
             </ToastProvider>
