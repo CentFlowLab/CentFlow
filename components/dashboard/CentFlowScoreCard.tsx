@@ -1,7 +1,8 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { CentFlowScoreResult } from '@/lib/domain/financial';
+import { buildScoreExplanation } from '@/lib/domain/financial/score-explain';
 import { colors, radius, spacing } from '@/lib/theme';
 
 type CentFlowScoreCardProps = {
@@ -9,6 +10,7 @@ type CentFlowScoreCardProps = {
   levelLabel: string;
   nextLevelLabel?: string | null;
   progressPercent: number;
+  onPress?: () => void;
 };
 
 const BAND_COLORS = {
@@ -23,21 +25,24 @@ export function CentFlowScoreCard({
   levelLabel,
   nextLevelLabel,
   progressPercent,
+  onPress,
 }: CentFlowScoreCardProps) {
   const accent = BAND_COLORS[score.band];
+  const { earned, missing } = buildScoreExplanation(score);
+  const topEarned = earned.slice(0, 2);
 
-  return (
-    <Card variant="elevated" style={styles.card}>
+  const content = (
+    <>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerMain}>
           <Text variant="label" color="textMuted">
             CentFlow Score
           </Text>
           <View style={styles.scoreRow}>
-            <Text variant="display" style={{ color: accent }}>
+            <Text variant="h1" style={{ color: accent }}>
               {score.score}
             </Text>
-            <Text variant="h3" color="textMuted">
+            <Text variant="bodyMedium" color="textMuted">
               /100
             </Text>
           </View>
@@ -51,6 +56,16 @@ export function CentFlowScoreCard({
           </Text>
         </View>
       </View>
+
+      {topEarned.length > 0 ? (
+        <View style={styles.preview}>
+          {topEarned.map((line) => (
+            <Text key={line.key} variant="caption" color="textSecondary">
+              +{line.points} {line.label.toLowerCase()}
+            </Text>
+          ))}
+        </View>
+      ) : null}
 
       {nextLevelLabel ? (
         <View style={styles.progressBlock}>
@@ -67,7 +82,29 @@ export function CentFlowScoreCard({
           </View>
         </View>
       ) : null}
-    </Card>
+
+      {onPress ? (
+        <Text variant="caption" color="primary">
+          Como melhorar{missing.length > 0 ? ` · +${missing.length} áreas` : ''} →
+        </Text>
+      ) : null}
+    </>
+  );
+
+  if (!onPress) {
+    return (
+      <Card variant="elevated" style={styles.card}>
+        {content}
+      </Card>
+    );
+  }
+
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+      <Card variant="elevated" style={styles.card}>
+        {content}
+      </Card>
+    </Pressable>
   );
 }
 
@@ -76,10 +113,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginBottom: spacing.lg,
   },
+  pressed: {
+    opacity: 0.92,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: spacing.md,
+  },
+  headerMain: {
+    flex: 1,
+    gap: spacing.xs,
   },
   scoreRow: {
     flexDirection: 'row',
@@ -94,6 +138,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: colors.surface,
   },
+  preview: {
+    gap: 2,
+    paddingTop: spacing.xs,
+  },
   progressBlock: {
     gap: spacing.sm,
   },
@@ -102,7 +150,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   track: {
-    height: 8,
+    height: 6,
     borderRadius: radius.full,
     backgroundColor: colors.surface,
     overflow: 'hidden',

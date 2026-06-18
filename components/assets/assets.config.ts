@@ -35,13 +35,13 @@ export const ASSETS_EMPTY_CONFIG: Record<AssetsTab, AssetsEmptyConfig> = {
     icon: { ios: 'shield.fill', android: 'verified_user', web: 'verified_user' },
     title: 'Guarda as tuas garantias',
     description:
-      'Regista produtos com data de validade e evita perder direitos por esquecimento.',
+      'Digitaliza talões para criar movimentos e guardar garantias automaticamente — com alertas antes de expirarem.',
     actionLabel: 'Adicionar garantia',
     secondaryActionLabel: 'Como funciona',
     highlights: [
+      'OCR lê o talão e preenche dados',
       'Alertas antes da expiração',
-      'Histórico por produto',
-      'Integrado com o dashboard',
+      'Histórico por produto e loja',
     ],
   },
   inventario: {

@@ -15,14 +15,15 @@ type GoalsSectionProps = {
   goals: Goal[];
   onEdit?: (goal: Goal) => void;
   onLearnMore?: () => void;
+  onPrimaryAction?: () => void;
   onDelete?: (goal: Goal) => void;
 };
 
-export function GoalsSection({ goals, onEdit, onLearnMore, onDelete }: GoalsSectionProps) {
+export function GoalsSection({ goals, onEdit, onLearnMore, onPrimaryAction, onDelete }: GoalsSectionProps) {
   if (goals.length === 0) {
     return (
       <View style={styles.container}>
-        <GoalsEmptyState onLearnMore={onLearnMore} />
+        <GoalsEmptyState onLearnMore={onLearnMore} onPrimaryAction={onPrimaryAction} />
       </View>
     );
   }

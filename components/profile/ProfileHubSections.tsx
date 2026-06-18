@@ -2,18 +2,21 @@ import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Button, Card, SectionHeader, Text } from '@/components/ui';
+import { Card, SectionHeader, Text } from '@/components/ui';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useAuth } from '@/lib/auth';
+import { getAppVariant } from '@/lib/config/app-variant';
 import { FEATURE_AREA_CONFIG, ALL_FEATURE_AREAS } from '@/lib/onboarding/constants';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
 import { getCountryLabel, getCurrencyLabel } from '@/lib/preferences/config';
 import { colors, radius, spacing } from '@/lib/theme';
+import { formatDateShort } from '@/lib/utils/format';
 
 type ProfileHubSectionsProps = {
   name: string;
@@ -22,16 +25,45 @@ type ProfileHubSectionsProps = {
   activatingFeature?: FeatureAreaId | null;
 };
 
-function StatCell({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.statCell}>
+function getPlanLabel(): string {
+  const variant = getAppVariant();
+  if (variant === 'beta') return 'CentFlow Beta';
+  if (variant === 'development') return 'CentFlow Dev';
+  return 'CentFlow';
+}
+
+function StatCell({
+  label,
+  value,
+  onPress,
+}: {
+  label: string;
+  value: number;
+  onPress?: () => void;
+}) {
+  const content = (
+    <>
       <Text variant="h3" color="primary">
         {value}
       </Text>
       <Text variant="caption" color="textMuted" style={styles.statLabel}>
         {label}
       </Text>
-    </View>
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={styles.statCell}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.statCell, pressed && styles.statCellPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}>
+      {content}
+    </Pressable>
   );
 }
 
@@ -44,6 +76,7 @@ export function ProfileHubSections({
   const { isAuthenticated } = useAuth();
   const { data: profile } = useProfile();
   const { data: preferences } = useUserPreferences();
+  const { data: onboardingAnswers } = useOnboardingAnswers();
   const { data: transactions = [] } = useTransactions('all');
   const { data: liabilities } = useLiabilities();
   const { data: assets } = useAssets();
@@ -55,9 +88,16 @@ export function ProfileHubSections({
   const activeGoals =
     assets?.goals.filter((goal) => goal.current < goal.target).length ?? 0;
   const warrantiesCount = assets?.warranties.length ?? 0;
+  const activeFeatures = ALL_FEATURE_AREAS.filter(
+    (id) => isFeatureActive(id) || enabledFeatures.includes(id),
+  ).length;
 
   const region = preferences?.region ?? 'PT';
   const currency = getCurrencyLabel(profile?.currency ?? 'EUR');
+  const memberSince = onboardingAnswers?.completedAt
+    ? formatDateShort(onboardingAnswers.completedAt)
+    : null;
+  const planLabel = getPlanLabel();
 
   return (
     <>
@@ -77,18 +117,23 @@ export function ProfileHubSections({
           <Text variant="caption" color="textSecondary">
             {email}
           </Text>
-          <View style={styles.accountRow}>
+          <View style={styles.metaRow}>
             <View style={styles.statusPill}>
               <Text variant="caption" color="primary">
                 {isAuthenticated ? 'Conta activa' : 'Sessão pendente'}
               </Text>
             </View>
+            {memberSince ? (
+              <Text variant="caption" color="textMuted">
+                Desde {memberSince}
+              </Text>
+            ) : null}
           </View>
         </View>
       </Card>
 
       <View style={styles.section}>
-        <SectionHeader title="Preferências regionais" />
+        <SectionHeader title="Preferências" />
         <Card variant="outlined" padding="sm">
           <Pressable
             onPress={() => router.push('/settings/currency-region')}
@@ -112,11 +157,48 @@ export function ProfileHubSections({
               size={16}
             />
           </Pressable>
+          <Pressable
+            onPress={() => router.push('/settings/personal-data')}
+            style={({ pressed }) => [styles.menuRow, styles.menuRowBorder, pressed && styles.menuRowPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Dados pessoais">
+            <SymbolView
+              name={{ ios: 'person.crop.circle', android: 'person', web: 'person' }}
+              tintColor={colors.textSecondary}
+              size={22}
+            />
+            <View style={styles.menuText}>
+              <Text variant="bodyMedium">Dados pessoais</Text>
+              <Text variant="caption" color="textMuted">
+                Nome, email e conta
+              </Text>
+            </View>
+            <SymbolView
+              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+              tintColor={colors.textMuted}
+              size={16}
+            />
+          </Pressable>
         </Card>
       </View>
 
       <View style={styles.section}>
         <SectionHeader title="A tua CentFlow" />
+        <Card variant="outlined" style={styles.planCard}>
+          <View style={styles.planRow}>
+            <View>
+              <Text variant="bodyMedium">{planLabel}</Text>
+              <Text variant="caption" color="textMuted">
+                {activeFeatures} de {ALL_FEATURE_AREAS.length} áreas activas
+              </Text>
+            </View>
+            <View style={styles.planBadge}>
+              <Text variant="caption" color="primary">
+                Gratuito
+              </Text>
+            </View>
+          </View>
+        </Card>
         <Card variant="outlined" style={styles.featuresCard}>
           {ALL_FEATURE_AREAS.map((featureId, index) => {
             const config = FEATURE_AREA_CONFIG[featureId];
@@ -139,14 +221,16 @@ export function ProfileHubSections({
                 {active ? (
                   <View style={styles.activeDot} />
                 ) : (
-                  <Button
-                    label="Activar"
-                    variant="ghost"
-                    size="sm"
-                    loading={activatingFeature === featureId}
-                    disabled={activatingFeature !== null}
+                  <Pressable
                     onPress={() => onActivateFeature(featureId)}
-                  />
+                    disabled={activatingFeature !== null}
+                    style={({ pressed }) => [styles.activateLink, pressed && styles.menuRowPressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Activar ${config.label}`}>
+                    <Text variant="caption" color="primary">
+                      {activatingFeature === featureId ? '…' : 'Activar'}
+                    </Text>
+                  </Pressable>
                 )}
               </View>
             );
@@ -155,14 +239,34 @@ export function ProfileHubSections({
       </View>
 
       <View style={styles.section}>
-        <SectionHeader title="Resumo pessoal" />
+        <SectionHeader title="Estatísticas" subtitle="O teu painel pessoal" />
         <Card variant="outlined" style={styles.statsCard}>
           <View style={styles.statsGrid}>
-            <StatCell label="Movimentos" value={transactions.length} />
-            <StatCell label="Subscrições" value={activeSubscriptions} />
-            <StatCell label="Objetivos" value={activeGoals} />
-            <StatCell label="Garantias" value={warrantiesCount} />
-            <StatCell label="Créditos" value={activeCredits} />
+            <StatCell
+              label="Movimentos"
+              value={transactions.length}
+              onPress={() => router.push('/(tabs)/movimentos')}
+            />
+            <StatCell
+              label="Objetivos"
+              value={activeGoals}
+              onPress={() => router.push('/(tabs)/ativos?tab=objetivos')}
+            />
+            <StatCell
+              label="Subscrições"
+              value={activeSubscriptions}
+              onPress={() => router.push('/(tabs)/movimentos?view=subscricoes')}
+            />
+            <StatCell
+              label="Garantias"
+              value={warrantiesCount}
+              onPress={() => router.push('/(tabs)/ativos?tab=garantias')}
+            />
+            <StatCell
+              label="Créditos"
+              value={activeCredits}
+              onPress={() => router.push('/(tabs)/movimentos?view=creditos')}
+            />
           </View>
         </Card>
       </View>
@@ -175,7 +279,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   avatarLarge: {
     width: 64,
@@ -191,8 +295,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
-  accountRow: {
+  metaRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
     marginTop: spacing.xs,
   },
   statusPill: {
@@ -202,7 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryMuted,
   },
   section: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   menuRow: {
     flexDirection: 'row',
@@ -211,12 +318,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.md,
   },
+  menuRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   menuRowPressed: {
     backgroundColor: colors.surfaceHighlight,
   },
   menuText: {
     flex: 1,
     gap: spacing.xs,
+  },
+  planCard: {
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+  },
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  planBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryMuted,
   },
   featuresCard: {
     paddingVertical: spacing.xs,
@@ -246,17 +373,26 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.primary,
   },
+  activateLink: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
   statsCard: {
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   statCell: {
     minWidth: '28%',
     gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+  },
+  statCellPressed: {
+    backgroundColor: colors.surfaceHighlight,
   },
   statLabel: {
     maxWidth: 96,

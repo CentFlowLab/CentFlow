@@ -8,36 +8,33 @@ export function DashboardSkeleton() {
   return (
     <View style={styles.container}>
       <Card variant="elevated" style={styles.heroCard}>
-        <Skeleton width="40%" height={12} />
-        <Skeleton width="70%" height={36} style={styles.mtMd} />
-        <Skeleton width="30%" height={14} style={styles.mtSm} />
+        <Skeleton width="35%" height={12} />
+        <Skeleton width="65%" height={40} style={styles.mtSm} />
+        <Skeleton width="45%" height={14} style={styles.mtSm} />
         <View style={styles.breakdownRow}>
-          <Skeleton width="45%" height={40} />
-          <Skeleton width="45%" height={40} />
+          <Skeleton width="45%" height={36} />
+          <Skeleton width="45%" height={36} />
         </View>
-        <Skeleton width={120} height={40} style={styles.mtMd} />
       </Card>
 
-      <View style={styles.metricsGrid}>
-        {[1, 2, 3].map((i) => (
-          <Card key={i} variant="elevated" style={styles.metricCard}>
-            <Skeleton width={36} height={36} />
-            <Skeleton width="60%" height={10} style={styles.mtSm} />
-            <Skeleton width="80%" height={18} style={styles.mtSm} />
-          </Card>
+      <Card variant="elevated" style={styles.assistantCard}>
+        <Skeleton width="30%" height={12} />
+        {[1, 2].map((i) => (
+          <View key={i} style={styles.insightRow}>
+            <Skeleton width={28} height={28} borderRadius={radius.md} />
+            <SkeletonGroup gap={spacing.xs} style={styles.insightText}>
+              <Skeleton width="75%" height={14} />
+              <Skeleton width="90%" height={12} />
+            </SkeletonGroup>
+          </View>
         ))}
-      </View>
+      </Card>
 
-      <Skeleton width="55%" height={16} style={styles.mtLg} />
-      {[1, 2].map((i) => (
-        <Card key={i} variant="outlined" style={styles.alertCard}>
-          <Skeleton width={40} height={40} />
-          <SkeletonGroup gap={spacing.sm} style={styles.alertContent}>
-            <Skeleton width="70%" height={14} />
-            <Skeleton width="90%" height={12} />
-          </SkeletonGroup>
-        </Card>
-      ))}
+      <Card variant="elevated" style={styles.scoreCard}>
+        <Skeleton width="40%" height={12} />
+        <Skeleton width="25%" height={32} style={styles.mtSm} />
+        <Skeleton width="100%" height={6} style={styles.mtMd} />
+      </Card>
     </View>
   );
 }
@@ -48,33 +45,29 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     gap: spacing.xs,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  assistantCard: {
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  scoreCard: {
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
   },
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  metricCard: {
-    flex: 1,
-    minWidth: '30%',
-    gap: spacing.xs,
-  },
-  alertCard: {
+  insightRow: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginBottom: spacing.md,
+    alignItems: 'center',
   },
-  alertContent: {
+  insightText: {
     flex: 1,
   },
   mtSm: { marginTop: spacing.sm },
   mtMd: { marginTop: spacing.md },
-  mtLg: { marginTop: spacing.lg },
 });

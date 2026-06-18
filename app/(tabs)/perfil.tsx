@@ -54,6 +54,11 @@ const MENU_SECTIONS: Array<{
         route: '/settings/security',
       },
       {
+        icon: { ios: 'hand.raised.fill', android: 'privacy_tip', web: 'privacy_tip' },
+        label: 'Privacidade',
+        route: '/settings/privacy',
+      },
+      {
         icon: { ios: 'doc.richtext', android: 'picture_as_pdf', web: 'picture_as_pdf' },
         label: 'Exportar PDF',
         route: '/settings/export-pdf',
@@ -265,10 +270,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   profileProgress: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   section: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   menuItem: {
     flexDirection: 'row',

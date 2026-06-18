@@ -15,6 +15,7 @@ type NetWorthHeroCardProps = {
   weeklySpending?: number;
   hasActivity?: boolean;
   onAddMovement?: () => void;
+  onScanReceipt?: () => void;
 };
 
 function getNetWorthColor(value: number): string {
@@ -36,6 +37,7 @@ export function NetWorthHeroCard({
   weeklySpending = 0,
   hasActivity = true,
   onAddMovement,
+  onScanReceipt,
 }: NetWorthHeroCardProps) {
   const netWorthColor = getNetWorthColor(netWorth.netWorth);
   const changeColor = getChangeColor(changePercent);
@@ -62,15 +64,27 @@ export function NetWorthHeroCard({
             Começa por adicionar o teu primeiro movimento
           </Text>
           <Text variant="body" color="textSecondary" style={styles.emptyDescription}>
-            Em segundos vês saldo, evolução e insights personalizados sobre os teus gastos.
+            Digitaliza um talão ou regista manualmente — em segundos vês saldo, evolução e insights.
           </Text>
-          {onAddMovement ? (
-            <Button
-              label="Adicionar movimento"
-              onPress={onAddMovement}
-              fullWidth
-              style={styles.emptyButton}
-            />
+          {onAddMovement || onScanReceipt ? (
+            <View style={styles.emptyActions}>
+              {onScanReceipt ? (
+                <Button
+                  label="Digitalizar talão"
+                  onPress={onScanReceipt}
+                  fullWidth
+                />
+              ) : null}
+              {onAddMovement ? (
+                <Button
+                  label="Adicionar movimento"
+                  variant={onScanReceipt ? 'secondary' : 'primary'}
+                  onPress={onAddMovement}
+                  fullWidth
+                  style={styles.emptyButton}
+                />
+              ) : null}
+            </View>
           ) : null}
       </Card>
     );
@@ -243,5 +257,9 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     marginTop: spacing.xs,
+  },
+  emptyActions: {
+    width: '100%',
+    gap: spacing.sm,
   },
 });

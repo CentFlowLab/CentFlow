@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActionCenterSheet,
   CentFlowScoreCard,
+  CentFlowScoreSheet,
   DashboardHeaderLeading,
   DashboardFinancialSnapshot,
   DashboardSkeleton,
@@ -85,6 +86,7 @@ export default function InicioScreen() {
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [actionCenterVisible, setActionCenterVisible] = useState(false);
+  const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
 
   const { score, levelProgress, assistant } = useCentFlowIntelligence();
 
@@ -190,6 +192,9 @@ export default function InicioScreen() {
         break;
       case 'review_subscriptions':
         router.push('/(tabs)/movimentos?view=subscricoes');
+        break;
+      case 'view_warranties':
+        router.push('/(tabs)/ativos?tab=garantias');
         break;
       case 'view_plan':
         setActionCenterVisible(true);
@@ -302,6 +307,16 @@ export default function InicioScreen() {
         <ScreenContainer scrollable={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
+          <NetWorthHeroCard
+            netWorth={netWorth}
+            changePercent={netWorthChangePercent}
+            monthlyChange={netWorthChangeThisMonth}
+            weeklySpending={weeklySpending}
+            hasActivity={hasActivity}
+            onAddMovement={openAddMovement}
+            onScanReceipt={openReceiptScanner}
+          />
+
           <HomeAssistantCard
             plan={assistant}
             onAction={handleAssistantAction}
@@ -313,21 +328,17 @@ export default function InicioScreen() {
             levelLabel={levelProgress.level.label}
             nextLevelLabel={levelProgress.nextLevel?.label ?? null}
             progressPercent={levelProgress.progressPercent}
-          />
-
-          <NetWorthHeroCard
-            netWorth={netWorth}
-            changePercent={netWorthChangePercent}
-            monthlyChange={netWorthChangeThisMonth}
-            weeklySpending={weeklySpending}
-            hasActivity={hasActivity}
-            onAddMovement={openAddMovement}
+            onPress={() => setScoreSheetVisible(true)}
           />
 
           <DashboardFinancialSnapshot trends={analysisData?.trends ?? null} />
 
           {showInsight && homeInsight ? (
             <HomePersonalizedInsightCard insight={homeInsight} />
+          ) : null}
+
+          {showGoalHighlight && featuredGoal ? (
+            <HomeGoalHighlightCard goal={featuredGoal} />
           ) : null}
 
           <SectionHeader
@@ -347,6 +358,7 @@ export default function InicioScreen() {
             ))
           ) : (
             <EmptyState
+              compact
               icon={
                 <SymbolView
                   name={{
@@ -355,19 +367,17 @@ export default function InicioScreen() {
                     web: 'receipt_long',
                   }}
                   tintColor={colors.primary}
-                  size={32}
+                  size={28}
                 />
               }
               title="Sem movimentos recentes"
               description={noTransactionsMessage}
               actionLabel="Adicionar movimento"
               onAction={openAddMovement}
+              secondaryActionLabel="Digitalizar talão"
+              onSecondaryAction={openReceiptScanner}
             />
           )}
-
-          {showGoalHighlight && featuredGoal ? (
-            <HomeGoalHighlightCard goal={featuredGoal} />
-          ) : null}
 
           <HomeStoriesRow unread={hasUnread} onStoryPress={handleStoryPress} />
 
@@ -445,6 +455,13 @@ export default function InicioScreen() {
         visible={actionCenterVisible}
         onClose={() => setActionCenterVisible(false)}
         onSelect={handleAssistantAction}
+      />
+
+      <CentFlowScoreSheet
+        visible={scoreSheetVisible}
+        score={score}
+        levelLabel={levelProgress.level.label}
+        onClose={() => setScoreSheetVisible(false)}
       />
     </View>
   );

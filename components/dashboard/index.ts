@@ -1,5 +1,6 @@
 export { ActionCenterSheet } from './ActionCenterSheet';
 export { CentFlowScoreCard } from './CentFlowScoreCard';
+export { CentFlowScoreSheet } from './CentFlowScoreSheet';
 export { HomeAssistantCard } from './HomeAssistantCard';
 export { DemoModeBadge } from './DemoModeBadge';
 export { HomeAssetsSummaryCard } from './HomeAssetsSummaryCard';

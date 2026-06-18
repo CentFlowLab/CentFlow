@@ -32,6 +32,7 @@ export type AssistantActionId =
   | 'add_subscription'
   | 'create_goal'
   | 'review_subscriptions'
+  | 'view_warranties'
   | 'view_plan';
 
 export type AssistantInsight = {
@@ -60,4 +61,8 @@ export type CentFlowScoreInput = {
   goals: Array<{ current: number; target: number }>;
   subscriptionsRenewingSoon: number;
   featuredGoalGap?: number | null;
+  warrantiesExpiringSoon?: number;
+  weeklyExpenseDelta?: number | null;
+  goalsCount?: number;
+  transactionCount?: number;
 };

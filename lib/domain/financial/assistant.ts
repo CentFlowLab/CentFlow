@@ -5,6 +5,8 @@ import { calculateCentFlowScore } from './centflow-score';
 type AssistantInput = CentFlowScoreInput & {
   firstName: string;
   subscriptionCount: number;
+  goalsCount: number;
+  transactionCount: number;
 };
 
 function buildSavingsTip(input: AssistantInput, score: CentFlowScoreResult): string | undefined {
@@ -18,6 +20,58 @@ function buildSavingsTip(input: AssistantInput, score: CentFlowScoreResult): str
     return 'Tenta reduzir 5% das despesas fixas este mês.';
   }
   return undefined;
+}
+
+function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] {
+  const items: AssistantInsight[] = [];
+
+  if (input.transactionCount === 0) {
+    items.push({
+      id: 'start-movement',
+      emoji: '✏️',
+      title: 'Adiciona o teu primeiro movimento',
+      description: 'Começa por registar uma despesa ou rendimento para ver o património actualizado.',
+      priority: 'high',
+      actionId: 'add_expense',
+      actionLabel: 'Adicionar movimento',
+    });
+  }
+
+  items.push({
+    id: 'start-receipt',
+    emoji: '📸',
+    title: 'Digitaliza um talão',
+    description: 'OCR cria movimento automaticamente e pode guardar a garantia.',
+    priority: 'high',
+    actionId: 'scan_receipt',
+    actionLabel: 'Digitalizar talão',
+  });
+
+  if (input.goalsCount === 0) {
+    items.push({
+      id: 'start-goal',
+      emoji: '🎯',
+      title: 'Cria um objetivo de poupança',
+      description: 'Define uma meta concreta e acompanha o progresso semana a semana.',
+      priority: 'medium',
+      actionId: 'create_goal',
+      actionLabel: 'Criar objetivo',
+    });
+  }
+
+  if (input.subscriptionCount === 0) {
+    items.push({
+      id: 'start-sub',
+      emoji: '📅',
+      title: 'Organiza as tuas subscrições',
+      description: 'Regista serviços recorrentes para controlar o orçamento mensal.',
+      priority: 'medium',
+      actionId: 'add_subscription',
+      actionLabel: 'Adicionar subscrição',
+    });
+  }
+
+  return items.slice(0, 3);
 }
 
 export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPlan {
@@ -48,6 +102,33 @@ export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPl
     });
   }
 
+  const warrantiesExpiring = input.warrantiesExpiringSoon ?? 0;
+  if (warrantiesExpiring > 0) {
+    insights.push({
+      id: 'warranty-expiry',
+      emoji: '🛡️',
+      title: `${warrantiesExpiring} garantia${warrantiesExpiring > 1 ? 's' : ''} a expirar`,
+      description: 'Revê validades antes de perderes direitos de reparação.',
+      priority: 'high',
+      actionId: 'view_warranties',
+      actionLabel: 'Ver garantias',
+    });
+  }
+
+  if (
+    input.weeklyExpenseDelta != null &&
+    input.weeklyExpenseDelta < 0 &&
+    input.transactionCount > 0
+  ) {
+    insights.push({
+      id: 'weekly-down',
+      emoji: '📉',
+      title: 'Registaste menos despesas esta semana',
+      description: `Gastaste cerca de ${Math.abs(Math.round(input.weeklyExpenseDelta))}€ menos que na semana passada.`,
+      priority: 'low',
+    });
+  }
+
   if (score.breakdown.subscriptions < 12 && input.subscriptionCount > 0) {
     insights.push({
       id: 'subs-load',
@@ -61,19 +142,17 @@ export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPl
   }
 
   if (insights.length === 0) {
-    insights.push({
-      id: 'daily-action',
-      emoji: '📸',
-      title: 'Digitaliza a próxima compra',
-      description: 'OCR cria movimento e pode guardar garantia automaticamente.',
-      priority: 'low',
-      actionId: 'scan_receipt',
-      actionLabel: 'Digitalizar talão',
-    });
+    insights.push(...buildGettingStartedInsights(input));
   }
 
+  const hour = new Date().getHours();
+  let greeting = `Olá, ${input.firstName}`;
+  if (hour < 12) greeting = `Bom dia, ${input.firstName}`;
+  else if (hour < 19) greeting = `Boa tarde, ${input.firstName}`;
+  else greeting = `Boa noite, ${input.firstName}`;
+
   return {
-    greeting: `Bom dia ${input.firstName} 👋`,
+    greeting,
     insights: insights.slice(0, 3),
     savingsTip: buildSavingsTip(input, score),
   };

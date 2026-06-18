@@ -13,6 +13,7 @@ type EmptyStateProps = {
   onAction?: () => void;
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
+  compact?: boolean;
 };
 
 export function EmptyState({
@@ -23,11 +24,12 @@ export function EmptyState({
   onAction,
   secondaryActionLabel,
   onSecondaryAction,
+  compact = false,
 }: EmptyStateProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.iconWrapper}>{icon}</View>
-      <Text variant="h2" align="center" style={styles.title}>
+    <View style={[styles.container, compact && styles.containerCompact]}>
+      <View style={[styles.iconWrapper, compact && styles.iconWrapperCompact]}>{icon}</View>
+      <Text variant={compact ? 'h3' : 'h2'} align="center" style={styles.title}>
         {title}
       </Text>
       <Text variant="body" color="textSecondary" align="center" style={styles.description}>
@@ -61,6 +63,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing['4xl'],
     gap: spacing.md,
   },
+  containerCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    gap: spacing.sm,
+  },
   iconWrapper: {
     width: 72,
     height: 72,
@@ -69,6 +76,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
+  },
+  iconWrapperCompact: {
+    width: 56,
+    height: 56,
+    marginBottom: spacing.xs,
   },
   title: {
     maxWidth: 280,

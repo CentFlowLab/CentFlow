@@ -15,16 +15,18 @@ const EXAMPLE_GOALS = [
 
 type GoalsEmptyStateProps = {
   onLearnMore?: () => void;
+  onPrimaryAction?: () => void;
 };
 
-export function GoalsEmptyState({ onLearnMore }: GoalsEmptyStateProps) {
+export function GoalsEmptyState({ onLearnMore, onPrimaryAction }: GoalsEmptyStateProps) {
   const { data: answers } = useOnboardingAnswers();
   const personalized = getPersonalizedEmptyStateCopy('objetivos', answers ?? null);
 
   const title = personalized.title || 'Ainda sem objetivos';
   const description =
     personalized.description ||
-    'Cria metas de poupança com valor alvo, data prevista e acompanha o progresso em tempo real. Usa o botão + no topo para adicionar.';
+    'Cria uma meta de poupança e acompanha o teu progresso em tempo real.';
+  const actionLabel = personalized.actionLabel || 'Criar objetivo';
 
   return (
     <View style={styles.container}>
@@ -81,6 +83,9 @@ export function GoalsEmptyState({ onLearnMore }: GoalsEmptyStateProps) {
       </Card>
 
       <View style={styles.actions}>
+        {onPrimaryAction ? (
+          <Button label={actionLabel} onPress={onPrimaryAction} fullWidth size="lg" />
+        ) : null}
         {onLearnMore ? (
           <Button label="Como funcionam os objetivos?" variant="ghost" onPress={onLearnMore} fullWidth />
         ) : null}

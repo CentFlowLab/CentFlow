@@ -10,16 +10,23 @@ const EXAMPLE_PRODUCTS = ['Portátil', 'Frigorífico', 'Telemóvel', 'Eletrodom�
 
 type WarrantiesEmptyStateProps = {
   onLearnMore?: () => void;
+  onPrimaryAction?: () => void;
+  onScanReceipt?: () => void;
 };
 
-export function WarrantiesEmptyState({ onLearnMore }: WarrantiesEmptyStateProps) {
+export function WarrantiesEmptyState({
+  onLearnMore,
+  onPrimaryAction,
+  onScanReceipt,
+}: WarrantiesEmptyStateProps) {
   const { data: answers } = useOnboardingAnswers();
   const personalized = getPersonalizedEmptyStateCopy('garantias', answers ?? null);
 
   const title = personalized.title || 'Protege as tuas compras';
   const description =
     personalized.description ||
-    'Regista garantias com data de expiração, associa ao talão original e recebe alertas antes que expirem. Usa o botão + no topo para adicionar.';
+    'Regista garantias com data de expiração, associa ao talão original e recebe alertas antes que expirem.';
+  const actionLabel = personalized.actionLabel || 'Adicionar garantia';
 
   return (
     <View style={styles.container}>
@@ -72,6 +79,18 @@ export function WarrantiesEmptyState({ onLearnMore }: WarrantiesEmptyStateProps)
       </Card>
 
       <View style={styles.actions}>
+        {onScanReceipt ? (
+          <Button label="Digitalizar talão" onPress={onScanReceipt} fullWidth size="lg" />
+        ) : null}
+        {onPrimaryAction ? (
+          <Button
+            label={actionLabel}
+            variant={onScanReceipt ? 'secondary' : 'primary'}
+            onPress={onPrimaryAction}
+            fullWidth
+            size="lg"
+          />
+        ) : null}
         {onLearnMore ? (
           <Button label="Porque registar garantias?" variant="ghost" onPress={onLearnMore} fullWidth />
         ) : null}

@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-18T21:28:03.371Z -->
-<!-- Git: 9dcb13f (2026-06-18T21:31:25+01:00) -->
+<!-- Última geração: 2026-06-18T21:58:47.806Z -->
+<!-- Git: ce15d22 (2026-06-18T22:28:10+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 5 — Movimentos (OCR melhorado → UI confirmação)** |
-| Última geração | 2026-06-18T21:28:03.371Z |
+| Última geração | 2026-06-18T21:58:47.806Z |
 | Path do projeto | `C:\Users\EMANU\Documents\CentFlow App\centflow` |
-| Git commit | `9dcb13f` (2026-06-18T21:31:25+01:00) |
+| Git commit | `ce15d22` (2026-06-18T22:28:10+01:00) |
 
 ---
 
@@ -194,6 +194,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     ActionCenterSheet.tsx
     AttentionCard.tsx
     CentFlowScoreCard.tsx
+    CentFlowScoreSheet.tsx
     DashboardFinancialSnapshot.tsx
     DashboardGreeting.tsx
     DashboardHeaderLeading.tsx
@@ -433,6 +434,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       assistant.ts
       centflow-score.ts
       index.ts
+      score-explain.ts
       types.ts
     financial-profile.service.ts
     financial-profile.types.ts

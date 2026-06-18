@@ -14,9 +14,11 @@ export function HomeAssistantCard({ plan, onAction, onOpenActionCenter }: HomeAs
   return (
     <Card variant="elevated" style={styles.card}>
       <View style={styles.header}>
-        <Text variant="h3">{plan.greeting}</Text>
-        <Text variant="caption" color="textMuted">
-          O teu plano de hoje
+        <Text variant="label" color="textMuted">
+          Plano de hoje
+        </Text>
+        <Text variant="bodyMedium" color="textSecondary">
+          {plan.insights.length} {plan.insights.length === 1 ? 'acção' : 'acções'} para ti
         </Text>
       </View>
 

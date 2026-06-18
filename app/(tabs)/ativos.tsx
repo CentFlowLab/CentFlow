@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,7 +30,7 @@ import { colors, spacing } from '@/lib/theme';
 
 export default function AtivosScreen() {
   const insets = useSafeAreaInsets();
-  const { action } = useLocalSearchParams<{ action?: string }>();
+  const { action, tab } = useLocalSearchParams<{ action?: string; tab?: string }>();
   const handledAction = useRef(false);
   const [activeTab, setActiveTab] = useState<AssetsTab>('objetivos');
   const [goalFormVisible, setGoalFormVisible] = useState(false);
@@ -67,6 +67,12 @@ export default function AtivosScreen() {
     const config = ASSETS_EMPTY_CONFIG[activeTab];
     Alert.alert(config.title, config.highlights.join('\n\n• '));
   }
+
+  useEffect(() => {
+    if (tab === 'objetivos' || tab === 'garantias' || tab === 'inventario') {
+      setActiveTab(tab);
+    }
+  }, [tab]);
 
   useEffect(() => {
     if (handledAction.current || !action) return;
@@ -200,6 +206,7 @@ export default function AtivosScreen() {
                   goals={assets.goals}
                   onEdit={openEditGoal}
                   onLearnMore={handleLearnMore}
+                  onPrimaryAction={openCreateGoal}
                   onDelete={(goal) => deleteGoal.mutate(goal.id)}
                 />
               </FeatureAreaGate>
@@ -211,6 +218,8 @@ export default function AtivosScreen() {
                   warranties={assets.warranties}
                   onEdit={openEditWarranty}
                   onLearnMore={handleLearnMore}
+                  onPrimaryAction={openCreateWarranty}
+                  onScanReceipt={() => router.push('/(tabs)/movimentos?action=receipt')}
                   onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
                 />
               </FeatureAreaGate>

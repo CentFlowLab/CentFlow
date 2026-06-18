@@ -15,6 +15,8 @@ type WarrantiesSectionProps = {
   warranties: Warranty[];
   onEdit?: (warranty: Warranty) => void;
   onLearnMore?: () => void;
+  onPrimaryAction?: () => void;
+  onScanReceipt?: () => void;
   onDelete?: (warranty: Warranty) => void;
 };
 
@@ -22,6 +24,8 @@ export function WarrantiesSection({
   warranties,
   onEdit,
   onLearnMore,
+  onPrimaryAction,
+  onScanReceipt,
   onDelete,
 }: WarrantiesSectionProps) {
   const sortedWarranties = useMemo(() => sortWarrantiesByUrgency(warranties), [warranties]);
@@ -29,7 +33,11 @@ export function WarrantiesSection({
   if (warranties.length === 0) {
     return (
       <View style={styles.container}>
-        <WarrantiesEmptyState onLearnMore={onLearnMore} />
+        <WarrantiesEmptyState
+          onLearnMore={onLearnMore}
+          onPrimaryAction={onPrimaryAction}
+          onScanReceipt={onScanReceipt}
+        />
       </View>
     );
   }
