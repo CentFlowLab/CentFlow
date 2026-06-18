@@ -122,7 +122,7 @@ Login/Registo → (tabs) → se onboarding incompleto → /onboarding → (tabs)
 | `20240613000000_initial_schema.sql` | profiles, transactions, receipts, OCR |
 | `20240614000000_assets_schema.sql` | goals, warranties, inventory |
 | `20240615000000_warranties_receipt.sql` | ligação garantias ↔ recibos |
-| `20240616000000_user_preferences.sql` | push, região, tema, biometria |
+| `20240616000001_user_preferences.sql` | push, região, tema, biometria |
 | `20240617000000_onboarding_answers.sql` | respostas onboarding conversacional (JSONB) |
 
 **Tabelas principais:**
