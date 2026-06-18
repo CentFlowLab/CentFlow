@@ -42,6 +42,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 type DraggableBottomSheetProps = {
   visible: boolean;
   onClose: () => void;
+  /** Chamado quando o Modal desmonta após a animação de fecho (antes de abrir outro sheet). */
+  onDismissed?: () => void;
   /** Quando true, bloqueia swipe/backdrop e pede confirmação no X / voltar. */
   isDirty?: boolean;
   /** Retorna true para cancelar o fecho (ex.: voltar um passo interno). */
@@ -58,6 +60,7 @@ type DraggableBottomSheetProps = {
 export function DraggableBottomSheet({
   visible,
   onClose,
+  onDismissed,
   isDirty = false,
   onBeforeClose,
   header,
@@ -86,8 +89,9 @@ export function DraggableBottomSheet({
       translateY.value = 0;
       handlePulse.value = 0;
       if (notifyParent) onClose();
+      onDismissed?.();
     },
-    [handlePulse, onClose, translateY],
+    [handlePulse, onClose, onDismissed, translateY],
   );
 
   const animateOut = useCallback(

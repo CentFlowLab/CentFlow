@@ -1,4 +1,5 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { useCallback, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout/DraggableBottomSheet';
@@ -58,10 +59,25 @@ type QuickAddMenuSheetProps = {
 };
 
 export function QuickAddMenuSheet({ visible, onClose, onSelect }: QuickAddMenuSheetProps) {
+  const pendingActionRef = useRef<QuickAddActionId | null>(null);
+
+  const handleDismissed = useCallback(() => {
+    const action = pendingActionRef.current;
+    if (!action) return;
+    pendingActionRef.current = null;
+    onSelect(action);
+  }, [onSelect]);
+
+  function handleSelect(action: QuickAddActionId) {
+    pendingActionRef.current = action;
+    onClose();
+  }
+
   return (
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      onDismissed={handleDismissed}
       maxHeight="72%"
       header={(requestClose) => (
         <View style={styles.header}>
@@ -84,10 +100,7 @@ export function QuickAddMenuSheet({ visible, onClose, onSelect }: QuickAddMenuSh
         {ITEMS.map((item) => (
           <Pressable
             key={item.id}
-            onPress={() => {
-              onClose();
-              requestAnimationFrame(() => onSelect(item.id));
-            }}
+            onPress={() => handleSelect(item.id)}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             accessibilityRole="button"
             accessibilityLabel={item.label}>
