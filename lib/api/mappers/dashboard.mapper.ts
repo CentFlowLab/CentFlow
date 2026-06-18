@@ -164,6 +164,7 @@ export function mapNetWorth(raw: RawNetWorthResponse): NetWorthResult {
       accounts: toNumber(breakdown.accounts),
       inventory: toNumber(breakdown.inventory),
       investments: toNumber(breakdown.investments),
+      savings: toNumber(breakdown.savings ?? 0),
       liabilities: toNumber(breakdown.liabilities),
     },
     assetsByCategory,

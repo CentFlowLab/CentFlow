@@ -7,6 +7,7 @@ import { isSupabaseEnabled } from '@/lib/supabase';
 import { buildMockHomeScreenData, composeHomeScreenData } from '../mock-home';
 import { fetchAssetsData } from './assets.service';
 import { fetchDashboardData } from './dashboard.service';
+import { fetchCreditsForCurrentUser } from './liabilities-fetch';
 import { fetchTransactions } from './transaction.service';
 
 /**
@@ -18,13 +19,14 @@ export async function fetchHomeScreenData(): Promise<HomeScreenData> {
     return buildMockHomeScreenData();
   }
 
-  const [assets, transactions] = await Promise.all([
+  const [assets, transactions, credits] = await Promise.all([
     fetchAssetsData(),
     fetchTransactions('all'),
+    fetchCreditsForCurrentUser(),
   ]);
 
   if (isSupabaseEnabled()) {
-    const dashboard = composeDashboardFromLocalSources({ transactions, assets });
+    const dashboard = composeDashboardFromLocalSources({ transactions, assets, credits });
     return composeHomeScreenData(dashboard, assets, transactions, 'live');
   }
 

@@ -1,14 +1,19 @@
 export type AppLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+export type AppLogSeverity = 'low' | 'medium' | 'high' | 'critical';
+
 export type AppLogEntry = {
   id: string;
   timestamp: string;
   level: AppLogLevel;
+  severity: AppLogSeverity;
   source: string;
   message: string;
   stack?: string;
   context?: Record<string, unknown>;
 };
+
+import { withDiagnosticContext } from './runtime-context';
 
 const MAX_ENTRIES = 250;
 const listeners = new Set<(entries: AppLogEntry[]) => void>();
@@ -36,15 +41,26 @@ function formatArg(value: unknown): string {
   }
 }
 
-function pushEntry(entry: Omit<AppLogEntry, 'id' | 'timestamp'> & { timestamp?: string }) {
+function severityForLevel(level: AppLogLevel, context?: Record<string, unknown>): AppLogSeverity {
+  if (level === 'error') {
+    if (context?.isFatal === true) return 'critical';
+    return 'high';
+  }
+  if (level === 'warn') return 'medium';
+  return 'low';
+}
+
+function pushEntry(entry: Omit<AppLogEntry, 'id' | 'timestamp' | 'severity'> & { timestamp?: string; severity?: AppLogSeverity }) {
+  const mergedContext = entry.context ? withDiagnosticContext(entry.context) : withDiagnosticContext();
   const next: AppLogEntry = {
     id: `${Date.now()}-${++seq}`,
     timestamp: entry.timestamp ?? new Date().toISOString(),
     level: entry.level,
+    severity: entry.severity ?? severityForLevel(entry.level, mergedContext),
     source: entry.source,
     message: entry.message,
     stack: entry.stack,
-    context: entry.context,
+    context: mergedContext,
   };
 
   entries = [next, ...entries].slice(0, MAX_ENTRIES);
@@ -87,21 +103,34 @@ export function logAppError(
     source,
     message: err.message || 'Erro desconhecido',
     stack: err.stack,
-    context,
+    context: withDiagnosticContext(context),
   });
+}
+
+function captureConsoleStack(): string | undefined {
+  const stack = new Error().stack;
+  if (!stack) return undefined;
+  const lines = stack.split('\n').slice(3, 8);
+  return lines.length > 0 ? lines.join('\n') : undefined;
 }
 
 export function logFromConsole(level: AppLogLevel, args: unknown[], source = 'console') {
   const message = args.map(formatArg).join(' ');
-  return pushEntry({ level, source, message });
+  const stack = level === 'warn' || level === 'error' ? captureConsoleStack() : undefined;
+  return pushEntry({ level, source, message, stack });
 }
 
 export function exportAppLogText(): string {
   return getAppLogEntries()
     .map((entry) => {
-      const ctx = entry.context ? `\ncontext: ${JSON.stringify(entry.context)}` : '';
-      const stack = entry.stack ? `\n${entry.stack}` : '';
-      return `[${entry.timestamp}] ${entry.level.toUpperCase()} (${entry.source}) ${entry.message}${ctx}${stack}`;
+      const ctx = entry.context
+        ? Object.entries(entry.context)
+            .map(([key, value]) => `${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`)
+            .join('\n')
+        : '';
+      const stack = entry.stack ? `\nstack:\n${entry.stack}` : '';
+      const contextBlock = ctx ? `\n${ctx}` : '';
+      return `[${entry.timestamp}] ${entry.severity.toUpperCase()} ${entry.level.toUpperCase()} (${entry.source})\n${entry.message}${contextBlock}${stack}`;
     })
     .join('\n\n---\n\n');
 }
@@ -142,7 +171,8 @@ export function installGlobalDiagnostics(): void {
   };
 
   const rejectionHandler = (event: PromiseRejectionEvent | { reason?: unknown }) => {
-    logAppError('unhandled-rejection', event.reason ?? 'Promise rejection');
+    const reason = event.reason ?? 'Promise rejection';
+    logAppError('unhandled-rejection', reason, { component: 'promise' });
   };
 
   if (typeof globalThis.addEventListener === 'function') {
@@ -154,7 +184,10 @@ export function installGlobalDiagnostics(): void {
   if (errorUtils?.getGlobalHandler && errorUtils?.setGlobalHandler) {
     const defaultHandler = errorUtils.getGlobalHandler();
     errorUtils.setGlobalHandler((error, isFatal) => {
-      logAppError('global-handler', error, { isFatal: Boolean(isFatal) });
+      logAppError('global-handler', error, {
+        isFatal: Boolean(isFatal),
+        component: 'react-native',
+      });
       defaultHandler?.(error, isFatal);
     });
   }

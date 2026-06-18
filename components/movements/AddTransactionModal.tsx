@@ -1,11 +1,12 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
+import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { useProcessReceipt } from '@/hooks/useProcessReceipt';
 import { useReceiptImage } from '@/hooks/useReceiptImage';
 import { formHasAnyText } from '@/lib/forms';
@@ -28,6 +29,7 @@ import {
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { colors, radius, spacing } from '@/lib/theme';
 import { logDoctorValidationFailure } from '@/lib/doctor';
+import { setDiagnosticAction } from '@/lib/diagnostics';
 import { todayInputDate } from '@/lib/utils/format';
 
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
@@ -63,6 +65,8 @@ export function AddTransactionModal({
   presetFilter = 'all',
   onImportCsv,
 }: AddTransactionModalProps) {
+  useDiagnosticScreen(visible ? 'movement_create' : 'movement_create_closed');
+
   const createMutation = useCreateTransaction();
   const processReceipt = useProcessReceipt();
   const receiptImage = useReceiptImage();
@@ -118,7 +122,9 @@ export function AddTransactionModal({
     setIsUploadingOnly(false);
     setRetakePending(false);
     receiptImage.reset();
-    createMutation.reset();
+    if (!createMutation.isPending) {
+      createMutation.reset();
+    }
     processReceipt.reset();
     didAutoPick.current = false;
   }, [visible, lockedType]);
@@ -132,44 +138,12 @@ export function AddTransactionModal({
   }, [type, visible]);
 
   useEffect(() => {
-    setCategory('');
-  }, [type]);
-
-  useEffect(() => {
     if (!visible || !startWithReceiptPicker || didAutoPick.current) return;
     didAutoPick.current = true;
     receiptImage.showSourcePicker();
   }, [visible, startWithReceiptPicker]);
 
-  useEffect(() => {
-    if (!retakePending || !receiptImage.draft) return;
-    if (receiptImage.isPicking || receiptImage.isPreprocessing) return;
-
-    if (retakeBaselineUri.current === receiptImage.draft.localUri) {
-      setRetakePending(false);
-      retakeBaselineUri.current = null;
-      return;
-    }
-
-    setRetakePending(false);
-    retakeBaselineUri.current = null;
-    void handleProcessReceipt();
-  }, [
-    retakePending,
-    receiptImage.draft,
-    receiptImage.isPicking,
-    receiptImage.isPreprocessing,
-  ]);
-
-  function applyFormValues(values: ReceiptFormValues) {
-    setType(values.type);
-    setAmount(values.amount);
-    setCategory(values.category);
-    setDescription(values.description || values.merchantName);
-    setDate(values.date);
-  }
-
-  async function handleProcessReceipt() {
+  const handleProcessReceipt = useCallback(async () => {
     if (!receiptImage.draft) return;
 
     setApiError(null);
@@ -197,6 +171,35 @@ export function AddTransactionModal({
         }
       }
     }
+  }, [processReceipt, receiptImage.draft]);
+
+  useEffect(() => {
+    if (!retakePending || !receiptImage.draft) return;
+    if (receiptImage.isPicking || receiptImage.isPreprocessing) return;
+
+    if (retakeBaselineUri.current === receiptImage.draft.localUri) {
+      setRetakePending(false);
+      retakeBaselineUri.current = null;
+      return;
+    }
+
+    setRetakePending(false);
+    retakeBaselineUri.current = null;
+    void handleProcessReceipt();
+  }, [
+    retakePending,
+    receiptImage.draft,
+    receiptImage.isPicking,
+    receiptImage.isPreprocessing,
+    handleProcessReceipt,
+  ]);
+
+  function applyFormValues(values: ReceiptFormValues) {
+    setType(values.type);
+    setAmount(values.amount);
+    setCategory(values.category);
+    setDescription(values.description || values.merchantName);
+    setDate(values.date);
   }
 
   async function handleManualWithoutOcr() {
@@ -255,6 +258,8 @@ export function AddTransactionModal({
 
     setErrors({});
 
+    setDiagnosticAction('save_movement');
+
     try {
       const input = {
         ...result.data,
@@ -301,46 +306,61 @@ export function AddTransactionModal({
   ) {
     const confirmation = formValuesToConfirmation(values, parseAmount(values.amount));
 
-    // Detect first transaction before the mutation mutates caches
     const existingTxs =
       queryClient.getQueryData<Transaction[]>(queryKeys.transactions({ filter: 'all' })) ?? [];
     const isFirst = existingTxs.length === 0;
 
-    const outcome = await createMutation.mutateAsync({
-      type: confirmation.type,
-      amount: confirmation.amount,
-      category: confirmation.category,
-      description: confirmation.description,
-      date: confirmation.date,
-      receiptMeta: {
-        receiptId: processed.receiptId,
-        receiptUrl: processed.receiptUrl,
-        receiptImage: processed.receiptImage,
-      },
-      confirmation,
-    });
+    setDiagnosticAction('save_movement');
 
-    // Analytics for receipt scan success (this is the "successful scan" moment)
-    const itemsCount = outcome.itemsSavedCount ?? 0;
-    track(AnalyticsEvents.RECEIPT_SCANNED, {
-      items_count: itemsCount,
-      has_ocr_items: itemsCount > 0,
-    });
+    try {
+      const outcome = await createMutation.mutateAsync({
+        type: confirmation.type,
+        amount: confirmation.amount,
+        category: confirmation.category,
+        description: confirmation.description,
+        date: confirmation.date,
+        receiptMeta: {
+          receiptId: processed.receiptId,
+          receiptUrl: processed.receiptUrl,
+          receiptImage: processed.receiptImage,
+        },
+        confirmation,
+      });
 
-    if (isFirst) {
-      track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, { type: confirmation.type });
-    }
+      const itemsCount = outcome.itemsSavedCount ?? 0;
 
-    setConfirmVisible(false);
-    onClose();
+      try {
+        track(AnalyticsEvents.RECEIPT_SCANNED, {
+          items_count: itemsCount,
+          has_ocr_items: itemsCount > 0,
+        });
+        if (isFirst) {
+          track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, { type: confirmation.type });
+        }
+      } catch {
+        // Analytics não deve bloquear o fluxo
+      }
 
-    if (itemsCount > 0) {
-      showToast(
-        `Movimento criado — ${itemsCount} ${itemsCount === 1 ? 'item do talão guardado' : 'itens do talão guardados'}.`,
-        'success',
-      );
-    } else {
-      showToast('Movimento criado com talão anexado.', 'success');
+      setConfirmVisible(false);
+
+      if (itemsCount > 0) {
+        showToast(
+          `Movimento criado — ${itemsCount} ${itemsCount === 1 ? 'item do talão guardado' : 'itens do talão guardados'}.`,
+          'success',
+        );
+      } else {
+        showToast('Movimento criado com talão anexado.', 'success');
+      }
+
+      onClose();
+    } catch (error) {
+      if (error instanceof ReceiptUploadError) {
+        setApiError(getReceiptUploadErrorMessage(error));
+      } else {
+        setApiError(getApiErrorMessage(error, 'o movimento'));
+      }
+      showToast('Não conseguimos guardar este movimento. Tenta novamente.', 'error');
+      throw error;
     }
   }
 
@@ -409,7 +429,7 @@ export function AddTransactionModal({
       ) : null}
 
       <DraggableBottomSheet
-        visible={visible}
+        visible={visible && !receiptImage.pendingDraft}
         onClose={onClose}
         isDirty={isDirty}
         onBeforeClose={() => {

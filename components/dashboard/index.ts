@@ -8,7 +8,6 @@ export { HomeGoalHighlightCard } from './HomeGoalHighlightCard';
 export { HomePersonalizedInsightCard } from './HomePersonalizedInsightCard';
 export { HomeChangesSheet } from './HomeChangesSheet';
 export { HomeAttentionSheet } from './HomeAttentionSheet';
-export { HomeStoriesRow, type HomeStoryId } from './HomeStoriesRow';
 export { HomeQuickActions, type RecommendedQuickAction } from './HomeQuickActions';
 export { DashboardGreeting } from './DashboardGreeting';
 export { DashboardHeaderLeading } from './DashboardHeaderLeading';

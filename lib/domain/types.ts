@@ -60,7 +60,7 @@ export interface Credit {
   notes?: string;
 }
 
-export type AssetCategoryKey = 'accounts' | 'inventory' | 'investments';
+export type AssetCategoryKey = 'accounts' | 'inventory' | 'investments' | 'savings';
 
 export interface AssetCategoryBreakdown {
   key: AssetCategoryKey;
@@ -76,6 +76,7 @@ export interface NetWorthResult {
     accounts: number;
     inventory: number;
     investments: number;
+    savings: number;
     liabilities: number;
   };
   /** Breakdown por categoria de ativo — preparado para gráfico donut futuro. */
@@ -109,6 +110,8 @@ export interface NetWorthInput {
   inventory: InventoryItem[];
   investments: RecurringInvestment[];
   credits: Credit[];
+  /** Poupanças em objetivos — soma de `current` por meta. */
+  savings?: number;
 }
 
 export interface DashboardData {

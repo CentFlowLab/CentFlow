@@ -18,11 +18,8 @@ import {
 } from '@/components/movements';
 import { EmptyState, ErrorState } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
-import {
-  useDeleteSubscription,
-  useLiabilities,
-  useSaveSubscription,
-} from '@/hooks/queries/useLiabilities';
+import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
+import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import {
   useDeleteTransaction,
   useTransactions,
@@ -41,6 +38,8 @@ const FILTER_SEGMENTS = [
 ];
 
 export default function MovimentosScreen() {
+  useDiagnosticScreen('movements');
+
   const insets = useSafeAreaInsets();
   const { action, view } = useLocalSearchParams<{ action?: string; view?: string }>();
   const handledAction = useRef(false);

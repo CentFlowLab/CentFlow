@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-18T21:58:47.806Z -->
-<!-- Git: ce15d22 (2026-06-18T22:28:10+01:00) -->
+<!-- Última geração: 2026-06-18T22:19:11.232Z -->
+<!-- Git: e7785b4 (2026-06-18T22:58:51+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 5 — Movimentos (OCR melhorado → UI confirmação)** |
-| Última geração | 2026-06-18T21:58:47.806Z |
+| Última geração | 2026-06-18T22:19:11.232Z |
 | Path do projeto | `C:\Users\EMANU\Documents\CentFlow App\centflow` |
-| Git commit | `ce15d22` (2026-06-18T22:28:10+01:00) |
+| Git commit | `e7785b4` (2026-06-18T22:58:51+01:00) |
 
 ---
 
@@ -70,6 +70,7 @@ Património Líq.  = Total Ativos − Total Passivos
 - `sumInventoryValue()`
 - `sumRecurringInvestments()`
 - `sumCreditLiabilities()`
+- `sumGoalSavings()`
 - `calculateNetWorth()`
 - `calculateNetWorthChangePercent()`
 
@@ -207,7 +208,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     HomeGoalHighlightCard.tsx
     HomePersonalizedInsightCard.tsx
     HomeQuickActions.tsx
-    HomeStoriesRow.tsx
     MetricCard.tsx
     NetWorthHeroCard.tsx
     SuggestionCard.tsx
@@ -329,9 +329,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useTransactions.ts
     useUserPreferences.ts
   useCentFlowIntelligence.ts
+  useDiagnosticScreen.ts
   useFeatureAreas.ts
   useFormDismiss.ts
-  useHomeStoryNotifications.ts
   useImportCsv.ts
   useKeyboardVisible.ts
   useOnboarding.ts
@@ -373,6 +373,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       dashboard.service.ts
       financial-profile.service.ts
       home.service.ts
+      liabilities-fetch.ts
       prices.service.ts
       profile.service.ts
       receipt-items.service.ts
@@ -419,6 +420,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     app-log.ts
     config.ts
     index.ts
+    runtime-context.ts
   doctor/
     index.ts
     log-mutation.ts
@@ -442,6 +444,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     goal.utils.ts
     home.types.ts
     index.ts
+    net-worth.service.test.ts
     net-worth.service.ts
     receipt-confirmation.schema.ts
     receipt-confirmation.ts
@@ -468,7 +471,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     light-impact.ts
   home/
     smart-summary.ts
-    story-seen.storage.ts
   liabilities/
     liabilities.service.ts
   migrations/

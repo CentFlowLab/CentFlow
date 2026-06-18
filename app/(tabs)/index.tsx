@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -18,20 +18,15 @@ import {
   DashboardSkeleton,
   DemoModeBadge,
   HomeAssistantCard,
-  HomeAttentionSheet,
-  HomeChangesSheet,
   HomeGoalHighlightCard,
   HomePersonalizedInsightCard,
   HomeQuickActions,
-  HomeStoriesRow,
-  type HomeStoryId,
   type RecommendedQuickAction,
   SuggestionCard,
   NetWorthHeroCard,
 } from '@/components/dashboard';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal, TransactionListItem } from '@/components/movements';
-import { FinancialProfileDetailSheet } from '@/components/profile';
 import {
   ErrorState,
   RefetchingIndicator,
@@ -41,10 +36,9 @@ import {
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
-import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
-import { useHomeStoryNotifications } from '@/hooks/useHomeStoryNotifications';
+import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import type { AssistantActionId } from '@/lib/domain/financial';
 import {
@@ -57,31 +51,13 @@ import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import { colors, spacing } from '@/lib/theme';
 
 export default function InicioScreen() {
+  useDiagnosticScreen('home');
+
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
   const { data: analysisData } = useAnalysisData();
-  const { data: financialProfile } = useFinancialProfile();
   const { data: onboardingAnswers } = useOnboardingAnswers();
 
-  const profileScore = financialProfile?.score ?? 0;
-  const profilePendingCount = financialProfile?.pendingDimensions.length ?? 0;
-  const weeklySpendingPreview = data?.weeklySpending ?? 0;
-  const netWorthChangePreview = data?.netWorthChangeThisMonth ?? 0;
-  const personalInflationPreview = data?.personalInflation ?? null;
-  const attentionIdsPreview = data?.attentionItems.map((item) => item.id) ?? [];
-
-  const { hasUnread, markStorySeen } = useHomeStoryNotifications({
-    profileScore,
-    profilePendingCount,
-    weeklySpending: weeklySpendingPreview,
-    netWorthChangeThisMonth: netWorthChangePreview,
-    personalInflation: personalInflationPreview,
-    attentionIds: attentionIdsPreview,
-  });
-
-  const [profileDetailVisible, setProfileDetailVisible] = useState(false);
-  const [changesSheetVisible, setChangesSheetVisible] = useState(false);
-  const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
@@ -89,24 +65,6 @@ export default function InicioScreen() {
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
 
   const { score, levelProgress, assistant } = useCentFlowIntelligence();
-
-  const handleStoryPress = useCallback(
-    (id: HomeStoryId) => {
-      if (id === 'profile') {
-        setProfileDetailVisible(true);
-        void markStorySeen('profile');
-        return;
-      }
-      if (id === 'changes') {
-        setChangesSheetVisible(true);
-        void markStorySeen('changes');
-        return;
-      }
-      setAttentionSheetVisible(true);
-      void markStorySeen('attention');
-    },
-    [markStorySeen],
-  );
 
   const header = (
     <AppHeader
@@ -158,8 +116,6 @@ export default function InicioScreen() {
     netWorthChangePercent,
     weeklySpending,
     netWorthChangeThisMonth,
-    personalInflation,
-    attentionItems,
     suggestions,
     assetsSummary,
     recentTransactions,
@@ -227,21 +183,6 @@ export default function InicioScreen() {
     assetsSummary.inventoryCount > 0;
 
   const fallbackSuggestions = getPersonalizedFallbackSuggestions(onboardingAnswers ?? null);
-
-  const closeProfileSheet = () => {
-    setProfileDetailVisible(false);
-    void markStorySeen('profile');
-  };
-
-  const closeChangesSheet = () => {
-    setChangesSheetVisible(false);
-    void markStorySeen('changes');
-  };
-
-  const closeAttentionSheet = () => {
-    setAttentionSheetVisible(false);
-    void markStorySeen('attention');
-  };
 
   const recommendedRaw = getRecommendedHomeActions(onboardingAnswers ?? null);
   const recommendedActions: RecommendedQuickAction[] = recommendedRaw.map((rec) => {
@@ -379,8 +320,6 @@ export default function InicioScreen() {
             />
           )}
 
-          <HomeStoriesRow unread={hasUnread} onStoryPress={handleStoryPress} />
-
           <View style={styles.section}>
             <SectionHeader title="O que devo fazer?" subtitle="Sugestões para ti" />
             {suggestions.length > 0 ? (
@@ -417,27 +356,6 @@ export default function InicioScreen() {
           <RefetchingIndicator visible={isRefetching} />
         </ScreenContainer>
       </ScrollView>
-
-
-      <FinancialProfileDetailSheet
-        visible={profileDetailVisible}
-        profile={financialProfile}
-        onClose={closeProfileSheet}
-      />
-
-      <HomeChangesSheet
-        visible={changesSheetVisible}
-        onClose={closeChangesSheet}
-        weeklySpending={weeklySpending}
-        netWorthChangeThisMonth={netWorthChangeThisMonth}
-        personalInflation={personalInflation}
-      />
-
-      <HomeAttentionSheet
-        visible={attentionSheetVisible}
-        onClose={closeAttentionSheet}
-        items={attentionItems}
-      />
 
       <AddTransactionModal
         visible={addMovementVisible}

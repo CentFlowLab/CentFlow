@@ -1,7 +1,8 @@
-import { calculateNetWorth } from './net-worth.service';
+import { calculateNetWorth, sumGoalSavings } from './net-worth.service';
 import type { AssetsData } from './assets.types';
 import type { DashboardData } from './types';
 import type { Transaction } from './transaction.types';
+import type { Credit } from './types';
 
 function sumWeeklyExpenses(transactions: Transaction[]): number {
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -21,8 +22,11 @@ function estimateCashBalance(transactions: Transaction[]): number {
 export function composeDashboardFromLocalSources(input: {
   transactions: Transaction[];
   assets: AssetsData;
+  credits?: Credit[];
 }): DashboardData {
   const cashBalance = estimateCashBalance(input.transactions);
+  const goalSavings = sumGoalSavings(input.assets.goals);
+  const credits = input.credits ?? [];
 
   const netWorth = calculateNetWorth({
     accounts: [
@@ -35,7 +39,8 @@ export function composeDashboardFromLocalSources(input: {
     ],
     inventory: input.assets.inventory,
     investments: [],
-    credits: [],
+    savings: goalSavings,
+    credits,
   });
 
   return {

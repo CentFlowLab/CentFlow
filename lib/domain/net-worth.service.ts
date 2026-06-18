@@ -41,6 +41,11 @@ export function sumCreditLiabilities(credits: Credit[]): number {
   return credits.reduce((sum, credit) => sum + credit.outstandingBalance, 0);
 }
 
+/** Soma poupanças registadas em objetivos. */
+export function sumGoalSavings(goals: Array<{ current: number }>): number {
+  return goals.reduce((sum, goal) => sum + Math.max(0, goal.current), 0);
+}
+
 /**
  * Calcula património líquido e breakdown completo.
  * Função central reutilizável em Dashboard, Análises e Ativos.
@@ -49,15 +54,19 @@ export function calculateNetWorth(input: NetWorthInput): NetWorthResult {
   const accountsTotal = sumAccountBalances(input.accounts);
   const inventoryTotal = sumInventoryValue(input.inventory);
   const investmentsTotal = sumRecurringInvestments(input.investments);
+  const savingsTotal = input.savings ?? 0;
   const liabilitiesTotal = sumCreditLiabilities(input.credits);
 
-  const totalAssets = accountsTotal + inventoryTotal + investmentsTotal;
+  const totalAssets = accountsTotal + inventoryTotal + investmentsTotal + savingsTotal;
   const netWorth = totalAssets - liabilitiesTotal;
 
   const assetsByCategory = [
     { key: 'accounts' as const, label: 'Contas', value: accountsTotal },
     { key: 'inventory' as const, label: 'Inventário', value: inventoryTotal },
     { key: 'investments' as const, label: 'Investimentos', value: investmentsTotal },
+    ...(savingsTotal > 0
+      ? [{ key: 'savings' as const, label: 'Poupanças', value: savingsTotal }]
+      : []),
   ].filter((category) => category.value > 0);
 
   return {
@@ -68,6 +77,7 @@ export function calculateNetWorth(input: NetWorthInput): NetWorthResult {
       accounts: accountsTotal,
       inventory: inventoryTotal,
       investments: investmentsTotal,
+      savings: savingsTotal,
       liabilities: liabilitiesTotal,
     },
     assetsByCategory,

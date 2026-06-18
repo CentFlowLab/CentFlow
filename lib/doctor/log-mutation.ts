@@ -1,4 +1,5 @@
 import { logAppError, logAppEvent } from '@/lib/diagnostics';
+import { setDiagnosticAction } from '@/lib/diagnostics/runtime-context';
 
 export type MutationFailureContext = {
   action: string;
@@ -32,9 +33,12 @@ export function logDoctorMutationFailure(
   const message =
     error instanceof Error ? error.message : typeof error === 'string' ? error : 'Erro desconhecido';
 
+  setDiagnosticAction(context.action);
+
   logAppError('doctor:mutation', error instanceof Error ? error : new Error(message), {
     action: context.action,
     screen: context.screen,
+    component: context.screen,
     authenticated: context.authenticated,
     payload: sanitizePayload(context.payload),
   });

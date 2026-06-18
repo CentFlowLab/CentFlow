@@ -72,7 +72,9 @@ export function useCreateTransaction() {
   const mutation = useMutation({
     mutationFn: (input: CreateTransactionInput) =>
       createTransaction(input, { onPhase: setPhase }),
-    onSettled: () => setPhase(null),
+    onSettled: () => {
+      queueMicrotask(() => setPhase(null));
+    },
     onSuccess: () => invalidateTransactionQueries(queryClient),
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {

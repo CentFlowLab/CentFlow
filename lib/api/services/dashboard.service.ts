@@ -19,6 +19,7 @@ import type {
 import { isSupabaseEnabled } from '@/lib/supabase';
 
 import { fetchAssetsData } from './assets.service';
+import { fetchCreditsForCurrentUser } from './liabilities-fetch';
 import { fetchTransactions } from './transaction.service';
 
 /**
@@ -32,11 +33,12 @@ import { fetchTransactions } from './transaction.service';
  */
 export async function fetchDashboardData(): Promise<DashboardData> {
   if (isSupabaseEnabled()) {
-    const [transactions, assets] = await Promise.all([
+    const [transactions, assets, credits] = await Promise.all([
       fetchTransactions('all'),
       fetchAssetsData(),
+      fetchCreditsForCurrentUser(),
     ]);
-    return composeDashboardFromLocalSources({ transactions, assets });
+    return composeDashboardFromLocalSources({ transactions, assets, credits });
   }
 
   try {

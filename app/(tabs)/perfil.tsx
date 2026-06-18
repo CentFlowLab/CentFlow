@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useFeatureAreas } from '@/hooks/useFeatureAreas';
+import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
@@ -95,6 +96,8 @@ function getMenuSections() {
 }
 
 export default function PerfilScreen() {
+  useDiagnosticScreen('profile');
+
   const { signOut } = useAuth();
   const { reset: resetOnboarding } = useOnboarding();
   const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
@@ -190,7 +193,7 @@ export default function PerfilScreen() {
           <FinancialProfileProgress
             profile={financialProfile}
             isLoading={isProfileScoreLoading}
-            variant="full"
+            variant="compact"
             style={styles.profileProgress}
             onPress={() => setProfileDetailVisible(true)}
           />
@@ -270,7 +273,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   profileProgress: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   section: {
     marginBottom: spacing.xl,

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/layout';
 import { Button, ScreenContainer, Text } from '@/components/ui';
+import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { useToast } from '@/components/ui/Toast';
 import {
   clearAppLog,
@@ -22,6 +23,8 @@ import {
 import { colors, radius, spacing } from '@/lib/theme';
 
 export default function DiagnosticsSettingsScreen() {
+  useDiagnosticScreen('doctor');
+
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const [entries, setEntries] = useState<AppLogEntry[]>([]);
@@ -116,9 +119,15 @@ export default function DiagnosticsSettingsScreen() {
             {entries.map((entry) => (
               <View key={entry.id} style={styles.entry}>
                 <Text variant="caption" color={entry.level === 'error' ? 'danger' : 'textMuted'}>
-                  {entry.level.toUpperCase()} · {entry.source}
+                  {entry.severity.toUpperCase()} · {entry.level.toUpperCase()} · {entry.source}
                 </Text>
                 <Text variant="bodyMedium">{entry.message}</Text>
+                {entry.context?.screen ? (
+                  <Text variant="caption" color="textSecondary">
+                    screen: {String(entry.context.screen)}
+                    {entry.context.action ? ` · action: ${String(entry.context.action)}` : ''}
+                  </Text>
+                ) : null}
                 {entry.stack ? (
                   <Text variant="caption" color="textMuted" style={styles.mono}>
                     {entry.stack}

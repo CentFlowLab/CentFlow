@@ -177,14 +177,16 @@ export function FinancialProfileProgress({
   );
 
   const card = (
-    <View style={[styles.wrapper, style]}>
-      <LinearGradient
-        colors={['rgba(45,212,191,0.18)', 'rgba(20,184,166,0.06)', 'rgba(5,8,14,0)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.glow}
-      />
-      <Card variant="elevated" style={styles.card}>
+    <View style={[styles.wrapper, isCompact && styles.wrapperCompact, style]}>
+      {!isCompact ? (
+        <LinearGradient
+          colors={['rgba(45,212,191,0.18)', 'rgba(20,184,166,0.06)', 'rgba(5,8,14,0)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.glow}
+        />
+      ) : null}
+      <Card variant="elevated" style={[styles.card, isCompact && styles.cardCompact]}>
         {content}
       </Card>
     </View>
@@ -250,6 +252,9 @@ const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
   },
+  wrapperCompact: {
+    marginBottom: 0,
+  },
   glow: {
     ...StyleSheet.absoluteFill,
     borderRadius: radius.xl,
@@ -258,6 +263,9 @@ const styles = StyleSheet.create({
   card: {
     gap: spacing.md,
     borderColor: colors.borderStrong,
+  },
+  cardCompact: {
+    gap: spacing.sm,
   },
   loadingBar: {
     marginTop: spacing.sm,

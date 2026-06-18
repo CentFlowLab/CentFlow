@@ -12,7 +12,6 @@ import {
 import {
   Gesture,
   GestureDetector,
-  GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Animated, {
@@ -216,7 +215,7 @@ export function DraggableBottomSheet({
       onRequestClose={requestClose}
       statusBarTranslucent
       hardwareAccelerated>
-      <GestureHandlerRootView style={styles.root}>
+      <View style={styles.root}>
         <View style={styles.overlay}>
           <AnimatedPressable
             style={[styles.backdrop, backdropAnimatedStyle]}
@@ -276,7 +275,7 @@ export function DraggableBottomSheet({
             </Animated.View>
           </GestureDetector>
         </View>
-      </GestureHandlerRootView>
+      </View>
     </Modal>
   );
 }
