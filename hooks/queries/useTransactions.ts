@@ -10,7 +10,7 @@ import {
   updateTransaction,
 } from '@/lib/api/services/transaction.service';
 import { useAuth } from '@/lib/auth';
-import { logDoctorMutationFailure } from '@/lib/doctor';
+import { logDoctorMutationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
 import { getCategoryLabel } from '@/lib/data/transaction-categories';
 import type {
   CreateTransactionInput,
@@ -70,12 +70,36 @@ export function useCreateTransaction() {
   const [phase, setPhase] = useState<CreateTransactionPhase | null>(null);
 
   const mutation = useMutation({
-    mutationFn: (input: CreateTransactionInput) =>
-      createTransaction(input, { onPhase: setPhase }),
-    onSettled: () => {
+    mutationFn: async (input: CreateTransactionInput) => {
+      traceMovementStep('mutation_start', {
+        component: 'useCreateTransaction',
+        type: input.type,
+        category: input.category,
+      });
+      try {
+        const outcome = await createTransaction(input, {
+          onPhase: (phase) => {
+            setPhase(phase);
+            traceMovementStep('mutation_phase', { phase, component: 'useCreateTransaction' });
+          },
+        });
+        return outcome;
+      } catch (error) {
+        traceMovementError('mutation_error', error, { component: 'useCreateTransaction' });
+        throw error;
+      }
+    },
+    onSettled: (_data, error) => {
+      traceMovementStep(error ? 'mutation_error' : 'mutation_settled', {
+        component: 'useCreateTransaction',
+        hadError: Boolean(error),
+      });
       queueMicrotask(() => setPhase(null));
     },
-    onSuccess: () => invalidateTransactionQueries(queryClient),
+    onSuccess: () => {
+      traceMovementStep('mutation_success', { component: 'useCreateTransaction' });
+      invalidateTransactionQueries(queryClient);
+    },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
         action: 'create_transaction',

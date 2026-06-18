@@ -14,6 +14,7 @@ import {
   subscribeAppLog,
   type AppLogEntry,
 } from '@/lib/diagnostics';
+import { getMovementFlowDebugState, MOVEMENT_FLOW_SOURCE } from '@/lib/doctor';
 import {
   EMAIL_TYPE_LABELS,
   invokeTestEmail,
@@ -28,7 +29,14 @@ export default function DiagnosticsSettingsScreen() {
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const [entries, setEntries] = useState<AppLogEntry[]>([]);
+  const [movementOnly, setMovementOnly] = useState(true);
   const [emailLoading, setEmailLoading] = useState<LifecycleEmailType | null>(null);
+
+  const visibleEntries = movementOnly
+    ? entries.filter((e) => e.source === MOVEMENT_FLOW_SOURCE)
+    : entries;
+
+  const flowState = getMovementFlowDebugState();
 
   const emailTestTypes = Object.keys(EMAIL_TYPE_LABELS) as LifecycleEmailType[];
 
@@ -79,11 +87,23 @@ export default function DiagnosticsSettingsScreen() {
         ]}>
         <ScreenContainer scrollable={false}>
           <Text variant="body" color="textSecondary" style={styles.lead}>
-            Todos os erros, avisos e falhas de rede ficam registados aqui durante os testes.
-            Usa «Partilhar log» para enviar ao developer.
+            Filtra por «movement_create» para ver o rasto do bloqueio ao criar movimentos.
+            Se aparecer STALL, o último passo indica onde a UI parou.
           </Text>
 
+          {movementOnly ? (
+            <Text variant="caption" color="textMuted" style={styles.flowState}>
+              Último passo: {flowState.lastStep} · há {flowState.msSinceLastStep}ms
+            </Text>
+          ) : null}
+
           <View style={styles.actions}>
+            <Button
+              label={movementOnly ? 'Ver todos os logs' : 'Só movement_create'}
+              variant="secondary"
+              onPress={() => setMovementOnly((v) => !v)}
+              fullWidth
+            />
             <Button label="Partilhar log" onPress={() => void handleShare()} fullWidth />
             <Button
               label="Limpar log"
@@ -116,12 +136,29 @@ export default function DiagnosticsSettingsScreen() {
           ) : null}
 
           <View style={styles.list}>
-            {entries.map((entry) => (
-              <View key={entry.id} style={styles.entry}>
+            {visibleEntries.length === 0 ? (
+              <Text variant="body" color="textMuted" align="center">
+                Sem entradas {movementOnly ? 'movement_create' : ''}. Abre o modal e tenta guardar um movimento.
+              </Text>
+            ) : null}
+            {visibleEntries.map((entry) => (
+              <View
+                key={entry.id}
+                style={[
+                  styles.entry,
+                  entry.source === MOVEMENT_FLOW_SOURCE && styles.entryMovement,
+                ]}>
                 <Text variant="caption" color={entry.level === 'error' ? 'danger' : 'textMuted'}>
                   {entry.severity.toUpperCase()} · {entry.level.toUpperCase()} · {entry.source}
                 </Text>
-                <Text variant="bodyMedium">{entry.message}</Text>
+                <Text variant="bodyMedium" color={entry.source === MOVEMENT_FLOW_SOURCE ? 'primary' : 'text'}>
+                  {entry.context?.step ? String(entry.context.step) : entry.message}
+                </Text>
+                {entry.context?.step && entry.message !== entry.context.step ? (
+                  <Text variant="caption" color="textSecondary">
+                    {entry.message}
+                  </Text>
+                ) : null}
                 {entry.context?.screen ? (
                   <Text variant="caption" color="textSecondary">
                     screen: {String(entry.context.screen)}
@@ -155,7 +192,10 @@ const styles = StyleSheet.create({
   },
   lead: {
     lineHeight: 22,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  flowState: {
+    marginBottom: spacing.md,
   },
   actions: {
     gap: spacing.sm,
@@ -175,6 +215,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
     gap: spacing.xs,
+  },
+  entryMovement: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
   },
   mono: {
     fontFamily: 'monospace',

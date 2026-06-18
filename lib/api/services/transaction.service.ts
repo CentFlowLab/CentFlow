@@ -24,6 +24,7 @@ import {
 } from '@/lib/api/services/receipt.service';
 import { isMockAuthEnabled } from '@/lib/auth';
 import { isSupabaseEnabled, supabaseTransactions } from '@/lib/supabase';
+import { traceMovementError, traceMovementStep } from '@/lib/doctor';
 import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import type {
   CreateTransactionInput,
@@ -95,6 +96,12 @@ export async function createTransaction(
   input: CreateTransactionInput,
   options?: CreateTransactionOptions,
 ): Promise<CreateTransactionOutcome> {
+  traceMovementStep('mutation_service_start', {
+    component: 'transaction.service',
+    hasReceipt: Boolean(input.receipt || input.receiptMeta),
+    hasConfirmation: Boolean(input.confirmation),
+  });
+
   let receiptId: string | undefined = input.receiptMeta?.receiptId;
   let receiptUrl: string | undefined = input.receiptMeta?.receiptUrl;
   let receiptImage: string | undefined = input.receiptMeta?.receiptImage;
@@ -103,12 +110,14 @@ export async function createTransaction(
 
   if (input.receipt && !receiptId) {
     options?.onPhase?.('uploading_receipt');
+    traceMovementStep('mutation_service_upload', { component: 'transaction.service' });
     const upload = await uploadReceipt(input.receipt);
     receiptId = upload.id;
     receiptUrl = upload.url;
     receiptImage = upload.localUri ?? upload.url;
 
     options?.onPhase?.('processing_ocr');
+    traceMovementStep('mutation_service_ocr', { component: 'transaction.service', skipOcr: input.skipOcr });
     if (!input.skipOcr) {
       try {
         ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
@@ -120,6 +129,10 @@ export async function createTransaction(
   }
 
   options?.onPhase?.('creating_transaction');
+  traceMovementStep('mutation_service_creating', {
+    component: 'transaction.service',
+    backend: isMockAuthEnabled() ? 'mock' : isSupabaseEnabled() ? 'supabase' : 'api',
+  });
 
   const transactionInput: CreateTransactionInput = {
     type: input.confirmation?.type ?? input.type,
@@ -138,6 +151,7 @@ export async function createTransaction(
       receiptImage,
     });
   } else if (isSupabaseEnabled()) {
+    traceMovementStep('mutation_service_supabase_insert', { component: 'transaction.service' });
     transaction = await supabaseTransactions.createTransaction({
       ...transactionInput,
       receiptId,
@@ -205,6 +219,12 @@ export async function createTransaction(
       throw error;
     }
   }
+
+  traceMovementStep('mutation_service_done', {
+    component: 'transaction.service',
+    transactionId: transaction.id,
+    itemsSavedCount,
+  });
 
   return {
     transaction,

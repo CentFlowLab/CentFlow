@@ -5,6 +5,7 @@ import type {
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 
+import { traceMovementError, traceMovementStep } from '@/lib/doctor';
 import { getSupabaseClient } from './client';
 import {
   enrichTransactionsWithReceiptUrls,
@@ -71,6 +72,7 @@ export async function fetchTransactions(
 export async function createTransaction(
   input: CreateTransactionInput & { receiptId?: string },
 ): Promise<Transaction> {
+  traceMovementStep('mutation_service_supabase_auth', { component: 'supabase.transactions' });
   const supabase = getSupabaseClient();
 
   const {
@@ -79,10 +81,20 @@ export async function createTransaction(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    traceMovementError('mutation_error', userError ?? new Error('no user'), {
+      component: 'supabase.transactions',
+      phase: 'auth',
+    });
     throw new Error('Utilizador não autenticado');
   }
 
   const payload = toTransactionInsert(user.id, input);
+
+  traceMovementStep('mutation_service_supabase_insert', {
+    component: 'supabase.transactions',
+    type: input.type,
+    category: input.category,
+  });
 
   const { data, error } = await supabase
     .from('transactions')
@@ -90,11 +102,22 @@ export async function createTransaction(
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    traceMovementError('mutation_error', error, {
+      component: 'supabase.transactions',
+      phase: 'insert',
+      code: error.code,
+    });
+    throw new Error(error.message);
+  }
 
   const transaction = mapTransactionRow(data);
 
   if (input.receiptId) {
+    traceMovementStep('mutation_service_supabase_receipt_url', {
+      component: 'supabase.transactions',
+      receiptId: input.receiptId,
+    });
     const { data: receipt } = await supabase
       .from('receipts')
       .select('storage_path')

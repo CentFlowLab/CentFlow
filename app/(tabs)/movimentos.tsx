@@ -20,6 +20,7 @@ import { EmptyState, ErrorState } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
+import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import {
   useDeleteTransaction,
   useTransactions,
@@ -88,6 +89,7 @@ export default function MovimentosScreen() {
   }, [view]);
 
   function openAddModal(withReceipt = false) {
+    traceMovementStep('form_open', { component: 'MovimentosScreen', withReceipt });
     setStartWithReceiptPicker(withReceipt);
     setModalVisible(true);
   }

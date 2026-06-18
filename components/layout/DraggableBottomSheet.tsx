@@ -28,6 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
 import { lightImpact } from '@/lib/haptics/light-impact';
+import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const DISMISS_DRAG = 110;
@@ -49,6 +50,8 @@ type DraggableBottomSheetProps = {
   maxHeight?: `${number}%` | number;
   sheetStyle?: StyleProp<ViewStyle>;
   scrollContentStyle?: StyleProp<ViewStyle>;
+  /** Quando definido, regista open/close no Doctor (fluxo movement_create). */
+  traceId?: string;
 };
 
 export function DraggableBottomSheet({
@@ -61,6 +64,7 @@ export function DraggableBottomSheet({
   maxHeight = '92%',
   sheetStyle,
   scrollContentStyle,
+  traceId,
 }: DraggableBottomSheetProps) {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(0);
@@ -138,6 +142,9 @@ export function DraggableBottomSheet({
 
   useEffect(() => {
     if (visible) {
+      if (traceId) {
+        traceMovementStep('sheet_visible', { component: 'DraggableBottomSheet', traceId });
+      }
       setIsMounted(true);
       isClosingRef.current = false;
       translateY.value = sheetHeight.value > 0 ? sheetHeight.value : 420;
@@ -146,9 +153,12 @@ export function DraggableBottomSheet({
     }
 
     if (isMounted && !isClosingRef.current) {
+      if (traceId) {
+        traceMovementStep('sheet_close', { component: 'DraggableBottomSheet', traceId });
+      }
       animateOut(false);
     }
-  }, [visible, isMounted, animateOut, sheetHeight, translateY]);
+  }, [visible, isMounted, animateOut, sheetHeight, translateY, traceId]);
 
   useEffect(() => {
     if (!isMounted) return;

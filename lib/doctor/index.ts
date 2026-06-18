@@ -20,4 +20,12 @@ export {
   type MutationFailureContext,
 } from './log-mutation';
 
+export {
+  traceMovementStep,
+  traceMovementError,
+  getMovementFlowDebugState,
+  MOVEMENT_FLOW_SOURCE,
+  type MovementFlowStep,
+} from './movement-flow-trace';
+
 export const DOCTOR_SOURCE = 'centflow-doctor';

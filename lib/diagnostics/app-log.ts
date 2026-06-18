@@ -13,7 +13,7 @@ export type AppLogEntry = {
   context?: Record<string, unknown>;
 };
 
-import { withDiagnosticContext } from './runtime-context';
+import { withDiagnosticContext, getDiagnosticRuntimeContext } from './runtime-context';
 
 const MAX_ENTRIES = 250;
 const listeners = new Set<(entries: AppLogEntry[]) => void>();
@@ -172,7 +172,12 @@ export function installGlobalDiagnostics(): void {
 
   const rejectionHandler = (event: PromiseRejectionEvent | { reason?: unknown }) => {
     const reason = event.reason ?? 'Promise rejection';
-    logAppError('unhandled-rejection', reason, { component: 'promise' });
+    const { screen, action } = getDiagnosticRuntimeContext();
+    logAppError('unhandled-rejection', reason, {
+      component: 'promise',
+      action: `unhandled_rejection:${action}`,
+      screen,
+    });
   };
 
   if (typeof globalThis.addEventListener === 'function') {
@@ -184,9 +189,12 @@ export function installGlobalDiagnostics(): void {
   if (errorUtils?.getGlobalHandler && errorUtils?.setGlobalHandler) {
     const defaultHandler = errorUtils.getGlobalHandler();
     errorUtils.setGlobalHandler((error, isFatal) => {
+      const { screen, action } = getDiagnosticRuntimeContext();
       logAppError('global-handler', error, {
         isFatal: Boolean(isFatal),
         component: 'react-native',
+        action: `global_error:${action}`,
+        screen,
       });
       defaultHandler?.(error, isFatal);
     });

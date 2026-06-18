@@ -28,8 +28,9 @@ import {
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { colors, radius, spacing } from '@/lib/theme';
-import { logDoctorValidationFailure } from '@/lib/doctor';
+import { logDoctorValidationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
 import { setDiagnosticAction } from '@/lib/diagnostics';
+import { useMovementRenderProbe } from '@/hooks/useMovementRenderProbe';
 import { todayInputDate } from '@/lib/utils/format';
 
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
@@ -66,6 +67,7 @@ export function AddTransactionModal({
   onImportCsv,
 }: AddTransactionModalProps) {
   useDiagnosticScreen(visible ? 'movement_create' : 'movement_create_closed');
+  useMovementRenderProbe(visible);
 
   const createMutation = useCreateTransaction();
   const processReceipt = useProcessReceipt();
@@ -106,6 +108,8 @@ export function AddTransactionModal({
   useEffect(() => {
     if (!visible) return;
 
+    traceMovementStep('form_init_start', { lockedType, presetFilter });
+
     const initialType = lockedType ?? 'expense';
     const defaultCategory = getCategoriesForType(initialType)[0]?.id ?? '';
 
@@ -127,10 +131,13 @@ export function AddTransactionModal({
     }
     processReceipt.reset();
     didAutoPick.current = false;
+
+    traceMovementStep('form_init_done', { initialType, defaultCategory });
   }, [visible, lockedType]);
 
   useEffect(() => {
     if (!visible) return;
+    traceMovementStep('effect_sync_category', { type });
     const cats = getCategoriesForType(type);
     setCategory((current) =>
       current && cats.some((item) => item.id === current) ? current : cats[0]?.id ?? '',
@@ -139,9 +146,16 @@ export function AddTransactionModal({
 
   useEffect(() => {
     if (!visible || !startWithReceiptPicker || didAutoPick.current) return;
+    traceMovementStep('effect_auto_receipt_picker');
     didAutoPick.current = true;
     receiptImage.showSourcePicker();
   }, [visible, startWithReceiptPicker]);
+
+  useEffect(() => {
+    if (!visible) {
+      traceMovementStep('form_close_request', { reason: 'visible_false' });
+    }
+  }, [visible]);
 
   const handleProcessReceipt = useCallback(async () => {
     if (!receiptImage.draft) return;
@@ -176,6 +190,10 @@ export function AddTransactionModal({
   useEffect(() => {
     if (!retakePending || !receiptImage.draft) return;
     if (receiptImage.isPicking || receiptImage.isPreprocessing) return;
+
+    traceMovementStep('effect_retake_receipt', {
+      draftUri: receiptImage.draft.localUri?.slice(-24),
+    });
 
     if (retakeBaselineUri.current === receiptImage.draft.localUri) {
       setRetakePending(false);
@@ -228,7 +246,10 @@ export function AddTransactionModal({
   }
 
   async function handleSaveManual() {
+    traceMovementStep('save_click', { path: 'manual' });
     setApiError(null);
+
+    traceMovementStep('validation_start', { type, category, amountLen: amount.length });
 
     const parsedAmount = parseAmount(amount);
     const result = createTransactionSchema.safeParse({
@@ -240,6 +261,9 @@ export function AddTransactionModal({
     });
 
     if (!result.success) {
+      traceMovementStep('validation_fail', {
+        issues: result.error.issues.map((i) => i.message),
+      });
       const fieldErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {
         const key = issue.path[0];
@@ -258,6 +282,7 @@ export function AddTransactionModal({
 
     setErrors({});
 
+    traceMovementStep('validation_success', { type: result.data.type, amount: result.data.amount });
     setDiagnosticAction('save_movement');
 
     try {
@@ -282,15 +307,19 @@ export function AddTransactionModal({
         queryClient.getQueryData<Transaction[]>(queryKeys.transactions({ filter: 'all' })) ?? [];
       const isFirst = existingTxs.length === 0;
 
+      traceMovementStep('mutation_start', { path: 'manual', isFirst });
       await createMutation.mutateAsync(input);
+      traceMovementStep('mutation_success', { path: 'manual' });
 
       if (isFirst) {
         track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, { type: result.data.type });
       }
 
       showToast('Movimento guardado.', 'success');
+      traceMovementStep('modal_close', { path: 'manual', reason: 'save_ok' });
       onClose();
     } catch (error) {
+      traceMovementError('mutation_error', error, { path: 'manual' });
       if (error instanceof ReceiptUploadError) {
         setApiError(getReceiptUploadErrorMessage(error));
       } else {
@@ -313,6 +342,7 @@ export function AddTransactionModal({
     setDiagnosticAction('save_movement');
 
     try {
+      traceMovementStep('mutation_start', { path: 'receipt_confirm', isFirst });
       const outcome = await createMutation.mutateAsync({
         type: confirmation.type,
         amount: confirmation.amount,
@@ -326,6 +356,8 @@ export function AddTransactionModal({
         },
         confirmation,
       });
+
+      traceMovementStep('mutation_success', { path: 'receipt_confirm' });
 
       const itemsCount = outcome.itemsSavedCount ?? 0;
 
@@ -352,8 +384,10 @@ export function AddTransactionModal({
         showToast('Movimento criado com talão anexado.', 'success');
       }
 
+      traceMovementStep('modal_close', { path: 'receipt_confirm', reason: 'save_ok' });
       onClose();
     } catch (error) {
+      traceMovementError('mutation_error', error, { path: 'receipt_confirm' });
       if (error instanceof ReceiptUploadError) {
         setApiError(getReceiptUploadErrorMessage(error));
       } else {
@@ -430,7 +464,11 @@ export function AddTransactionModal({
 
       <DraggableBottomSheet
         visible={visible && !receiptImage.pendingDraft}
-        onClose={onClose}
+        onClose={() => {
+          traceMovementStep('modal_close', { reason: 'sheet_onClose' });
+          onClose();
+        }}
+        traceId="movement_create_sheet"
         isDirty={isDirty}
         onBeforeClose={() => {
           if (showConfirm) {
@@ -502,7 +540,14 @@ export function AddTransactionModal({
         {showTransactionForm ? (
           <>
             {showTypePicker ? (
-              <SegmentedControl segments={TYPE_SEGMENTS} value={type} onChange={setType} />
+              <SegmentedControl
+                segments={TYPE_SEGMENTS}
+                value={type}
+                onChange={(next) => {
+                  traceMovementStep('field_change', { field: 'type', value: next });
+                  setType(next);
+                }}
+              />
             ) : (
               <Card variant="outlined" padding="md" style={styles.lockedTypeCard}>
                 <Text variant="caption" color="textMuted">
@@ -517,7 +562,10 @@ export function AddTransactionModal({
             <TextField
               label="Valor (€)"
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={(text) => {
+                traceMovementStep('field_change', { field: 'amount', len: text.length });
+                setAmount(text);
+              }}
               keyboardType="decimal-pad"
               placeholder="0,00"
               error={errors.amount}
@@ -533,7 +581,10 @@ export function AddTransactionModal({
                   return (
                     <Pressable
                       key={item.id}
-                      onPress={() => setCategory(item.id)}
+                      onPress={() => {
+                        traceMovementStep('field_change', { field: 'category', value: item.id });
+                        setCategory(item.id);
+                      }}
                       style={[styles.categoryChip, isSelected && styles.categoryChipActive]}>
                       <SymbolView
                         name={item.icon}
@@ -560,7 +611,10 @@ export function AddTransactionModal({
             <TextField
               label="Descrição (opcional)"
               value={description}
-              onChangeText={setDescription}
+              onChangeText={(text) => {
+                traceMovementStep('field_change', { field: 'description', len: text.length });
+                setDescription(text);
+              }}
               placeholder="Ex: Jantar com amigos"
               maxLength={200}
             />
@@ -568,7 +622,10 @@ export function AddTransactionModal({
             <DatePickerField
               label="Data"
               value={date}
-              onChange={setDate}
+              onChange={(next) => {
+                traceMovementStep('field_change', { field: 'date', value: next });
+                setDate(next);
+              }}
               error={errors.date}
             />
           </>

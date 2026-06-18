@@ -39,6 +39,7 @@ import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
+import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import type { AssistantActionId } from '@/lib/domain/financial';
 import {
@@ -124,6 +125,7 @@ export default function InicioScreen() {
   } = data;
 
   const openAddMovement = () => {
+    traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: false });
     setStartWithReceiptPicker(false);
     setAddMovementVisible(true);
   };
@@ -159,6 +161,7 @@ export default function InicioScreen() {
   }
 
   const openReceiptScanner = () => {
+    traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: true });
     setStartWithReceiptPicker(true);
     setAddMovementVisible(true);
   };
