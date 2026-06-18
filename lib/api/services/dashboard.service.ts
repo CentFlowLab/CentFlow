@@ -72,6 +72,11 @@ async function fetchDashboardComposed(): Promise<DashboardData> {
 
 /** Obtém apenas património — útil para invalidação granular. */
 export async function fetchNetWorthData(): Promise<DashboardData['netWorth']> {
+  if (isSupabaseEnabled()) {
+    const dashboard = await fetchDashboardData();
+    return dashboard.netWorth;
+  }
+
   try {
     const raw = await apiFetch<RawNetWorthResponse>(API_ENDPOINTS.netWorth);
     return mapNetWorth(raw);

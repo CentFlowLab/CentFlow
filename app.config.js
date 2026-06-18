@@ -60,6 +60,9 @@ module.exports = {
     updates: {
       ...appJson.expo.updates,
       channel: updateChannel,
+      requestHeaders: {
+        'expo-channel-name': updateChannel,
+      },
     },
     extra: {
       ...appJson.expo.extra,

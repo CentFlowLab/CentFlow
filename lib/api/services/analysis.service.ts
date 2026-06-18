@@ -141,6 +141,15 @@ async function fetchAnalysisComposed(): Promise<AnalysisData> {
  * Tenta GET /net-worth; fallback para GET /analytics.
  */
 export async function fetchPatrimonyAllocation(): Promise<PatrimonyAllocationData> {
+  if (isSupabaseEnabled()) {
+    const netWorth = await fetchNetWorthData();
+    return {
+      allocation: netWorth.assetsByCategory,
+      totalAssets: netWorth.totalAssets,
+      netWorth: netWorth.netWorth,
+    };
+  }
+
   try {
     const raw = await apiFetch<RawNetWorthResponse>(API_ENDPOINTS.netWorth);
     const netWorth = mapNetWorth(raw);

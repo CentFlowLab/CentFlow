@@ -1,8 +1,6 @@
 import { getAccessToken } from './token';
 import { getRuntimePublicEnv } from '@/lib/config/runtime-env';
-import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { logAppError } from '@/lib/diagnostics';
-import { getSupabaseUrl, isSupabaseEnabled } from '@/lib/supabase';
 
 const LEGACY_PLACEHOLDER_API = 'https://api.centflow.app';
 
@@ -13,11 +11,7 @@ function resolveApiBaseUrl(): string {
     return configured;
   }
 
-  if (isSupabaseEnabled() || isRealDataOnlyVariant()) {
-    const supabaseUrl = getSupabaseUrl();
-    if (supabaseUrl) return supabaseUrl;
-  }
-
+  // Supabase não expõe /dashboard nem /net-worth — dados vêm via SDK (lib/supabase).
   return configured || LEGACY_PLACEHOLDER_API;
 }
 
