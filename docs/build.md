@@ -129,22 +129,47 @@ A app verifica updates ao abrir (expo-updates). `runtimeVersion` segue `appVersi
 
 ---
 
-## Alternativa: GitHub Actions (IPA unsigned / LiveContainer)
+## Pipeline automático (GitHub Actions)
 
-Mantido em `.github/workflows/build-ios-unsigned.yml` para quem **não tem conta Apple Developer** e usa **LiveContainer**.
+**Workflow principal:** `.github/workflows/release.yml` — **CentFlow Release**
 
-```text
-GitHub → Actions → "Build iOS unsigned IPA" → Run workflow
-```
+Dispara automaticamente em **cada push para `main`**:
 
-Inputs: `mock_auth`, `api_url` (equivalente ao `env` do EAS).
+| Job | O que faz |
+|-----|-----------|
+| **Validate lockfile** | `npm ci --dry-run` — evita builds quebrados |
+| **EAS Update (OTA)** | Publica nos canais `preview` + `production` |
+| **Build IPA beta** | IPA unsigned com Supabase real, variant `beta`, canal OTA `preview` |
+
+Manual: GitHub → Actions → **CentFlow Release** → Run workflow.
+
+### Secret obrigatório (OTA no CI)
+
+1. Criar token em [expo.dev/settings/access-tokens](https://expo.dev/settings/access-tokens)
+2. GitHub → repo → **Settings → Secrets → Actions → New secret**
+3. Nome: `EXPO_TOKEN` | Valor: o token Expo
+
+Sem `EXPO_TOKEN`, o job OTA falha (o build IPA continua).
+
+### Artefactos
+
+- **IPA:** Actions → run → **CentFlow-beta-ipa-&lt;commit&gt;** (nome inclui SHA)
+- **OTA:** [expo.dev](https://expo.dev) → projecto centflow → Updates
+
+O IPA usa **CentFlow Beta** + **Doctor activo** + **Supabase real** (não mock).
+
+---
+
+## Alternativa legacy: alias LiveContainer
+
+`.github/workflows/build-ios-unsigned.yml` redirecciona para o mesmo pipeline **CentFlow Release**.
 
 **Quando usar cada um:**
 
 | Cenário | Ferramenta |
 |---------|------------|
-| Iteração rápida + OTA | **EAS Build + EAS Update** |
-| Sem conta Apple, sideload LiveContainer | **GitHub Actions** (unsigned IPA) |
+| Iteração rápida + OTA | **Push main** (CI automático) ou `npm run eas:update:preview` |
+| Sem conta Apple, sideload LiveContainer | **CentFlow Release** (IPA no artefacto) |
 | App Store / TestFlight | **EAS production** + `eas submit` |
 
 ---

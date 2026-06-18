@@ -44,6 +44,11 @@ const mockAuth =
   process.env.EXPO_PUBLIC_MOCK_AUTH?.trim() ||
   (isBeta || isProduction ? 'false' : '');
 
+const updateChannel =
+  process.env.EAS_UPDATE_CHANNEL?.trim() ||
+  process.env.EXPO_PUBLIC_EAS_UPDATE_CHANNEL?.trim() ||
+  (isBeta ? 'preview' : isProduction ? 'production' : 'development');
+
 module.exports = {
   expo: {
     ...appJson.expo,
@@ -52,6 +57,10 @@ module.exports = {
       ...(appJson.expo.plugins ?? []),
       '@react-native-community/datetimepicker',
     ],
+    updates: {
+      ...appJson.expo.updates,
+      channel: updateChannel,
+    },
     extra: {
       ...appJson.expo.extra,
       appVariant: variant,
