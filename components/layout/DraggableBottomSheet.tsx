@@ -12,6 +12,7 @@ import {
 import {
   Gesture,
   GestureDetector,
+  GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Animated, {
@@ -69,7 +70,6 @@ export function DraggableBottomSheet({
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(0);
   const sheetHeight = useSharedValue(0);
-  const scrollOffset = useSharedValue(0);
   const handlePulse = useSharedValue(0);
   const isDirtyShared = useSharedValue(isDirty);
   const isClosingRef = useRef(false);
@@ -84,11 +84,10 @@ export function DraggableBottomSheet({
       isClosingRef.current = false;
       setIsMounted(false);
       translateY.value = 0;
-      scrollOffset.value = 0;
       handlePulse.value = 0;
       if (notifyParent) onClose();
     },
-    [handlePulse, onClose, scrollOffset, translateY],
+    [handlePulse, onClose, translateY],
   );
 
   const animateOut = useCallback(
@@ -130,16 +129,6 @@ export function DraggableBottomSheet({
     performClose();
   }, [isDirty, onBeforeClose, performClose]);
 
-  const attemptGestureDismiss = useCallback(() => {
-    if (isDirtyShared.value) {
-      translateY.value = withSpring(0, BLOCKED_SPRING);
-      onBlockedDismiss();
-      return;
-    }
-
-    requestClose();
-  }, [isDirtyShared, onBlockedDismiss, requestClose, translateY]);
-
   useEffect(() => {
     if (visible) {
       if (traceId) {
@@ -171,14 +160,10 @@ export function DraggableBottomSheet({
     return () => subscription.remove();
   }, [isMounted, requestClose]);
 
-  const nativeScroll = Gesture.Native();
-
   const panGesture = Gesture.Pan()
-    .simultaneousWithExternalGesture(nativeScroll)
     .activeOffsetY(6)
     .failOffsetX([-24, 24])
     .onUpdate((event) => {
-      if (scrollOffset.value > 2) return;
       translateY.value = Math.max(0, event.translationY);
     })
     .onEnd((event) => {
@@ -225,7 +210,7 @@ export function DraggableBottomSheet({
       onRequestClose={requestClose}
       statusBarTranslucent
       hardwareAccelerated>
-      <View style={styles.root}>
+      <GestureHandlerRootView style={styles.root}>
         <View style={styles.overlay}>
           <AnimatedPressable
             style={[styles.backdrop, backdropAnimatedStyle]}
@@ -239,17 +224,17 @@ export function DraggableBottomSheet({
             accessibilityLabel="Fechar"
           />
 
-          <GestureDetector gesture={panGesture}>
-            <Animated.View
-              onLayout={(event) => {
-                sheetHeight.value = event.nativeEvent.layout.height;
-              }}
-              style={[
-                styles.sheet,
-                { maxHeight, paddingBottom: Math.max(insets.bottom, spacing.lg) },
-                sheetAnimatedStyle,
-                sheetStyle,
-              ]}>
+          <Animated.View
+            onLayout={(event) => {
+              sheetHeight.value = event.nativeEvent.layout.height;
+            }}
+            style={[
+              styles.sheet,
+              { maxHeight, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+              sheetAnimatedStyle,
+              sheetStyle,
+            ]}>
+            <GestureDetector gesture={panGesture}>
               <View style={styles.handleArea}>
                 <Animated.View style={[styles.handle, handleAnimatedStyle]} />
                 {isDirty ? (
@@ -258,34 +243,29 @@ export function DraggableBottomSheet({
                   </View>
                 ) : null}
               </View>
+            </GestureDetector>
 
-              {typeof header === 'function' ? header(requestClose) : header}
+            {typeof header === 'function' ? header(requestClose) : header}
 
-              <GestureDetector gesture={nativeScroll}>
-                <KeyboardAwareScrollView
-                  enableOnAndroid
-                  enableAutomaticScroll
-                  extraScrollHeight={Platform.OS === 'ios' ? 96 : 64}
-                  extraHeight={180}
-                  keyboardOpeningTime={0}
-                  enableResetScrollToCoords={false}
-                  onScroll={(event) => {
-                    scrollOffset.value = event.nativeEvent.contentOffset.y;
-                  }}
-                  scrollEventThrottle={16}
-                  bounces
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  keyboardDismissMode="on-drag"
-                  contentContainerStyle={[styles.scrollContent, scrollContentStyle]}
-                  style={styles.keyboard}>
-                  {children}
-                </KeyboardAwareScrollView>
-              </GestureDetector>
-            </Animated.View>
-          </GestureDetector>
+            <KeyboardAwareScrollView
+              enableOnAndroid
+              enableAutomaticScroll
+              extraScrollHeight={Platform.OS === 'ios' ? 96 : 64}
+              extraHeight={180}
+              keyboardOpeningTime={0}
+              enableResetScrollToCoords={false}
+              bounces
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              nestedScrollEnabled
+              contentContainerStyle={[styles.scrollContent, scrollContentStyle]}
+              style={styles.keyboard}>
+              {children}
+            </KeyboardAwareScrollView>
+          </Animated.View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
@@ -334,8 +314,8 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   keyboard: {
-    flexGrow: 0,
     flexShrink: 1,
+    minHeight: 0,
   },
   scrollContent: {
     paddingBottom: spacing['2xl'],
