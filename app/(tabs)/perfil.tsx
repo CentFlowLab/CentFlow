@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
-import { FinancialProfileDetailSheet, FinancialProfileProgress } from '@/components/profile';
+import { FinancialProfileDetailSheet, FinancialProfileProgress, ProfileHubSections } from '@/components/profile';
 import {
   Button,
   Card,
@@ -14,12 +14,15 @@ import {
   SectionHeader,
   Text,
 } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
+import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
 import { isDiagnosticsEnabled } from '@/lib/diagnostics';
+import type { FeatureAreaId } from '@/lib/onboarding/types';
 import { colors, spacing } from '@/lib/theme';
 
 type MenuItem = {
@@ -33,38 +36,18 @@ const MENU_SECTIONS: Array<{
   items: MenuItem[];
 }> = [
   {
-    title: 'Notificações',
+    title: 'Definições',
     items: [
       {
         icon: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
         label: 'Notificações',
         route: '/settings/notifications',
       },
-    ],
-  },
-  {
-    title: 'Preferências',
-    items: [
-      {
-        icon: { ios: 'eurosign.circle', android: 'euro', web: 'euro' },
-        label: 'Moeda e região',
-        route: '/settings/currency-region',
-      },
       {
         icon: { ios: 'paintbrush.fill', android: 'palette', web: 'palette' },
         label: 'Aparência',
         route: '/settings/appearance',
       },
-      {
-        icon: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
-        label: 'Repetir onboarding',
-        route: '__redo_onboarding__',
-      },
-    ],
-  },
-  {
-    title: 'Segurança & Dados',
-    items: [
       {
         icon: { ios: 'lock.fill', android: 'lock', web: 'lock' },
         label: 'Segurança',
@@ -80,6 +63,11 @@ const MENU_SECTIONS: Array<{
         label: 'Exportar dados',
         route: '/settings/export-data',
       },
+      {
+        icon: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
+        label: 'Repetir onboarding',
+        route: '__redo_onboarding__',
+      },
     ],
   },
 ];
@@ -92,7 +80,7 @@ function getMenuSections() {
       items: [
         {
           icon: { ios: 'ladybug.fill', android: 'bug_report', web: 'bug_report' },
-          label: 'Log de diagnóstico',
+          label: 'CentFlow Doctor',
           route: '/settings/diagnostics',
         },
       ],
@@ -111,7 +99,22 @@ export default function PerfilScreen() {
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
   const [loggingOut, setLoggingOut] = useState(false);
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
+  const { showToast } = useToast();
+  const { activateFeature } = useFeatureAreas();
+  const [activatingFeature, setActivatingFeature] = useState<FeatureAreaId | null>(null);
   const [resettingOnboarding, setResettingOnboarding] = useState(false);
+
+  async function handleActivateFeature(feature: FeatureAreaId) {
+    setActivatingFeature(feature);
+    try {
+      await activateFeature(feature);
+      showToast('Área activada com sucesso.', 'success');
+    } catch {
+      showToast('Não foi possível activar esta área.', 'error');
+    } finally {
+      setActivatingFeature(null);
+    }
+  }
 
   function handleRedoOnboarding() {
     Alert.alert(
@@ -187,19 +190,12 @@ export default function PerfilScreen() {
             onPress={() => setProfileDetailVisible(true)}
           />
 
-          <Card variant="elevated" style={styles.profileCard}>
-            <View style={styles.avatarLarge}>
-              <Text variant="h2" color="primary">
-                {profile?.avatarInitials ?? 'CF'}
-              </Text>
-            </View>
-            <View style={styles.profileInfo}>
-              <Text variant="h3">{profile?.name ?? 'Utilizador'}</Text>
-              <Text variant="caption" color="textSecondary">
-                {profile?.email ?? ''}
-              </Text>
-            </View>
-          </Card>
+          <ProfileHubSections
+            name={profile?.name ?? 'Utilizador'}
+            email={profile?.email ?? ''}
+            onActivateFeature={handleActivateFeature}
+            activatingFeature={activatingFeature}
+          />
 
           {getMenuSections().map((section) => (
             <View key={section.title} style={styles.section}>
@@ -268,28 +264,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.lg,
   },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    marginBottom: spacing['2xl'],
-  },
   profileProgress: {
     marginBottom: spacing['2xl'],
-  },
-  avatarLarge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-  },
-  profileInfo: {
-    flex: 1,
-    gap: spacing.xs,
   },
   section: {
     marginBottom: spacing['2xl'],

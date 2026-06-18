@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
@@ -12,6 +12,7 @@ import {
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { formFieldsDiffer, formHasAnyText } from '@/lib/forms';
 import { createWarrantySchema } from '@/lib/domain/assets.schema';
 import type { Warranty } from '@/lib/domain/assets.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
@@ -47,21 +48,46 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
   const isSaving = createWarranty.isPending || updateWarranty.isPending;
   const isDeleting = deleteWarranty.isPending;
 
+  const baselineRef = useRef({
+    product: '',
+    expiresAt: '',
+    purchaseDate: '',
+    store: '',
+    receiptId: null as string | null,
+  });
+
   useEffect(() => {
     if (!visible) return;
 
     if (warranty) {
-      setProduct(warranty.product);
-      setExpiresAt(formatInputDate(warranty.expiresAt));
-      setPurchaseDate(formatInputDate(warranty.purchaseDate));
-      setStore(warranty.store ?? '');
+      const next = {
+        product: warranty.product,
+        expiresAt: formatInputDate(warranty.expiresAt),
+        purchaseDate: formatInputDate(warranty.purchaseDate),
+        store: warranty.store ?? '',
+        receiptId: warranty.receiptTransactionId ?? null,
+      };
+      setProduct(next.product);
+      setExpiresAt(next.expiresAt);
+      setPurchaseDate(next.purchaseDate);
+      setStore(next.store);
       setSelectedReceipt(null);
+      baselineRef.current = next;
     } else {
-      setProduct('');
-      setExpiresAt(formatInputDate(new Date(Date.now() + 365 * 86400000)));
-      setPurchaseDate('');
-      setStore('');
+      const defaultExpiry = formatInputDate(new Date(Date.now() + 365 * 86400000));
+      const next = {
+        product: '',
+        expiresAt: defaultExpiry,
+        purchaseDate: '',
+        store: '',
+        receiptId: null,
+      };
+      setProduct(next.product);
+      setExpiresAt(next.expiresAt);
+      setPurchaseDate(next.purchaseDate);
+      setStore(next.store);
       setSelectedReceipt(null);
+      baselineRef.current = next;
     }
 
     setErrors({});
@@ -70,6 +96,37 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
     updateWarranty.reset();
     deleteWarranty.reset();
   }, [visible, warranty?.id]);
+
+  const isDirty = useMemo(() => {
+    if (!visible) return false;
+
+    const receiptId = selectedReceipt?.id ?? baselineRef.current.receiptId;
+    const current = { product, expiresAt, purchaseDate, store, receiptId: receiptId ?? null };
+    const baseline = baselineRef.current;
+
+    if (warranty) {
+      return formFieldsDiffer(
+        {
+          product: current.product,
+          expiresAt: current.expiresAt,
+          purchaseDate: current.purchaseDate,
+          store: current.store,
+        },
+        {
+          product: baseline.product,
+          expiresAt: baseline.expiresAt,
+          purchaseDate: baseline.purchaseDate,
+          store: baseline.store,
+        },
+      ) || current.receiptId !== baseline.receiptId;
+    }
+
+    return (
+      formHasAnyText(product, purchaseDate, store) ||
+      selectedReceipt !== null ||
+      (expiresAt.trim() !== '' && expiresAt !== baseline.expiresAt)
+    );
+  }, [visible, warranty, product, expiresAt, purchaseDate, store, selectedReceipt]);
 
   const receiptId = warranty?.receiptTransactionId;
 
@@ -166,6 +223,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      isDirty={isDirty}
       maxHeight="92%"
       scrollContentStyle={styles.content}
       header={(requestClose) => (

@@ -1,10 +1,12 @@
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
+import { PasswordStrengthMeter } from '@/components/security/PasswordStrengthMeter';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { isMockAuthEnabled, registerSchema, useAuth, getAuthErrorMessage } from '@/lib/auth';
+import { PASSWORD_POLICY_HINT, validatePassword } from '@/lib/security/passwordPolicy';
 import { colors, spacing } from '@/lib/theme';
 
 export default function RegisterScreen() {
@@ -17,6 +19,17 @@ export default function RegisterScreen() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const passwordValidation = useMemo(
+    () => validatePassword(password, { email, name }),
+    [password, email, name],
+  );
+
+  const canSubmit =
+    passwordValidation.valid &&
+    password === confirmPassword &&
+    name.trim().length >= 2 &&
+    email.includes('@');
 
   async function handleRegister() {
     setApiError(null);
@@ -134,6 +147,17 @@ export default function RegisterScreen() {
         error={errors.password}
       />
 
+      {password.length > 0 ? (
+        <PasswordStrengthMeter
+          strength={passwordValidation.strength}
+          errors={passwordValidation.errors}
+        />
+      ) : (
+        <Text variant="caption" color="textMuted">
+          {PASSWORD_POLICY_HINT}
+        </Text>
+      )}
+
       <TextField
         label="Confirmar password"
         value={confirmPassword}
@@ -148,7 +172,7 @@ export default function RegisterScreen() {
         label="Criar conta"
         onPress={handleRegister}
         loading={loading}
-        disabled={googleLoading}
+        disabled={!canSubmit || googleLoading}
         fullWidth
         size="lg"
         style={styles.submit}

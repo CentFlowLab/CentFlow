@@ -1,11 +1,13 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useDeleteSubscription, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { formFieldsDiffer, formHasAnyText } from '@/lib/forms';
 import type { Subscription, SubscriptionBillingInterval } from '@/lib/domain/assets.types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
@@ -31,6 +33,7 @@ export function SubscriptionFormModal({
   const isEditing = Boolean(subscription);
   const saveSubscription = useSaveSubscription();
   const deleteSubscription = useDeleteSubscription();
+  const { showToast } = useToast();
 
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
@@ -41,25 +44,61 @@ export function SubscriptionFormModal({
   const isSaving = saveSubscription.isPending;
   const isDeleting = deleteSubscription.isPending;
 
+  const baselineRef = useRef({
+    name: '',
+    amount: '',
+    renewsAt: '',
+    billingInterval: 'monthly' as SubscriptionBillingInterval,
+  });
+
   useEffect(() => {
     if (!visible) return;
 
     if (subscription) {
-      setName(subscription.name);
-      setAmount(String(subscription.amount));
-      setBillingInterval(subscription.billingInterval ?? 'monthly');
-      setRenewsAt(formatInputDate(subscription.renewsAt));
+      const next = {
+        name: subscription.name,
+        amount: String(subscription.amount),
+        billingInterval: subscription.billingInterval ?? 'monthly',
+        renewsAt: formatInputDate(subscription.renewsAt),
+      };
+      setName(next.name);
+      setAmount(next.amount);
+      setBillingInterval(next.billingInterval);
+      setRenewsAt(next.renewsAt);
+      baselineRef.current = next;
     } else {
-      setName('');
-      setAmount('');
-      setBillingInterval('monthly');
-      setRenewsAt('');
+      const empty = {
+        name: '',
+        amount: '',
+        billingInterval: 'monthly' as SubscriptionBillingInterval,
+        renewsAt: '',
+      };
+      setName(empty.name);
+      setAmount(empty.amount);
+      setBillingInterval(empty.billingInterval);
+      setRenewsAt(empty.renewsAt);
+      baselineRef.current = empty;
     }
 
     setApiError(null);
     saveSubscription.reset();
     deleteSubscription.reset();
   }, [visible, subscription?.id]);
+
+  const isDirty = useMemo(() => {
+    if (!visible) return false;
+
+    const baseline = baselineRef.current;
+
+    if (subscription) {
+      return (
+        formFieldsDiffer({ name, amount, renewsAt }, baseline) ||
+        billingInterval !== baseline.billingInterval
+      );
+    }
+
+    return formHasAnyText(name, amount, renewsAt);
+  }, [visible, subscription, name, amount, renewsAt, billingInterval]);
 
   async function handleSave() {
     setApiError(null);
@@ -88,9 +127,11 @@ export function SubscriptionFormModal({
         billingInterval,
         renewsAt: parsedRenewsAt,
       });
+      showToast(isEditing ? 'Subscrição actualizada.' : 'Subscrição adicionada.', 'success');
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'a subscrição'));
+      showToast('Não conseguimos guardar esta subscrição. Tenta novamente.', 'error');
     }
   }
 
@@ -118,7 +159,9 @@ export function SubscriptionFormModal({
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      isDirty={isDirty}
       maxHeight="92%"
+      scrollContentStyle={styles.form}
       header={(requestClose) => (
         <View style={styles.header}>
           <Text variant="h2">{isEditing ? 'Editar subscrição' : 'Nova subscrição'}</Text>

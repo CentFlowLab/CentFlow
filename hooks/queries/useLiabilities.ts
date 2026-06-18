@@ -12,6 +12,7 @@ import {
   saveSubscriptionForUser,
 } from '@/lib/liabilities/liabilities.service';
 import { useAuth } from '@/lib/auth';
+import { logDoctorMutationFailure } from '@/lib/doctor';
 
 function randomId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -36,6 +37,10 @@ export function useSaveCredit() {
 
   return useMutation({
     mutationFn: async (input: Omit<Credit, 'id'> & { id?: string }) => {
+      if (!userId) {
+        throw new Error('Sessão expirada. Inicia sessão novamente.');
+      }
+
       const credit: Credit = {
         id: input.id ?? randomId('credit'),
         name: input.name,
@@ -61,6 +66,14 @@ export function useSaveCredit() {
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+    },
+    onError: (error, variables) => {
+      logDoctorMutationFailure(error, {
+        action: 'save_credit',
+        screen: 'CreditFormModal',
+        authenticated: Boolean(userId),
+        payload: { id: variables.id, creditType: variables.creditType },
+      });
     },
   });
 }
@@ -107,6 +120,14 @@ export function useSaveSubscription() {
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+    },
+    onError: (error, variables) => {
+      logDoctorMutationFailure(error, {
+        action: 'save_subscription',
+        screen: 'SubscriptionFormModal',
+        authenticated: Boolean(userId),
+        payload: { id: variables.id, name: variables.name },
+      });
     },
   });
 }

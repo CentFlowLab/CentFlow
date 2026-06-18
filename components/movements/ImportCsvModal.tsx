@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
@@ -46,6 +46,11 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
     setFailedCount(0);
     importMutation.reset();
   }, [visible, importMutation]);
+
+  const isDirty = useMemo(() => {
+    if (!visible) return false;
+    return step !== 'pick' || parseResult !== null;
+  }, [visible, step, parseResult]);
 
   async function handlePickFile() {
     setPickError(null);
@@ -112,6 +117,7 @@ export function ImportCsvModal({ visible, onClose }: ImportCsvModalProps) {
     <DraggableBottomSheet
       visible={visible}
       onClose={handleClose}
+      isDirty={isDirty}
       header={(requestClose) => (
         <View style={styles.header}>
           <View style={styles.headerText}>

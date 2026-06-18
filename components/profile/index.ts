@@ -1,4 +1,5 @@
 export { FinancialProfileDetailSheet } from './FinancialProfileDetailSheet';
+export { ProfileHubSections } from './ProfileHubSections';
 export { FinancialProfileDimensionRow } from './FinancialProfileDimensionRow';
 export { FinancialProfileProgress } from './FinancialProfileProgress';
 export {

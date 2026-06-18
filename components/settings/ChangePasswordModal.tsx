@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Text, TextField } from '@/components/ui';
 import { useChangePassword } from '@/hooks/mutations/useProfileMutations';
+import { useFormDismiss } from '@/hooks/useFormDismiss';
 import { useToast } from '@/components/ui/Toast';
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
+import { formHasAnyText } from '@/lib/forms';
 import { spacing } from '@/lib/theme';
 
 type ChangePasswordModalProps = {
@@ -19,11 +21,23 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  useEffect(() => {
+    if (!visible) return;
+    setNewPassword('');
+    setConfirmPassword('');
+  }, [visible]);
+
   function handleClose() {
     setNewPassword('');
     setConfirmPassword('');
     onClose();
   }
+
+  const isDirty = useMemo(
+    () => formHasAnyText(newPassword, confirmPassword),
+    [newPassword, confirmPassword],
+  );
+  const dismiss = useFormDismiss(handleClose, isDirty);
 
   async function handleSubmit() {
     if (newPassword.length < 8) {
@@ -57,13 +71,16 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
     <DraggableBottomSheet
       visible={visible}
       onClose={handleClose}
+      isDirty={isDirty}
       maxHeight="70%"
-      header={() => (
+      header={(requestClose) => (
         <View style={styles.header}>
-          <Text variant="h3">Alterar palavra-passe</Text>
-          <Text variant="caption" color="textMuted">
-            Escolhe uma palavra-passe segura com pelo menos 8 caracteres.
-          </Text>
+          <View style={styles.headerText}>
+            <Text variant="h3">Alterar palavra-passe</Text>
+            <Text variant="caption" color="textMuted">
+              Escolhe uma palavra-passe segura com pelo menos 8 caracteres.
+            </Text>
+          </View>
         </View>
       )}>
       <TextField
@@ -87,7 +104,7 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
         loading={changePassword.isPending}
         fullWidth
       />
-      <Button label="Cancelar" variant="ghost" onPress={handleClose} fullWidth />
+      <Button label="Cancelar" variant="ghost" onPress={dismiss} fullWidth />
     </DraggableBottomSheet>
   );
 }
@@ -96,5 +113,8 @@ const styles = StyleSheet.create({
   header: {
     gap: spacing.xs,
     marginBottom: spacing.lg,
+  },
+  headerText: {
+    gap: spacing.xs,
   },
 });

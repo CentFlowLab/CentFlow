@@ -21,22 +21,28 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
+import { lightImpact } from '@/lib/haptics/light-impact';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const DISMISS_DRAG = 110;
 const DISMISS_VELOCITY = 850;
 const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
+const BLOCKED_SPRING = { damping: 18, stiffness: 420, mass: 0.7 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type DraggableBottomSheetProps = {
   visible: boolean;
   onClose: () => void;
+  /** Quando true, bloqueia swipe/backdrop e pede confirmação no X / voltar. */
+  isDirty?: boolean;
   /** Retorna true para cancelar o fecho (ex.: voltar um passo interno). */
   onBeforeClose?: () => boolean;
   header?: React.ReactNode | ((requestClose: () => void) => React.ReactNode);
@@ -49,6 +55,7 @@ type DraggableBottomSheetProps = {
 export function DraggableBottomSheet({
   visible,
   onClose,
+  isDirty = false,
   onBeforeClose,
   header,
   children,
@@ -60,8 +67,14 @@ export function DraggableBottomSheet({
   const translateY = useSharedValue(0);
   const sheetHeight = useSharedValue(0);
   const scrollOffset = useSharedValue(0);
+  const handlePulse = useSharedValue(0);
+  const isDirtyShared = useSharedValue(isDirty);
   const isClosingRef = useRef(false);
   const [isMounted, setIsMounted] = useState(visible);
+
+  useEffect(() => {
+    isDirtyShared.value = isDirty;
+  }, [isDirty, isDirtyShared]);
 
   const finishClose = useCallback(
     (notifyParent: boolean) => {
@@ -69,9 +82,10 @@ export function DraggableBottomSheet({
       setIsMounted(false);
       translateY.value = 0;
       scrollOffset.value = 0;
+      handlePulse.value = 0;
       if (notifyParent) onClose();
     },
-    [onClose, scrollOffset, translateY],
+    [handlePulse, onClose, scrollOffset, translateY],
   );
 
   const animateOut = useCallback(
@@ -89,17 +103,39 @@ export function DraggableBottomSheet({
     [finishClose, sheetHeight, translateY],
   );
 
-  const tryClose = useCallback(
-    (notifyParent: boolean) => {
-      if (onBeforeClose?.()) return;
-      animateOut(notifyParent);
-    },
-    [animateOut, onBeforeClose],
-  );
+  const performClose = useCallback(() => {
+    if (onBeforeClose?.()) return;
+    animateOut(true);
+  }, [animateOut, onBeforeClose]);
+
+  const onBlockedDismiss = useCallback(() => {
+    lightImpact();
+    handlePulse.value = withSequence(
+      withTiming(1, { duration: 80 }),
+      withTiming(0, { duration: 220 }),
+    );
+  }, [handlePulse]);
 
   const requestClose = useCallback(() => {
-    tryClose(true);
-  }, [tryClose]);
+    if (onBeforeClose?.()) return;
+
+    if (isDirty) {
+      confirmDiscardChanges(performClose);
+      return;
+    }
+
+    performClose();
+  }, [isDirty, onBeforeClose, performClose]);
+
+  const attemptGestureDismiss = useCallback(() => {
+    if (isDirtyShared.value) {
+      translateY.value = withSpring(0, BLOCKED_SPRING);
+      onBlockedDismiss();
+      return;
+    }
+
+    requestClose();
+  }, [isDirtyShared, onBlockedDismiss, requestClose, translateY]);
 
   useEffect(() => {
     if (visible) {
@@ -119,12 +155,12 @@ export function DraggableBottomSheet({
     if (!isMounted) return;
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      tryClose(true);
+      requestClose();
       return true;
     });
 
     return () => subscription.remove();
-  }, [isMounted, tryClose]);
+  }, [isMounted, requestClose]);
 
   const nativeScroll = Gesture.Native();
 
@@ -141,7 +177,13 @@ export function DraggableBottomSheet({
         translateY.value > DISMISS_DRAG || event.velocityY > DISMISS_VELOCITY;
 
       if (shouldDismiss) {
-        runOnJS(requestClose)();
+        if (isDirtyShared.value) {
+          translateY.value = withSpring(0, BLOCKED_SPRING);
+          runOnJS(onBlockedDismiss)();
+          return;
+        }
+
+        runOnJS(performClose)();
         return;
       }
 
@@ -159,6 +201,11 @@ export function DraggableBottomSheet({
     };
   });
 
+  const handleAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: handlePulse.value > 0.5 ? colors.primary : colors.borderStrong,
+    transform: [{ scaleX: 1 + handlePulse.value * 0.15 }],
+  }));
+
   if (!isMounted) return null;
 
   return (
@@ -173,7 +220,13 @@ export function DraggableBottomSheet({
         <View style={styles.overlay}>
           <AnimatedPressable
             style={[styles.backdrop, backdropAnimatedStyle]}
-            onPress={requestClose}
+            onPress={() => {
+              if (isDirty) {
+                onBlockedDismiss();
+                return;
+              }
+              requestClose();
+            }}
             accessibilityLabel="Fechar"
           />
 
@@ -189,7 +242,12 @@ export function DraggableBottomSheet({
                 sheetStyle,
               ]}>
               <View style={styles.handleArea}>
-                <View style={styles.handle} />
+                <Animated.View style={[styles.handle, handleAnimatedStyle]} />
+                {isDirty ? (
+                  <View style={styles.protectedHint}>
+                    <View style={styles.protectedDot} />
+                  </View>
+                ) : null}
               </View>
 
               {typeof header === 'function' ? header(requestClose) : header}
@@ -198,8 +256,8 @@ export function DraggableBottomSheet({
                 <KeyboardAwareScrollView
                   enableOnAndroid
                   enableAutomaticScroll
-                  extraScrollHeight={Platform.OS === 'ios' ? 72 : 48}
-                  extraHeight={140}
+                  extraScrollHeight={Platform.OS === 'ios' ? 96 : 64}
+                  extraHeight={180}
                   keyboardOpeningTime={0}
                   enableResetScrollToCoords={false}
                   onScroll={(event) => {
@@ -248,6 +306,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
   handle: {
     width: 40,
@@ -255,11 +314,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.borderStrong,
   },
+  protectedHint: {
+    height: 4,
+  },
+  protectedDot: {
+    width: 6,
+    height: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    opacity: 0.85,
+  },
   keyboard: {
     flexGrow: 0,
     flexShrink: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing['2xl'],
+    flexGrow: 1,
   },
 });

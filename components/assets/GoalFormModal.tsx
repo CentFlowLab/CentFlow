@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
@@ -7,6 +7,7 @@ import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui'
 import { useCreateGoal, useDeleteGoal, useUpdateGoal } from '@/hooks/queries/useAssets';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { formFieldsDiffer, formHasAnyText } from '@/lib/forms';
 import type { Goal } from '@/lib/domain/assets.types';
 import { createGoalSchema } from '@/lib/domain/assets.schema';
 import {
@@ -45,19 +46,30 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
   const isSaving = createGoal.isPending || updateGoal.isPending;
   const isDeleting = deleteGoal.isPending;
 
+  const baselineRef = useRef({ name: '', target: '', current: '', deadline: '' });
+
   useEffect(() => {
     if (!visible) return;
 
     if (goal) {
-      setName(goal.name);
-      setTarget(formatGoalAmount(goal.target));
-      setCurrent(formatGoalAmount(goal.current));
-      setDeadline(formatInputDate(goal.deadline));
+      const next = {
+        name: goal.name,
+        target: formatGoalAmount(goal.target),
+        current: formatGoalAmount(goal.current),
+        deadline: formatInputDate(goal.deadline),
+      };
+      setName(next.name);
+      setTarget(next.target);
+      setCurrent(next.current);
+      setDeadline(next.deadline);
+      baselineRef.current = next;
     } else {
-      setName('');
-      setTarget('');
-      setCurrent('');
-      setDeadline('');
+      const empty = { name: '', target: '', current: '', deadline: '' };
+      setName(empty.name);
+      setTarget(empty.target);
+      setCurrent(empty.current);
+      setDeadline(empty.deadline);
+      baselineRef.current = empty;
     }
 
     setErrors({});
@@ -65,8 +77,15 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
     createGoal.reset();
     updateGoal.reset();
     deleteGoal.reset();
-    // Mutations mudam de referência a cada render — só re-inicializar ao abrir ou mudar item.
   }, [visible, goal?.id]);
+
+  const isDirty = useMemo(() => {
+    if (!visible) return false;
+    if (goal) {
+      return formFieldsDiffer({ name, target, current, deadline }, baselineRef.current);
+    }
+    return formHasAnyText(name, target, current, deadline);
+  }, [visible, goal, name, target, current, deadline]);
 
   const preview = useMemo(() => {
     const targetValue = parseGoalAmount(target);
@@ -149,6 +168,7 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      isDirty={isDirty}
       maxHeight="92%"
       scrollContentStyle={styles.content}
       header={(requestClose) => (

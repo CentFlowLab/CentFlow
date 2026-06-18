@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ASSETS_SECTION_META } from '@/components/assets/assets.config';
@@ -12,6 +12,7 @@ import {
 } from '@/hooks/queries/useAssets';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { formFieldsDiffer, formHasAnyText } from '@/lib/forms';
 import { createInventoryItemSchema } from '@/lib/domain/assets.schema';
 import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
@@ -50,17 +51,27 @@ export function InventoryFormModal({
   const isSaving = createInventory.isPending || updateInventory.isPending;
   const isDeleting = deleteInventory.isPending;
 
+  const baselineRef = useRef({ name: '', value: '', category: '' });
+
   useEffect(() => {
     if (!visible) return;
 
     if (item) {
-      setName(item.name);
-      setValue(String(item.value));
-      setCategory(item.category ?? '');
+      const next = {
+        name: item.name,
+        value: String(item.value),
+        category: item.category ?? '',
+      };
+      setName(next.name);
+      setValue(next.value);
+      setCategory(next.category);
+      baselineRef.current = next;
     } else {
-      setName('');
-      setValue('');
-      setCategory('');
+      const empty = { name: '', value: '', category: '' };
+      setName(empty.name);
+      setValue(empty.value);
+      setCategory(empty.category);
+      baselineRef.current = empty;
     }
 
     setErrors({});
@@ -69,6 +80,14 @@ export function InventoryFormModal({
     updateInventory.reset();
     deleteInventory.reset();
   }, [visible, item?.id]);
+
+  const isDirty = useMemo(() => {
+    if (!visible) return false;
+    if (item) {
+      return formFieldsDiffer({ name, value, category }, baselineRef.current);
+    }
+    return formHasAnyText(name, value, category);
+  }, [visible, item, name, value, category]);
 
   async function handleSave() {
     setApiError(null);
@@ -140,6 +159,7 @@ export function InventoryFormModal({
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      isDirty={isDirty}
       maxHeight="88%"
       scrollContentStyle={styles.content}
       header={(requestClose) => (

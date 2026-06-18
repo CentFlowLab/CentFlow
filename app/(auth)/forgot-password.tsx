@@ -70,7 +70,7 @@ export default function ForgotPasswordScreen() {
             Email enviado!
           </Text>
           <Text variant="caption" color="textSecondary">
-            Se existir uma conta com esse email, receberás instruções em breve.
+            Enviámos um email com instruções para redefinir a password.
           </Text>
         </Card>
       ) : null}

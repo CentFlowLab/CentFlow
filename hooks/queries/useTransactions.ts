@@ -10,6 +10,7 @@ import {
   updateTransaction,
 } from '@/lib/api/services/transaction.service';
 import { useAuth } from '@/lib/auth';
+import { logDoctorMutationFailure } from '@/lib/doctor';
 import { getCategoryLabel } from '@/lib/data/transaction-categories';
 import type {
   CreateTransactionInput,
@@ -73,6 +74,13 @@ export function useCreateTransaction() {
       createTransaction(input, { onPhase: setPhase }),
     onSettled: () => setPhase(null),
     onSuccess: () => invalidateTransactionQueries(queryClient),
+    onError: (error, variables) => {
+      logDoctorMutationFailure(error, {
+        action: 'create_transaction',
+        screen: 'AddTransactionModal',
+        payload: { type: variables.type, category: variables.category },
+      });
+    },
   });
 
   return {

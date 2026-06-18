@@ -35,3 +35,9 @@ file_size_limit = "10MiB"
 
 [functions.process-receipt]
 verify_jwt = true
+
+[functions.send-email]
+verify_jwt = true
+
+[functions.email-jobs]
+verify_jwt = false

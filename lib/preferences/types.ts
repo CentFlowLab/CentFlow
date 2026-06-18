@@ -11,6 +11,12 @@ export type UserPreferences = {
   warrantyAlerts: boolean;
   budgetAlerts: boolean;
   weeklyDigest: boolean;
+  emailImportant: boolean;
+  emailWeeklyDigest: boolean;
+  emailWarrantyAlerts: boolean;
+  emailSubscriptionRenewals: boolean;
+  emailCreditPayments: boolean;
+  emailTipsInsights: boolean;
   region: UserRegion;
   themeId: ThemeId;
   biometricsEnabled: boolean;

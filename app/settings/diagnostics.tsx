@@ -13,12 +13,36 @@ import {
   subscribeAppLog,
   type AppLogEntry,
 } from '@/lib/diagnostics';
+import {
+  EMAIL_TYPE_LABELS,
+  invokeTestEmail,
+  isEmailDevToolsEnabled,
+  type LifecycleEmailType,
+} from '@/lib/email';
 import { colors, radius, spacing } from '@/lib/theme';
 
 export default function DiagnosticsSettingsScreen() {
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const [entries, setEntries] = useState<AppLogEntry[]>([]);
+  const [emailLoading, setEmailLoading] = useState<LifecycleEmailType | null>(null);
+
+  const emailTestTypes = Object.keys(EMAIL_TYPE_LABELS) as LifecycleEmailType[];
+
+  async function handleTestEmail(type: LifecycleEmailType) {
+    setEmailLoading(type);
+    try {
+      await invokeTestEmail(type);
+      showToast(`Email «${EMAIL_TYPE_LABELS[type]}» registado (preview/envio).`, 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Falha ao testar email.',
+        'error',
+      );
+    } finally {
+      setEmailLoading(null);
+    }
+  }
 
   useEffect(() => {
     if (!isDiagnosticsEnabled()) {
@@ -32,7 +56,7 @@ export default function DiagnosticsSettingsScreen() {
     try {
       await Share.share({
         message: exportAppLogText(),
-        title: 'CentFlow — Log de diagnóstico',
+        title: 'CentFlow Doctor — Log',
       });
     } catch {
       showToast('Não foi possível partilhar o log.', 'error');
@@ -43,7 +67,7 @@ export default function DiagnosticsSettingsScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Diagnóstico" subtitle="Erros e eventos da app em tempo real" showBack />
+      <AppHeader title="CentFlow Doctor" subtitle="Erros, mutations e contexto técnico" showBack />
 
       <ScrollView
         contentContainerStyle={[
@@ -68,6 +92,25 @@ export default function DiagnosticsSettingsScreen() {
               fullWidth
             />
           </View>
+
+          {isEmailDevToolsEnabled() ? (
+            <View style={styles.emailSection}>
+              <Text variant="label" color="textMuted">
+                Testar emails lifecycle
+              </Text>
+              {emailTestTypes.map((type) => (
+                <Button
+                  key={type}
+                  label={EMAIL_TYPE_LABELS[type]}
+                  variant="secondary"
+                  loading={emailLoading === type}
+                  disabled={emailLoading !== null}
+                  onPress={() => void handleTestEmail(type)}
+                  fullWidth
+                />
+              ))}
+            </View>
+          ) : null}
 
           <View style={styles.list}>
             {entries.map((entry) => (
@@ -106,6 +149,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   actions: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  emailSection: {
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },

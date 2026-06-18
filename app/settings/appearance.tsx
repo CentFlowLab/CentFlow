@@ -16,6 +16,9 @@ export default function AppearanceScreen() {
   const updatePreferences = useUpdatePreferences();
   const { showToast } = useToast();
 
+  const activeTheme = THEME_OPTIONS.find((item) => item.id === preferences?.themeId) ?? THEME_OPTIONS[0];
+  const upcomingThemes = THEME_OPTIONS.filter((item) => !item.available);
+
   async function handleSelectTheme(themeId: ThemeId) {
     const theme = THEME_OPTIONS.find((item) => item.id === themeId);
     if (!theme?.available) {
@@ -43,49 +46,55 @@ export default function AppearanceScreen() {
     <SettingsScreenLayout title="Aparência" subtitle="Tema visual da aplicação">
       <SettingsHero
         icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
-        title="Personaliza o visual"
-        description="A tua preferência fica guardada para quando novos temas estiverem disponíveis."
+        title="Tema actual"
+        description="Dark Premium é o visual activo da CentFlow."
       />
 
-      {THEME_OPTIONS.map((theme) => {
-        const isActive = preferences.themeId === theme.id;
-        return (
-          <Pressable
-            key={theme.id}
-            onPress={() => handleSelectTheme(theme.id)}
-            style={({ pressed }) => [pressed && styles.pressed]}>
-            <Card
-              variant={isActive ? 'elevated' : 'outlined'}
-              style={[styles.themeCard, isActive && styles.themeCardActive]}>
-              <View style={styles.themeHeader}>
-                <Text variant="bodyMedium">{theme.name}</Text>
-                {isActive ? (
-                  <View style={styles.activeBadge}>
-                    <Text variant="caption" color="primary">
-                      Activo
-                    </Text>
-                  </View>
-                ) : !theme.available ? (
-                  <Text variant="caption" color="textMuted">
-                    Em breve
-                  </Text>
-                ) : null}
-              </View>
-              <Text variant="caption" color="textMuted">
-                {theme.description}
+      <Pressable
+        onPress={() => handleSelectTheme(activeTheme.id)}
+        style={({ pressed }) => [pressed && styles.pressed]}>
+        <Card variant="elevated" style={[styles.themeCard, styles.themeCardActive]}>
+          <View style={styles.themeHeader}>
+            <Text variant="bodyMedium">{activeTheme.name}</Text>
+            <View style={styles.activeBadge}>
+              <Text variant="caption" color="primary">
+                Activo
               </Text>
-              <View style={styles.previewRow}>
-                {theme.preview.map((color, index) => (
-                  <View
-                    key={`${theme.id}-${index}`}
-                    style={[styles.previewSwatch, { backgroundColor: color }]}
-                  />
-                ))}
+            </View>
+          </View>
+          <Text variant="caption" color="textMuted">
+            {activeTheme.description}
+          </Text>
+          <View style={styles.previewRow}>
+            {activeTheme.preview.map((color, index) => (
+              <View
+                key={`${activeTheme.id}-${index}`}
+                style={[styles.previewSwatch, { backgroundColor: color }]}
+              />
+            ))}
+          </View>
+        </Card>
+      </Pressable>
+
+      {upcomingThemes.length > 0 ? (
+        <View style={styles.upcomingBlock}>
+          <Text variant="label" color="textMuted">
+            Em breve
+          </Text>
+          {upcomingThemes.map((theme) => (
+            <Card key={theme.id} variant="outlined" style={styles.upcomingCard}>
+              <View style={styles.upcomingRow}>
+                <Text variant="caption" color="textSecondary">
+                  {theme.name}
+                </Text>
+                <Text variant="caption" color="textMuted">
+                  {theme.description}
+                </Text>
               </View>
             </Card>
-          </Pressable>
-        );
-      })}
+          ))}
+        </View>
+      ) : null}
     </SettingsScreenLayout>
   );
 }
@@ -93,7 +102,7 @@ export default function AppearanceScreen() {
 const styles = StyleSheet.create({
   themeCard: {
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   themeCardActive: {
     borderColor: colors.primary,
@@ -120,6 +129,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  upcomingBlock: {
+    gap: spacing.sm,
+  },
+  upcomingCard: {
+    paddingVertical: spacing.sm,
+  },
+  upcomingRow: {
+    gap: spacing.xs,
   },
   pressed: {
     opacity: 0.9,

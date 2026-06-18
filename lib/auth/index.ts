@@ -12,7 +12,7 @@ export {
 export { isSupabaseEnabled, isGoogleSignInAvailable } from '@/lib/supabase';
 export * as authService from './auth.service';
 export { getAuthErrorMessage } from './errors';
-export { loginSchema, registerSchema, forgotPasswordSchema } from './schemas';
+export { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema } from './schemas';
 export type {
   User,
   AuthSession,

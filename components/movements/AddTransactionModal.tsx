@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -8,6 +8,7 @@ import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast';
 import { useProcessReceipt } from '@/hooks/useProcessReceipt';
 import { useReceiptImage } from '@/hooks/useReceiptImage';
+import { formHasAnyText } from '@/lib/forms';
 import {
   getCreateTransactionPhaseLabel,
   useCreateTransaction,
@@ -26,6 +27,7 @@ import {
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { colors, radius, spacing } from '@/lib/theme';
+import { logDoctorValidationFailure } from '@/lib/doctor';
 import { todayInputDate } from '@/lib/utils/format';
 
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
@@ -100,9 +102,12 @@ export function AddTransactionModal({
   useEffect(() => {
     if (!visible) return;
 
-    setType(lockedType ?? 'expense');
+    const initialType = lockedType ?? 'expense';
+    const defaultCategory = getCategoriesForType(initialType)[0]?.id ?? '';
+
+    setType(initialType);
     setAmount('');
-    setCategory('');
+    setCategory(defaultCategory);
     setDescription('');
     setDate(todayInputDate());
     setErrors({});
@@ -117,6 +122,14 @@ export function AddTransactionModal({
     processReceipt.reset();
     didAutoPick.current = false;
   }, [visible, lockedType]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const cats = getCategoriesForType(type);
+    setCategory((current) =>
+      current && cats.some((item) => item.id === current) ? current : cats[0]?.id ?? '',
+    );
+  }, [type, visible]);
 
   useEffect(() => {
     setCategory('');
@@ -230,6 +243,13 @@ export function AddTransactionModal({
         if (typeof key === 'string') fieldErrors[key] = issue.message;
       });
       setErrors(fieldErrors);
+      logDoctorValidationFailure({
+        action: 'create_transaction',
+        screen: 'AddTransactionModal',
+        reason: result.error.issues.map((issue) => issue.message).join('; '),
+        payload: { type, category },
+      });
+      showToast('Verifica os campos assinalados.', 'error');
       return;
     }
 
@@ -263,6 +283,7 @@ export function AddTransactionModal({
         track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, { type: result.data.type });
       }
 
+      showToast('Movimento guardado.', 'success');
       onClose();
     } catch (error) {
       if (error instanceof ReceiptUploadError) {
@@ -270,6 +291,7 @@ export function AddTransactionModal({
       } else {
         setApiError(getApiErrorMessage(error, 'o movimento'));
       }
+      showToast('Não conseguimos guardar este movimento. Tenta novamente.', 'error');
     }
   }
 
@@ -350,6 +372,21 @@ export function AddTransactionModal({
 
   const showConfirm = confirmVisible && processedReceipt !== null;
 
+  const isDirty = useMemo(() => {
+    if (!visible) return false;
+    if (showConfirm || receiptImage.draft || processedReceipt || manualFillMode) return true;
+    return formHasAnyText(amount, category, description);
+  }, [
+    visible,
+    showConfirm,
+    receiptImage.draft,
+    processedReceipt,
+    manualFillMode,
+    amount,
+    category,
+    description,
+  ]);
+
   const hasReceipt = Boolean(receiptImage.draft);
   const showTransactionForm = !hasReceipt || manualFillMode;
   const isBusy = isProcessing || isSaving || isUploadingOnly;
@@ -374,6 +411,7 @@ export function AddTransactionModal({
       <DraggableBottomSheet
         visible={visible}
         onClose={onClose}
+        isDirty={isDirty}
         onBeforeClose={() => {
           if (showConfirm) {
             setConfirmVisible(false);

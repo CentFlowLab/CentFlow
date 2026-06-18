@@ -200,6 +200,23 @@ export async function requestPasswordReset(email: string): Promise<void> {
   });
 }
 
+export async function completePasswordRecoveryFromUrl(url: string): Promise<void> {
+  if (!isSupabaseEnabled()) {
+    throw new Error('Recuperação de password só disponível com Supabase.');
+  }
+
+  await supabaseAuth.completePasswordRecoveryFromUrl(url);
+}
+
+export async function updatePasswordAfterRecovery(newPassword: string): Promise<void> {
+  if (isSupabaseEnabled()) {
+    await supabaseAuth.updatePassword(newPassword);
+    return;
+  }
+
+  throw new Error('Alteração de password indisponível neste ambiente.');
+}
+
 /** Carrega token guardado e valida sessão. */
 export async function restoreSession(): Promise<AuthSession | null> {
   if (isSupabaseEnabled()) {

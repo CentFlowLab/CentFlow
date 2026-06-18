@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
@@ -15,6 +15,7 @@ import {
 import { updateTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { formFieldsDiffer } from '@/lib/forms';
 import { colors, spacing } from '@/lib/theme';
 
 import { TransactionForm } from './TransactionForm';
@@ -45,13 +46,41 @@ export function EditTransactionModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
+  const baselineRef = useRef<TransactionFormValues>({
+    type: 'expense',
+    amount: '',
+    category: '',
+    description: '',
+    date: '',
+  });
+
   useEffect(() => {
     if (!visible || !transaction) return;
-    setValues(transactionToFormValues(transaction));
+    const next = transactionToFormValues(transaction);
+    setValues(next);
+    baselineRef.current = next;
     setErrors({});
     setApiError(null);
     updateMutation.reset();
   }, [visible, transaction?.id]);
+
+  const isDirty = useMemo(() => {
+    if (!visible || !transaction) return false;
+    return formFieldsDiffer(
+      {
+        amount: values.amount,
+        category: values.category,
+        description: values.description,
+        date: values.date,
+      },
+      {
+        amount: baselineRef.current.amount,
+        category: baselineRef.current.category,
+        description: baselineRef.current.description,
+        date: baselineRef.current.date,
+      },
+    ) || values.type !== baselineRef.current.type;
+  }, [visible, transaction, values]);
 
   if (!transaction) return null;
 
@@ -94,6 +123,7 @@ export function EditTransactionModal({
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      isDirty={isDirty}
       maxHeight="92%"
       scrollContentStyle={styles.content}
       header={(requestClose) => (

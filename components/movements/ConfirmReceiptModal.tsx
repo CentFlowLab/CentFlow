@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   BackHandler,
@@ -20,6 +20,7 @@ import {
 import { receiptConfirmationSchema } from '@/lib/domain/receipt-confirmation.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { formFieldsDiffer } from '@/lib/forms';
 import { getReceiptDisplayUri } from '@/lib/receipt/receipt-image-preprocess';
 import {
   getOcrConfidenceTone,
@@ -157,15 +158,58 @@ export function ConfirmReceiptModal({
   const [viewerOpen, setViewerOpen] = useState(false);
   const [rawTextOpen, setRawTextOpen] = useState(false);
 
+  const baselineRef = useRef<ReceiptFormValues>(emptyReceiptFormValues());
+
   useEffect(() => {
     if (!visible || !processed) return;
-    setValues(ocrToFormValues(processed.ocrResult));
+    const next = ocrToFormValues(processed.ocrResult);
+    setValues(next);
+    baselineRef.current = next;
     setErrors({});
     setApiError(null);
     setManualMode(false);
     setViewerOpen(false);
     setRawTextOpen(false);
   }, [visible, processed]);
+
+  const isDirty = useMemo(() => {
+    if (!visible || embedded || !processed) return false;
+    if (manualMode) {
+      return formFieldsDiffer(
+        {
+          amount: values.amount,
+          category: values.category,
+          description: values.description,
+          date: values.date,
+          merchantName: values.merchantName,
+        },
+        {
+          amount: baselineRef.current.amount,
+          category: baselineRef.current.category,
+          description: baselineRef.current.description,
+          date: baselineRef.current.date,
+          merchantName: baselineRef.current.merchantName,
+        },
+      ) || values.type !== baselineRef.current.type;
+    }
+
+    return formFieldsDiffer(
+      {
+        amount: values.amount,
+        category: values.category,
+        description: values.description,
+        date: values.date,
+        merchantName: values.merchantName,
+      },
+      {
+        amount: baselineRef.current.amount,
+        category: baselineRef.current.category,
+        description: baselineRef.current.description,
+        date: baselineRef.current.date,
+        merchantName: baselineRef.current.merchantName,
+      },
+    ) || values.type !== baselineRef.current.type;
+  }, [visible, embedded, processed, manualMode, values]);
 
   useEffect(() => {
     if (!visible || !embedded) return;
@@ -435,6 +479,7 @@ export function ConfirmReceiptModal({
       <DraggableBottomSheet
         visible={visible}
         onClose={onClose}
+        isDirty={isDirty}
         maxHeight="94%"
         scrollContentStyle={styles.content}
         header={sheetHeader}>

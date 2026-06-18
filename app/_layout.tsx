@@ -13,9 +13,9 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect } from '@/components/app';
+import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect, AppSecurityBootstrap, BiometricGate, EmailDeepLinkHandler } from '@/components/app';
 import { DiagnosticsBootstrap, DiagnosticOverlay } from '@/components/diagnostics';
-import { AuthLoadingScreen } from '@/components/auth';
+import { View } from 'react-native';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
 import { queryClient } from '@/lib/api';
@@ -27,11 +27,7 @@ export const unstable_settings = {
   initialRouteName: 'index',
 };
 
-void SplashScreen.preventAutoHideAsync().catch(() => {
-  // Ignora se o splash nativo já foi escondido (reload / OTA).
-});
-
-const SPLASH_MAX_MS = 5000;
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const CentFlowTheme = {
   ...DarkTheme,
@@ -81,7 +77,12 @@ export default function RootLayout() {
                   <StatusBar style="light" />
                   <DiagnosticsBootstrap />
                   <AndroidNavigationBarEffect />
-                  <RootNavigator />
+                  <AppSecurityBootstrap>
+                    <BiometricGate>
+                      <EmailDeepLinkHandler />
+                      <RootNavigator />
+                    </BiometricGate>
+                  </AppSecurityBootstrap>
                   <DiagnosticOverlay />
                 </ThemeProvider>
               </PreferencesProvider>
@@ -97,21 +98,17 @@ function RootNavigator() {
   const { isAuthenticated, isLoading, startupError, retryBootstrap } = useAuth();
 
   useEffect(() => {
+    void SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!isLoading) {
       void SplashScreen.hideAsync().catch(() => {});
     }
   }, [isLoading]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void SplashScreen.hideAsync().catch(() => {});
-    }, SPLASH_MAX_MS);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   if (isLoading) {
-    return <AuthLoadingScreen />;
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
   }
 
   if (startupError) {
@@ -130,8 +127,10 @@ function RootNavigator() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
+          animation: 'slide_from_right',
         }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="reset-password" options={{ animation: 'fade' }} />
         <Stack.Screen
           name="auth/callback"
           options={{ presentation: 'modal', animation: 'fade' }}

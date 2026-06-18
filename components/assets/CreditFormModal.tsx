@@ -1,12 +1,19 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useDeleteCredit, useSaveCredit } from '@/hooks/queries/useLiabilities';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { formFieldsDiffer, formHasAnyText } from '@/lib/forms';
 import { analyzeCredit } from '@/lib/credit/credit-analysis';
+import {
+  CREDIT_TYPE_OPTIONS,
+  inferCreditTypeFromName,
+  resolveCreditName,
+} from '@/lib/credit/credit-type.utils';
 import type { Credit, CreditType } from '@/lib/domain/types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
@@ -23,13 +30,7 @@ type CreditFormModalProps = {
   credit?: Credit | null;
 };
 
-const CREDIT_TYPES: Array<{ key: CreditType; label: string }> = [
-  { key: 'personal', label: 'Pessoal' },
-  { key: 'mortgage', label: 'Habitação' },
-  { key: 'auto', label: 'Automóvel' },
-  { key: 'student', label: 'Estudante' },
-  { key: 'other', label: 'Outro' },
-];
+const CREDIT_TYPES = CREDIT_TYPE_OPTIONS;
 
 function parseOptionalAmount(value: string): number | undefined {
   if (!value.trim()) return undefined;
@@ -54,8 +55,9 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
   const isEditing = Boolean(credit);
   const saveCredit = useSaveCredit();
   const deleteCredit = useDeleteCredit();
+  const { showToast } = useToast();
 
-  const [name, setName] = useState('');
+  const [customName, setCustomName] = useState('');
   const [creditType, setCreditType] = useState<CreditType>('personal');
   const [lender, setLender] = useState('');
   const [originalAmount, setOriginalAmount] = useState('');
@@ -77,52 +79,166 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
   const isSaving = saveCredit.isPending;
   const isDeleting = deleteCredit.isPending;
 
+  const baselineRef = useRef<Record<string, string | CreditType>>({
+    creditType: 'personal',
+    customName: '',
+    lender: '',
+    originalAmount: '',
+    balance: '',
+    interestRateAnnual: '',
+    indexRate: '',
+    spread: '',
+    termMonths: '',
+    monthlyPayment: '',
+    insuranceMonthly: '',
+    monthlyIncome: '',
+    earlyAmortization: '',
+    nextAmount: '',
+    nextDate: '',
+    startDate: '',
+    notes: '',
+  });
+
   useEffect(() => {
     if (!visible) return;
 
+    const applySnapshot = (snapshot: Record<string, string | CreditType>) => {
+      setCreditType(snapshot.creditType as CreditType);
+      setCustomName(String(snapshot.customName ?? ''));
+      setLender(String(snapshot.lender ?? ''));
+      setOriginalAmount(String(snapshot.originalAmount ?? ''));
+      setBalance(String(snapshot.balance ?? ''));
+      setInterestRateAnnual(String(snapshot.interestRateAnnual ?? ''));
+      setIndexRate(String(snapshot.indexRate ?? ''));
+      setSpread(String(snapshot.spread ?? ''));
+      setTermMonths(String(snapshot.termMonths ?? ''));
+      setMonthlyPayment(String(snapshot.monthlyPayment ?? ''));
+      setInsuranceMonthly(String(snapshot.insuranceMonthly ?? ''));
+      setMonthlyIncome(String(snapshot.monthlyIncome ?? ''));
+      setEarlyAmortization(String(snapshot.earlyAmortization ?? ''));
+      setNextAmount(String(snapshot.nextAmount ?? ''));
+      setNextDate(String(snapshot.nextDate ?? ''));
+      setStartDate(String(snapshot.startDate ?? ''));
+      setNotes(String(snapshot.notes ?? ''));
+      baselineRef.current = snapshot;
+    };
+
     if (credit) {
-      setName(credit.name);
-      setCreditType(credit.creditType ?? 'personal');
-      setLender(credit.lender ?? '');
-      setOriginalAmount(credit.originalAmount ? String(credit.originalAmount) : '');
-      setBalance(String(credit.outstandingBalance));
-      setInterestRateAnnual(
-        credit.interestRateAnnual !== undefined ? String(credit.interestRateAnnual) : '',
-      );
-      setIndexRate(credit.indexRate !== undefined ? String(credit.indexRate) : '');
-      setSpread(credit.spread !== undefined ? String(credit.spread) : '');
-      setTermMonths(credit.termMonths ? String(credit.termMonths) : '');
-      setMonthlyPayment(credit.monthlyPayment ? String(credit.monthlyPayment) : '');
-      setInsuranceMonthly(credit.insuranceMonthly ? String(credit.insuranceMonthly) : '');
-      setMonthlyIncome(credit.monthlyIncome ? String(credit.monthlyIncome) : '');
-      setNextAmount(credit.nextPaymentAmount ? String(credit.nextPaymentAmount) : '');
-      setNextDate(formatInputDate(credit.nextPaymentDate));
-      setStartDate(formatInputDate(credit.startDate));
-      setNotes(credit.notes ?? '');
+      const type = credit.creditType ?? inferCreditTypeFromName(credit.name);
+      applySnapshot({
+        creditType: type,
+        customName: type === 'other' ? credit.name : '',
+        lender: credit.lender ?? '',
+        originalAmount: credit.originalAmount ? String(credit.originalAmount) : '',
+        balance: String(credit.outstandingBalance),
+        interestRateAnnual:
+          credit.interestRateAnnual !== undefined ? String(credit.interestRateAnnual) : '',
+        indexRate: credit.indexRate !== undefined ? String(credit.indexRate) : '',
+        spread: credit.spread !== undefined ? String(credit.spread) : '',
+        termMonths: credit.termMonths ? String(credit.termMonths) : '',
+        monthlyPayment: credit.monthlyPayment ? String(credit.monthlyPayment) : '',
+        insuranceMonthly: credit.insuranceMonthly ? String(credit.insuranceMonthly) : '',
+        monthlyIncome: credit.monthlyIncome ? String(credit.monthlyIncome) : '',
+        earlyAmortization: '',
+        nextAmount: credit.nextPaymentAmount ? String(credit.nextPaymentAmount) : '',
+        nextDate: formatInputDate(credit.nextPaymentDate),
+        startDate: formatInputDate(credit.startDate),
+        notes: credit.notes ?? '',
+      });
     } else {
-      setName('');
-      setCreditType('personal');
-      setLender('');
-      setOriginalAmount('');
-      setBalance('');
-      setInterestRateAnnual('');
-      setIndexRate('');
-      setSpread('');
-      setTermMonths('');
-      setMonthlyPayment('');
-      setInsuranceMonthly('');
-      setMonthlyIncome('');
-      setEarlyAmortization('');
-      setNextAmount('');
-      setNextDate('');
-      setStartDate('');
-      setNotes('');
+      applySnapshot({
+        creditType: 'personal',
+        customName: '',
+        lender: '',
+        originalAmount: '',
+        balance: '',
+        interestRateAnnual: '',
+        indexRate: '',
+        spread: '',
+        termMonths: '',
+        monthlyPayment: '',
+        insuranceMonthly: '',
+        monthlyIncome: '',
+        earlyAmortization: '',
+        nextAmount: '',
+        nextDate: '',
+        startDate: '',
+        notes: '',
+      });
     }
 
     setApiError(null);
     saveCredit.reset();
     deleteCredit.reset();
   }, [visible, credit?.id]);
+
+  const isDirty = useMemo(() => {
+    if (!visible) return false;
+
+    const current = {
+      customName,
+      lender,
+      originalAmount,
+      balance,
+      interestRateAnnual,
+      indexRate,
+      spread,
+      termMonths,
+      monthlyPayment,
+      insuranceMonthly,
+      monthlyIncome,
+      earlyAmortization,
+      nextAmount,
+      nextDate,
+      startDate,
+      notes,
+    };
+    const baseline = baselineRef.current;
+
+    if (credit) {
+      const { creditType: _ignored, ...baselineFields } = baseline;
+      return formFieldsDiffer(current, baselineFields) || creditType !== baseline.creditType;
+    }
+
+    return formHasAnyText(
+      customName,
+      lender,
+      originalAmount,
+      balance,
+      interestRateAnnual,
+      indexRate,
+      spread,
+      termMonths,
+      monthlyPayment,
+      insuranceMonthly,
+      monthlyIncome,
+      earlyAmortization,
+      nextAmount,
+      nextDate,
+      startDate,
+      notes,
+    );
+  }, [
+    visible,
+    credit,
+    creditType,
+    customName,
+    lender,
+    originalAmount,
+    balance,
+    interestRateAnnual,
+    indexRate,
+    spread,
+    termMonths,
+    monthlyPayment,
+    insuranceMonthly,
+    monthlyIncome,
+    earlyAmortization,
+    nextAmount,
+    nextDate,
+    startDate,
+    notes,
+  ]);
 
   const analysis = useMemo(() => {
     const outstandingBalance = parseGoalAmount(balance);
@@ -159,8 +275,10 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
     setApiError(null);
 
     const outstandingBalance = parseGoalAmount(balance);
-    if (!name.trim()) {
-      setApiError('Indica o nome do crédito.');
+    const resolvedName = resolveCreditName(creditType, customName);
+
+    if (creditType === 'other' && !resolvedName) {
+      setApiError('Indica o tipo de crédito personalizado.');
       return;
     }
     if (Number.isNaN(outstandingBalance) || outstandingBalance < 0) {
@@ -183,7 +301,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
     try {
       await saveCredit.mutateAsync({
         id: credit?.id,
-        name: name.trim(),
+        name: resolvedName,
         outstandingBalance,
         creditType,
         lender: lender.trim() || undefined,
@@ -200,9 +318,11 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
         startDate: parsedStartDate,
         notes: notes.trim() || undefined,
       });
+      showToast(isEditing ? 'Crédito actualizado.' : 'Crédito adicionado.', 'success');
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'o crédito'));
+      showToast('Não conseguimos guardar este crédito. Tenta novamente.', 'error');
     }
   }
 
@@ -230,7 +350,9 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      isDirty={isDirty}
       maxHeight="94%"
+      scrollContentStyle={styles.form}
       header={(requestClose) => (
         <View style={styles.header}>
           <View>
@@ -248,8 +370,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
           </Pressable>
         </View>
       )}>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={styles.form}>
+      <View style={styles.form}>
           <Text variant="label" color="textMuted">
             Tipo de crédito
           </Text>
@@ -257,7 +378,10 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
             {CREDIT_TYPES.map((type) => (
               <Pressable
                 key={type.key}
-                onPress={() => setCreditType(type.key)}
+                onPress={() => {
+                  setCreditType(type.key);
+                  if (type.key !== 'other') setCustomName('');
+                }}
                 style={[styles.typeChip, creditType === type.key && styles.typeChipActive]}>
                 <Text
                   variant="caption"
@@ -268,7 +392,15 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
             ))}
           </View>
 
-          <TextField label="Nome" value={name} onChangeText={setName} placeholder="Ex.: Crédito habitação" />
+          {creditType === 'other' ? (
+            <TextField
+              label="Tipo de crédito personalizado"
+              value={customName}
+              onChangeText={setCustomName}
+              placeholder="Ex.: Crédito consolidado"
+            />
+          ) : null}
+
           <TextField
             label="Instituição (opcional)"
             value={lender}
@@ -447,8 +579,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
               fullWidth
             />
           ) : null}
-        </View>
-      </ScrollView>
+      </View>
     </DraggableBottomSheet>
   );
 }

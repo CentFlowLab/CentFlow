@@ -12,6 +12,12 @@ type PreferencesRow = {
   warranty_alerts: boolean;
   budget_alerts: boolean;
   weekly_digest: boolean;
+  email_important?: boolean;
+  email_weekly_digest?: boolean;
+  email_warranty_alerts?: boolean;
+  email_subscription_renewals?: boolean;
+  email_credit_payments?: boolean;
+  email_tips_insights?: boolean;
   region: UserPreferences['region'];
   theme_id: UserPreferences['themeId'];
   biometrics_enabled: boolean;
@@ -23,6 +29,12 @@ function mapRow(row: PreferencesRow): UserPreferences {
     warrantyAlerts: row.warranty_alerts,
     budgetAlerts: row.budget_alerts,
     weeklyDigest: row.weekly_digest,
+    emailImportant: row.email_important ?? true,
+    emailWeeklyDigest: row.email_weekly_digest ?? row.weekly_digest ?? true,
+    emailWarrantyAlerts: row.email_warranty_alerts ?? row.warranty_alerts ?? true,
+    emailSubscriptionRenewals: row.email_subscription_renewals ?? true,
+    emailCreditPayments: row.email_credit_payments ?? true,
+    emailTipsInsights: row.email_tips_insights ?? true,
     region: normalizeCountryCode(row.region),
     themeId: row.theme_id,
     biometricsEnabled: row.biometrics_enabled,
@@ -46,6 +58,18 @@ function toRow(userId: string, prefs: Partial<UserPreferences>) {
     ...(prefs.warrantyAlerts !== undefined && { warranty_alerts: prefs.warrantyAlerts }),
     ...(prefs.budgetAlerts !== undefined && { budget_alerts: prefs.budgetAlerts }),
     ...(prefs.weeklyDigest !== undefined && { weekly_digest: prefs.weeklyDigest }),
+    ...(prefs.emailImportant !== undefined && { email_important: prefs.emailImportant }),
+    ...(prefs.emailWeeklyDigest !== undefined && { email_weekly_digest: prefs.emailWeeklyDigest }),
+    ...(prefs.emailWarrantyAlerts !== undefined && {
+      email_warranty_alerts: prefs.emailWarrantyAlerts,
+    }),
+    ...(prefs.emailSubscriptionRenewals !== undefined && {
+      email_subscription_renewals: prefs.emailSubscriptionRenewals,
+    }),
+    ...(prefs.emailCreditPayments !== undefined && {
+      email_credit_payments: prefs.emailCreditPayments,
+    }),
+    ...(prefs.emailTipsInsights !== undefined && { email_tips_insights: prefs.emailTipsInsights }),
     ...(prefs.region !== undefined && { region: toSupabaseRegion(prefs.region) }),
     ...(prefs.themeId !== undefined && { theme_id: prefs.themeId }),
     ...(prefs.biometricsEnabled !== undefined && {
@@ -73,10 +97,10 @@ async function fetchSupabasePreferences(userId: string): Promise<UserPreferences
       .single();
 
     if (insertError) throw new Error(insertError.message);
-    return mapRow(inserted as PreferencesRow);
+    return mapRow(inserted as unknown as PreferencesRow);
   }
 
-  return mapRow(data as PreferencesRow);
+  return mapRow(data as unknown as PreferencesRow);
 }
 
 async function updateSupabasePreferences(
@@ -87,12 +111,12 @@ async function updateSupabasePreferences(
 
   const { data, error } = await supabase
     .from('user_preferences')
-    .upsert(toRow(userId, patch), { onConflict: 'user_id' })
+    .upsert(toRow(userId, patch) as never, { onConflict: 'user_id' })
     .select('*')
     .single();
 
   if (error) throw new Error(error.message);
-  return mapRow(data as PreferencesRow);
+  return mapRow(data as unknown as PreferencesRow);
 }
 
 export async function fetchUserPreferences(userId: string): Promise<UserPreferences> {

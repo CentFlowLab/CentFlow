@@ -8,7 +8,7 @@ import { isMockAuthEnabled, loginSchema, useAuth, getAuthErrorMessage } from '@/
 import { colors, spacing } from '@/lib/theme';
 
 export default function LoginScreen() {
-  const { signIn, signInWithGoogle, isGoogleSignInAvailable } = useAuth();
+  const { signIn, signInWithGoogle, isGoogleSignInAvailable, sessionExpiredMessage } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -77,6 +77,14 @@ export default function LoginScreen() {
           </Link>
         </View>
       }>
+      {sessionExpiredMessage ? (
+        <Card variant="outlined" style={styles.infoCard} padding="md">
+          <Text variant="caption" color="textSecondary">
+            {sessionExpiredMessage}
+          </Text>
+        </Card>
+      ) : null}
+
       {apiError ? (
         <Card variant="outlined" style={styles.errorCard} padding="md">
           <Text variant="caption" color="danger">
@@ -144,6 +152,10 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  infoCard: {
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceHighlight,
+  },
   errorCard: {
     borderColor: colors.danger,
     backgroundColor: colors.dangerMuted,

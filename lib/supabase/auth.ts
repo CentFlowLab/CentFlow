@@ -266,6 +266,45 @@ export async function requestPasswordReset(email: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function completePasswordRecoveryFromUrl(url: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { params, errorCode } = QueryParams.getQueryParams(url);
+
+  if (errorCode) {
+    throw new Error(String(errorCode));
+  }
+
+  if (params.error_description) {
+    throw new Error(String(params.error_description));
+  }
+
+  if (params.code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(String(params.code));
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  const accessToken = params.access_token ? String(params.access_token) : null;
+  const refreshToken = params.refresh_token ? String(params.refresh_token) : null;
+
+  if (!accessToken) {
+    throw new Error('Link de recuperação inválido ou expirado.');
+  }
+
+  const { error } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken ?? '',
+  });
+
+  if (error) throw new Error(error.message);
+}
+
+export async function updatePassword(newPassword: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw new Error(error.message);
+}
+
 export async function restoreSession(): Promise<AuthSession | null> {
   let supabase;
   try {

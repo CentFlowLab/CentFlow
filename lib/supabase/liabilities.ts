@@ -159,8 +159,20 @@ export async function upsertCreditToSupabase(credit: Credit): Promise<Credit> {
       .eq('id', credit.id)
       .select()
       .single();
-    if (error) throw new Error(error.message);
-    return mapCreditRow(data as CreditRow);
+
+    if (!error && data) {
+      return mapCreditRow(data as CreditRow);
+    }
+
+    if (error) {
+      const { data: inserted, error: insertError } = await supabase
+        .from('credits')
+        .insert({ ...payload, id: undefined })
+        .select()
+        .single();
+      if (insertError) throw new Error(insertError.message);
+      return mapCreditRow(inserted as CreditRow);
+    }
   }
 
   const { data, error } = await supabase.from('credits').insert(payload).select().single();
