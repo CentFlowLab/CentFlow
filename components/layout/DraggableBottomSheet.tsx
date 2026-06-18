@@ -22,21 +22,18 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
-import { lightImpact } from '@/lib/haptics/light-impact';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const DISMISS_DRAG = 110;
 const DISMISS_VELOCITY = 850;
 const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
-const BLOCKED_SPRING = { damping: 18, stiffness: 420, mass: 0.7 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -45,7 +42,10 @@ type DraggableBottomSheetProps = {
   onClose: () => void;
   /** Chamado quando o Modal desmonta após a animação de fecho (antes de abrir outro sheet). */
   onDismissed?: () => void;
-  /** Quando true, bloqueia swipe/backdrop e pede confirmação no X / voltar. */
+  /**
+   * Quando true, pede confirmação ao fechar pelo X ou botão voltar.
+   * Swipe no handle/header e toque no backdrop fecham sem confirmação.
+   */
   isDirty?: boolean;
   /** Retorna true para cancelar o fecho (ex.: voltar um passo interno). */
   onBeforeClose?: () => boolean;
@@ -74,26 +74,19 @@ export function DraggableBottomSheet({
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(0);
   const sheetHeight = useSharedValue(0);
-  const handlePulse = useSharedValue(0);
-  const isDirtyShared = useSharedValue(isDirty);
   const isClosingRef = useRef(false);
   const animateOutRef = useRef<(notifyParent: boolean) => void>(() => {});
   const [isMounted, setIsMounted] = useState(visible);
-
-  useEffect(() => {
-    isDirtyShared.value = isDirty;
-  }, [isDirty, isDirtyShared]);
 
   const finishClose = useCallback(
     (notifyParent: boolean) => {
       isClosingRef.current = false;
       setIsMounted(false);
       translateY.value = 0;
-      handlePulse.value = 0;
       if (notifyParent) onClose();
       onDismissed?.();
     },
-    [handlePulse, onClose, onDismissed, translateY],
+    [onClose, onDismissed, translateY],
   );
 
   const animateOut = useCallback(
@@ -113,29 +106,23 @@ export function DraggableBottomSheet({
 
   animateOutRef.current = animateOut;
 
-  const performClose = useCallback(() => {
+  /** Fecho imediato — swipe (handle/header), backdrop. */
+  const dismissSheet = useCallback(() => {
     if (onBeforeClose?.()) return;
     animateOut(true);
   }, [animateOut, onBeforeClose]);
 
-  const onBlockedDismiss = useCallback(() => {
-    lightImpact();
-    handlePulse.value = withSequence(
-      withTiming(1, { duration: 80 }),
-      withTiming(0, { duration: 220 }),
-    );
-  }, [handlePulse]);
-
+  /** Fecho pelo X / voltar — confirma se isDirty. */
   const requestClose = useCallback(() => {
     if (onBeforeClose?.()) return;
 
     if (isDirty) {
-      confirmDiscardChanges(performClose);
+      confirmDiscardChanges(dismissSheet);
       return;
     }
 
-    performClose();
-  }, [isDirty, onBeforeClose, performClose]);
+    dismissSheet();
+  }, [dismissSheet, isDirty, onBeforeClose]);
 
   useEffect(() => {
     if (visible) {
@@ -171,8 +158,8 @@ export function DraggableBottomSheet({
   }, [isMounted, requestClose]);
 
   const panGesture = Gesture.Pan()
-    .activeOffsetY(6)
-    .failOffsetX([-24, 24])
+    .activeOffsetY(8)
+    .failOffsetX([-28, 28])
     .onUpdate((event) => {
       translateY.value = Math.max(0, event.translationY);
     })
@@ -181,13 +168,7 @@ export function DraggableBottomSheet({
         translateY.value > DISMISS_DRAG || event.velocityY > DISMISS_VELOCITY;
 
       if (shouldDismiss) {
-        if (isDirtyShared.value) {
-          translateY.value = withSpring(0, BLOCKED_SPRING);
-          runOnJS(onBlockedDismiss)();
-          return;
-        }
-
-        runOnJS(performClose)();
+        runOnJS(dismissSheet)();
         return;
       }
 
@@ -205,10 +186,8 @@ export function DraggableBottomSheet({
     };
   });
 
-  const handleAnimatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: handlePulse.value > 0.5 ? colors.primary : colors.borderStrong,
-    transform: [{ scaleX: 1 + handlePulse.value * 0.15 }],
-  }));
+  const headerContent =
+    typeof header === 'function' ? header(requestClose) : header;
 
   if (!isMounted) return null;
 
@@ -224,13 +203,7 @@ export function DraggableBottomSheet({
         <View style={styles.overlay}>
           <AnimatedPressable
             style={[styles.backdrop, backdropAnimatedStyle]}
-            onPress={() => {
-              if (isDirty) {
-                onBlockedDismiss();
-                return;
-              }
-              requestClose();
-            }}
+            onPress={dismissSheet}
             accessibilityLabel="Fechar"
           />
 
@@ -245,17 +218,13 @@ export function DraggableBottomSheet({
               sheetStyle,
             ]}>
             <GestureDetector gesture={panGesture}>
-              <View style={styles.handleArea}>
-                <Animated.View style={[styles.handle, handleAnimatedStyle]} />
-                {isDirty ? (
-                  <View style={styles.protectedHint}>
-                    <View style={styles.protectedDot} />
-                  </View>
-                ) : null}
+              <View style={styles.dragZone}>
+                <View style={styles.handleArea}>
+                  <View style={styles.handle} />
+                </View>
+                {headerContent}
               </View>
             </GestureDetector>
-
-            {typeof header === 'function' ? header(requestClose) : header}
 
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -299,27 +268,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
   },
+  dragZone: {
+    flexShrink: 0,
+  },
   handleArea: {
     alignItems: 'center',
     paddingVertical: spacing.sm,
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: radius.full,
     backgroundColor: colors.borderStrong,
-  },
-  protectedHint: {
-    height: 4,
-  },
-  protectedDot: {
-    width: 6,
-    height: 6,
-    borderRadius: radius.full,
-    backgroundColor: colors.primary,
-    opacity: 0.85,
   },
   keyboard: {
     flexShrink: 1,
