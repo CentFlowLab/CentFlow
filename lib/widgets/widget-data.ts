@@ -43,4 +43,4 @@ export function useWidgetSnapshot(): WidgetSnapshot | null {
 }
 
 /** Persistência nativa de widgets fica para build nativo dedicado. */
-export const WIDGET_STORAGE_KEY = 'centflow:widget:snapshot';
+export const WIDGET_STORAGE_KEY = 'centflow_widget_snapshot';
