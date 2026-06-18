@@ -445,6 +445,19 @@ export function AddTransactionModal({
   const showTransactionForm = !hasReceipt || manualFillMode;
   const isBusy = isProcessing || isSaving || isUploadingOnly;
 
+  const handleSheetClose = useCallback(() => {
+    traceMovementStep('modal_close', { reason: 'sheet_onClose' });
+    onClose();
+  }, [onClose]);
+
+  const handleBeforeClose = useCallback(() => {
+    if (showConfirm) {
+      setConfirmVisible(false);
+      return true;
+    }
+    return false;
+  }, [showConfirm]);
+
   return (
     <>
       {receiptImage.pendingDraft ? (
@@ -464,19 +477,10 @@ export function AddTransactionModal({
 
       <DraggableBottomSheet
         visible={visible && !receiptImage.pendingDraft}
-        onClose={() => {
-          traceMovementStep('modal_close', { reason: 'sheet_onClose' });
-          onClose();
-        }}
+        onClose={handleSheetClose}
         traceId="movement_create_sheet"
         isDirty={isDirty}
-        onBeforeClose={() => {
-          if (showConfirm) {
-            setConfirmVisible(false);
-            return true;
-          }
-          return false;
-        }}
+        onBeforeClose={handleBeforeClose}
         maxHeight="92%"
         scrollContentStyle={styles.form}
         header={(requestClose) =>

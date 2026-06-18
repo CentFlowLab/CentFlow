@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BackHandler,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
   type StyleProp,
@@ -14,7 +16,6 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -76,6 +77,7 @@ export function DraggableBottomSheet({
   const handlePulse = useSharedValue(0);
   const isDirtyShared = useSharedValue(isDirty);
   const isClosingRef = useRef(false);
+  const animateOutRef = useRef<(notifyParent: boolean) => void>(() => {});
   const [isMounted, setIsMounted] = useState(visible);
 
   useEffect(() => {
@@ -109,6 +111,8 @@ export function DraggableBottomSheet({
     [finishClose, sheetHeight, translateY],
   );
 
+  animateOutRef.current = animateOut;
+
   const performClose = useCallback(() => {
     if (onBeforeClose?.()) return;
     animateOut(true);
@@ -135,13 +139,15 @@ export function DraggableBottomSheet({
 
   useEffect(() => {
     if (visible) {
-      if (traceId) {
-        traceMovementStep('sheet_visible', { component: 'DraggableBottomSheet', traceId });
+      if (!isMounted) {
+        if (traceId) {
+          traceMovementStep('sheet_visible', { component: 'DraggableBottomSheet', traceId });
+        }
+        setIsMounted(true);
+        isClosingRef.current = false;
+        translateY.value = sheetHeight.value > 0 ? sheetHeight.value : 420;
+        translateY.value = withSpring(0, SPRING_CONFIG);
       }
-      setIsMounted(true);
-      isClosingRef.current = false;
-      translateY.value = sheetHeight.value > 0 ? sheetHeight.value : 420;
-      translateY.value = withSpring(0, SPRING_CONFIG);
       return;
     }
 
@@ -149,9 +155,9 @@ export function DraggableBottomSheet({
       if (traceId) {
         traceMovementStep('sheet_close', { component: 'DraggableBottomSheet', traceId });
       }
-      animateOut(false);
+      animateOutRef.current(false);
     }
-  }, [visible, isMounted, animateOut, sheetHeight, translateY, traceId]);
+  }, [visible, isMounted, sheetHeight, translateY, traceId]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -251,22 +257,20 @@ export function DraggableBottomSheet({
 
             {typeof header === 'function' ? header(requestClose) : header}
 
-            <KeyboardAwareScrollView
-              enableOnAndroid
-              enableAutomaticScroll
-              extraScrollHeight={Platform.OS === 'ios' ? 96 : 64}
-              extraHeight={180}
-              keyboardOpeningTime={0}
-              enableResetScrollToCoords={false}
-              bounces
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              nestedScrollEnabled
-              contentContainerStyle={[styles.scrollContent, scrollContentStyle]}
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
               style={styles.keyboard}>
-              {children}
-            </KeyboardAwareScrollView>
+              <ScrollView
+                bounces
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                nestedScrollEnabled
+                contentContainerStyle={[styles.scrollContent, scrollContentStyle]}>
+                {children}
+              </ScrollView>
+            </KeyboardAvoidingView>
           </Animated.View>
         </View>
       </GestureHandlerRootView>
