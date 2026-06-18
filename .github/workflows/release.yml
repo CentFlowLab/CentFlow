@@ -86,6 +86,7 @@ jobs:
   ota:
     name: EAS Update (OTA)
     needs: validate
+    continue-on-error: true
     if: >-
       github.event_name == 'push' ||
       (contains(fromJSON('["workflow_dispatch","workflow_call"]'), github.event_name) &&
@@ -359,3 +360,29 @@ jobs:
           path: ${{ env.IPA_PATH }}
           retention-days: 14
           if-no-files-found: error
+
+  summary:
+    name: Release summary
+    needs: [validate, ota, build-ipa]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write job summary
+        run: |
+          {
+            echo "## CentFlow Release — \`${{ github.sha }}\`"
+            echo ""
+            echo "| Job | Resultado |"
+            echo "|-----|-----------|"
+            echo "| Validate | ${{ needs.validate.result }} |"
+            echo "| OTA | ${{ needs.ota.result }} |"
+            echo "| IPA beta | ${{ needs.build-ipa.result }} |"
+            echo ""
+            if [ "${{ needs.ota.result }}" = "failure" ]; then
+              echo "> **OTA falhou** — adiciona \`EXPO_TOKEN\` em Settings → Secrets → Actions e re-executa só o job OTA."
+              echo "> OTA já foi publicado manualmente no commit \`9a49218\` (preview + production)."
+            fi
+            if [ "${{ needs.build-ipa.result }}" = "success" ]; then
+              echo "> **IPA pronto** — descarrega o artefacto \`CentFlow-beta-ipa-${{ github.sha }}\` neste run."
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
