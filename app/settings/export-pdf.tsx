@@ -13,6 +13,7 @@ import { useDashboardData } from '@/hooks/queries/useDashboardData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { exportFinancialPdf } from '@/lib/export/export.service';
 import {
   countSelectedPdfSections,
@@ -32,6 +33,7 @@ export default function ExportPdfScreen() {
   const { data: user, isLoading: userLoading } = useProfile();
   const { data: transactions = [], isLoading: transactionsLoading } = useTransactions('all');
   const { data: assets, isLoading: assetsLoading } = useAssets();
+  const { score } = useCentFlowIntelligence();
   const { showToast } = useToast();
 
   const loading =
@@ -53,6 +55,7 @@ export default function ExportPdfScreen() {
       await exportFinancialPdf({
         dashboard,
         profile,
+        centFlowScore: score,
         userName: user?.name ?? 'Utilizador',
         transactions,
         assets,

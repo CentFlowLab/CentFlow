@@ -35,7 +35,7 @@ O `eas init` preenche `app.json` → `expo.extra.eas.projectId` e o URL de updat
 | `preview-simulator` | Simulador iOS (dev) | `preview` | `true` |
 | `production` | App Store / Play Store | `production` | `false` |
 
-Ver também: [docs/BETA.md](./BETA.md)
+Ver também: [docs/beta.md](./beta.md)
 
 ### Variáveis de ambiente nos builds
 

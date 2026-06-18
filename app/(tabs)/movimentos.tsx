@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -44,6 +44,8 @@ export default function MovimentosScreen() {
   const insets = useSafeAreaInsets();
   const { action, view } = useLocalSearchParams<{ action?: string; view?: string }>();
   const handledAction = useRef(false);
+  const handledRouteAction = useRef<string | null>(null);
+  const suppressDetectionRef = useRef(false);
   const [activeView, setActiveView] = useState<MovementsView>('movimentos');
   const [filter, setFilter] = useState<TransactionFilter>('all');
   const [modalVisible, setModalVisible] = useState(false);
@@ -96,35 +98,59 @@ export default function MovimentosScreen() {
     setStartWithReceiptPicker(false);
   }
 
+  function closeSubscriptionForm() {
+    setSubscriptionFormVisible(false);
+    setEditingSubscription(null);
+    suppressDetectionRef.current = false;
+  }
+
+  const openSubscriptionForm = useCallback((subscription: Subscription | null = null) => {
+    suppressDetectionRef.current = true;
+    setActiveView('subscricoes');
+    setEditingSubscription(subscription);
+    requestAnimationFrame(() => {
+      setSubscriptionFormVisible(true);
+    });
+  }, []);
+
   useEffect(() => {
     if (handledAction.current || action !== 'receipt') return;
     handledAction.current = true;
     setActiveView('movimentos');
     openAddModal(true);
     showToast('Digitaliza o teu primeiro talão!', 'info');
+    router.setParams({ action: '' });
   }, [action, showToast]);
 
   useEffect(() => {
+    if (!action || action === 'receipt') {
+      if (!action) handledRouteAction.current = null;
+      return;
+    }
+    if (handledRouteAction.current === action) return;
+    handledRouteAction.current = action;
+
     if (action === 'new-movement') {
       setActiveView('movimentos');
       openAddModal(false);
-      return;
+    } else if (action === 'new-subscription') {
+      openSubscriptionForm(null);
     }
-    if (action === 'new-subscription') {
-      setActiveView('subscricoes');
-      setEditingSubscription(null);
-      setSubscriptionFormVisible(true);
-    }
-  }, [action]);
+
+    router.setParams({ action: '' });
+  }, [action, openSubscriptionForm]);
 
   const handleQuickAdd = useQuickAddActions({
     onMovement: () => openAddModal(false),
-    onSubscription: () => {
-      setActiveView('subscricoes');
-      setEditingSubscription(null);
-      setSubscriptionFormVisible(true);
-    },
+    onSubscription: () => openSubscriptionForm(null),
   });
+
+  const showDetectionModal =
+    activeDetection !== null &&
+    !subscriptionFormVisible &&
+    !quickAddVisible &&
+    !modalVisible &&
+    !suppressDetectionRef.current;
 
   function handleEdit(transaction: Transaction) {
     setEditingTransaction(transaction);
@@ -281,14 +307,8 @@ export default function MovimentosScreen() {
           <FeatureAreaGate feature="subscriptions">
             <SubscriptionsSection
               subscriptions={subscriptions}
-              onCreate={() => {
-                setEditingSubscription(null);
-                setSubscriptionFormVisible(true);
-              }}
-              onEdit={(subscription) => {
-                setEditingSubscription(subscription);
-                setSubscriptionFormVisible(true);
-              }}
+              onCreate={() => openSubscriptionForm(null)}
+              onEdit={(subscription) => openSubscriptionForm(subscription)}
               onLearnMore={handleLearnMore}
               onDelete={(item) => deleteSubscription.mutate(item.id)}
             />
@@ -312,14 +332,11 @@ export default function MovimentosScreen() {
       <SubscriptionFormModal
         visible={subscriptionFormVisible}
         subscription={editingSubscription}
-        onClose={() => {
-          setSubscriptionFormVisible(false);
-          setEditingSubscription(null);
-        }}
+        onClose={closeSubscriptionForm}
       />
 
       <PendingSubscriptionModal
-        visible={activeDetection !== null}
+        visible={showDetectionModal}
         detection={activeDetection}
         onConfirm={handleConfirmDetection}
         onDismiss={dismissCurrent}

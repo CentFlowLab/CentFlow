@@ -85,8 +85,8 @@ export function QuickAddMenuSheet({ visible, onClose, onSelect }: QuickAddMenuSh
           <Pressable
             key={item.id}
             onPress={() => {
-              onSelect(item.id);
               onClose();
+              requestAnimationFrame(() => onSelect(item.id));
             }}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             accessibilityRole="button"

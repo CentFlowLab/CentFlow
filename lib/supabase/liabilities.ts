@@ -189,8 +189,21 @@ export async function upsertSubscriptionToSupabase(
       .eq('id', subscription.id)
       .select()
       .single();
-    if (error) throw new Error(error.message);
-    return mapSubscriptionRow(data as SubscriptionRow);
+
+    if (!error && data) {
+      return mapSubscriptionRow(data as SubscriptionRow);
+    }
+
+    // UUID local órfão — inserir como novo registo
+    if (error) {
+      const { data: inserted, error: insertError } = await supabase
+        .from('subscriptions')
+        .insert({ ...payload, id: undefined })
+        .select()
+        .single();
+      if (insertError) throw new Error(insertError.message);
+      return mapSubscriptionRow(inserted as SubscriptionRow);
+    }
   }
 
   const { data, error } = await supabase

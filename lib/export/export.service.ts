@@ -4,6 +4,7 @@ import * as Sharing from 'expo-sharing';
 
 import type { AssetsData } from '@/lib/domain/assets.types';
 import type { DashboardData } from '@/lib/domain';
+import type { CentFlowScoreResult } from '@/lib/domain/financial';
 import type { FinancialProfileResult } from '@/lib/domain/financial-profile.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import {
@@ -21,10 +22,23 @@ import {
 export type FinancialPdfInput = {
   dashboard?: DashboardData;
   profile?: FinancialProfileResult;
+  centFlowScore?: CentFlowScoreResult;
   userName: string;
   transactions?: Transaction[];
   assets?: AssetsData;
   sections?: PdfSectionSelection;
+};
+
+export type UserDataExportPayload = {
+  exportedAt: string;
+  version: number;
+  transactions: Transaction[];
+  goals: AssetsData['goals'];
+  warranties: AssetsData['warranties'];
+  inventory: AssetsData['inventory'];
+  credits: AssetsData['credits'];
+  subscriptions: AssetsData['subscriptions'];
+  centFlowScore?: CentFlowScoreResult;
 };
 
 function escapeHtml(value: string): string {
@@ -127,6 +141,36 @@ function buildAssetsSummary(assets?: AssetsData): string {
   `;
 }
 
+function levelProgressLabel(score: number): string {
+  if (score >= 80) return 'Mestre';
+  if (score >= 60) return 'Estratega';
+  if (score >= 40) return 'Gestor';
+  return 'Organizador';
+}
+
+function buildSubscriptionsSection(assets?: AssetsData): string {
+  const subscriptions = assets?.subscriptions ?? [];
+  if (subscriptions.length === 0) {
+    return '<p class="muted">Sem subscrições registadas.</p>';
+  }
+
+  return `
+    <div class="stack compact">
+      ${subscriptions
+        .slice(0, 12)
+        .map(
+          (sub) => `
+            <div class="row-item">
+              <span>${escapeHtml(sub.name)}</span>
+              <strong>${escapeHtml(formatCurrency(sub.amount))}</strong>
+            </div>
+          `,
+        )
+        .join('')}
+    </div>
+  `;
+}
+
 function buildBreakdownRows(dashboard?: DashboardData): string {
   const breakdown = dashboard?.netWorth.breakdown;
   if (!breakdown) return '';
@@ -158,6 +202,7 @@ function buildPdfHtml(input: FinancialPdfInput): string {
   const {
     dashboard,
     profile,
+    centFlowScore,
     userName,
     transactions = [],
     assets,
@@ -169,8 +214,10 @@ function buildPdfHtml(input: FinancialPdfInput): string {
   const change = formatPercent(dashboard?.netWorthChangePercent ?? 0);
   const monthlyChange = formatCurrency(dashboard?.netWorthChangeThisMonth ?? 0);
   const weeklySpending = formatCurrency(dashboard?.weeklySpending ?? 0);
-  const score = profile?.score ?? 0;
-  const level = profile?.levelLabel ?? '—';
+  const score = centFlowScore?.score ?? profile?.score ?? 0;
+  const level = centFlowScore
+    ? `${centFlowScore.bandLabel} · ${levelProgressLabel(centFlowScore.score)}`
+    : profile?.levelLabel ?? '—';
   const date = new Date().toLocaleDateString(locale, {
     day: '2-digit',
     month: 'long',
@@ -213,14 +260,15 @@ function buildPdfHtml(input: FinancialPdfInput): string {
   const perfilBody = `
     <div class="grid-2">
       <div class="stat-card">
-        <span class="label">Pontuação</span>
-        <span class="stat-value accent">${score}%</span>
+        <span class="label">CentFlow Score</span>
+        <span class="stat-value accent">${score}/100</span>
       </div>
       <div class="stat-card">
         <span class="label">Nível</span>
         <span class="stat-value">${escapeHtml(level)}</span>
       </div>
     </div>
+    ${centFlowScore ? `<p class="muted">${escapeHtml(centFlowScore.summary)}</p>` : ''}
   `;
 
   const sectionBlocks = [
@@ -230,6 +278,7 @@ function buildPdfHtml(input: FinancialPdfInput): string {
     sections.movimentos ? section('Movimentos recentes', buildTransactionRows(transactions)) : '',
     sections.objetivos ? section('Objectivos', buildGoalsSection(assets)) : '',
     sections.ativos ? section('Ativos', buildAssetsSummary(assets)) : '',
+    sections.subscricoes ? section('Subscrições', buildSubscriptionsSection(assets)) : '',
   ].join('');
 
   return `
@@ -551,24 +600,24 @@ export async function exportFinancialPdf(input: FinancialPdfInput): Promise<void
   throw new Error('Partilha não disponível neste dispositivo.');
 }
 
-export async function exportUserDataJson(
-  transactions: Transaction[],
-  assets: AssetsData,
-): Promise<void> {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    version: 1,
-    transactions,
-    goals: assets.goals,
-    warranties: assets.warranties,
-    inventory: assets.inventory,
+export async function exportUserDataJson(payload: UserDataExportPayload): Promise<void> {
+  const filePayload = {
+    exportedAt: payload.exportedAt ?? new Date().toISOString(),
+    version: payload.version ?? 2,
+    transactions: payload.transactions,
+    goals: payload.goals,
+    warranties: payload.warranties,
+    inventory: payload.inventory,
+    credits: payload.credits,
+    subscriptions: payload.subscriptions,
+    centFlowScore: payload.centFlowScore,
   };
 
   const fileName = `centflow-export-${Date.now()}.json`;
   const baseDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
   if (!baseDir) throw new Error('Armazenamento local indisponível.');
   const fileUri = `${baseDir}${fileName}`;
-  await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(payload, null, 2));
+  await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(filePayload, null, 2));
 
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(fileUri, {

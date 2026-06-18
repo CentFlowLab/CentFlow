@@ -10,10 +10,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  ActionCenterSheet,
+  CentFlowScoreCard,
   DashboardHeaderLeading,
   DashboardFinancialSnapshot,
   DashboardSkeleton,
   DemoModeBadge,
+  HomeAssistantCard,
   HomeAttentionSheet,
   HomeChangesSheet,
   HomeGoalHighlightCard,
@@ -39,8 +42,10 @@ import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { useHomeStoryNotifications } from '@/hooks/useHomeStoryNotifications';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import type { AssistantActionId } from '@/lib/domain/financial';
 import {
   getContextualNoTransactionsMessage,
   getHomePersonalizedInsight,
@@ -79,6 +84,9 @@ export default function InicioScreen() {
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
+  const [actionCenterVisible, setActionCenterVisible] = useState(false);
+
+  const { score, levelProgress, assistant } = useCentFlowIntelligence();
 
   const handleStoryPress = useCallback(
     (id: HomeStoryId) => {
@@ -165,6 +173,29 @@ export default function InicioScreen() {
   const handleQuickAdd = useQuickAddActions({
     onMovement: openAddMovement,
   });
+
+  function handleAssistantAction(actionId: AssistantActionId) {
+    switch (actionId) {
+      case 'add_expense':
+        openAddMovement();
+        break;
+      case 'scan_receipt':
+        openReceiptScanner();
+        break;
+      case 'create_goal':
+        router.push('/(tabs)/ativos?action=new-goal');
+        break;
+      case 'add_subscription':
+        router.push('/(tabs)/movimentos?view=subscricoes&action=new-subscription');
+        break;
+      case 'review_subscriptions':
+        router.push('/(tabs)/movimentos?view=subscricoes');
+        break;
+      case 'view_plan':
+        setActionCenterVisible(true);
+        break;
+    }
+  }
 
   const openReceiptScanner = () => {
     setStartWithReceiptPicker(true);
@@ -271,6 +302,19 @@ export default function InicioScreen() {
         <ScreenContainer scrollable={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
+          <HomeAssistantCard
+            plan={assistant}
+            onAction={handleAssistantAction}
+            onOpenActionCenter={() => setActionCenterVisible(true)}
+          />
+
+          <CentFlowScoreCard
+            score={score}
+            levelLabel={levelProgress.level.label}
+            nextLevelLabel={levelProgress.nextLevel?.label ?? null}
+            progressPercent={levelProgress.progressPercent}
+          />
+
           <NetWorthHeroCard
             netWorth={netWorth}
             changePercent={netWorthChangePercent}
@@ -350,7 +394,7 @@ export default function InicioScreen() {
           </View>
 
           <HomeQuickActions
-            onAddMovement={() => setQuickAddVisible(true)}
+            onAddMovement={() => setActionCenterVisible(true)}
             onViewMovements={() => router.push('/(tabs)/movimentos')}
             onNewGoal={
               !hasGoalRecommendation
@@ -395,6 +439,12 @@ export default function InicioScreen() {
         visible={quickAddVisible}
         onClose={() => setQuickAddVisible(false)}
         onSelect={handleQuickAdd}
+      />
+
+      <ActionCenterSheet
+        visible={actionCenterVisible}
+        onClose={() => setActionCenterVisible(false)}
+        onSelect={handleAssistantAction}
       />
     </View>
   );

@@ -42,4 +42,5 @@ supabase/.branches/
 *.tsbuildinfo
 
 ci-artifacts/
+.expo-export-test/
 

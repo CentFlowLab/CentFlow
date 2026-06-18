@@ -4,7 +4,8 @@ export type PdfSectionId =
   | 'perfil'
   | 'movimentos'
   | 'objetivos'
-  | 'ativos';
+  | 'ativos'
+  | 'subscricoes';
 
 export type PdfSectionSelection = Record<PdfSectionId, boolean>;
 
@@ -47,6 +48,11 @@ export const PDF_SECTION_OPTIONS: PdfSectionOption[] = [
     label: 'Ativos',
     description: 'Garantias e inventário.',
   },
+  {
+    id: 'subscricoes',
+    label: 'Subscrições',
+    description: 'Custos recorrentes mensais.',
+  },
 ];
 
 export const DEFAULT_PDF_SECTIONS: PdfSectionSelection = {
@@ -56,6 +62,7 @@ export const DEFAULT_PDF_SECTIONS: PdfSectionSelection = {
   movimentos: true,
   objetivos: true,
   ativos: true,
+  subscricoes: true,
 };
 
 export function normalizePdfSections(selection: PdfSectionSelection): PdfSectionSelection {

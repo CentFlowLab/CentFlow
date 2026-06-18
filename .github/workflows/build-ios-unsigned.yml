@@ -3,7 +3,7 @@
 # =============================================================================
 #
 # ⚠️  ALTERNATIVA LEGACY — o fluxo principal é EAS Build + EAS Update.
-#     Ver docs/BUILD.md para builds rápidos e OTA.
+#     Ver docs/build.md para builds rápidos e OTA.
 #
 #     Usa este workflow apenas se:
 #     - Não tens conta Apple Developer

@@ -88,6 +88,10 @@ export function useSaveSubscription() {
 
   return useMutation({
     mutationFn: async (input: Omit<Subscription, 'id'> & { id?: string }) => {
+      if (!userId) {
+        throw new Error('Sessão expirada. Inicia sessão novamente.');
+      }
+
       const subscription: Subscription = {
         id: input.id ?? randomId('sub'),
         name: input.name,

@@ -19,7 +19,7 @@
 **Não há código de servidor aqui.** O motor OCR corre em `https://api.centflow.app`.
 
 Implementação de referência para a equipa backend:
-- `backend-reference/ocr_preprocess.py` — deskew, CLAHE, binarização, Tesseract `por+eng --psm 6 --oem 3`
+- `docs/backend/ocr_preprocess.py` — deskew, CLAHE, binarização, Tesseract `por+eng --psm 6 --oem 3`
 
 ## Melhorias obrigatórias no BACKEND (maior impacto)
 
@@ -52,7 +52,7 @@ Alternativa talões estreitos: `--psm 4`
 1. `.env`: `EXPO_PUBLIC_MOCK_AUTH=false` (mock devolve dados fictícios perfeitos)
 2. Foto com boa luz, talão plano, sem reflexos
 3. Comparar `rawText` no ecrã de confirmação antes/depois de v3
-4. Backend: `python backend-reference/ocr_preprocess.py foto.jpg`
+4. Backend: `python docs/backend/ocr_preprocess.py foto.jpg`
 
 ## Script de teste local (heurísticas PT)
 

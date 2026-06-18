@@ -44,8 +44,8 @@
     "UI isPreprocessing no ReceiptAttachmentField + doc OCR_PIPELINE.md (recomendações backend)",
     "OCR v3 — resize 1200px, contraste jpeg-js, rotação EXIF, compressão inteligente",
     "OCR multi-motor (google_vision → vision → auto → tesseract) + polling 8×",
-    "backend-reference/ocr_preprocess.py — deskew/binarização/Tesseract para equipa server",
-    "EAS Build + EAS Update configurado (eas.json, expo-updates, docs/BUILD.md)"
+    "docs/backend/ocr_preprocess.py — deskew/binarização/Tesseract para equipa server",
+    "EAS Build + EAS Update configurado (eas.json, expo-updates, docs/build.md)"
   ],
   "pending": [
     "Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)",

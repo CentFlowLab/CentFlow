@@ -8,7 +8,9 @@ import {
 import { Button, Card, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useAssets } from '@/hooks/queries/useAssets';
+import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { exportUserDataJson } from '@/lib/export/export.service';
 import { spacing } from '@/lib/theme';
 
@@ -16,7 +18,12 @@ export default function ExportDataScreen() {
   const [exporting, setExporting] = useState(false);
   const { data: transactions } = useTransactions('all');
   const { data: assets } = useAssets();
+  const { data: liabilities } = useLiabilities();
+  const { score } = useCentFlowIntelligence();
   const { showToast } = useToast();
+
+  const credits = liabilities?.credits ?? assets?.credits ?? [];
+  const subscriptions = liabilities?.subscriptions ?? assets?.subscriptions ?? [];
 
   const assetCount =
     (assets?.goals.length ?? 0) +
@@ -27,12 +34,16 @@ export default function ExportDataScreen() {
     setExporting(true);
 
     try {
-      await exportUserDataJson(transactions ?? [], assets ?? {
-        goals: [],
-        warranties: [],
-        inventory: [],
-        credits: [],
-        subscriptions: [],
+      await exportUserDataJson({
+        exportedAt: new Date().toISOString(),
+        version: 2,
+        transactions: transactions ?? [],
+        goals: assets?.goals ?? [],
+        warranties: assets?.warranties ?? [],
+        inventory: assets?.inventory ?? [],
+        credits,
+        subscriptions,
+        centFlowScore: score,
       });
       showToast('Dados exportados com sucesso.', 'success');
     } catch (error) {
@@ -46,19 +57,20 @@ export default function ExportDataScreen() {
   }
 
   return (
-    <SettingsScreenLayout title="Exportar dados" subtitle="Backup em formato JSON">
+    <SettingsScreenLayout title="Exportar dados" subtitle="Backup completo em JSON">
       <SettingsHero
         icon={{ ios: 'square.and.arrow.up', android: 'upload', web: 'upload' }}
         title="Os teus dados"
-        description="Exporta movimentos, objetivos, garantias e inventário."
+        description="Exporta movimentos, ativos, créditos, subscrições e CentFlow Score."
       />
 
       <Card variant="elevated" style={styles.card}>
         <Text variant="bodyMedium">
-          {transactions?.length ?? 0} movimentos · {assetCount} ativos
+          {transactions?.length ?? 0} movimentos · {assetCount} ativos · {subscriptions.length}{' '}
+          subscrições
         </Text>
         <Text variant="caption" color="textMuted">
-          Ficheiro JSON legível — útil para backup ou migração futura.
+          Ficheiro JSON v2 — inclui score e passivos recorrentes.
         </Text>
       </Card>
 
