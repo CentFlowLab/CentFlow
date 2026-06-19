@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   BackHandler,
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   View,
+  type KeyboardEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -16,6 +16,7 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -31,9 +32,15 @@ import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { colors, radius, spacing } from '@/lib/theme';
 
+import { BottomSheetScrollProvider } from './BottomSheetScrollContext';
+import type { BottomSheetScrollRef } from './BottomSheetScrollContext';
+
 const DISMISS_DRAG = 110;
 const DISMISS_VELOCITY = 850;
+const OPEN_DURATION = 280;
+const CLOSE_DURATION = 240;
 const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
+const FALLBACK_SHEET_HEIGHT = 420;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -72,47 +79,54 @@ export function DraggableBottomSheet({
   traceId,
 }: DraggableBottomSheetProps) {
   const insets = useSafeAreaInsets();
-  const translateY = useSharedValue(0);
-  const sheetHeight = useSharedValue(0);
+  const translateY = useSharedValue(FALLBACK_SHEET_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+  const keyboardOffset = useSharedValue(0);
+  const sheetHeight = useSharedValue(FALLBACK_SHEET_HEIGHT);
   const isClosingRef = useRef(false);
   const animateOutRef = useRef<(notifyParent: boolean) => void>(() => {});
+  const scrollRef = useRef<BottomSheetScrollRef>(null);
+  const [scrollView, setScrollView] = useState<BottomSheetScrollRef>(null);
   const [isMounted, setIsMounted] = useState(visible);
 
   const finishClose = useCallback(
     (notifyParent: boolean) => {
       isClosingRef.current = false;
+      keyboardOffset.value = 0;
+      backdropOpacity.value = 0;
+      translateY.value = sheetHeight.value > 0 ? sheetHeight.value : FALLBACK_SHEET_HEIGHT;
       setIsMounted(false);
-      translateY.value = 0;
       if (notifyParent) onClose();
       onDismissed?.();
     },
-    [onClose, onDismissed, translateY],
+    [backdropOpacity, keyboardOffset, onClose, onDismissed, sheetHeight, translateY],
   );
 
   const animateOut = useCallback(
     (notifyParent: boolean) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
+      keyboardOffset.value = withTiming(0, { duration: 160 });
 
-      const distance = sheetHeight.value > 0 ? sheetHeight.value : 420;
-      translateY.value = withTiming(distance, { duration: 240 }, (finished) => {
+      const distance = sheetHeight.value > 0 ? sheetHeight.value : FALLBACK_SHEET_HEIGHT;
+      backdropOpacity.value = withTiming(0, { duration: CLOSE_DURATION });
+      translateY.value = withTiming(distance, { duration: CLOSE_DURATION }, (finished) => {
         if (finished) {
           runOnJS(finishClose)(notifyParent);
         }
       });
     },
-    [finishClose, sheetHeight, translateY],
+    [backdropOpacity, finishClose, keyboardOffset, sheetHeight, translateY],
   );
 
   animateOutRef.current = animateOut;
 
-  /** Fecho imediato — swipe (handle/header), backdrop. */
   const dismissSheet = useCallback(() => {
     if (onBeforeClose?.()) return;
+    Keyboard.dismiss();
     animateOut(true);
   }, [animateOut, onBeforeClose]);
 
-  /** Fecho pelo X / voltar — confirma se isDirty. */
   const requestClose = useCallback(() => {
     if (onBeforeClose?.()) return;
 
@@ -124,16 +138,27 @@ export function DraggableBottomSheet({
     dismissSheet();
   }, [dismissSheet, isDirty, onBeforeClose]);
 
-  useEffect(() => {
+  const animateIn = useCallback(() => {
+    const distance = sheetHeight.value > 0 ? sheetHeight.value : FALLBACK_SHEET_HEIGHT;
+    translateY.value = distance;
+    backdropOpacity.value = 0;
+    translateY.value = withTiming(0, { duration: OPEN_DURATION });
+    backdropOpacity.value = withTiming(1, { duration: OPEN_DURATION });
+  }, [backdropOpacity, sheetHeight, translateY]);
+
+  useLayoutEffect(() => {
     if (visible) {
       if (!isMounted) {
         if (traceId) {
           traceMovementStep('sheet_visible', { component: 'DraggableBottomSheet', traceId });
         }
-        setIsMounted(true);
+        const distance = sheetHeight.value > 0 ? sheetHeight.value : FALLBACK_SHEET_HEIGHT;
+        translateY.value = distance;
+        backdropOpacity.value = 0;
         isClosingRef.current = false;
-        translateY.value = sheetHeight.value > 0 ? sheetHeight.value : 420;
-        translateY.value = withSpring(0, SPRING_CONFIG);
+        setIsMounted(true);
+      } else if (!isClosingRef.current) {
+        animateIn();
       }
       return;
     }
@@ -144,7 +169,35 @@ export function DraggableBottomSheet({
       }
       animateOutRef.current(false);
     }
-  }, [visible, isMounted, sheetHeight, translateY, traceId]);
+  }, [visible, isMounted, animateIn, sheetHeight, translateY, backdropOpacity, traceId]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const onKeyboardShow = (event: KeyboardEvent) => {
+      const lift = Math.max(0, event.endCoordinates.height - insets.bottom);
+      const duration =
+        Platform.OS === 'ios' && event.duration > 0 ? event.duration : 250;
+      keyboardOffset.value = withTiming(lift, { duration });
+    };
+
+    const onKeyboardHide = (event: KeyboardEvent) => {
+      const duration =
+        Platform.OS === 'ios' && event.duration > 0 ? event.duration : 200;
+      keyboardOffset.value = withTiming(0, { duration });
+    };
+
+    const showSub = Keyboard.addListener(showEvent, onKeyboardShow);
+    const hideSub = Keyboard.addListener(hideEvent, onKeyboardHide);
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [insets.bottom, isMounted, keyboardOffset]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -162,6 +215,13 @@ export function DraggableBottomSheet({
     .failOffsetX([-28, 28])
     .onUpdate((event) => {
       translateY.value = Math.max(0, event.translationY);
+      const max = sheetHeight.value > 0 ? sheetHeight.value : FALLBACK_SHEET_HEIGHT;
+      backdropOpacity.value = interpolate(
+        translateY.value,
+        [0, max],
+        [1, 0],
+        Extrapolation.CLAMP,
+      );
     })
     .onEnd((event) => {
       const shouldDismiss =
@@ -173,18 +233,16 @@ export function DraggableBottomSheet({
       }
 
       translateY.value = withSpring(0, SPRING_CONFIG);
+      backdropOpacity.value = withTiming(1, { duration: 180 });
     });
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value - keyboardOffset.value }],
   }));
 
-  const backdropAnimatedStyle = useAnimatedStyle(() => {
-    const max = sheetHeight.value > 0 ? sheetHeight.value : 420;
-    return {
-      opacity: interpolate(translateY.value, [0, max], [1, 0], Extrapolation.CLAMP),
-    };
-  });
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
 
   const headerContent =
     typeof header === 'function' ? header(requestClose) : header;
@@ -209,7 +267,10 @@ export function DraggableBottomSheet({
 
           <Animated.View
             onLayout={(event) => {
-              sheetHeight.value = event.nativeEvent.layout.height;
+              const height = event.nativeEvent.layout.height;
+              if (height > 0) {
+                sheetHeight.value = height;
+              }
             }}
             style={[
               styles.sheet,
@@ -226,20 +287,30 @@ export function DraggableBottomSheet({
               </View>
             </GestureDetector>
 
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-              style={styles.keyboard}>
-              <ScrollView
-                bounces
-                showsVerticalScrollIndicator={false}
+            <BottomSheetScrollProvider value={scrollView}>
+              <KeyboardAwareScrollView
+                innerRef={(ref) => {
+                  scrollRef.current = ref;
+                  if (scrollView !== ref) {
+                    setScrollView(ref);
+                  }
+                }}
+                style={styles.scroll}
+                contentContainerStyle={[styles.scrollContent, scrollContentStyle]}
+                enableOnAndroid
+                enableAutomaticScroll
+                enableResetScrollToCoords={false}
+                extraScrollHeight={Platform.OS === 'ios' ? 72 : 96}
+                extraHeight={Platform.OS === 'ios' ? 120 : 140}
+                keyboardOpeningTime={Platform.OS === 'ios' ? 250 : 0}
                 keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
+                keyboardDismissMode="interactive"
+                showsVerticalScrollIndicator={false}
                 nestedScrollEnabled
-                contentContainerStyle={[styles.scrollContent, scrollContentStyle]}>
+                bounces>
                 {children}
-              </ScrollView>
-            </KeyboardAvoidingView>
+              </KeyboardAwareScrollView>
+            </BottomSheetScrollProvider>
           </Animated.View>
         </View>
       </GestureHandlerRootView>
@@ -256,7 +327,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.overlay,
   },
   sheet: {
@@ -267,6 +338,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
+    overflow: 'hidden',
   },
   dragZone: {
     flexShrink: 0,
@@ -282,9 +354,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.borderStrong,
   },
-  keyboard: {
+  scroll: {
+    flexGrow: 0,
     flexShrink: 1,
-    minHeight: 0,
   },
   scrollContent: {
     paddingBottom: spacing['2xl'],

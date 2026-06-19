@@ -2,8 +2,13 @@ import {
   StyleSheet,
   TextInput,
   View,
+  type NativeSyntheticEvent,
+  type TextInputFocusEventData,
   type TextInputProps,
 } from 'react-native';
+import { useRef } from 'react';
+
+import { useBottomSheetScroll } from '@/components/layout/BottomSheetScrollContext';
 
 import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
 import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
@@ -36,10 +41,22 @@ export function TextField({
   ocrEdited,
   ocrConfidenceLevel,
   style,
+  onFocus,
   ...props
 }: TextFieldProps) {
   const level = ocrConfidenceLevel ?? 'unknown';
   const ocrTone = ocrHighlighted ? getOcrFieldTone(level) : null;
+  const sheetScroll = useBottomSheetScroll();
+  const inputRef = useRef<TextInput>(null);
+
+  const handleFocus = (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+    onFocus?.(event);
+    if (!sheetScroll) return;
+
+    requestAnimationFrame(() => {
+      sheetScroll.scrollToFocusedInput(inputRef.current as never);
+    });
+  };
 
   return (
     <View style={styles.wrapper}>
@@ -63,7 +80,9 @@ export function TextField({
         ) : null}
       </View>
       <TextInput
+        ref={inputRef}
         placeholderTextColor={colors.textMuted}
+        onFocus={handleFocus}
         style={[
           styles.input,
           ocrTone && {
