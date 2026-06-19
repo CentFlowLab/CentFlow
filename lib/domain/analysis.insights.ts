@@ -2,6 +2,7 @@ import type { AssetsData } from '@/lib/domain/assets.types';
 import type { DashboardData } from '@/lib/domain';
 import type { AnalysisInsight, AnalysisTrends } from '@/lib/domain/analysis.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
+import { isTransactionOccurred } from '@/lib/domain/transaction-date.utils';
 import { WARRANTY_CRITICAL_DAYS } from '@/lib/domain/warranty.utils';
 import { daysUntil, formatCurrency, formatPercent } from '@/lib/utils/format';
 
@@ -16,9 +17,9 @@ function parseDate(value: string): Date {
   return new Date(`${value}T12:00:00`);
 }
 
-function isWithinLastDays(date: string, days: number, offsetDays = 0): boolean {
+function isWithinLastDays(date: string, days: number, offsetDays = 0, asOf = new Date()): boolean {
   const target = parseDate(date);
-  const end = new Date();
+  const end = new Date(asOf);
   end.setHours(23, 59, 59, 999);
   end.setDate(end.getDate() - offsetDays);
 
@@ -26,7 +27,7 @@ function isWithinLastDays(date: string, days: number, offsetDays = 0): boolean {
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
 
-  return target >= start && target <= end;
+  return target >= start && target <= end && isTransactionOccurred(date, asOf);
 }
 
 function sumExpensesByCategory(transactions: Transaction[], days: number, offsetDays = 0) {

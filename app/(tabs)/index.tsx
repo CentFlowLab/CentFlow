@@ -114,6 +114,7 @@ export default function InicioScreen() {
 
   const {
     netWorth,
+    projection,
     netWorthChangePercent,
     weeklySpending,
     netWorthChangeThisMonth,
@@ -256,6 +257,7 @@ export default function InicioScreen() {
             changePercent={netWorthChangePercent}
             monthlyChange={netWorthChangeThisMonth}
             weeklySpending={weeklySpending}
+            futureMovementsDelta={projection.futureMovementsDelta}
             hasActivity={hasActivity}
             onAddMovement={openAddMovement}
             onScanReceipt={openReceiptScanner}

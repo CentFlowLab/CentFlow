@@ -13,6 +13,8 @@ type NetWorthHeroCardProps = {
   changePercent: number;
   monthlyChange?: number;
   weeklySpending?: number;
+  /** Delta líquido de movimentos futuros (ex.: +1090€ previstos). */
+  futureMovementsDelta?: number;
   hasActivity?: boolean;
   onAddMovement?: () => void;
   onScanReceipt?: () => void;
@@ -35,6 +37,7 @@ export function NetWorthHeroCard({
   changePercent,
   monthlyChange = 0,
   weeklySpending = 0,
+  futureMovementsDelta = 0,
   hasActivity = true,
   onAddMovement,
   onScanReceipt,
@@ -111,6 +114,13 @@ export function NetWorthHeroCard({
         <Text variant="display" style={[styles.value, { color: netWorthColor }]}>
           {formatCurrency(netWorth.netWorth)}
         </Text>
+
+        {futureMovementsDelta !== 0 ? (
+          <Text variant="caption" color="textSecondary" style={styles.projectedHint}>
+            {futureMovementsDelta > 0 ? '+' : ''}
+            {formatCurrency(futureMovementsDelta)} previstos
+          </Text>
+        ) : null}
 
         <View style={styles.changeRow}>
           <Text variant="bodyMedium" style={{ color: changeColor }}>
@@ -198,6 +208,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundElevated,
   },
   value: {
+    marginBottom: spacing.xs,
+  },
+  projectedHint: {
     marginBottom: spacing.sm,
   },
   changeRow: {

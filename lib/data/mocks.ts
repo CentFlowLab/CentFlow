@@ -1,6 +1,7 @@
 import {
   calculateNetWorth,
   calculateNetWorthChangePercent,
+  buildNetWorthProjection,
   type Account,
   type AttentionItem,
   type Credit,
@@ -231,6 +232,7 @@ export function buildMockDashboard(): DashboardData {
 
   return {
     netWorth,
+    projection: buildNetWorthProjection(netWorth.netWorth, 0),
     previousMonthNetWorth: PREVIOUS_MONTH_NET_WORTH,
     netWorthChangePercent: calculateNetWorthChangePercent(
       netWorth.netWorth,

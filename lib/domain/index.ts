@@ -1,8 +1,10 @@
 export {
   calculateNetWorth,
   calculateNetWorthChangePercent,
+  buildNetWorthProjection,
   sumAccountBalances,
   sumCreditLiabilities,
+  sumGoalSavings,
   sumInventoryValue,
   sumRecurringInvestments,
 } from './net-worth.service';
@@ -42,6 +44,7 @@ export type {
   DashboardData,
   InventoryItem,
   NetWorthInput,
+  NetWorthProjection,
   NetWorthResult,
   RecurringInvestment,
   Suggestion,

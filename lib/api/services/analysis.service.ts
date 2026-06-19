@@ -15,6 +15,7 @@ import { buildMockAnalysisData } from '@/lib/data/analysis.mocks';
 import { buildMockDashboard } from '@/lib/data/mocks';
 import { composeAnalysisFromSources } from '@/lib/domain/analysis.compose';
 import type { AnalysisData } from '@/lib/domain/analysis.types';
+import { buildNetWorthProjection } from '@/lib/domain/net-worth.service';
 import { isSupabaseEnabled } from '@/lib/supabase';
 import type {
   RawAnalysisInsight,
@@ -119,6 +120,7 @@ async function fetchAnalysisComposed(): Promise<AnalysisData> {
 
   const dashboard = {
     netWorth: composed.netWorth,
+    projection: buildNetWorthProjection(composed.netWorth.netWorth, 0),
     previousMonthNetWorth: 0,
     netWorthChangePercent: 0,
     weeklySpending: 0,

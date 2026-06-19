@@ -83,6 +83,14 @@ export interface NetWorthResult {
   assetsByCategory: AssetCategoryBreakdown[];
 }
 
+/** Património após incluir movimentos futuros agendados. */
+export interface NetWorthProjection {
+  /** Património actual + impacto líquido de movimentos com date > hoje. */
+  netWorth: number;
+  /** Delta líquido (receitas − despesas) dos movimentos futuros. */
+  futureMovementsDelta: number;
+}
+
 export type AttentionType = 'warranty' | 'credit' | 'subscription';
 export type AttentionPriority = 'high' | 'medium' | 'low';
 
@@ -116,6 +124,8 @@ export interface NetWorthInput {
 
 export interface DashboardData {
   netWorth: NetWorthResult;
+  /** Projeção com movimentos futuros — preparado para ecrãs dedicados. */
+  projection: NetWorthProjection;
   previousMonthNetWorth: number;
   netWorthChangePercent: number;
   weeklySpending: number;

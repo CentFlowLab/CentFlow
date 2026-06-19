@@ -6,6 +6,7 @@ import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { getWarrantiesSummary } from '@/lib/domain/warranty.utils';
+import { isTransactionOccurred } from '@/lib/domain/transaction-date.utils';
 import {
   buildDailyAssistantPlan,
   calculateCentFlowScore,
@@ -42,8 +43,9 @@ function getWeekStart(date: Date): Date {
 
 function compareWeeklyExpenses(
   transactions: Array<{ type: string; amount: number; date: string }>,
+  asOf: Date = new Date(),
 ): number | null {
-  const now = new Date();
+  const now = asOf;
   const thisWeekStart = getWeekStart(now).getTime();
   const lastWeekStart = thisWeekStart - 7 * 24 * 60 * 60 * 1000;
 
@@ -52,7 +54,8 @@ function compareWeeklyExpenses(
 
   for (const tx of transactions) {
     if (tx.type !== 'expense') continue;
-    const time = new Date(tx.date).getTime();
+    if (!isTransactionOccurred(tx.date, asOf)) continue;
+    const time = new Date(`${tx.date.slice(0, 10)}T12:00:00`).getTime();
     if (time >= thisWeekStart) thisWeek += tx.amount;
     else if (time >= lastWeekStart && time < thisWeekStart) lastWeek += tx.amount;
   }

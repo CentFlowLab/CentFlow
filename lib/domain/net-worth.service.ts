@@ -3,6 +3,7 @@ import type {
   Credit,
   InventoryItem,
   NetWorthInput,
+  NetWorthProjection,
   NetWorthResult,
   RecurringInvestment,
 } from './types';
@@ -81,6 +82,17 @@ export function calculateNetWorth(input: NetWorthInput): NetWorthResult {
       liabilities: liabilitiesTotal,
     },
     assetsByCategory,
+  };
+}
+
+/** Património projetado = actual + delta líquido de movimentos futuros. */
+export function buildNetWorthProjection(
+  currentNetWorth: number,
+  futureMovementsDelta: number,
+): NetWorthProjection {
+  return {
+    netWorth: currentNetWorth + futureMovementsDelta,
+    futureMovementsDelta,
   };
 }
 

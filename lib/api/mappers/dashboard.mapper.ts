@@ -1,6 +1,7 @@
 import {
   calculateNetWorth,
   calculateNetWorthChangePercent,
+  buildNetWorthProjection,
   type Account,
   type AttentionItem,
   type AttentionPriority,
@@ -265,6 +266,7 @@ export function mapDashboardResponse(raw: RawDashboardResponse): DashboardData {
 
   return {
     netWorth,
+    projection: buildNetWorthProjection(netWorth.netWorth, 0),
     previousMonthNetWorth,
     netWorthChangePercent,
     weeklySpending: metrics.weeklySpending,
@@ -320,6 +322,7 @@ export function composeDashboardData(parts: {
 
   return {
     netWorth,
+    projection: buildNetWorthProjection(netWorth.netWorth, 0),
     previousMonthNetWorth,
     netWorthChangePercent:
       pick(

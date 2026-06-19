@@ -5,6 +5,7 @@ import type {
   FinancialLevel,
   FinancialLevelId,
 } from './types';
+import { isTransactionOccurred } from '../transaction-date.utils';
 
 const LEVELS: FinancialLevel[] = [
   {
@@ -165,19 +166,22 @@ export function monthlySubscriptionTotal(
   }, 0);
 }
 
-export function estimateMonthlyCashflow(transactions: Array<{ type: string; amount: number; date: string }>): {
+export function estimateMonthlyCashflow(
+  transactions: Array<{ type: string; amount: number; date: string }>,
+  asOf: Date = new Date(),
+): {
   income: number;
   expenses: number;
 } {
-  const now = new Date();
-  const month = now.getMonth();
-  const year = now.getFullYear();
+  const month = asOf.getMonth();
+  const year = asOf.getFullYear();
 
   let income = 0;
   let expenses = 0;
 
   for (const tx of transactions) {
-    const date = new Date(tx.date);
+    if (!isTransactionOccurred(tx.date, asOf)) continue;
+    const date = new Date(`${tx.date.slice(0, 10)}T12:00:00`);
     if (date.getMonth() !== month || date.getFullYear() !== year) continue;
     if (tx.type === 'income') income += tx.amount;
     else expenses += tx.amount;
