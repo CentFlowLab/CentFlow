@@ -5,22 +5,16 @@ import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
-import { AnalisesTabIconProvider, useAnalisesTabIconReplay } from '@/lib/analises-tab-icon/analises-tab-icon.context';
 import { colors, typography } from '@/lib/theme';
 
 const TAB_BAR_CONTENT_HEIGHT = Platform.OS === 'ios' ? 56 : 52;
 
 export default function TabLayout() {
-  return (
-    <AnalisesTabIconProvider>
-      <TabLayoutInner />
-    </AnalisesTabIconProvider>
-  );
+  return <TabLayoutInner />;
 }
 
 function TabLayoutInner() {
   const keyboardVisible = useKeyboardVisible();
-  const { requestReplay } = useAnalisesTabIconReplay();
 
   return (
     <Tabs
@@ -96,11 +90,6 @@ function TabLayoutInner() {
           tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
           tabBarLabelStyle: [typography.tabLabel, styles.analisesLabel],
           tabBarItemStyle: [styles.tabBarItem, styles.analisesItem],
-        }}
-        listeners={{
-          tabPress: () => {
-            requestReplay();
-          },
         }}
       />
       <Tabs.Screen
@@ -182,12 +171,11 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   analisesItem: {
-    marginTop: -8,
+    marginTop: -2,
     overflow: 'visible',
   },
   analisesLabel: {
-    marginTop: 4,
+    marginTop: 2,
     fontWeight: '600',
-    color: colors.primary,
   },
 });

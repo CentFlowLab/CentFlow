@@ -1,116 +1,72 @@
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { memo, useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { useAnalisesTabIconReplay } from '@/lib/analises-tab-icon/analises-tab-icon.context';
+import { AnalysisIconMark } from '@/components/icons/AnalysisIconMark';
 import { colors } from '@/lib/theme';
 
-const VIDEO_SOURCE = require('@/assets/videos/analises-tab-icon.mp4');
+const ANIM_DURATION = 200;
+const ICON_SIZE = 26;
+const ICON_SIZE_FOCUSED = 28;
 
 type TabBarAnalisesIconProps = {
   focused: boolean;
 };
 
-export function TabBarAnalisesIcon({ focused }: TabBarAnalisesIconProps) {
-  const { replayToken } = useAnalisesTabIconReplay();
-  const [useFallback, setUseFallback] = useState(Platform.OS === 'web');
-
-  const player = useVideoPlayer(VIDEO_SOURCE, (videoPlayer) => {
-    videoPlayer.loop = false;
-    videoPlayer.muted = true;
-  });
+function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
+  const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
-    const subscription = player.addListener('statusChange', ({ error }) => {
-      if (error) {
-        setUseFallback(true);
-      }
-    });
+    progress.value = withTiming(focused ? 1 : 0, { duration: ANIM_DURATION });
+  }, [focused, progress]);
 
-    return () => subscription.remove();
-  }, [player]);
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0.72, 1]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [1, 1.05]) }],
+  }));
 
-  useEffect(() => {
-    if (useFallback) return;
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0, 0.5]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.85, 1.08]) }],
+  }));
 
-    player.currentTime = 0;
-    player.play();
-  }, [focused, replayToken, player, useFallback]);
-
-  if (useFallback) {
-    return <AnalisesIconFallback focused={focused} />;
-  }
+  const size = focused ? ICON_SIZE_FOCUSED : ICON_SIZE;
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.circle, focused && styles.circleFocused]}>
-        <VideoView
-          player={player}
-          style={styles.video}
-          contentFit="cover"
-          nativeControls={false}
-        />
-      </View>
+      <Animated.View pointerEvents="none" style={[styles.glow, glowAnimatedStyle]} />
+      <Animated.View style={iconAnimatedStyle}>
+        <AnalysisIconMark size={size} active={focused} />
+      </Animated.View>
     </View>
   );
 }
 
-function AnalisesIconFallback({ focused }: { focused: boolean }) {
-  return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={
-          focused
-            ? [colors.primary, colors.primaryDark]
-            : [colors.surfaceElevated, colors.surfaceHighlight]
-        }
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.circle, focused && styles.circleFocused]}>
-        <SymbolView
-          name={{
-            ios: 'chart.pie.fill',
-            android: 'pie_chart',
-            web: 'pie_chart',
-          }}
-          tintColor={focused ? colors.textInverse : colors.primary}
-          size={focused ? 28 : 24}
-        />
-      </LinearGradient>
-    </View>
-  );
-}
+export const TabBarAnalisesIcon = memo(TabBarAnalisesIconComponent);
 
 const styles = StyleSheet.create({
   wrapper: {
+    width: 36,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -10,
     overflow: 'visible',
   },
-  circle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.tabBar,
-    overflow: 'hidden',
+  glow: {
+    position: 'absolute',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.primaryGlow,
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  circleFocused: {
-    borderColor: colors.background,
-    shadowOpacity: 0.2,
-  },
-  video: {
-    width: 50,
-    height: 50,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });
