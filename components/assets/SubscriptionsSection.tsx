@@ -6,6 +6,7 @@ import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
 import { Card, Text } from '@/components/ui';
 import type { Subscription } from '@/lib/domain/assets.types';
 import { subscriptionToMonthlyAmount } from '@/lib/subscriptions/subscription-utils';
+import { getRenewalStatus } from '@/lib/subscriptions/renewal.utils';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
@@ -16,24 +17,6 @@ type SubscriptionsSectionProps = {
   onLearnMore?: () => void;
   onDelete?: (subscription: Subscription) => void;
 };
-
-function getRenewalStatus(renewsAt?: string): { label: string; tone: 'default' | 'warning' | 'danger' } {
-  if (!renewsAt) {
-    return { label: 'Activa', tone: 'default' };
-  }
-
-  const renewDate = new Date(renewsAt);
-  const now = new Date();
-  const diffDays = Math.ceil((renewDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) {
-    return { label: 'Renova em breve', tone: 'warning' };
-  }
-  if (diffDays <= 7) {
-    return { label: `Renova em ${diffDays}d`, tone: 'warning' };
-  }
-  return { label: 'Activa', tone: 'default' };
-}
 
 export function SubscriptionsSection({
   subscriptions,
@@ -90,7 +73,11 @@ export function SubscriptionsSection({
         {subscriptions.map((subscription) => {
           const status = getRenewalStatus(subscription.renewsAt);
           const statusColor =
-            status.tone === 'warning' ? colors.warning : colors.success;
+            status.tone === 'danger'
+              ? colors.danger
+              : status.tone === 'warning'
+                ? colors.warning
+                : colors.success;
 
           return (
             <SwipeableAssetRow

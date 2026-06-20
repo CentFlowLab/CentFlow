@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { queryKeys } from '@/lib/api/keys';
 import { invalidateTransactionQueries } from '@/lib/api/invalidate-queries';
 import {
+  applyOptimisticTransactionDelete,
+  applyOptimisticTransactionUpdate,
+  getTransactionQueries,
+  patchTransactionCaches,
+} from '@/lib/api/transaction-cache';
+import {
   createTransaction,
   deleteTransaction,
   fetchTransactions,
@@ -11,7 +17,6 @@ import {
 } from '@/lib/api/services/transaction.service';
 import { useAuth } from '@/lib/auth';
 import { logDoctorMutationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
-import { getCategoryLabel } from '@/lib/data/transaction-categories';
 import type {
   CreateTransactionInput,
   CreateTransactionPhase,
@@ -20,22 +25,11 @@ import type {
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 
-type TransactionSnapshot = Array<[readonly unknown[], Transaction[] | undefined]>;
-
-export function getTransactionQueries(queryClient: QueryClient): TransactionSnapshot {
-  return queryClient.getQueriesData<Transaction[]>({ queryKey: ['transactions'] });
-}
-
-export function patchTransactionCaches(
-  queryClient: QueryClient,
-  updater: (transactions: Transaction[]) => Transaction[],
-) {
-  queryClient.setQueriesData<Transaction[]>({ queryKey: ['transactions'] }, (current) =>
-    updater(current ?? []),
-  );
-}
-
-export { invalidateTransactionQueries };
+export {
+  getTransactionQueries,
+  patchTransactionCaches,
+  invalidateTransactionQueries,
+};
 
 export function useTransactions(filter: TransactionFilter = 'all') {
   const { isAuthenticated } = useAuth();
@@ -133,26 +127,19 @@ export function useUpdateTransaction() {
       const snapshot = getTransactionQueries(queryClient);
 
       patchTransactionCaches(queryClient, (transactions) =>
-        transactions.map((transaction) =>
-          transaction.id === transactionId
-            ? {
-                ...transaction,
-                type: input.type,
-                amount: input.amount,
-                category: input.category,
-                categoryLabel: getCategoryLabel(input.category, input.type),
-                description: input.description,
-                date: input.date,
-              }
-            : transaction,
-        ),
+        applyOptimisticTransactionUpdate(transactions, transactionId, input),
       );
 
       return { snapshot };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, variables, context) => {
       context?.snapshot.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
+      });
+      logDoctorMutationFailure(_error, {
+        action: 'movement_update',
+        screen: 'EditTransactionModal',
+        payload: { transactionId: variables.transactionId },
       });
     },
     onSettled: () => invalidateTransactionQueries(queryClient),
@@ -169,14 +156,19 @@ export function useDeleteTransaction() {
       const snapshot = getTransactionQueries(queryClient);
 
       patchTransactionCaches(queryClient, (transactions) =>
-        transactions.filter((transaction) => transaction.id !== transactionId),
+        applyOptimisticTransactionDelete(transactions, transactionId),
       );
 
       return { snapshot };
     },
-    onError: (_error, _transactionId, context) => {
+    onError: (_error, transactionId, context) => {
       context?.snapshot.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
+      });
+      logDoctorMutationFailure(_error, {
+        action: 'movement_delete',
+        screen: 'EditTransactionModal',
+        payload: { transactionId },
       });
     },
     onSettled: () => invalidateTransactionQueries(queryClient),

@@ -12,12 +12,14 @@ import {
   DashboardSkeleton,
   DemoModeBadge,
   HomeAssistantCard,
+  HomeAttentionSheet,
   HomeGoalHighlightCard,
   HomePersonalizedInsightCard,
   HomeQuickActions,
   type RecommendedQuickAction,
   SuggestionCard,
   NetWorthHeroCard,
+  AttentionCard,
 } from '@/components/dashboard';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal, TransactionListItem } from '@/components/movements';
@@ -56,6 +58,7 @@ export default function InicioScreen() {
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [actionCenterVisible, setActionCenterVisible] = useState(false);
+  const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
 
   const { score, levelProgress, assistant } = useCentFlowIntelligence();
@@ -111,6 +114,7 @@ export default function InicioScreen() {
     netWorthChangePercent,
     weeklySpending,
     netWorthChangeThisMonth,
+    attentionItems,
     suggestions,
     assetsSummary,
     recentTransactions,
@@ -262,6 +266,24 @@ export default function InicioScreen() {
             onOpenActionCenter={() => setActionCenterVisible(true)}
           />
 
+          {attentionItems.length > 0 ? (
+            <View style={styles.section}>
+              <SectionHeader
+                title="Precisa atenção"
+                subtitle={`${attentionItems.length} alerta${attentionItems.length > 1 ? 's' : ''}`}
+                actionLabel={attentionItems.length > 2 ? 'Ver todos' : undefined}
+                onAction={
+                  attentionItems.length > 2
+                    ? () => setAttentionSheetVisible(true)
+                    : undefined
+                }
+              />
+              {attentionItems.slice(0, 2).map((item) => (
+                <AttentionCard key={item.id} item={item} />
+              ))}
+            </View>
+          ) : null}
+
           <CentFlowScoreCard
             score={score}
             levelLabel={levelProgress.level.label}
@@ -378,6 +400,12 @@ export default function InicioScreen() {
         score={score}
         levelLabel={levelProgress.level.label}
         onClose={() => setScoreSheetVisible(false)}
+      />
+
+      <HomeAttentionSheet
+        visible={attentionSheetVisible}
+        onClose={() => setAttentionSheetVisible(false)}
+        items={attentionItems}
       />
     </View>
   );

@@ -91,7 +91,7 @@ export interface NetWorthProjection {
   futureMovementsDelta: number;
 }
 
-export type AttentionType = 'warranty' | 'credit' | 'subscription';
+export type AttentionType = 'warranty' | 'credit' | 'subscription' | 'goal';
 export type AttentionPriority = 'high' | 'medium' | 'low';
 
 export interface AttentionItem {

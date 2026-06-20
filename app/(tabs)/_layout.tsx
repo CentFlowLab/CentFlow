@@ -89,6 +89,24 @@ function TabLayoutInner() {
         options={{
           title: 'Análises',
           tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
+          tabBarItemStyle: [styles.tabBarItem, styles.analisesItem],
+          tabBarLabel: ({ focused, children }) => (
+            <Text
+              style={[
+                typography.tabLabel,
+                styles.tabLabel,
+                styles.analisesLabel,
+                {
+                  color: focused ? colors.primary : colors.textMuted,
+                  fontWeight: focused ? '600' : '400',
+                },
+              ]}>
+              {children}
+            </Text>
+          ),
+          tabBarButton: Platform.OS === 'android'
+            ? (props) => <TabBarButtonAnalisesAndroid {...(props as PressableProps)} />
+            : undefined,
         }}
       />
       <Tabs.Screen
@@ -135,6 +153,25 @@ function TabLayoutInner() {
   );
 }
 
+function TabBarButtonAnalisesAndroid(props: PressableProps) {
+  const { style, children, ...rest } = props;
+
+  return (
+    <Pressable
+      {...rest}
+      android_ripple={{
+        color: `${colors.primary}28`,
+        borderless: false,
+      }}
+      style={(state) => [
+        styles.tabButtonAnalises,
+        typeof style === 'function' ? style(state) : style,
+      ]}>
+      <View style={styles.tabButtonContent}>{children}</View>
+    </Pressable>
+  );
+}
+
 function TabBarButtonAndroid(props: PressableProps) {
   const { style, children, ...rest } = props;
 
@@ -176,10 +213,22 @@ const styles = StyleSheet.create({
   tabLabel: {
     marginTop: 2,
   },
+  analisesItem: {
+    marginTop: Platform.OS === 'ios' ? -6 : -4,
+    overflow: 'visible',
+  },
+  analisesLabel: {
+    marginTop: 4,
+  },
   tabButton: {
     flex: 1,
     alignSelf: 'stretch',
     overflow: 'hidden',
+  },
+  tabButtonAnalises: {
+    flex: 1,
+    alignSelf: 'stretch',
+    overflow: 'visible',
   },
   tabButtonContent: {
     flex: 1,

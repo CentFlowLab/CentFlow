@@ -25,6 +25,8 @@ import {
 } from '@/lib/receipt/ocr-sanitize';
 import { resolveReceiptOcr } from '@/lib/receipt/resolve-receipt-ocr';
 import { RECEIPT_PREPROCESS_VERSION } from '@/lib/receipt/receipt-image-preprocess';
+import { traceFinancialMutationError, traceOcrFailure } from '@/lib/doctor/financial-mutation-trace';
+import { DEFAULT_OCR_UNAVAILABLE_MESSAGE } from '@/lib/receipt/ocr-messages';
 import type { RawReceiptOcrPayload, RawReceiptResponse } from '@/lib/types/receipt.api';
 import { toIsoDateString } from '@/lib/utils/format';
 
@@ -215,16 +217,39 @@ export async function processReceiptFlow(
     ocrResult = client.result ? sanitizeOcrResult(client.result) : null;
     if (!ocrResult) {
       ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
+      traceOcrFailure(ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, {
+        screen: 'movement_create',
+        action: 'ocr_process',
+        component: 'receipt.service',
+        receiptId: upload.id,
+        engine: 'device',
+      });
     }
   } else if (isSupabaseEnabled()) {
     const resolved = await resolveReceiptOcr(upload.id, draft, upload.ocrResult);
     ocrResult = resolved.result;
     ocrUnavailableReason = resolved.unavailableReason;
+    if (!ocrResult) {
+      traceOcrFailure(ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, {
+        screen: 'movement_create',
+        action: 'ocr_process',
+        component: 'receipt.service',
+        receiptId: upload.id,
+        engine: resolved.engine,
+      });
+    }
   } else {
     try {
       ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
-    } catch {
+    } catch (error) {
       ocrResult = null;
+      traceFinancialMutationError(error, {
+        screen: 'movement_create',
+        action: 'ocr_process',
+        component: 'receipt.service',
+        receiptId: upload.id,
+        severity: 'high',
+      });
     }
 
     if (!ocrResult) {
@@ -232,6 +257,13 @@ export async function processReceiptFlow(
       ocrResult = client.result ? sanitizeOcrResult(client.result) : null;
       if (!ocrResult) {
         ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
+        traceOcrFailure(ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, {
+          screen: 'movement_create',
+          action: 'ocr_process',
+          component: 'receipt.service',
+          receiptId: upload.id,
+          engine: 'device_fallback',
+        });
       }
     }
   }

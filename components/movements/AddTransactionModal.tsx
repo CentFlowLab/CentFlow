@@ -27,6 +27,7 @@ import {
   ReceiptUploadError,
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
+import { resolveOcrUserMessage, DEFAULT_OCR_UNAVAILABLE_MESSAGE } from '@/lib/receipt/ocr-messages';
 import { colors, radius, spacing } from '@/lib/theme';
 import { logDoctorValidationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
 import { setDiagnosticAction } from '@/lib/diagnostics';
@@ -164,8 +165,19 @@ export function AddTransactionModal({
 
     try {
       const processed = await processReceipt.mutateAsync(receiptImage.draft);
-      setProcessedReceipt(processed);
+      const withMessage = processed.ocrResult
+        ? processed
+        : {
+            ...processed,
+            ocrUnavailableReason: resolveOcrUserMessage(
+              processed.ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE,
+            ),
+          };
+      setProcessedReceipt(withMessage);
       setConfirmVisible(true);
+      if (!processed.ocrResult) {
+        showToast(withMessage.ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, 'warning');
+      }
     } catch (error) {
       try {
         const processed = await uploadReceiptOnly(receiptImage.draft);
@@ -185,7 +197,7 @@ export function AddTransactionModal({
         }
       }
     }
-  }, [processReceipt, receiptImage.draft]);
+  }, [processReceipt, receiptImage.draft, showToast]);
 
   useEffect(() => {
     if (!retakePending || !receiptImage.draft) return;

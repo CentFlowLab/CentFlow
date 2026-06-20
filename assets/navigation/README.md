@@ -1,8 +1,8 @@
-# Navigation assets — Análises
+# Navigation — Ícone Análises
 
-| Ficheiro | Uso |
-|----------|-----|
-| `analysis-icon.png` | Emblema CentFlow Analysis (branding / web fallback) |
-| `analysis-icon-source.png` | Logo completo original (referência) |
+| Ficheiro | Descrição |
+|----------|-----------|
+| `analysis-tab-icon.png` | **Asset oficial** fornecido pelo utilizador (CentFlow Analysis). Não substituir nem regenerar. |
 
-O tab bar usa `AnalysisIconMark` (SVG vetorial) em iOS/Android para nitidez retina e animações suaves. A PNG serve como fallback web e asset de marca.
+O tab bar usa este PNG directamente via `require()` em `TabBarAnalisesIcon.tsx`.
+O emblema hexagonal (metade superior do PNG) é mostrado com clip CSS — o ficheiro permanece intacto.

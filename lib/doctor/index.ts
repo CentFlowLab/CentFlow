@@ -21,6 +21,16 @@ export {
 } from './log-mutation';
 
 export {
+  traceFinancialMutationStep,
+  traceFinancialMutationError,
+  traceOcrFailure,
+  FINANCIAL_MUTATION_SOURCE,
+  OCR_FLOW_SOURCE,
+  type FinancialMutationAction,
+  type FinancialTraceContext,
+} from './financial-mutation-trace';
+
+export {
   traceMovementStep,
   traceMovementError,
   getMovementFlowDebugState,

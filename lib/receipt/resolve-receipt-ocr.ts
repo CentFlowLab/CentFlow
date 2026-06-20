@@ -1,5 +1,6 @@
 import type { ReceiptDraft, ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import { isMockOcrDemoEnabled } from '@/lib/auth';
+import { traceFinancialMutationError, traceOcrFailure } from '@/lib/doctor/financial-mutation-trace';
 import { isSupabaseEnabled, supabaseReceipts } from '@/lib/supabase';
 import { getClientOcrUnavailableMessage, runClientOcr } from '@/lib/receipt/client-ocr';
 import {
@@ -41,7 +42,15 @@ export async function resolveReceiptOcr(
     try {
       const raw = await supabaseReceipts.invokeVisionOcr(receiptId);
       cloud = raw ? sanitizeOcrResult({ ...raw, source: 'api' }) : null;
-    } catch {
+    } catch (error) {
+      traceFinancialMutationError(error, {
+        screen: 'movement_create',
+        action: 'ocr_resolve',
+        component: 'resolve-receipt-ocr',
+        receiptId,
+        engine: 'cloud',
+        severity: 'medium',
+      });
       cloud = null;
     }
 
@@ -66,10 +75,20 @@ export async function resolveReceiptOcr(
       return { result: cloud, engine: 'cloud' };
     }
 
+    const unavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
+    traceOcrFailure(unavailableReason ?? 'ocr_no_result', {
+      screen: 'movement_create',
+      component: 'resolve-receipt-ocr',
+      receiptId,
+      engine: device ? 'device' : 'none',
+      cloudAttempted: true,
+      deviceAttempted: true,
+    });
+
     return {
       result: device,
       engine: device ? 'device' : 'none',
-      unavailableReason: getClientOcrUnavailableMessage(client.unavailableReason),
+      unavailableReason,
     };
   }
 

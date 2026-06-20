@@ -14,7 +14,12 @@ import {
   subscribeAppLog,
   type AppLogEntry,
 } from '@/lib/diagnostics';
-import { getMovementFlowDebugState, MOVEMENT_FLOW_SOURCE } from '@/lib/doctor';
+import {
+  getMovementFlowDebugState,
+  MOVEMENT_FLOW_SOURCE,
+  FINANCIAL_MUTATION_SOURCE,
+  OCR_FLOW_SOURCE,
+} from '@/lib/doctor';
 import {
   EMAIL_TYPE_LABELS,
   invokeTestEmail,
@@ -23,17 +28,25 @@ import {
 } from '@/lib/email';
 import { colors, radius, spacing } from '@/lib/theme';
 
+const FINANCIAL_SOURCES = new Set([
+  MOVEMENT_FLOW_SOURCE,
+  FINANCIAL_MUTATION_SOURCE,
+  OCR_FLOW_SOURCE,
+  'doctor:mutation',
+  'doctor:validation',
+]);
+
 export default function DiagnosticsSettingsScreen() {
   useDiagnosticScreen('doctor');
 
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const [entries, setEntries] = useState<AppLogEntry[]>([]);
-  const [movementOnly, setMovementOnly] = useState(true);
+  const [financialOnly, setFinancialOnly] = useState(true);
   const [emailLoading, setEmailLoading] = useState<LifecycleEmailType | null>(null);
 
-  const visibleEntries = movementOnly
-    ? entries.filter((e) => e.source === MOVEMENT_FLOW_SOURCE)
+  const visibleEntries = financialOnly
+    ? entries.filter((e) => FINANCIAL_SOURCES.has(e.source))
     : entries;
 
   const flowState = getMovementFlowDebugState();
@@ -87,11 +100,11 @@ export default function DiagnosticsSettingsScreen() {
         ]}>
         <ScreenContainer scrollable={false}>
           <Text variant="body" color="textSecondary" style={styles.lead}>
-            Filtra por «movement_create» para ver o rasto do bloqueio ao criar movimentos.
+            Filtra por operações financeiras (movimentos, OCR, créditos, objetivos, etc.).
             Se aparecer STALL, o último passo indica onde a UI parou.
           </Text>
 
-          {movementOnly ? (
+          {financialOnly ? (
             <Text variant="caption" color="textMuted" style={styles.flowState}>
               Último passo: {flowState.lastStep} · há {flowState.msSinceLastStep}ms
             </Text>
@@ -99,9 +112,9 @@ export default function DiagnosticsSettingsScreen() {
 
           <View style={styles.actions}>
             <Button
-              label={movementOnly ? 'Ver todos os logs' : 'Só movement_create'}
+              label={financialOnly ? 'Ver todos os logs' : 'Só operações financeiras'}
               variant="secondary"
-              onPress={() => setMovementOnly((v) => !v)}
+              onPress={() => setFinancialOnly((v) => !v)}
               fullWidth
             />
             <Button label="Partilhar log" onPress={() => void handleShare()} fullWidth />

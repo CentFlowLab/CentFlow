@@ -25,6 +25,7 @@ import {
 import { isMockAuthEnabled } from '@/lib/auth';
 import { isSupabaseEnabled, supabaseTransactions } from '@/lib/supabase';
 import { traceMovementError, traceMovementStep } from '@/lib/doctor';
+import { traceFinancialMutationError, traceOcrFailure } from '@/lib/doctor/financial-mutation-trace';
 import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import type {
   CreateTransactionInput,
@@ -122,8 +123,24 @@ export async function createTransaction(
       try {
         ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
         ocrProcessed = ocrResult !== null;
-      } catch {
+        if (!ocrResult) {
+          traceOcrFailure('ocr_no_result_after_process', {
+            screen: 'movement_create',
+            action: 'ocr_process',
+            component: 'transaction.service',
+            receiptId: upload.id,
+            severity: 'medium',
+          });
+        }
+      } catch (error) {
         ocrProcessed = false;
+        traceFinancialMutationError(error, {
+          screen: 'movement_create',
+          action: 'ocr_process',
+          component: 'transaction.service',
+          receiptId: upload.id,
+          severity: 'high',
+        });
       }
     }
   }

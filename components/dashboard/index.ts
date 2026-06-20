@@ -1,4 +1,5 @@
 export { ActionCenterSheet } from './ActionCenterSheet';
+export { AttentionCard } from './AttentionCard';
 export { CentFlowScoreCard } from './CentFlowScoreCard';
 export { CentFlowScoreSheet } from './CentFlowScoreSheet';
 export { HomeAssistantCard } from './HomeAssistantCard';

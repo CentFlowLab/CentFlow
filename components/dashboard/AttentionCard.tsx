@@ -23,6 +23,10 @@ const TYPE_CONFIG: Record<
     icon: { ios: 'arrow.clockwise', android: 'autorenew', web: 'autorenew' },
     color: colors.accent,
   },
+  goal: {
+    icon: { ios: 'target', android: 'flag', web: 'flag' },
+    color: colors.primary,
+  },
 };
 
 const PRIORITY_BORDER: Record<AttentionItem['priority'], string> = {
@@ -35,6 +39,7 @@ function getAttentionRoute(type: AttentionType): string | null {
   if (type === 'credit') return '/(tabs)/movimentos?view=creditos';
   if (type === 'subscription') return '/(tabs)/movimentos?view=subscricoes';
   if (type === 'warranty') return '/(tabs)/ativos';
+  if (type === 'goal') return '/(tabs)/ativos?tab=objetivos';
   return null;
 }
 

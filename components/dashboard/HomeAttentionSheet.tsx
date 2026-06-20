@@ -55,7 +55,7 @@ export function HomeAttentionSheet({ visible, onClose, items }: HomeAttentionShe
             Nada urgente por agora
           </Text>
           <Text variant="caption" color="textSecondary" align="center">
-            Garantias, créditos e subscrições estão sob controlo.
+            Garantias, créditos, subscrições e objetivos estão sob controlo.
           </Text>
         </View>
       )}

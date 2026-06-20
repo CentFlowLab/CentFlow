@@ -1,16 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-import { queryKeys } from '@/lib/api/keys';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
+import { invalidateTransactionQueryTargets } from '@/lib/api/transaction-invalidation';
 
 export function invalidateTransactionQueries(queryClient: QueryClient): void {
   traceMovementStep('cache_invalidate_start', { component: 'invalidateTransactionQueries' });
-  queryClient.invalidateQueries({ queryKey: ['transactions'] });
-  queryClient.invalidateQueries({ queryKey: queryKeys.home });
-  queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
-  queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
-  queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
-  queryClient.invalidateQueries({ queryKey: queryKeys.netWorth });
+  invalidateTransactionQueryTargets(queryClient);
   traceMovementStep('cache_invalidate_done', { component: 'invalidateTransactionQueries' });
 }
 

@@ -69,7 +69,7 @@ export function useSaveCredit() {
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
-        action: 'save_credit',
+        action: variables.id ? 'credit_update' : 'credit_create',
         screen: 'CreditFormModal',
         authenticated: Boolean(userId),
         payload: { id: variables.id, creditType: variables.creditType },
@@ -90,6 +90,13 @@ export function useDeleteCredit() {
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+    },
+    onError: (error, id) => {
+      logDoctorMutationFailure(error, {
+        action: 'credit_delete',
+        screen: 'CreditFormModal',
+        payload: { id },
+      });
     },
   });
 }
@@ -123,7 +130,7 @@ export function useSaveSubscription() {
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
-        action: 'save_subscription',
+        action: variables.id ? 'subscription_update' : 'subscription_create',
         screen: 'SubscriptionFormModal',
         authenticated: Boolean(userId),
         payload: { id: variables.id, name: variables.name },
@@ -144,6 +151,14 @@ export function useDeleteSubscription() {
     onSuccess: () => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+    },
+    onError: (error, id) => {
+      logDoctorMutationFailure(error, {
+        action: 'subscription_delete',
+        screen: 'SubscriptionsSection',
+        authenticated: Boolean(userId),
+        payload: { id },
+      });
     },
   });
 }

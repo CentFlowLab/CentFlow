@@ -1,4 +1,6 @@
 import { calculateNetWorth, buildNetWorthProjection, sumGoalSavings } from './net-worth.service';
+import { buildAttentionItems } from './attention-items';
+import { calculateMonthlyNetWorthMetrics } from './net-worth-monthly';
 import type { AssetsData } from './assets.types';
 import type { DashboardData } from './types';
 import type { Transaction } from './transaction.types';
@@ -64,15 +66,35 @@ export function composeDashboardFromLocalSources(input: {
 
   const projection = buildNetWorthProjection(netWorth.netWorth, futureMovementsDelta);
 
+  const monthlyMetrics = calculateMonthlyNetWorthMetrics(
+    input.transactions,
+    {
+      inventory: input.assets.inventory,
+      investments: [],
+      credits,
+      savings: goalSavings,
+    },
+    netWorth.netWorth,
+    asOf,
+  );
+
+  const attentionItems = buildAttentionItems({
+    warranties: input.assets.warranties,
+    credits,
+    subscriptions: input.assets.subscriptions,
+    goals: input.assets.goals,
+    asOf,
+  });
+
   return {
     netWorth,
     projection,
-    previousMonthNetWorth: netWorth.netWorth,
-    netWorthChangePercent: 0,
+    previousMonthNetWorth: monthlyMetrics.previousMonthNetWorth,
+    netWorthChangePercent: monthlyMetrics.netWorthChangePercent,
     weeklySpending: sumWeeklyExpenses(input.transactions, asOf),
-    netWorthChangeThisMonth: 0,
+    netWorthChangeThisMonth: monthlyMetrics.netWorthChangeThisMonth,
     personalInflation: null,
-    attentionItems: [],
+    attentionItems,
     suggestions: [],
   };
 }

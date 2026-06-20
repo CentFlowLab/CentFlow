@@ -6,6 +6,7 @@ import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { getWarrantiesSummary } from '@/lib/domain/warranty.utils';
+import { countRenewalsSoon } from '@/lib/subscriptions/renewal.utils';
 import { isTransactionOccurred } from '@/lib/domain/transaction-date.utils';
 import {
   buildDailyAssistantPlan,
@@ -17,20 +18,6 @@ import {
   type DailyAssistantPlan,
   type FinancialLevel,
 } from '@/lib/domain/financial';
-
-function countRenewalsSoon(
-  subscriptions: Array<{ renewsAt?: string }>,
-  withinDays = 14,
-): number {
-  const now = Date.now();
-  const limit = now + withinDays * 24 * 60 * 60 * 1000;
-
-  return subscriptions.filter((sub) => {
-    if (!sub.renewsAt) return false;
-    const time = new Date(sub.renewsAt).getTime();
-    return time >= now && time <= limit;
-  }).length;
-}
 
 function getWeekStart(date: Date): Date {
   const copy = new Date(date);

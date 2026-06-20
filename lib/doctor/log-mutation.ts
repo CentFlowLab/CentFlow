@@ -1,4 +1,5 @@
 import { logAppError, logAppEvent } from '@/lib/diagnostics';
+import type { AppLogSeverity } from '@/lib/diagnostics/app-log';
 import { setDiagnosticAction } from '@/lib/diagnostics/runtime-context';
 
 export type MutationFailureContext = {
@@ -6,6 +7,7 @@ export type MutationFailureContext = {
   screen?: string;
   payload?: Record<string, unknown>;
   authenticated?: boolean;
+  severity?: AppLogSeverity;
 };
 
 const SENSITIVE_KEYS = /password|token|secret|authorization|iban|account/i;
@@ -40,6 +42,7 @@ export function logDoctorMutationFailure(
     screen: context.screen,
     component: context.screen,
     authenticated: context.authenticated,
+    severity: context.severity ?? 'high',
     payload: sanitizePayload(context.payload),
   });
 }
@@ -50,6 +53,7 @@ export function logDoctorValidationFailure(
   logAppEvent('warn', 'doctor:validation', context.reason, {
     action: context.action,
     screen: context.screen,
+    severity: context.severity ?? 'medium',
     payload: sanitizePayload(context.payload),
   });
 }
