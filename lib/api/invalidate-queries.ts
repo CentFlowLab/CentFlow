@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
+import { queryKeys } from '@/lib/api/keys';
 import { invalidateTransactionQueryTargets } from '@/lib/api/transaction-invalidation';
 
 export function invalidateTransactionQueries(queryClient: QueryClient): void {

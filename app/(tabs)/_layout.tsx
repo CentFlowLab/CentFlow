@@ -1,5 +1,13 @@
 import { Tabs } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type PressableProps,
+  type PressableStateCallbackType,
+} from 'react-native';
 
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
@@ -167,7 +175,11 @@ function TabBarButtonAnalisesAndroid(props: PressableProps) {
         styles.tabButtonAnalises,
         typeof style === 'function' ? style(state) : style,
       ]}>
-      <View style={styles.tabButtonContent}>{children}</View>
+      {(state) => (
+        <View style={styles.tabButtonContent}>
+          {renderPressableChildren(children, state)}
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -186,9 +198,20 @@ function TabBarButtonAndroid(props: PressableProps) {
         styles.tabButton,
         typeof style === 'function' ? style(state) : style,
       ]}>
-      <View style={styles.tabButtonContent}>{children}</View>
+      {(state) => (
+        <View style={styles.tabButtonContent}>
+          {renderPressableChildren(children, state)}
+        </View>
+      )}
     </Pressable>
   );
+}
+
+function renderPressableChildren(
+  children: PressableProps['children'],
+  state: PressableStateCallbackType,
+) {
+  return typeof children === 'function' ? children(state) : children;
 }
 
 const styles = StyleSheet.create({

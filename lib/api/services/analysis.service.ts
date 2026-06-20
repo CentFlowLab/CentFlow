@@ -7,7 +7,10 @@ import {
 } from '@/lib/api/mappers/analysis.mapper';
 import { mapNetWorth } from '@/lib/api/mappers/dashboard.mapper';
 import { fetchAssetsData } from '@/lib/api/services/assets.service';
-import { fetchDashboardData } from '@/lib/api/services/dashboard.service';
+import {
+  fetchDashboardData,
+  fetchNetWorthData,
+} from '@/lib/api/services/dashboard.service';
 import { fetchTransactions } from '@/lib/api/services/transaction.service';
 import { shouldUseMockData } from '@/lib/config/data-mode';
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';

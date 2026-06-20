@@ -1206,3 +1206,11 @@ export const Constants = {
     },
   },
 } as const
+
+export type Profile = Tables<"profiles">
+export type ReceiptRow = Tables<"receipts">
+export type OcrResultRow = Tables<"ocr_results">
+export type TransactionRow = Tables<"transactions">
+export type ReceiptStatus = ReceiptRow["status"]
+export type TransactionType = TransactionRow["type"]
+export type OcrSource = OcrResultRow["source"]

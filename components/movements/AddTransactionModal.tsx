@@ -176,7 +176,7 @@ export function AddTransactionModal({
       setProcessedReceipt(withMessage);
       setConfirmVisible(true);
       if (!processed.ocrResult) {
-        showToast(withMessage.ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, 'warning');
+        showToast(withMessage.ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, 'info');
       }
     } catch (error) {
       try {

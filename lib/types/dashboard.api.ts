@@ -55,6 +55,7 @@ export interface RawNetWorthComputed {
     accounts?: number;
     inventory?: number;
     investments?: number;
+    savings?: number;
     liabilities?: number;
   };
   assets_by_category?: Array<{ key?: string; label?: string; value?: number }>;

@@ -2,8 +2,6 @@ import {
   StyleSheet,
   TextInput,
   View,
-  type NativeSyntheticEvent,
-  type TextInputFocusEventData,
   type TextInputProps,
 } from 'react-native';
 import { useRef } from 'react';
@@ -49,7 +47,7 @@ export function TextField({
   const sheetScroll = useBottomSheetScroll();
   const inputRef = useRef<TextInput>(null);
 
-  const handleFocus = (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleFocus: NonNullable<TextInputProps['onFocus']> = (event) => {
     onFocus?.(event);
     if (!sheetScroll) return;
 

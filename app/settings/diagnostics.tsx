@@ -151,7 +151,7 @@ export default function DiagnosticsSettingsScreen() {
           <View style={styles.list}>
             {visibleEntries.length === 0 ? (
               <Text variant="body" color="textMuted" align="center">
-                Sem entradas {movementOnly ? 'movement_create' : ''}. Abre o modal e tenta guardar um movimento.
+                Sem entradas {financialOnly ? 'movement_create' : ''}. Abre o modal e tenta guardar um movimento.
               </Text>
             ) : null}
             {visibleEntries.map((entry) => (

@@ -105,6 +105,14 @@ export function mapOcrResultRow(row: OcrResultRow): ReceiptOcrResult {
   };
 }
 
+function normalizeReceiptStatus(raw?: string): ReceiptUpload['status'] {
+  const value = raw?.toLowerCase();
+  if (value === 'processing' || value === 'pending') return 'processing';
+  if (value === 'ready' || value === 'completed' || value === 'done') return 'ready';
+  if (value === 'failed' || value === 'error') return 'failed';
+  return 'uploaded';
+}
+
 export function mapReceiptRow(
   row: ReceiptRow,
   signedUrl: string | null,
@@ -114,7 +122,7 @@ export function mapReceiptRow(
     id: row.id,
     url: signedUrl ?? localUri ?? '',
     localUri: localUri ?? signedUrl ?? undefined,
-    status: row.status,
+    status: normalizeReceiptStatus(row.status),
   };
 }
 
