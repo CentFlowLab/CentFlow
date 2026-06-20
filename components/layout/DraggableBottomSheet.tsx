@@ -29,6 +29,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
+import { logAppError } from '@/lib/diagnostics';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { colors, radius, spacing } from '@/lib/theme';
 
@@ -178,16 +179,35 @@ export function DraggableBottomSheet({
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const onKeyboardShow = (event: KeyboardEvent) => {
-      const lift = Math.max(0, event.endCoordinates.height - insets.bottom);
-      const duration =
-        Platform.OS === 'ios' && event.duration > 0 ? event.duration : 250;
-      keyboardOffset.value = withTiming(lift, { duration });
+      try {
+        const keyboardHeight = event.endCoordinates?.height ?? 0;
+        const lift = Math.max(0, keyboardHeight - insets.bottom);
+        const duration =
+          Platform.OS === 'ios' && event.duration > 0 ? event.duration : 250;
+        keyboardOffset.value = withTiming(lift, { duration });
+      } catch (error) {
+        logAppError('movement_create', error, {
+          screen: 'movement_create',
+          action: 'keyboard_show',
+          component: 'DraggableBottomSheet',
+          severity: 'high',
+        });
+      }
     };
 
     const onKeyboardHide = (event: KeyboardEvent) => {
-      const duration =
-        Platform.OS === 'ios' && event.duration > 0 ? event.duration : 200;
-      keyboardOffset.value = withTiming(0, { duration });
+      try {
+        const duration =
+          Platform.OS === 'ios' && event.duration > 0 ? event.duration : 200;
+        keyboardOffset.value = withTiming(0, { duration });
+      } catch (error) {
+        logAppError('movement_create', error, {
+          screen: 'movement_create',
+          action: 'keyboard_hide',
+          component: 'DraggableBottomSheet',
+          severity: 'high',
+        });
+      }
     };
 
     const showSub = Keyboard.addListener(showEvent, onKeyboardShow);
@@ -298,7 +318,7 @@ export function DraggableBottomSheet({
                 style={styles.scroll}
                 contentContainerStyle={[styles.scrollContent, scrollContentStyle]}
                 enableOnAndroid
-                enableAutomaticScroll
+                enableAutomaticScroll={false}
                 enableResetScrollToCoords={false}
                 extraScrollHeight={Platform.OS === 'ios' ? 72 : 96}
                 extraHeight={Platform.OS === 'ios' ? 120 : 140}

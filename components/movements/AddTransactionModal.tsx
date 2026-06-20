@@ -577,6 +577,7 @@ export function AddTransactionModal({
 
             <TextField
               label="Valor (€)"
+              diagnosticField="amount"
               value={amount}
               onChangeText={(text) => {
                 traceMovementStep('field_change', { field: 'amount', len: text.length });
@@ -626,6 +627,7 @@ export function AddTransactionModal({
 
             <TextField
               label="Descrição (opcional)"
+              diagnosticField="description"
               value={description}
               onChangeText={(text) => {
                 traceMovementStep('field_change', { field: 'description', len: text.length });

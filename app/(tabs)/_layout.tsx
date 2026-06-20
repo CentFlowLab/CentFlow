@@ -237,11 +237,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   analisesItem: {
-    marginTop: Platform.OS === 'ios' ? -6 : -4,
-    overflow: 'visible',
+    marginTop: 0,
+    overflow: 'hidden',
   },
   analisesLabel: {
-    marginTop: 4,
+    marginTop: 2,
   },
   tabButton: {
     flex: 1,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   tabButtonAnalises: {
     flex: 1,
     alignSelf: 'stretch',
-    overflow: 'visible',
+    overflow: 'hidden',
   },
   tabButtonContent: {
     flex: 1,

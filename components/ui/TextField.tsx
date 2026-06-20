@@ -8,6 +8,7 @@ import { useRef } from 'react';
 
 import { useBottomSheetScroll } from '@/components/layout/BottomSheetScrollContext';
 
+import { logAppError, logAppEvent } from '@/lib/diagnostics';
 import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
 import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -23,6 +24,7 @@ type TextFieldProps = TextInputProps & {
   ocrEdited?: boolean;
   /** Nível de confiança do OCR para cores do campo */
   ocrConfidenceLevel?: OcrConfidenceLevel;
+  diagnosticField?: string;
 };
 
 const OCR_BADGE_LABELS: Record<OcrConfidenceLevel, string> = {
@@ -38,22 +40,74 @@ export function TextField({
   ocrHighlighted,
   ocrEdited,
   ocrConfidenceLevel,
+  diagnosticField,
   style,
   onFocus,
+  onChangeText,
   ...props
 }: TextFieldProps) {
   const level = ocrConfidenceLevel ?? 'unknown';
   const ocrTone = ocrHighlighted ? getOcrFieldTone(level) : null;
   const sheetScroll = useBottomSheetScroll();
   const inputRef = useRef<TextInput>(null);
+  const fieldName = diagnosticField ?? label;
 
   const handleFocus: NonNullable<TextInputProps['onFocus']> = (event) => {
-    onFocus?.(event);
+    try {
+      onFocus?.(event);
+    } catch (error) {
+      logAppError('movement_create', error, {
+        screen: 'movement_create',
+        action: 'input_focus',
+        component: 'TextField',
+        field: fieldName,
+        severity: 'high',
+      });
+    }
+
     if (!sheetScroll) return;
 
     requestAnimationFrame(() => {
-      sheetScroll.scrollToFocusedInput(inputRef.current as never);
+      const input = inputRef.current;
+      const scrollToFocusedInput = sheetScroll.scrollToFocusedInput;
+
+      if (!input || typeof scrollToFocusedInput !== 'function') {
+        logAppEvent('warn', 'movement_create', 'input_focus_scroll_unavailable', {
+          screen: 'movement_create',
+          action: 'input_focus',
+          component: 'TextField',
+          field: fieldName,
+          severity: 'high',
+        });
+        return;
+      }
+
+      try {
+        scrollToFocusedInput.call(sheetScroll, input);
+      } catch (error) {
+        logAppError('movement_create', error, {
+          screen: 'movement_create',
+          action: 'input_focus',
+          component: 'TextField',
+          field: fieldName,
+          severity: 'high',
+        });
+      }
     });
+  };
+
+  const handleChangeText: NonNullable<TextInputProps['onChangeText']> = (text) => {
+    try {
+      onChangeText?.(text);
+    } catch (error) {
+      logAppError('movement_create', error, {
+        screen: 'movement_create',
+        action: 'input_change',
+        component: 'TextField',
+        field: fieldName,
+        severity: 'high',
+      });
+    }
   };
 
   return (
@@ -81,6 +135,7 @@ export function TextField({
         ref={inputRef}
         placeholderTextColor={colors.textMuted}
         onFocus={handleFocus}
+        onChangeText={handleChangeText}
         style={[
           styles.input,
           ocrTone && {
