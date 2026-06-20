@@ -1,13 +1,12 @@
 import { Tabs } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, type PressableProps } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
 
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
-import { colors, typography } from '@/lib/theme';
-
-const TAB_BAR_CONTENT_HEIGHT = Platform.OS === 'ios' ? 56 : 52;
+import { TAB_BAR_CONTENT_HEIGHT } from '@/hooks/useTabBarMetrics';
+import { colors, spacing, typography } from '@/lib/theme';
 
 export default function TabLayout() {
   return <TabLayoutInner />;
@@ -27,15 +26,17 @@ function TabLayoutInner() {
           ? styles.tabBarHidden
           : {
               ...styles.tabBar,
+              height: TAB_BAR_CONTENT_HEIGHT,
               minHeight: TAB_BAR_CONTENT_HEIGHT,
               paddingBottom: 0,
-              overflow: 'visible' as const,
+              paddingTop: 0,
             },
         tabBarLabelStyle: typography.tabLabel,
         tabBarLabel: ({ focused, color, children }) => (
           <Text
             style={[
               typography.tabLabel,
+              styles.tabLabel,
               {
                 color,
                 fontWeight: focused ? '600' : '400',
@@ -88,8 +89,6 @@ function TabLayoutInner() {
         options={{
           title: 'Análises',
           tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
-          tabBarLabelStyle: [typography.tabLabel, styles.analisesLabel],
-          tabBarItemStyle: [styles.tabBarItem, styles.analisesItem],
         }}
       />
       <Tabs.Screen
@@ -137,18 +136,21 @@ function TabLayoutInner() {
 }
 
 function TabBarButtonAndroid(props: PressableProps) {
-  const { style, ...rest } = props;
+  const { style, children, ...rest } = props;
 
   return (
     <Pressable
       {...rest}
       android_ripple={{
-        color: `${colors.primary}33`,
-        borderless: true,
-        radius: 28,
+        color: `${colors.primary}28`,
+        borderless: false,
       }}
-      style={(state) => [typeof style === 'function' ? style(state) : style, { overflow: 'visible' }]}
-    />
+      style={(state) => [
+        styles.tabButton,
+        typeof style === 'function' ? style(state) : style,
+      ]}>
+      <View style={styles.tabButtonContent}>{children}</View>
+    </Pressable>
   );
 }
 
@@ -157,7 +159,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tabBar,
     borderTopColor: colors.tabBarBorder,
     borderTopWidth: 1,
-    paddingTop: 8,
     elevation: 0,
     shadowOpacity: 0,
   },
@@ -167,15 +168,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tabBarItem: {
-    paddingTop: 4,
-    overflow: 'visible',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
   },
-  analisesItem: {
-    marginTop: -2,
-    overflow: 'visible',
-  },
-  analisesLabel: {
+  tabLabel: {
     marginTop: 2,
-    fontWeight: '600',
+  },
+  tabButton: {
+    flex: 1,
+    alignSelf: 'stretch',
+    overflow: 'hidden',
+  },
+  tabButtonContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

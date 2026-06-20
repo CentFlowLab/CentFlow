@@ -7,22 +7,34 @@ type ScreenContainerProps = ViewProps & {
   scrollable?: boolean;
   padded?: boolean;
   edges?: ('top' | 'bottom')[];
+  /**
+   * Quando false (ecrãs dentro das tabs), não aplica insets.bottom —
+   * o navigator já reserva espaço para a tab bar.
+   */
+  applyBottomSafeInset?: boolean;
 };
 
 export function ScreenContainer({
   scrollable = true,
   padded = true,
   edges = ['bottom'],
+  applyBottomSafeInset = true,
   style,
   children,
   ...props
 }: ScreenContainerProps) {
   const insets = useSafeAreaInsets();
 
+  const bottomPadding = edges.includes('bottom')
+    ? applyBottomSafeInset
+      ? Math.max(insets.bottom, spacing.lg)
+      : spacing.lg
+    : 0;
+
   const contentStyle = [
     styles.content,
     padded && styles.padded,
-    edges.includes('bottom') && { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+    bottomPadding > 0 && { paddingBottom: bottomPadding },
     style,
   ];
 

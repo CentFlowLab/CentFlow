@@ -2,7 +2,6 @@ import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   ASSETS_EMPTY_CONFIG,
@@ -29,7 +28,6 @@ import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 
 export default function AtivosScreen() {
-  const insets = useSafeAreaInsets();
   const { action, tab } = useLocalSearchParams<{ action?: string; tab?: string }>();
   const handledAction = useRef(false);
   const [activeTab, setActiveTab] = useState<AssetsTab>('objetivos');
@@ -165,7 +163,7 @@ export default function AtivosScreen() {
       />
 
       {isLoading ? (
-        <ScreenContainer>
+        <ScreenContainer applyBottomSafeInset={false}>
           <AssetsSkeleton />
         </ScreenContainer>
       ) : isError ? (
@@ -189,9 +187,9 @@ export default function AtivosScreen() {
           }
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+            { paddingBottom: spacing['2xl'] },
           ]}>
-          <ScreenContainer scrollable={false}>
+          <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
             <View style={styles.overviewSection}>
               <AssetsOverviewCard
                 counts={counts}

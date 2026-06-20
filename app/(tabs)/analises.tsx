@@ -29,7 +29,7 @@ export default function AnalisesScreen() {
       <AppHeader />
 
       {isLoading ? (
-        <ScreenContainer>
+        <ScreenContainer applyBottomSafeInset={false}>
           <AnalysisSkeleton />
         </ScreenContainer>
       ) : isError || !data ? (
@@ -42,7 +42,7 @@ export default function AnalisesScreen() {
           />
         </View>
       ) : (
-        <ScreenContainer>
+        <ScreenContainer applyBottomSafeInset={false}>
           <SectionHeader title="Análises" subtitle={data.periodLabel} />
 
           <TrendsSummaryCard

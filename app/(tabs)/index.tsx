@@ -1,13 +1,7 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   ActionCenterSheet,
@@ -54,7 +48,6 @@ import { colors, spacing } from '@/lib/theme';
 export default function InicioScreen() {
   useDiagnosticScreen('home');
 
-  const insets = useSafeAreaInsets();
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
   const { data: analysisData } = useAnalysisData();
   const { data: onboardingAnswers } = useOnboardingAnswers();
@@ -89,7 +82,7 @@ export default function InicioScreen() {
     return (
       <View style={styles.screen}>
         {header}
-        <ScreenContainer>
+        <ScreenContainer applyBottomSafeInset={false}>
           <DashboardSkeleton />
         </ScreenContainer>
       </View>
@@ -247,9 +240,9 @@ export default function InicioScreen() {
         }
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+          { paddingBottom: spacing['2xl'] },
         ]}>
-        <ScreenContainer scrollable={false}>
+        <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
           <NetWorthHeroCard

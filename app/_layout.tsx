@@ -11,7 +11,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect, AppSecurityBootstrap, BiometricGate, EmailDeepLinkHandler } from '@/components/app';
 import { DiagnosticsBootstrap, DiagnosticOverlay } from '@/components/diagnostics';
@@ -51,7 +51,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       : '';
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <StartupShell>
         <StartupErrorScreen
           error={error}
@@ -67,7 +67,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <StartupShell>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>

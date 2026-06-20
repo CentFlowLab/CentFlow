@@ -176,7 +176,7 @@ export default function PerfilScreen() {
       />
 
       {isLoading ? (
-        <ScreenContainer>
+        <ScreenContainer applyBottomSafeInset={false}>
           <ProfileSkeleton />
         </ScreenContainer>
       ) : isError ? (
@@ -189,7 +189,7 @@ export default function PerfilScreen() {
           />
         </View>
       ) : (
-        <ScreenContainer>
+        <ScreenContainer applyBottomSafeInset={false}>
           <FinancialProfileProgress
             profile={financialProfile}
             isLoading={isProfileScoreLoading}

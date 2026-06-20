@@ -1,7 +1,6 @@
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CreditFormModal, CreditsSection } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
@@ -13,7 +12,6 @@ import type { Credit } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 
 export default function PrecosScreen() {
-  const insets = useSafeAreaInsets();
   const [editingCredit, setEditingCredit] = useState<Credit | null>(null);
   const [creditFormVisible, setCreditFormVisible] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
@@ -66,7 +64,7 @@ export default function PrecosScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+            { paddingBottom: spacing['2xl'] },
           ]}
           refreshControl={
             <RefreshControl
@@ -75,7 +73,7 @@ export default function PrecosScreen() {
               tintColor={colors.primary}
             />
           }>
-          <ScreenContainer scrollable={false}>
+          <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
             <FeatureAreaGate feature="credits">
               <CreditsSection
                 credits={credits}

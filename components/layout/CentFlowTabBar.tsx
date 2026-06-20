@@ -1,7 +1,6 @@
 import { Platform, View, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTabBarBottomInset } from '@/hooks/useTabBarBottomInset';
+import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
 import { colors } from '@/lib/theme';
 
 // Bundled pelo expo-router — evita dependência extra.
@@ -22,14 +21,11 @@ type CentFlowTabBarProps = {
 };
 
 /**
- * Tab bar com safe area inferior garantida.
- * Android: fallback generoso (edge-to-edge). iOS: inset nativo do dispositivo.
+ * Tab bar com safe area inferior dinâmica (Android edge-to-edge + iOS home indicator).
  */
 export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const { hidden, ...rest } = props;
-  const bottomInset = useTabBarBottomInset();
-  const insets = useSafeAreaInsets();
-  const paddingBottom = Platform.OS === 'android' ? bottomInset : insets.bottom;
+  const { contentHeight, bottomInset, totalHeight } = useTabBarMetrics();
 
   if (hidden) {
     return null;
@@ -37,8 +33,9 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
 
   const wrapperStyle: ViewStyle = {
     backgroundColor: colors.tabBar,
-    paddingBottom,
-    overflow: 'visible',
+    paddingBottom: bottomInset,
+    minHeight: totalHeight,
+    overflow: 'hidden',
     borderTopWidth: 1,
     borderTopColor: colors.tabBarBorder,
   };
@@ -49,7 +46,13 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
         {...rest}
         insets={{ ...rest.insets, bottom: 0 }}
         style={[
-          { backgroundColor: colors.tabBar, overflow: 'visible' },
+          {
+            backgroundColor: colors.tabBar,
+            height: contentHeight,
+            minHeight: contentHeight,
+            paddingBottom: 0,
+            paddingTop: 0,
+          },
           rest.style,
         ]}
       />

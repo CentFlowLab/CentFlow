@@ -2,7 +2,6 @@ import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
@@ -41,7 +40,6 @@ const FILTER_SEGMENTS = [
 export default function MovimentosScreen() {
   useDiagnosticScreen('movements');
 
-  const insets = useSafeAreaInsets();
   const { action, view } = useLocalSearchParams<{ action?: string; view?: string }>();
   const handledAction = useRef(false);
   const handledRouteAction = useRef<string | null>(null);
@@ -257,7 +255,7 @@ export default function MovimentosScreen() {
               contentContainerStyle={[
                 styles.listContent,
                 isEmpty && styles.listContentEmpty,
-                { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+                { paddingBottom: spacing.lg },
               ]}
               showsVerticalScrollIndicator={false}
               refreshControl={
@@ -296,7 +294,7 @@ export default function MovimentosScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.sectionContent,
-            { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
+            { paddingBottom: spacing['2xl'] },
           ]}
           refreshControl={
             <RefreshControl
