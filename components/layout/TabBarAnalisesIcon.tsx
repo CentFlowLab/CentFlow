@@ -10,13 +10,13 @@ import Animated, {
 
 import { colors } from '@/lib/theme';
 
-/** Asset premium v2 — ícone centrado com glow integrado. */
-const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-tab-icon-v2.png');
+/** Símbolo transparente (apenas o emblema) — círculo e glow são desenhados pela app. */
+const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-symbol.png');
 
 const ANIM_DURATION = 220;
-const OUTER_SIZE = 68;
+const OUTER_SIZE = 66;
 const INNER_SIZE = 58;
-const ICON_SIZE = 36;
+const ICON_SIZE = 46;
 const ICON_SLOT_HEIGHT = 28;
 
 type TabBarAnalisesIconProps = {
