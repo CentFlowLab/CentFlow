@@ -237,11 +237,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   analisesItem: {
-    marginTop: 0,
-    overflow: 'hidden',
+    marginTop: -10,
+    overflow: 'visible',
   },
   analisesLabel: {
-    marginTop: 2,
+    marginTop: -2,
   },
   tabButton: {
     flex: 1,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   tabButtonAnalises: {
     flex: 1,
     alignSelf: 'stretch',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   tabButtonContent: {
     flex: 1,

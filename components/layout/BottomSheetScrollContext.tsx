@@ -1,9 +1,11 @@
 import { createContext, useContext } from 'react';
-import type { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import type { TextInput } from 'react-native';
 
-export type BottomSheetScrollRef = KeyboardAwareScrollView | null;
+export type BottomSheetScrollController = {
+  scrollToInput: (input: TextInput | null, meta?: { field?: string }) => void;
+};
 
-const BottomSheetScrollContext = createContext<BottomSheetScrollRef>(null);
+const BottomSheetScrollContext = createContext<BottomSheetScrollController | null>(null);
 
 export function useBottomSheetScroll() {
   return useContext(BottomSheetScrollContext);

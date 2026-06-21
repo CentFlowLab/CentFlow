@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   Keyboard,
@@ -29,12 +29,12 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
-import { logAppError } from '@/lib/diagnostics';
+import { logAppError, logAppEvent } from '@/lib/diagnostics';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { colors, radius, spacing } from '@/lib/theme';
 
 import { BottomSheetScrollProvider } from './BottomSheetScrollContext';
-import type { BottomSheetScrollRef } from './BottomSheetScrollContext';
+import type { BottomSheetScrollController } from './BottomSheetScrollContext';
 
 const DISMISS_DRAG = 110;
 const DISMISS_VELOCITY = 850;
@@ -42,6 +42,9 @@ const OPEN_DURATION = 280;
 const CLOSE_DURATION = 240;
 const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
 const FALLBACK_SHEET_HEIGHT = 420;
+const KEYBOARD_BUTTON_GAP = 16;
+const FOCUSED_INPUT_EXTRA_HEIGHT = 120;
+const FOCUS_SCROLL_DELAY = 260;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -86,9 +89,60 @@ export function DraggableBottomSheet({
   const sheetHeight = useSharedValue(FALLBACK_SHEET_HEIGHT);
   const isClosingRef = useRef(false);
   const animateOutRef = useRef<(notifyParent: boolean) => void>(() => {});
-  const scrollRef = useRef<BottomSheetScrollRef>(null);
-  const [scrollView, setScrollView] = useState<BottomSheetScrollRef>(null);
+  const scrollRef = useRef<KeyboardAwareScrollView | null>(null);
+  const [keyboardContentPadding, setKeyboardContentPadding] = useState(0);
   const [isMounted, setIsMounted] = useState(visible);
+
+  const scrollController = useMemo<BottomSheetScrollController>(
+    () => ({
+      scrollToInput(input, meta) {
+        const runScroll = () => {
+          const scrollView = scrollRef.current as
+            | (KeyboardAwareScrollView & {
+                scrollToFocusedInput?: (
+                  reactNode: unknown,
+                  extraHeight?: number,
+                  keyboardOpeningTime?: number,
+                ) => void;
+              })
+            | null;
+          const scrollToFocusedInput = scrollView?.scrollToFocusedInput;
+
+          if (!input || typeof scrollToFocusedInput !== 'function') {
+            logAppEvent('warn', 'movement_create', 'input_focus_scroll_unavailable', {
+              screen: 'movement_create',
+              action: 'input_focus',
+              component: 'DraggableBottomSheet',
+              field: meta?.field,
+              severity: 'medium',
+            });
+            return;
+          }
+
+          try {
+            scrollToFocusedInput.call(
+              scrollView,
+              input,
+              FOCUSED_INPUT_EXTRA_HEIGHT,
+              Platform.OS === 'ios' ? FOCUS_SCROLL_DELAY : 0,
+            );
+          } catch (error) {
+            logAppError('movement_create', error, {
+              screen: 'movement_create',
+              action: 'input_focus',
+              component: 'DraggableBottomSheet',
+              field: meta?.field,
+              severity: 'high',
+            });
+          }
+        };
+
+        requestAnimationFrame(runScroll);
+        setTimeout(runScroll, Platform.OS === 'ios' ? FOCUS_SCROLL_DELAY : 90);
+      },
+    }),
+    [],
+  );
 
   const finishClose = useCallback(
     (notifyParent: boolean) => {
@@ -181,10 +235,11 @@ export function DraggableBottomSheet({
     const onKeyboardShow = (event: KeyboardEvent) => {
       try {
         const keyboardHeight = event.endCoordinates?.height ?? 0;
-        const lift = Math.max(0, keyboardHeight - insets.bottom);
+        const lift = Math.max(0, keyboardHeight - insets.bottom + KEYBOARD_BUTTON_GAP);
         const duration =
           Platform.OS === 'ios' && event.duration > 0 ? event.duration : 250;
         keyboardOffset.value = withTiming(lift, { duration });
+        setKeyboardContentPadding(KEYBOARD_BUTTON_GAP);
       } catch (error) {
         logAppError('movement_create', error, {
           screen: 'movement_create',
@@ -200,6 +255,7 @@ export function DraggableBottomSheet({
         const duration =
           Platform.OS === 'ios' && event.duration > 0 ? event.duration : 200;
         keyboardOffset.value = withTiming(0, { duration });
+        setKeyboardContentPadding(0);
       } catch (error) {
         logAppError('movement_create', error, {
           screen: 'movement_create',
@@ -307,16 +363,17 @@ export function DraggableBottomSheet({
               </View>
             </GestureDetector>
 
-            <BottomSheetScrollProvider value={scrollView}>
+            <BottomSheetScrollProvider value={scrollController}>
               <KeyboardAwareScrollView
                 innerRef={(ref) => {
-                  scrollRef.current = ref;
-                  if (scrollView !== ref) {
-                    setScrollView(ref);
-                  }
+                  scrollRef.current = ref as KeyboardAwareScrollView | null;
                 }}
                 style={styles.scroll}
-                contentContainerStyle={[styles.scrollContent, scrollContentStyle]}
+                contentContainerStyle={[
+                  styles.scrollContent,
+                  scrollContentStyle,
+                  { paddingBottom: spacing['2xl'] + keyboardContentPadding },
+                ]}
                 enableOnAndroid
                 enableAutomaticScroll={false}
                 enableResetScrollToCoords={false}

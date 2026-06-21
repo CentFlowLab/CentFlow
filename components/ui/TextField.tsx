@@ -8,7 +8,7 @@ import { useRef } from 'react';
 
 import { useBottomSheetScroll } from '@/components/layout/BottomSheetScrollContext';
 
-import { logAppError, logAppEvent } from '@/lib/diagnostics';
+import { logAppError } from '@/lib/diagnostics';
 import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
 import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -65,35 +65,17 @@ export function TextField({
       });
     }
 
-    if (!sheetScroll) return;
-
-    requestAnimationFrame(() => {
-      const input = inputRef.current;
-      const scrollToFocusedInput = sheetScroll.scrollToFocusedInput;
-
-      if (!input || typeof scrollToFocusedInput !== 'function') {
-        logAppEvent('warn', 'movement_create', 'input_focus_scroll_unavailable', {
-          screen: 'movement_create',
-          action: 'input_focus',
-          component: 'TextField',
-          field: fieldName,
-          severity: 'high',
-        });
-        return;
-      }
-
-      try {
-        scrollToFocusedInput.call(sheetScroll, input);
-      } catch (error) {
-        logAppError('movement_create', error, {
-          screen: 'movement_create',
-          action: 'input_focus',
-          component: 'TextField',
-          field: fieldName,
-          severity: 'high',
-        });
-      }
-    });
+    try {
+      sheetScroll?.scrollToInput(inputRef.current, { field: fieldName });
+    } catch (error) {
+      logAppError('movement_create', error, {
+        screen: 'movement_create',
+        action: 'input_focus',
+        component: 'TextField',
+        field: fieldName,
+        severity: 'high',
+      });
+    }
   };
 
   const handleChangeText: NonNullable<TextInputProps['onChangeText']> = (text) => {

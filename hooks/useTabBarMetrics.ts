@@ -6,9 +6,9 @@ import { resolveTabBarBottomInset } from '@/lib/layout/tab-bar-metrics';
 
 /** Altura visual da tab bar (ícones + labels), sem safe area inferior. */
 export const TAB_BAR_CONTENT_HEIGHT = Platform.select({
-  ios: 56,
-  android: 56,
-  default: 56,
+  ios: 72,
+  android: 72,
+  default: 72,
 }) as number;
 
 export type TabBarMetrics = {
