@@ -97,13 +97,11 @@ function TabLayoutInner() {
         options={{
           title: 'Análises',
           tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
-          tabBarItemStyle: [styles.tabBarItem, styles.analisesItem],
           tabBarLabel: ({ focused, children }) => (
             <Text
               style={[
                 typography.tabLabel,
                 styles.tabLabel,
-                styles.analisesLabel,
                 {
                   color: focused ? colors.primary : colors.textMuted,
                   fontWeight: focused ? '600' : '400',
@@ -236,13 +234,6 @@ const styles = StyleSheet.create({
   tabLabel: {
     marginTop: 2,
   },
-  analisesItem: {
-    marginTop: -10,
-    overflow: 'visible',
-  },
-  analisesLabel: {
-    marginTop: -2,
-  },
   tabButton: {
     flex: 1,
     alignSelf: 'stretch',
@@ -251,7 +242,7 @@ const styles = StyleSheet.create({
   tabButtonAnalises: {
     flex: 1,
     alignSelf: 'stretch',
-    overflow: 'visible',
+    overflow: 'hidden',
   },
   tabButtonContent: {
     flex: 1,
