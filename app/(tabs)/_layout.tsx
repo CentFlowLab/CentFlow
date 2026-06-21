@@ -11,7 +11,7 @@ import {
 
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
-import { TabBarAnalisesIcon } from '@/components/layout';
+import { TabBarAnalisesTab } from '@/components/layout';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
 import { colors, spacing, typography } from '@/lib/theme';
@@ -98,23 +98,9 @@ function TabLayoutInner() {
         name="analises"
         options={{
           title: 'Análises',
-          tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
+          tabBarShowLabel: false,
+          tabBarIcon: ({ focused }) => <TabBarAnalisesTab focused={focused} />,
           tabBarItemStyle: styles.analisesTabItem,
-          tabBarLabel: ({ focused, children }) => (
-            <Text
-              style={[
-                typography.tabLabel,
-                styles.tabLabel,
-                styles.analisesLabel,
-                {
-                  color: focused ? colors.primary : colors.textMuted,
-                  fontWeight: focused ? '600' : '500',
-                  opacity: focused ? 1 : 0.88,
-                },
-              ]}>
-              {children}
-            </Text>
-          ),
           tabBarButton: (props) => (
             <TabBarAnalisesButton {...(props as PressableProps)} />
           ),
@@ -171,11 +157,11 @@ function TabBarAnalisesButton(props: PressableProps) {
     <Pressable
       {...rest}
       android_ripple={{
-        color: `${colors.primary}32`,
+        color: `${colors.primary}36`,
         borderless: true,
-        radius: 32,
+        radius: 38,
       }}
-      hitSlop={{ top: 6, bottom: 2, left: 4, right: 4 }}
+      hitSlop={{ top: 4, bottom: 0, left: 6, right: 6 }}
       style={(state) => [
         styles.analisesTabButton,
         typeof style === 'function' ? style(state) : style,
@@ -243,15 +229,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingTop: 0,
-    paddingBottom: Platform.OS === 'android' ? 2 : spacing.xs,
+    paddingBottom: Platform.OS === 'android' ? 0 : spacing.xs,
     overflow: 'visible',
   },
   tabLabel: {
     marginTop: 2,
-  },
-  analisesLabel: {
-    marginTop: 4,
   },
   analisesTabButton: {
     flex: 1,

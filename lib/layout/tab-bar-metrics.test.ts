@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  ANDROID_TAB_BAR_INSET_MAX,
+  ANDROID_TAB_BAR_INSET_MIN,
   resolveTabBarBottomInset,
-  TAB_BAR_ANDROID_NAV_BUFFER,
   TAB_BAR_MIN_BOTTOM_INSET_ANDROID,
 } from '@/lib/layout/tab-bar-metrics';
 
@@ -19,7 +20,7 @@ test('resolveTabBarBottomInset usa insets.bottom no iOS', () => {
   );
 });
 
-test('resolveTabBarBottomInset usa gap screen-window no Android', () => {
+test('resolveTabBarBottomInset faz clamp no Android com inset grande', () => {
   assert.equal(
     resolveTabBarBottomInset({
       platform: 'android',
@@ -27,19 +28,19 @@ test('resolveTabBarBottomInset usa gap screen-window no Android', () => {
       screenHeight: 800,
       windowHeight: 752,
     }),
-    48 + TAB_BAR_ANDROID_NAV_BUFFER,
+    ANDROID_TAB_BAR_INSET_MAX,
   );
 });
 
-test('resolveTabBarBottomInset prefere insets.bottom quando maior que gap', () => {
+test('resolveTabBarBottomInset prefere insets.bottom quando moderado', () => {
   assert.equal(
     resolveTabBarBottomInset({
       platform: 'android',
-      insetsBottom: 48,
+      insetsBottom: 16,
       screenHeight: 800,
-      windowHeight: 776,
+      windowHeight: 784,
     }),
-    48 + TAB_BAR_ANDROID_NAV_BUFFER,
+    16,
   );
 });
 
@@ -51,17 +52,21 @@ test('resolveTabBarBottomInset fallback mínimo quando sem medição', () => {
       screenHeight: 800,
       windowHeight: 800,
     }),
-    TAB_BAR_MIN_BOTTOM_INSET_ANDROID,
+    ANDROID_TAB_BAR_INSET_MIN,
   );
 });
 
 test('resolveTabBarBottomInset não usa constante fixa 64px', () => {
   const inset = resolveTabBarBottomInset({
     platform: 'android',
-    insetsBottom: 24,
+    insetsBottom: 48,
     screenHeight: 800,
-    windowHeight: 776,
+    windowHeight: 752,
   });
-  assert.equal(inset, 24 + TAB_BAR_ANDROID_NAV_BUFFER);
+  assert.equal(inset, ANDROID_TAB_BAR_INSET_MAX);
   assert.notEqual(inset, 64);
+});
+
+test('TAB_BAR_MIN_BOTTOM_INSET_ANDROID alias', () => {
+  assert.equal(TAB_BAR_MIN_BOTTOM_INSET_ANDROID, 12);
 });

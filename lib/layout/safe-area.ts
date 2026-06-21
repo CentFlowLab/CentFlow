@@ -3,8 +3,14 @@ import { spacing } from '@/lib/theme';
 /** Fallback mínimo quando o SO não reporta insets (raro em edge-to-edge). */
 export const ANDROID_MIN_BOTTOM_INSET = 12;
 
-/** Espaço extra acima da navigation bar Android (só soma ao inset medido). */
-export const ANDROID_NAV_BUFFER = 4;
+/** Tab bar Android — mínimo confortável acima da navigation bar. */
+export const ANDROID_TAB_BAR_INSET_MIN = 8;
+
+/** Tab bar Android — máximo para evitar tab bar a flutuar demasiado (ex. Samsung A12). */
+export const ANDROID_TAB_BAR_INSET_MAX = 24;
+
+/** @deprecated Tab bar já não soma buffer extra */
+export const ANDROID_NAV_BUFFER = 0;
 
 export type SafeAreaInput = {
   platform: string;
@@ -13,39 +19,53 @@ export type SafeAreaInput = {
   windowHeight: number;
 };
 
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+/** Inset bruto: prefere insets.bottom; só usa gap screen−window se inset for 0. */
+export function resolveRawBottomInset(input: SafeAreaInput): number {
+  if (input.insetsBottom > 0) {
+    return input.insetsBottom;
+  }
+
+  return Math.max(0, input.screenHeight - input.windowHeight);
+}
+
 /**
- * Inset inferior fiável da navigation bar / home indicator.
- * Usa insets.bottom, gap screen−window, ou fallback mínimo.
+ * Inset inferior fiável da navigation bar / home indicator (modais, sheets).
+ * Não usa clamp agressivo — garante botões visíveis.
  */
 export function resolveNavigationBarInset(input: SafeAreaInput): number {
   if (input.platform !== 'android') {
     return Math.max(input.insetsBottom, 0);
   }
 
-  const systemUiGap = Math.max(0, input.screenHeight - input.windowHeight);
-  const measured = Math.max(input.insetsBottom, systemUiGap);
+  const raw = resolveRawBottomInset(input);
 
-  if (measured > 0) {
-    return measured;
+  if (raw <= 0) {
+    return ANDROID_MIN_BOTTOM_INSET;
   }
 
-  return ANDROID_MIN_BOTTOM_INSET;
+  return clamp(raw, ANDROID_MIN_BOTTOM_INSET, 48);
 }
 
-/** Inset inferior da tab bar — inclui buffer de conforto no Android. */
+/**
+ * Inset inferior só para a tab bar — clamp 8–24px no Android.
+ * Evita tab bar demasiado subida quando o SO reporta inset inflacionado.
+ */
 export function resolveTabBarBottomInset(input: SafeAreaInput): number {
   if (input.platform !== 'android') {
-    return resolveNavigationBarInset(input);
+    return Math.max(input.insetsBottom, 0);
   }
 
-  const systemUiGap = Math.max(0, input.screenHeight - input.windowHeight);
-  const measured = Math.max(input.insetsBottom, systemUiGap);
+  const raw = resolveRawBottomInset(input);
 
-  if (measured > 0) {
-    return measured + ANDROID_NAV_BUFFER;
+  if (raw <= 0) {
+    return ANDROID_TAB_BAR_INSET_MIN;
   }
 
-  return ANDROID_MIN_BOTTOM_INSET;
+  return clamp(raw, ANDROID_TAB_BAR_INSET_MIN, ANDROID_TAB_BAR_INSET_MAX);
 }
 
 /** Padding para botões fixos no fundo (fora da tab bar). */

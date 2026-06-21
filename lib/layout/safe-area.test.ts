@@ -3,7 +3,8 @@ import test from 'node:test';
 
 import {
   ANDROID_MIN_BOTTOM_INSET,
-  ANDROID_NAV_BUFFER,
+  ANDROID_TAB_BAR_INSET_MAX,
+  ANDROID_TAB_BAR_INSET_MIN,
   resolveBottomActionPadding,
   resolveModalBottomPadding,
   resolveNavigationBarInset,
@@ -35,15 +36,27 @@ test('resolveNavigationBarInset usa gap screen-window no Android', () => {
   );
 });
 
-test('resolveTabBarBottomInset adiciona buffer Android', () => {
+test('resolveTabBarBottomInset faz clamp no Android', () => {
   assert.equal(
     resolveTabBarBottomInset({
       platform: 'android',
-      insetsBottom: 24,
+      insetsBottom: 48,
       screenHeight: 800,
-      windowHeight: 776,
+      windowHeight: 752,
     }),
-    24 + ANDROID_NAV_BUFFER,
+    ANDROID_TAB_BAR_INSET_MAX,
+  );
+});
+
+test('resolveTabBarBottomInset respeita inset moderado', () => {
+  assert.equal(
+    resolveTabBarBottomInset({
+      platform: 'android',
+      insetsBottom: 16,
+      screenHeight: 800,
+      windowHeight: 784,
+    }),
+    16,
   );
 });
 
@@ -55,7 +68,19 @@ test('resolveTabBarBottomInset fallback mínimo Android', () => {
       screenHeight: 800,
       windowHeight: 800,
     }),
-    ANDROID_MIN_BOTTOM_INSET,
+    ANDROID_TAB_BAR_INSET_MIN,
+  );
+});
+
+test('resolveTabBarBottomInset prefere insets.bottom e não soma gap', () => {
+  assert.equal(
+    resolveTabBarBottomInset({
+      platform: 'android',
+      insetsBottom: 20,
+      screenHeight: 800,
+      windowHeight: 752,
+    }),
+    20,
   );
 });
 
@@ -71,4 +96,16 @@ test('resolveModalBottomPadding garante margem para botões', () => {
 test('resolveSheetBottomPadding respeita navigation bar', () => {
   const padding = resolveSheetBottomPadding(48);
   assert.ok(padding >= 48 + 8);
+});
+
+test('resolveNavigationBarInset fallback mínimo Android', () => {
+  assert.equal(
+    resolveNavigationBarInset({
+      platform: 'android',
+      insetsBottom: 0,
+      screenHeight: 800,
+      windowHeight: 800,
+    }),
+    ANDROID_MIN_BOTTOM_INSET,
+  );
 });

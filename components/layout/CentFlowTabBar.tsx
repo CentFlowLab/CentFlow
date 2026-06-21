@@ -1,7 +1,7 @@
-import { Platform, View, type ViewStyle } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 
 import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
-import { colors, spacing } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 
 // Bundled pelo expo-router — evita dependência extra.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -21,7 +21,7 @@ type CentFlowTabBarProps = {
 };
 
 /**
- * Tab bar com safe area inferior dinâmica e espaço para botão central elevado (Análises).
+ * Tab bar com safe area inferior clampada (Android) e espaço para botão central elevado.
  */
 export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const { hidden, ...rest } = props;
@@ -44,7 +44,6 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
     height: contentHeight,
     minHeight: contentHeight,
     justifyContent: 'flex-end',
-    paddingTop: spacing.sm,
     overflow: 'visible',
   };
 
@@ -57,8 +56,8 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
           style={[
             {
               backgroundColor: colors.tabBar,
-              height: contentHeight - spacing.sm,
-              minHeight: contentHeight - spacing.sm,
+              height: contentHeight,
+              minHeight: contentHeight,
               paddingBottom: 0,
               paddingTop: 0,
               borderTopWidth: 0,

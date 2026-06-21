@@ -7,8 +7,14 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { ANALYSIS_TAB_LIFT } from '@/lib/layout/device-metrics';
-import { colors } from '@/lib/theme';
+import {
+  ANALYSIS_TAB_CIRCLE,
+  ANALYSIS_TAB_EMBLEM,
+  ANALYSIS_TAB_LIFT,
+} from '@/lib/layout/device-metrics';
+import { colors, typography } from '@/lib/theme';
+
+import { Text } from '@/components/ui/Text';
 
 /** Asset oficial fornecido pelo utilizador — não substituir nem regenerar. */
 const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-tab-icon.png');
@@ -17,33 +23,31 @@ const ANIM_DURATION = 220;
 /** Emblema hexagonal ocupa ~52% superior do PNG. */
 const EMBLEM_TOP_RATIO = 0.52;
 
-const INACTIVE_EMBLEM = 32;
-const ACTIVE_EMBLEM = 38;
-const INACTIVE_RING = 46;
-const ACTIVE_RING = 54;
-const INACTIVE_GLOW = 50;
-const ACTIVE_GLOW = 62;
+const ACTIVE_GLOW = 80;
+const INACTIVE_GLOW = 70;
 
-type TabBarAnalisesIconProps = {
+type TabBarAnalisesTabProps = {
   focused: boolean;
+  label?: string;
 };
 
-const AnalysisTabAsset = memo(function AnalysisTabAsset({
+const AnalysisIcon = memo(function AnalysisIcon({
   emblemSize,
 }: {
   emblemSize: number;
 }) {
   const imageWidth = emblemSize;
   const imageHeight = emblemSize / EMBLEM_TOP_RATIO;
-  const topNudge = -(imageHeight * (1 - EMBLEM_TOP_RATIO) * 0.06);
+  const topNudge = -(imageHeight * (1 - EMBLEM_TOP_RATIO) * 0.04);
 
   return (
     <View
       style={[
-        styles.emblemClip,
+        styles.analysisIconClip,
         {
           width: emblemSize,
           height: emblemSize,
+          borderRadius: emblemSize / 2,
         },
       ]}>
       <Image
@@ -60,15 +64,17 @@ const AnalysisTabAsset = memo(function AnalysisTabAsset({
   );
 });
 
-function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
+function TabBarAnalisesTabComponent({
+  focused,
+  label = 'Análises',
+}: TabBarAnalisesTabProps) {
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
     progress.value = withTiming(focused ? 1 : 0, { duration: ANIM_DURATION });
   }, [focused, progress]);
 
-  const stackStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.78, 1]),
+  const circleContainerStyle = useAnimatedStyle(() => ({
     transform: [
       {
         translateY: interpolate(
@@ -77,30 +83,39 @@ function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
           [-ANALYSIS_TAB_LIFT.inactive, -ANALYSIS_TAB_LIFT.active],
         ),
       },
-      { scale: interpolate(progress.value, [0, 1], [1, 1.05]) },
+      { scale: interpolate(progress.value, [0, 1], [1, 1.04]) },
     ],
   }));
 
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.58, 1]),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.96, 1]) }],
+  const circleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0.82, 1]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.97, 1]) }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.18, 0.38]),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.94, 1.04]) }],
+    opacity: interpolate(progress.value, [0, 1], [0.28, 0.48]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.96, 1.06]) }],
   }));
 
-  const emblemSize = focused ? ACTIVE_EMBLEM : INACTIVE_EMBLEM;
-  const ringSize = focused ? ACTIVE_RING : INACTIVE_RING;
+  const emblemSize = focused
+    ? ANALYSIS_TAB_EMBLEM.active
+    : ANALYSIS_TAB_EMBLEM.inactive;
+  const circleSize = focused
+    ? ANALYSIS_TAB_CIRCLE.active
+    : ANALYSIS_TAB_CIRCLE.inactive;
   const glowSize = focused ? ACTIVE_GLOW : INACTIVE_GLOW;
 
   return (
-    <View style={styles.wrapper} pointerEvents="none">
-      <Animated.View style={[styles.elevatedStack, stackStyle]}>
+    <View style={styles.analysisTabWrapper} pointerEvents="none">
+      <Animated.View
+        style={[
+          styles.analysisCircleContainer,
+          { width: circleSize, height: circleSize },
+          circleContainerStyle,
+        ]}>
         <Animated.View
           style={[
-            styles.glow,
+            styles.analysisGlow,
             {
               width: glowSize,
               height: glowSize,
@@ -111,64 +126,87 @@ function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
         />
         <Animated.View
           style={[
-            styles.ring,
+            styles.analysisCircle,
             {
-              width: ringSize,
-              height: ringSize,
-              borderRadius: ringSize / 2,
+              width: circleSize,
+              height: circleSize,
+              borderRadius: circleSize / 2,
             },
-            ringStyle,
+            circleStyle,
           ]}
         />
-        <View style={[styles.emblemCenter, { width: ringSize, height: ringSize }]}>
-          <AnalysisTabAsset emblemSize={emblemSize} />
+        <View style={styles.analysisIcon}>
+          <AnalysisIcon emblemSize={emblemSize} />
         </View>
       </Animated.View>
+
+      <Text
+        variant="caption"
+        style={[
+          typography.tabLabel,
+          styles.analysisLabel,
+          {
+            color: focused ? colors.primary : colors.textMuted,
+            fontWeight: focused ? '700' : '500',
+            opacity: focused ? 1 : 0.9,
+          },
+        ]}>
+        {label}
+      </Text>
     </View>
   );
 }
 
-export const TabBarAnalisesIcon = memo(TabBarAnalisesIconComponent);
+/** Tab central premium — ícone elevado + círculo + glow + label. */
+export const TabBarAnalisesTab = memo(TabBarAnalisesTabComponent);
+
+/** @deprecated Usar TabBarAnalisesTab */
+export const TabBarAnalisesIcon = TabBarAnalisesTab;
 
 const styles = StyleSheet.create({
-  wrapper: {
-    width: ACTIVE_RING,
-    height: ACTIVE_RING,
+  analysisTabWrapper: {
     alignItems: 'center',
     justifyContent: 'flex-end',
+    width: ANALYSIS_TAB_CIRCLE.active + 8,
+    minHeight: ANALYSIS_TAB_CIRCLE.active + 22,
     overflow: 'visible',
   },
-  elevatedStack: {
+  analysisCircleContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: ACTIVE_RING,
-    height: ACTIVE_RING,
+    zIndex: 2,
+    elevation: Platform.OS === 'android' ? 6 : 0,
   },
-  glow: {
+  analysisGlow: {
     position: 'absolute',
     backgroundColor: colors.primaryGlow,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
+    shadowOpacity: 0.42,
+    shadowRadius: 14,
+    elevation: Platform.OS === 'android' ? 5 : 0,
+  },
+  analysisCircle: {
+    position: 'absolute',
+    backgroundColor: '#0A101A',
+    borderWidth: 1.5,
+    borderColor: 'rgba(94, 234, 212, 0.38)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
     elevation: Platform.OS === 'android' ? 4 : 0,
   },
-  ring: {
-    position: 'absolute',
-    backgroundColor: 'rgba(10, 16, 26, 0.97)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(94, 234, 212, 0.32)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 6,
-    elevation: Platform.OS === 'android' ? 3 : 0,
-  },
-  emblemCenter: {
+  analysisIcon: {
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
-  emblemClip: {
+  analysisIconClip: {
     overflow: 'hidden',
+  },
+  analysisLabel: {
+    marginTop: 6,
+    zIndex: 1,
   },
 });
