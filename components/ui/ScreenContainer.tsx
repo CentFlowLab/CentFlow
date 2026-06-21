@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View, ViewProps } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, spacing } from '@/lib/theme';
 
 type ScreenContainerProps = ViewProps & {
@@ -23,11 +23,11 @@ export function ScreenContainer({
   children,
   ...props
 }: ScreenContainerProps) {
-  const insets = useSafeAreaInsets();
+  const { navigationBarInset } = useResponsiveLayout();
 
   const bottomPadding = edges.includes('bottom')
     ? applyBottomSafeInset
-      ? Math.max(insets.bottom, spacing.lg)
+      ? Math.max(navigationBarInset, spacing.lg)
       : spacing.lg
     : 0;
 

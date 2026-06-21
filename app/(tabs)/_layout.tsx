@@ -39,6 +39,7 @@ function TabLayoutInner() {
               minHeight: contentHeight,
               paddingBottom: 0,
               paddingTop: 0,
+              overflow: 'visible',
             },
         tabBarLabelStyle: typography.tabLabel,
         tabBarLabel: ({ focused, color, children }) => (
@@ -98,6 +99,7 @@ function TabLayoutInner() {
         options={{
           title: 'Análises',
           tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
+          tabBarItemStyle: styles.analisesTabItem,
           tabBarLabel: ({ focused, children }) => (
             <Text
               style={[
@@ -106,12 +108,15 @@ function TabLayoutInner() {
                 styles.analisesLabel,
                 {
                   color: focused ? colors.primary : colors.textMuted,
-                  fontWeight: focused ? '600' : '400',
-                  opacity: focused ? 1 : 0.82,
+                  fontWeight: focused ? '600' : '500',
+                  opacity: focused ? 1 : 0.88,
                 },
               ]}>
               {children}
             </Text>
+          ),
+          tabBarButton: (props) => (
+            <TabBarAnalisesButton {...(props as PressableProps)} />
           ),
         }}
       />
@@ -156,6 +161,31 @@ function TabLayoutInner() {
         }}
       />
     </Tabs>
+  );
+}
+
+function TabBarAnalisesButton(props: PressableProps) {
+  const { style, children, ...rest } = props;
+
+  return (
+    <Pressable
+      {...rest}
+      android_ripple={{
+        color: `${colors.primary}32`,
+        borderless: true,
+        radius: 32,
+      }}
+      hitSlop={{ top: 6, bottom: 2, left: 4, right: 4 }}
+      style={(state) => [
+        styles.analisesTabButton,
+        typeof style === 'function' ? style(state) : style,
+      ]}>
+      {(state) => (
+        <View style={styles.analisesTabContent}>
+          {renderPressableChildren(children, state)}
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -205,15 +235,34 @@ const styles = StyleSheet.create({
   },
   tabBarItem: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingVertical: Platform.OS === 'android' ? spacing.xs : spacing.sm,
+    paddingBottom: Platform.OS === 'android' ? spacing.xs : spacing.sm,
+  },
+  analisesTabItem: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingTop: 0,
+    paddingBottom: Platform.OS === 'android' ? 2 : spacing.xs,
+    overflow: 'visible',
   },
   tabLabel: {
     marginTop: 2,
   },
   analisesLabel: {
-    marginTop: 3,
+    marginTop: 4,
+  },
+  analisesTabButton: {
+    flex: 1,
+    alignSelf: 'stretch',
+    overflow: 'visible',
+  },
+  analisesTabContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    overflow: 'visible',
   },
   tabButton: {
     flex: 1,

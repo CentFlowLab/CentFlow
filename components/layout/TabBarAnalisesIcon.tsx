@@ -7,19 +7,22 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { ANALYSIS_TAB_LIFT } from '@/lib/layout/device-metrics';
 import { colors } from '@/lib/theme';
 
 /** Asset oficial fornecido pelo utilizador — não substituir nem regenerar. */
 const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-tab-icon.png');
 
-const ANIM_DURATION = 200;
+const ANIM_DURATION = 220;
 /** Emblema hexagonal ocupa ~52% superior do PNG. */
 const EMBLEM_TOP_RATIO = 0.52;
 
-const INACTIVE_EMBLEM = 24;
-const ACTIVE_EMBLEM = 28;
-const ACTIVE_RING = 36;
-const ACTIVE_GLOW = 40;
+const INACTIVE_EMBLEM = 32;
+const ACTIVE_EMBLEM = 38;
+const INACTIVE_RING = 46;
+const ACTIVE_RING = 54;
+const INACTIVE_GLOW = 50;
+const ACTIVE_GLOW = 62;
 
 type TabBarAnalisesIconProps = {
   focused: boolean;
@@ -32,7 +35,7 @@ const AnalysisTabAsset = memo(function AnalysisTabAsset({
 }) {
   const imageWidth = emblemSize;
   const imageHeight = emblemSize / EMBLEM_TOP_RATIO;
-  const topNudge = -(imageHeight * (1 - EMBLEM_TOP_RATIO) * 0.08);
+  const topNudge = -(imageHeight * (1 - EMBLEM_TOP_RATIO) * 0.06);
 
   return (
     <View
@@ -64,50 +67,60 @@ function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
     progress.value = withTiming(focused ? 1 : 0, { duration: ANIM_DURATION });
   }, [focused, progress]);
 
-  const emblemStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.5, 1]),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [1, 1.04]) }],
+  const stackStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0.78, 1]),
+    transform: [
+      {
+        translateY: interpolate(
+          progress.value,
+          [0, 1],
+          [-ANALYSIS_TAB_LIFT.inactive, -ANALYSIS_TAB_LIFT.active],
+        ),
+      },
+      { scale: interpolate(progress.value, [0, 1], [1, 1.05]) },
+    ],
   }));
 
   const ringStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 1]),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.94, 1]) }],
+    opacity: interpolate(progress.value, [0, 1], [0.58, 1]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.96, 1]) }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 0.22]),
+    opacity: interpolate(progress.value, [0, 1], [0.18, 0.38]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.94, 1.04]) }],
   }));
 
   const emblemSize = focused ? ACTIVE_EMBLEM : INACTIVE_EMBLEM;
+  const ringSize = focused ? ACTIVE_RING : INACTIVE_RING;
+  const glowSize = focused ? ACTIVE_GLOW : INACTIVE_GLOW;
 
   return (
-    <View style={styles.wrapper}>
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.glow,
-          {
-            width: ACTIVE_GLOW,
-            height: ACTIVE_GLOW,
-            borderRadius: ACTIVE_GLOW / 2,
-          },
-          glowStyle,
-        ]}
-      />
-      <Animated.View style={[styles.iconStack, emblemStyle]}>
+    <View style={styles.wrapper} pointerEvents="none">
+      <Animated.View style={[styles.elevatedStack, stackStyle]}>
         <Animated.View
-          pointerEvents="none"
+          style={[
+            styles.glow,
+            {
+              width: glowSize,
+              height: glowSize,
+              borderRadius: glowSize / 2,
+            },
+            glowStyle,
+          ]}
+        />
+        <Animated.View
           style={[
             styles.ring,
             {
-              width: ACTIVE_RING,
-              height: ACTIVE_RING,
-              borderRadius: ACTIVE_RING / 2,
+              width: ringSize,
+              height: ringSize,
+              borderRadius: ringSize / 2,
             },
             ringStyle,
           ]}
         />
-        <View style={styles.emblemCenter}>
+        <View style={[styles.emblemCenter, { width: ringSize, height: ringSize }]}>
           <AnalysisTabAsset emblemSize={emblemSize} />
         </View>
       </Animated.View>
@@ -119,31 +132,37 @@ export const TabBarAnalisesIcon = memo(TabBarAnalisesIconComponent);
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: 40,
-    height: 28,
+    width: ACTIVE_RING,
+    height: ACTIVE_RING,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    overflow: 'visible',
+  },
+  elevatedStack: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: ACTIVE_RING,
+    height: ACTIVE_RING,
   },
   glow: {
     position: 'absolute',
     backgroundColor: colors.primaryGlow,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.14,
-    shadowRadius: 5,
-    elevation: Platform.OS === 'android' ? 1 : 0,
-  },
-  iconStack: {
-    width: ACTIVE_RING,
-    height: ACTIVE_RING,
-    alignItems: 'center',
-    justifyContent: 'center',
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: Platform.OS === 'android' ? 4 : 0,
   },
   ring: {
     position: 'absolute',
-    backgroundColor: 'rgba(14, 20, 30, 0.96)',
-    borderWidth: 1,
-    borderColor: 'rgba(94, 234, 212, 0.24)',
+    backgroundColor: 'rgba(10, 16, 26, 0.97)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(94, 234, 212, 0.32)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.16,
+    shadowRadius: 6,
+    elevation: Platform.OS === 'android' ? 3 : 0,
   },
   emblemCenter: {
     alignItems: 'center',

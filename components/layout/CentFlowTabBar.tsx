@@ -21,7 +21,7 @@ type CentFlowTabBarProps = {
 };
 
 /**
- * Tab bar com safe area inferior dinâmica (Android edge-to-edge + iOS home indicator).
+ * Tab bar com safe area inferior dinâmica e espaço para botão central elevado (Análises).
  */
 export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const { hidden, ...rest } = props;
@@ -35,7 +35,7 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
     backgroundColor: colors.tabBar,
     paddingBottom: bottomInset,
     minHeight: totalHeight,
-    overflow: 'hidden',
+    overflow: 'visible',
     borderTopWidth: 1,
     borderTopColor: colors.tabBarBorder,
   };
@@ -43,8 +43,9 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const innerStyle: ViewStyle = {
     height: contentHeight,
     minHeight: contentHeight,
-    justifyContent: 'center',
-    paddingTop: Platform.OS === 'android' ? spacing.xs : 0,
+    justifyContent: 'flex-end',
+    paddingTop: spacing.sm,
+    overflow: 'visible',
   };
 
   return (
@@ -56,11 +57,12 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
           style={[
             {
               backgroundColor: colors.tabBar,
-              height: contentHeight,
-              minHeight: contentHeight,
+              height: contentHeight - spacing.sm,
+              minHeight: contentHeight - spacing.sm,
               paddingBottom: 0,
               paddingTop: 0,
               borderTopWidth: 0,
+              overflow: 'visible',
             },
             rest.style,
           ]}

@@ -3,13 +3,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
 import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
@@ -20,6 +14,7 @@ import {
   inputDateToDate,
 } from '@/lib/utils/format';
 
+import { BottomActionSheet } from './BottomActionSheet';
 import { Button } from './Button';
 import { CentFlowCalendar } from './CentFlowCalendar';
 import { Text } from './Text';
@@ -89,6 +84,13 @@ export function DatePickerField({
     setPickerOpen(false);
   }
 
+  const modalActions = (
+    <View style={styles.modalActions}>
+      <Button label="Cancelar" variant="ghost" onPress={() => setPickerOpen(false)} style={styles.modalBtn} />
+      <Button label="Confirmar" onPress={confirmPicker} style={styles.modalBtn} />
+    </View>
+  );
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.labelRow}>
@@ -140,54 +142,36 @@ export function DatePickerField({
         </Text>
       ) : null}
 
-      {pickerOpen && Platform.OS === 'ios' ? (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setPickerOpen(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setPickerOpen(false)}>
-            <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
-              <Text variant="h3" style={styles.modalTitle}>
-                {label}
-              </Text>
-              <DateTimePicker
-                value={draft}
-                mode="date"
-                display="inline"
-                onChange={handleIosPickerChange}
-                minimumDate={minimumDate}
-                maximumDate={maximumDate}
-                themeVariant="dark"
-                locale="pt-PT"
-                style={styles.iosPicker}
-              />
-              <View style={styles.modalActions}>
-                <Button label="Cancelar" variant="ghost" onPress={() => setPickerOpen(false)} style={styles.modalBtn} />
-                <Button label="Confirmar" onPress={confirmPicker} style={styles.modalBtn} />
-              </View>
-            </Pressable>
-          </Pressable>
-        </Modal>
-      ) : null}
+      <BottomActionSheet
+        visible={pickerOpen && Platform.OS === 'ios'}
+        onClose={() => setPickerOpen(false)}
+        title={label}
+        footer={modalActions}>
+        <DateTimePicker
+          value={draft}
+          mode="date"
+          display="inline"
+          onChange={handleIosPickerChange}
+          minimumDate={minimumDate}
+          maximumDate={maximumDate}
+          themeVariant="dark"
+          locale="pt-PT"
+          style={styles.iosPicker}
+        />
+      </BottomActionSheet>
 
-      {pickerOpen && useCustomCalendar ? (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setPickerOpen(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setPickerOpen(false)}>
-            <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
-              <Text variant="h3" style={styles.modalTitle}>
-                {label}
-              </Text>
-              <CentFlowCalendar
-                value={draft}
-                onChange={setDraft}
-                minimumDate={minimumDate}
-                maximumDate={maximumDate}
-              />
-              <View style={styles.modalActions}>
-                <Button label="Cancelar" variant="ghost" onPress={() => setPickerOpen(false)} style={styles.modalBtn} />
-                <Button label="Confirmar" onPress={confirmPicker} style={styles.modalBtn} />
-              </View>
-            </Pressable>
-          </Pressable>
-        </Modal>
-      ) : null}
+      <BottomActionSheet
+        visible={pickerOpen && useCustomCalendar}
+        onClose={() => setPickerOpen(false)}
+        title={label}
+        footer={modalActions}>
+        <CentFlowCalendar
+          value={draft}
+          onChange={setDraft}
+          minimumDate={minimumDate}
+          maximumDate={maximumDate}
+        />
+      </BottomActionSheet>
     </View>
   );
 }
@@ -247,30 +231,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.textMuted,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: colors.surfaceElevated,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.lg,
-    paddingBottom: spacing['2xl'],
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalTitle: {
-    marginBottom: spacing.sm,
-  },
   iosPicker: {
     alignSelf: 'center',
   },
   modalActions: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginTop: spacing.md,
   },
   modalBtn: {
     flex: 1,

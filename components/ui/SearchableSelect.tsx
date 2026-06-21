@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SymbolView } from 'expo-symbols';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 import { Text, TextField } from '@/components/ui';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -39,7 +39,7 @@ export function SearchableSelect({
   disabled = false,
   style,
 }: SearchableSelectProps) {
-  const insets = useSafeAreaInsets();
+  const { modalBottomPadding } = useResponsiveLayout();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -86,7 +86,7 @@ export function SearchableSelect({
 
       <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}>
+        <View style={[styles.sheet, { paddingBottom: modalBottomPadding }]}>
           <View style={styles.sheetHeader}>
             <Text variant="h3">{label}</Text>
             <Pressable onPress={() => setOpen(false)} hitSlop={12}>

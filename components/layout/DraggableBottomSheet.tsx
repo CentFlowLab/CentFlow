@@ -26,8 +26,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
 import { logAppError } from '@/lib/diagnostics';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
@@ -74,11 +73,6 @@ type DraggableBottomSheetProps = {
   traceId?: string;
 };
 
-function resolveKeyboardInset(keyboardHeight: number, safeAreaBottom: number): number {
-  if (keyboardHeight <= 0) return 0;
-  return Math.max(KEYBOARD_FOOTER_GAP, keyboardHeight - safeAreaBottom + KEYBOARD_FOOTER_GAP);
-}
-
 export function DraggableBottomSheet({
   visible,
   onClose,
@@ -92,7 +86,7 @@ export function DraggableBottomSheet({
   scrollContentStyle,
   traceId,
 }: DraggableBottomSheetProps) {
-  const insets = useSafeAreaInsets();
+  const { sheetBottomPadding, keyboardAwareBottomPadding } = useResponsiveLayout();
   const translateY = useSharedValue(FALLBACK_SHEET_HEIGHT);
   const backdropOpacity = useSharedValue(0);
   const sheetHeight = useSharedValue(FALLBACK_SHEET_HEIGHT);
@@ -104,10 +98,12 @@ export function DraggableBottomSheet({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isMounted, setIsMounted] = useState(visible);
 
-  const keyboardInset = resolveKeyboardInset(keyboardHeight, insets.bottom);
+  const keyboardInset = keyboardHeight > 0
+    ? keyboardAwareBottomPadding(keyboardHeight)
+    : 0;
   const scrollBottomPadding =
     spacing['2xl'] +
-    keyboardInset +
+    (keyboardHeight > 0 ? keyboardInset : sheetBottomPadding) +
     (keyboardHeight > 0 ? SAVE_BUTTON_RESERVE : 0);
 
   const scrollController = useMemo<BottomSheetScrollController>(
@@ -371,7 +367,7 @@ export function DraggableBottomSheet({
                 paddingBottom:
                   keyboardHeight > 0
                     ? KEYBOARD_FOOTER_GAP
-                    : Math.max(insets.bottom, spacing.lg),
+                    : sheetBottomPadding,
               },
               sheetAnimatedStyle,
               sheetStyle,
