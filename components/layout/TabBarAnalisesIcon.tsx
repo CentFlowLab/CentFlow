@@ -20,6 +20,9 @@ const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-tab-icon.png');
 const ANIM_DURATION = 220;
 /** Emblema hexagonal ocupa ~52% superior do PNG. */
 const EMBLEM_TOP_RATIO = 0.52;
+const SOURCE_ASPECT = 682 / 1024;
+/** Centro visual do emblema ≈ meio da faixa superior. */
+const EMBLEM_CENTER_Y_RATIO = EMBLEM_TOP_RATIO / 2;
 
 const ICON_SLOT_HEIGHT = 28;
 const ACTIVE_GLOW = 68;
@@ -34,9 +37,10 @@ const AnalysisIcon = memo(function AnalysisIcon({
 }: {
   emblemSize: number;
 }) {
-  const imageWidth = emblemSize;
-  const imageHeight = emblemSize / EMBLEM_TOP_RATIO;
-  const topNudge = -(imageHeight * (1 - EMBLEM_TOP_RATIO) * 0.05);
+  const displayedHeight = emblemSize * SOURCE_ASPECT;
+  const containTop = (emblemSize - displayedHeight) / 2;
+  const emblemCenterY = containTop + displayedHeight * EMBLEM_CENTER_Y_RATIO;
+  const translateY = emblemSize / 2 - emblemCenterY;
 
   return (
     <View
@@ -51,11 +55,11 @@ const AnalysisIcon = memo(function AnalysisIcon({
       <Image
         source={ANALYSIS_TAB_ICON}
         style={{
-          width: imageWidth,
-          height: imageHeight,
-          marginTop: topNudge,
+          width: emblemSize,
+          height: emblemSize,
+          transform: [{ translateY }],
         }}
-        resizeMode="cover"
+        resizeMode="contain"
         accessibilityIgnoresInvertColors
       />
     </View>
@@ -128,7 +132,7 @@ function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
             circleStyle,
           ]}
         />
-        <View style={styles.iconCenter}>
+        <View style={[styles.iconCenter, { width: circleSize, height: circleSize }]}>
           <AnalysisIcon emblemSize={emblemSize} />
         </View>
       </Animated.View>
@@ -174,10 +178,13 @@ const styles = StyleSheet.create({
     elevation: Platform.OS === 'android' ? 2 : 0,
   },
   iconCenter: {
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconClip: {
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
