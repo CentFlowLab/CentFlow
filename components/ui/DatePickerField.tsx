@@ -1,5 +1,4 @@
 import DateTimePicker, {
-  DateTimePickerAndroid,
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { SymbolView } from 'expo-symbols';
@@ -22,6 +21,7 @@ import {
 } from '@/lib/utils/format';
 
 import { Button } from './Button';
+import { CentFlowCalendar } from './CentFlowCalendar';
 import { Text } from './Text';
 
 type DatePickerFieldProps = {
@@ -56,8 +56,8 @@ export function DatePickerField({
   ocrEdited,
   ocrConfidenceLevel,
 }: DatePickerFieldProps) {
-  const [iosOpen, setIosOpen] = useState(false);
-  const [iosDraft, setIosDraft] = useState<Date>(() => inputDateToDate(value) ?? new Date());
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [draft, setDraft] = useState<Date>(() => inputDateToDate(value) ?? new Date());
 
   const displayValue = value.trim() || '';
   const resolvedDate = useMemo(
@@ -67,49 +67,26 @@ export function DatePickerField({
 
   const level = ocrConfidenceLevel ?? 'unknown';
   const ocrTone = ocrHighlighted ? getOcrFieldTone(level) : null;
+  const useCustomCalendar = Platform.OS === 'android' || Platform.OS === 'web';
 
   function applyDate(date: Date) {
     onChange(dateToInputDate(date));
   }
 
-  function handlePickerChange(event: DateTimePickerEvent, selectedDate?: Date) {
-    if (Platform.OS === 'android') {
-      if (event.type === 'dismissed') return;
-      if (selectedDate) applyDate(selectedDate);
-      return;
-    }
-
+  function handleIosPickerChange(_event: DateTimePickerEvent, selectedDate?: Date) {
     if (selectedDate) {
-      setIosDraft(selectedDate);
+      setDraft(selectedDate);
     }
   }
 
   function openPicker() {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: resolvedDate,
-        mode: 'date',
-        display: 'calendar',
-        minimumDate,
-        maximumDate,
-        onChange: handlePickerChange,
-      });
-      return;
-    }
-
-    if (Platform.OS === 'web') {
-      setIosOpen(true);
-      setIosDraft(resolvedDate);
-      return;
-    }
-
-    setIosDraft(resolvedDate);
-    setIosOpen(true);
+    setDraft(resolvedDate);
+    setPickerOpen(true);
   }
 
-  function confirmIos() {
-    applyDate(iosDraft);
-    setIosOpen(false);
+  function confirmPicker() {
+    applyDate(draft);
+    setPickerOpen(false);
   }
 
   return (
@@ -163,18 +140,18 @@ export function DatePickerField({
         </Text>
       ) : null}
 
-      {Platform.OS === 'ios' && iosOpen ? (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setIosOpen(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setIosOpen(false)}>
+      {pickerOpen && Platform.OS === 'ios' ? (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setPickerOpen(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setPickerOpen(false)}>
             <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
               <Text variant="h3" style={styles.modalTitle}>
                 {label}
               </Text>
               <DateTimePicker
-                value={iosDraft}
+                value={draft}
                 mode="date"
                 display="inline"
-                onChange={handlePickerChange}
+                onChange={handleIosPickerChange}
                 minimumDate={minimumDate}
                 maximumDate={maximumDate}
                 themeVariant="dark"
@@ -182,33 +159,30 @@ export function DatePickerField({
                 style={styles.iosPicker}
               />
               <View style={styles.modalActions}>
-                <Button label="Cancelar" variant="ghost" onPress={() => setIosOpen(false)} style={styles.modalBtn} />
-                <Button label="Confirmar" onPress={confirmIos} style={styles.modalBtn} />
+                <Button label="Cancelar" variant="ghost" onPress={() => setPickerOpen(false)} style={styles.modalBtn} />
+                <Button label="Confirmar" onPress={confirmPicker} style={styles.modalBtn} />
               </View>
             </Pressable>
           </Pressable>
         </Modal>
       ) : null}
 
-      {Platform.OS === 'web' && iosOpen ? (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setIosOpen(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setIosOpen(false)}>
+      {pickerOpen && useCustomCalendar ? (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setPickerOpen(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setPickerOpen(false)}>
             <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
               <Text variant="h3" style={styles.modalTitle}>
                 {label}
               </Text>
-              <DateTimePicker
-                value={iosDraft}
-                mode="date"
-                display="default"
-                onChange={handlePickerChange}
+              <CentFlowCalendar
+                value={draft}
+                onChange={setDraft}
                 minimumDate={minimumDate}
                 maximumDate={maximumDate}
-                style={styles.iosPicker}
               />
               <View style={styles.modalActions}>
-                <Button label="Cancelar" variant="ghost" onPress={() => setIosOpen(false)} style={styles.modalBtn} />
-                <Button label="Confirmar" onPress={confirmIos} style={styles.modalBtn} />
+                <Button label="Cancelar" variant="ghost" onPress={() => setPickerOpen(false)} style={styles.modalBtn} />
+                <Button label="Confirmar" onPress={confirmPicker} style={styles.modalBtn} />
               </View>
             </Pressable>
           </Pressable>

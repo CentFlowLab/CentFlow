@@ -2,14 +2,13 @@ import { useMemo } from 'react';
 import { Dimensions, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { resolveTabBarBottomInset } from '@/lib/layout/tab-bar-metrics';
+import {
+  resolveTabBarBottomInset,
+  resolveTabBarContentHeight,
+} from '@/lib/layout/tab-bar-metrics';
 
 /** Altura visual da tab bar (ícones + labels), sem safe area inferior. */
-export const TAB_BAR_CONTENT_HEIGHT = Platform.select({
-  ios: 72,
-  android: 72,
-  default: 72,
-}) as number;
+export const TAB_BAR_CONTENT_HEIGHT = resolveTabBarContentHeight(Platform.OS);
 
 export type TabBarMetrics = {
   contentHeight: number;
@@ -26,6 +25,7 @@ export function useTabBarMetrics(): TabBarMetrics {
   return useMemo(() => {
     const screen = Dimensions.get('screen');
     const window = Dimensions.get('window');
+    const contentHeight = resolveTabBarContentHeight(Platform.OS);
     const bottomInset = resolveTabBarBottomInset({
       platform: Platform.OS,
       insetsBottom: insets.bottom,
@@ -34,9 +34,9 @@ export function useTabBarMetrics(): TabBarMetrics {
     });
 
     return {
-      contentHeight: TAB_BAR_CONTENT_HEIGHT,
+      contentHeight,
       bottomInset,
-      totalHeight: TAB_BAR_CONTENT_HEIGHT + bottomInset,
+      totalHeight: contentHeight + bottomInset,
     };
   }, [insets.bottom]);
 }

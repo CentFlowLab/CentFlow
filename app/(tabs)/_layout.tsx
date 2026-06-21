@@ -13,7 +13,7 @@ import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
-import { TAB_BAR_CONTENT_HEIGHT } from '@/hooks/useTabBarMetrics';
+import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
 import { colors, spacing, typography } from '@/lib/theme';
 
 export default function TabLayout() {
@@ -22,6 +22,7 @@ export default function TabLayout() {
 
 function TabLayoutInner() {
   const keyboardVisible = useKeyboardVisible();
+  const { contentHeight } = useTabBarMetrics();
 
   return (
     <Tabs
@@ -34,8 +35,8 @@ function TabLayoutInner() {
           ? styles.tabBarHidden
           : {
               ...styles.tabBar,
-              height: TAB_BAR_CONTENT_HEIGHT,
-              minHeight: TAB_BAR_CONTENT_HEIGHT,
+              height: contentHeight,
+              minHeight: contentHeight,
               paddingBottom: 0,
               paddingTop: 0,
             },
@@ -102,17 +103,16 @@ function TabLayoutInner() {
               style={[
                 typography.tabLabel,
                 styles.tabLabel,
+                styles.analisesLabel,
                 {
                   color: focused ? colors.primary : colors.textMuted,
                   fontWeight: focused ? '600' : '400',
+                  opacity: focused ? 1 : 0.82,
                 },
               ]}>
               {children}
             </Text>
           ),
-          tabBarButton: Platform.OS === 'android'
-            ? (props) => <TabBarButtonAnalisesAndroid {...(props as PressableProps)} />
-            : undefined,
         }}
       />
       <Tabs.Screen
@@ -159,29 +159,6 @@ function TabLayoutInner() {
   );
 }
 
-function TabBarButtonAnalisesAndroid(props: PressableProps) {
-  const { style, children, ...rest } = props;
-
-  return (
-    <Pressable
-      {...rest}
-      android_ripple={{
-        color: `${colors.primary}28`,
-        borderless: false,
-      }}
-      style={(state) => [
-        styles.tabButtonAnalises,
-        typeof style === 'function' ? style(state) : style,
-      ]}>
-      {(state) => (
-        <View style={styles.tabButtonContent}>
-          {renderPressableChildren(children, state)}
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
 function TabBarButtonAndroid(props: PressableProps) {
   const { style, children, ...rest } = props;
 
@@ -192,6 +169,7 @@ function TabBarButtonAndroid(props: PressableProps) {
         color: `${colors.primary}28`,
         borderless: false,
       }}
+      hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
       style={(state) => [
         styles.tabButton,
         typeof style === 'function' ? style(state) : style,
@@ -216,7 +194,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.tabBar,
     borderTopColor: colors.tabBarBorder,
-    borderTopWidth: 1,
+    borderTopWidth: 0,
     elevation: 0,
     shadowOpacity: 0,
   },
@@ -229,17 +207,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing.xs,
+    paddingVertical: Platform.OS === 'android' ? spacing.xs : spacing.sm,
   },
   tabLabel: {
     marginTop: 2,
   },
-  tabButton: {
-    flex: 1,
-    alignSelf: 'stretch',
-    overflow: 'hidden',
+  analisesLabel: {
+    marginTop: 3,
   },
-  tabButtonAnalises: {
+  tabButton: {
     flex: 1,
     alignSelf: 'stretch',
     overflow: 'hidden',

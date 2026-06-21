@@ -1,7 +1,7 @@
 import { Platform, View, type ViewStyle } from 'react-native';
 
 import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
-import { colors } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 
 // Bundled pelo expo-router — evita dependência extra.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -40,22 +40,32 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
     borderTopColor: colors.tabBarBorder,
   };
 
+  const innerStyle: ViewStyle = {
+    height: contentHeight,
+    minHeight: contentHeight,
+    justifyContent: 'center',
+    paddingTop: Platform.OS === 'android' ? spacing.xs : 0,
+  };
+
   return (
     <View style={wrapperStyle}>
-      <BottomTabBar
-        {...rest}
-        insets={{ ...rest.insets, bottom: 0 }}
-        style={[
-          {
-            backgroundColor: colors.tabBar,
-            height: contentHeight,
-            minHeight: contentHeight,
-            paddingBottom: 0,
-            paddingTop: 0,
-          },
-          rest.style,
-        ]}
-      />
+      <View style={innerStyle}>
+        <BottomTabBar
+          {...rest}
+          insets={{ ...rest.insets, bottom: 0 }}
+          style={[
+            {
+              backgroundColor: colors.tabBar,
+              height: contentHeight,
+              minHeight: contentHeight,
+              paddingBottom: 0,
+              paddingTop: 0,
+              borderTopWidth: 0,
+            },
+            rest.style,
+          ]}
+        />
+      </View>
     </View>
   );
 }

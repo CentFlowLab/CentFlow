@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { resolveTabBarBottomInset } from '@/lib/layout/tab-bar-metrics';
+import {
+  resolveTabBarBottomInset,
+  TAB_BAR_ANDROID_NAV_BUFFER,
+  TAB_BAR_MIN_BOTTOM_INSET_ANDROID,
+} from '@/lib/layout/tab-bar-metrics';
 
 test('resolveTabBarBottomInset usa insets.bottom no iOS', () => {
   assert.equal(
@@ -23,7 +27,7 @@ test('resolveTabBarBottomInset usa gap screen-window no Android', () => {
       screenHeight: 800,
       windowHeight: 752,
     }),
-    48,
+    48 + TAB_BAR_ANDROID_NAV_BUFFER,
   );
 });
 
@@ -35,11 +39,11 @@ test('resolveTabBarBottomInset prefere insets.bottom quando maior que gap', () =
       screenHeight: 800,
       windowHeight: 776,
     }),
-    48,
+    48 + TAB_BAR_ANDROID_NAV_BUFFER,
   );
 });
 
-test('resolveTabBarBottomInset fallback mínimo 8px quando sem medição', () => {
+test('resolveTabBarBottomInset fallback mínimo quando sem medição', () => {
   assert.equal(
     resolveTabBarBottomInset({
       platform: 'android',
@@ -47,7 +51,7 @@ test('resolveTabBarBottomInset fallback mínimo 8px quando sem medição', () =>
       screenHeight: 800,
       windowHeight: 800,
     }),
-    8,
+    TAB_BAR_MIN_BOTTOM_INSET_ANDROID,
   );
 });
 
@@ -58,6 +62,6 @@ test('resolveTabBarBottomInset não usa constante fixa 64px', () => {
     screenHeight: 800,
     windowHeight: 776,
   });
-  assert.equal(inset, 24);
+  assert.equal(inset, 24 + TAB_BAR_ANDROID_NAV_BUFFER);
   assert.notEqual(inset, 64);
 });

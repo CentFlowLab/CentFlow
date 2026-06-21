@@ -8,6 +8,7 @@ export { Skeleton, SkeletonGroup } from './Skeleton';
 export { SectionHeader } from './SectionHeader';
 export { ScreenContainer } from './ScreenContainer';
 export { TextField } from './TextField';
+export { CentFlowCalendar } from './CentFlowCalendar';
 export { DatePickerField } from './DatePickerField';
 export { SearchableSelect } from './SearchableSelect';
 export { ToastProvider, useToast } from './Toast';
