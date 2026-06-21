@@ -5,6 +5,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
   type KeyboardEvent,
@@ -16,7 +17,6 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -29,7 +29,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
-import { logAppError, logAppEvent } from '@/lib/diagnostics';
+import { logAppError } from '@/lib/diagnostics';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { colors, radius, spacing } from '@/lib/theme';
 
@@ -42,9 +42,14 @@ const OPEN_DURATION = 280;
 const CLOSE_DURATION = 240;
 const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
 const FALLBACK_SHEET_HEIGHT = 420;
-const KEYBOARD_BUTTON_GAP = 16;
-const FOCUSED_INPUT_EXTRA_HEIGHT = 120;
-const FOCUS_SCROLL_DELAY = 260;
+/** Margem mínima entre teclado e conteúdo/botão. */
+const KEYBOARD_FOOTER_GAP = 16;
+/** Reserva para botão Guardar no fundo do scroll (size lg ≈ 56px + margem). */
+const SAVE_BUTTON_RESERVE = 72;
+/** Espaço acima do input após scroll manual/automático. */
+const FOCUS_SCROLL_TOP_INSET = 96;
+const FOCUS_SCROLL_DELAY_IOS = 320;
+const FOCUS_SCROLL_DELAY_ANDROID = 120;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -69,6 +74,11 @@ type DraggableBottomSheetProps = {
   traceId?: string;
 };
 
+function resolveKeyboardInset(keyboardHeight: number, safeAreaBottom: number): number {
+  if (keyboardHeight <= 0) return 0;
+  return Math.max(KEYBOARD_FOOTER_GAP, keyboardHeight - safeAreaBottom + KEYBOARD_FOOTER_GAP);
+}
+
 export function DraggableBottomSheet({
   visible,
   onClose,
@@ -85,83 +95,94 @@ export function DraggableBottomSheet({
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(FALLBACK_SHEET_HEIGHT);
   const backdropOpacity = useSharedValue(0);
-  const keyboardOffset = useSharedValue(0);
   const sheetHeight = useSharedValue(FALLBACK_SHEET_HEIGHT);
   const isClosingRef = useRef(false);
   const animateOutRef = useRef<(notifyParent: boolean) => void>(() => {});
-  const scrollRef = useRef<KeyboardAwareScrollView | null>(null);
-  const [keyboardContentPadding, setKeyboardContentPadding] = useState(0);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollContentRef = useRef<View | null>(null);
+  const keyboardHeightRef = useRef(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isMounted, setIsMounted] = useState(visible);
+
+  const keyboardInset = resolveKeyboardInset(keyboardHeight, insets.bottom);
+  const scrollBottomPadding =
+    spacing['2xl'] +
+    keyboardInset +
+    (keyboardHeight > 0 ? SAVE_BUTTON_RESERVE : 0);
 
   const scrollController = useMemo<BottomSheetScrollController>(
     () => ({
+      keyboardInset,
       scrollToInput(input, meta) {
-        const runScroll = () => {
-          const scrollView = scrollRef.current as
-            | (KeyboardAwareScrollView & {
-                scrollToFocusedInput?: (
-                  reactNode: unknown,
-                  extraHeight?: number,
-                  keyboardOpeningTime?: number,
-                ) => void;
-              })
-            | null;
-          const scrollToFocusedInput = scrollView?.scrollToFocusedInput;
+        if (!input) return;
 
-          if (!input || typeof scrollToFocusedInput !== 'function') {
-            logAppEvent('warn', 'movement_create', 'input_focus_scroll_unavailable', {
-              screen: 'movement_create',
-              action: 'input_focus',
-              component: 'DraggableBottomSheet',
-              field: meta?.field,
-              severity: 'medium',
-            });
-            return;
-          }
+        const runScroll = () => {
+          const scrollView = scrollRef.current;
+          const contentView = scrollContentRef.current;
+
+          if (!scrollView || !contentView) return;
 
           try {
-            scrollToFocusedInput.call(
-              scrollView,
-              input,
-              FOCUSED_INPUT_EXTRA_HEIGHT,
-              Platform.OS === 'ios' ? FOCUS_SCROLL_DELAY : 0,
+            input.measureLayout(
+              contentView,
+              (_x, y, _width, height) => {
+                try {
+                  const targetY = Math.max(
+                    0,
+                    y - FOCUS_SCROLL_TOP_INSET + height * 0.25,
+                  );
+                  scrollView.scrollTo({ y: targetY, animated: true });
+                } catch (error) {
+                  logAppError('bottom_sheet', error, {
+                    screen: 'bottom_sheet',
+                    action: 'input_focus_scroll',
+                    component: 'DraggableBottomSheet',
+                    field: meta?.field,
+                    severity: 'low',
+                  });
+                }
+              },
+              () => {
+                /* measureLayout falhou — scroll manual ainda possível via padding */
+              },
             );
           } catch (error) {
-            logAppError('movement_create', error, {
-              screen: 'movement_create',
-              action: 'input_focus',
+            logAppError('bottom_sheet', error, {
+              screen: 'bottom_sheet',
+              action: 'input_focus_scroll',
               component: 'DraggableBottomSheet',
               field: meta?.field,
-              severity: 'high',
+              severity: 'low',
             });
           }
         };
 
-        requestAnimationFrame(runScroll);
-        setTimeout(runScroll, Platform.OS === 'ios' ? FOCUS_SCROLL_DELAY : 90);
+        const delay =
+          Platform.OS === 'ios' ? FOCUS_SCROLL_DELAY_IOS : FOCUS_SCROLL_DELAY_ANDROID;
+        setTimeout(runScroll, delay);
       },
     }),
-    [],
+    [keyboardInset],
   );
 
   const finishClose = useCallback(
     (notifyParent: boolean) => {
       isClosingRef.current = false;
-      keyboardOffset.value = 0;
       backdropOpacity.value = 0;
       translateY.value = sheetHeight.value > 0 ? sheetHeight.value : FALLBACK_SHEET_HEIGHT;
+      keyboardHeightRef.current = 0;
+      setKeyboardHeight(0);
       setIsMounted(false);
       if (notifyParent) onClose();
       onDismissed?.();
     },
-    [backdropOpacity, keyboardOffset, onClose, onDismissed, sheetHeight, translateY],
+    [backdropOpacity, onClose, onDismissed, sheetHeight, translateY],
   );
 
   const animateOut = useCallback(
     (notifyParent: boolean) => {
       if (isClosingRef.current) return;
       isClosingRef.current = true;
-      keyboardOffset.value = withTiming(0, { duration: 160 });
 
       const distance = sheetHeight.value > 0 ? sheetHeight.value : FALLBACK_SHEET_HEIGHT;
       backdropOpacity.value = withTiming(0, { duration: CLOSE_DURATION });
@@ -171,7 +192,7 @@ export function DraggableBottomSheet({
         }
       });
     },
-    [backdropOpacity, finishClose, keyboardOffset, sheetHeight, translateY],
+    [backdropOpacity, finishClose, sheetHeight, translateY],
   );
 
   animateOutRef.current = animateOut;
@@ -234,15 +255,12 @@ export function DraggableBottomSheet({
 
     const onKeyboardShow = (event: KeyboardEvent) => {
       try {
-        const keyboardHeight = event.endCoordinates?.height ?? 0;
-        const lift = Math.max(0, keyboardHeight - insets.bottom + KEYBOARD_BUTTON_GAP);
-        const duration =
-          Platform.OS === 'ios' && event.duration > 0 ? event.duration : 250;
-        keyboardOffset.value = withTiming(lift, { duration });
-        setKeyboardContentPadding(KEYBOARD_BUTTON_GAP);
+        const nextHeight = event.endCoordinates?.height ?? 0;
+        keyboardHeightRef.current = nextHeight;
+        setKeyboardHeight(nextHeight);
       } catch (error) {
-        logAppError('movement_create', error, {
-          screen: 'movement_create',
+        logAppError('bottom_sheet', error, {
+          screen: 'bottom_sheet',
           action: 'keyboard_show',
           component: 'DraggableBottomSheet',
           severity: 'high',
@@ -250,15 +268,13 @@ export function DraggableBottomSheet({
       }
     };
 
-    const onKeyboardHide = (event: KeyboardEvent) => {
+    const onKeyboardHide = () => {
       try {
-        const duration =
-          Platform.OS === 'ios' && event.duration > 0 ? event.duration : 200;
-        keyboardOffset.value = withTiming(0, { duration });
-        setKeyboardContentPadding(0);
+        keyboardHeightRef.current = 0;
+        setKeyboardHeight(0);
       } catch (error) {
-        logAppError('movement_create', error, {
-          screen: 'movement_create',
+        logAppError('bottom_sheet', error, {
+          screen: 'bottom_sheet',
           action: 'keyboard_hide',
           component: 'DraggableBottomSheet',
           severity: 'high',
@@ -273,7 +289,7 @@ export function DraggableBottomSheet({
       showSub.remove();
       hideSub.remove();
     };
-  }, [insets.bottom, isMounted, keyboardOffset]);
+  }, [isMounted]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -313,7 +329,7 @@ export function DraggableBottomSheet({
     });
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value - keyboardOffset.value }],
+    transform: [{ translateY: translateY.value }],
   }));
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
@@ -350,7 +366,13 @@ export function DraggableBottomSheet({
             }}
             style={[
               styles.sheet,
-              { maxHeight, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+              {
+                maxHeight,
+                paddingBottom:
+                  keyboardHeight > 0
+                    ? KEYBOARD_FOOTER_GAP
+                    : Math.max(insets.bottom, spacing.lg),
+              },
               sheetAnimatedStyle,
               sheetStyle,
             ]}>
@@ -364,29 +386,23 @@ export function DraggableBottomSheet({
             </GestureDetector>
 
             <BottomSheetScrollProvider value={scrollController}>
-              <KeyboardAwareScrollView
-                innerRef={(ref) => {
-                  scrollRef.current = ref as KeyboardAwareScrollView | null;
-                }}
+              <ScrollView
+                ref={scrollRef}
                 style={styles.scroll}
                 contentContainerStyle={[
                   styles.scrollContent,
                   scrollContentStyle,
-                  { paddingBottom: spacing['2xl'] + keyboardContentPadding },
+                  { paddingBottom: scrollBottomPadding },
                 ]}
-                enableOnAndroid
-                enableAutomaticScroll={false}
-                enableResetScrollToCoords={false}
-                extraScrollHeight={Platform.OS === 'ios' ? 72 : 96}
-                extraHeight={Platform.OS === 'ios' ? 120 : 140}
-                keyboardOpeningTime={Platform.OS === 'ios' ? 250 : 0}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="interactive"
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled
                 bounces>
-                {children}
-              </KeyboardAwareScrollView>
+                <View ref={scrollContentRef}>
+                  {children}
+                </View>
+              </ScrollView>
             </BottomSheetScrollProvider>
           </Animated.View>
         </View>
@@ -436,7 +452,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   scrollContent: {
-    paddingBottom: spacing['2xl'],
     flexGrow: 1,
   },
 });
