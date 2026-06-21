@@ -2,69 +2,26 @@ import { memo, useEffect } from 'react';
 import { Image, Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   interpolate,
+  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
-import {
-  ANALYSIS_TAB_CIRCLE,
-  ANALYSIS_TAB_EMBLEM,
-  ANALYSIS_TAB_LIFT,
-} from '@/lib/layout/device-metrics';
 import { colors } from '@/lib/theme';
 
-/** Asset oficial fornecido pelo utilizador — não substituir nem regenerar. */
-const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-tab-icon.png');
+/** Asset premium v2 — ícone centrado com glow integrado. */
+const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-tab-icon-v2.png');
 
 const ANIM_DURATION = 220;
-/** Emblema hexagonal ocupa ~52% superior do PNG. */
-const EMBLEM_TOP_RATIO = 0.52;
-const SOURCE_ASPECT = 682 / 1024;
-/** Centro visual do emblema ≈ meio da faixa superior. */
-const EMBLEM_CENTER_Y_RATIO = EMBLEM_TOP_RATIO / 2;
-
+const OUTER_SIZE = 68;
+const INNER_SIZE = 58;
+const ICON_SIZE = 36;
 const ICON_SLOT_HEIGHT = 28;
-const ACTIVE_GLOW = 68;
-const INACTIVE_GLOW = 62;
 
 type TabBarAnalisesIconProps = {
   focused: boolean;
 };
-
-const AnalysisIcon = memo(function AnalysisIcon({
-  emblemSize,
-}: {
-  emblemSize: number;
-}) {
-  const displayedHeight = emblemSize * SOURCE_ASPECT;
-  const containTop = (emblemSize - displayedHeight) / 2;
-  const emblemCenterY = containTop + displayedHeight * EMBLEM_CENTER_Y_RATIO;
-  const translateY = emblemSize / 2 - emblemCenterY;
-
-  return (
-    <View
-      style={[
-        styles.iconClip,
-        {
-          width: emblemSize,
-          height: emblemSize,
-          borderRadius: emblemSize / 2,
-        },
-      ]}>
-      <Image
-        source={ANALYSIS_TAB_ICON}
-        style={{
-          width: emblemSize,
-          height: emblemSize,
-          transform: [{ translateY }],
-        }}
-        resizeMode="contain"
-        accessibilityIgnoresInvertColors
-      />
-    </View>
-  );
-});
 
 function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
   const progress = useSharedValue(focused ? 1 : 0);
@@ -73,69 +30,33 @@ function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
     progress.value = withTiming(focused ? 1 : 0, { duration: ANIM_DURATION });
   }, [focused, progress]);
 
-  const elevatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY: interpolate(
-          progress.value,
-          [0, 1],
-          [-ANALYSIS_TAB_LIFT.inactive, -ANALYSIS_TAB_LIFT.active],
-        ),
-      },
-      { scale: interpolate(progress.value, [0, 1], [1, 1.03]) },
-    ],
-  }));
-
-  const circleStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.88, 1]),
-  }));
-
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.22, 0.36]),
+    opacity: interpolate(progress.value, [0, 1], [0, 0.28]),
   }));
 
-  const emblemSize = focused
-    ? ANALYSIS_TAB_EMBLEM.active
-    : ANALYSIS_TAB_EMBLEM.inactive;
-  const circleSize = focused
-    ? ANALYSIS_TAB_CIRCLE.active
-    : ANALYSIS_TAB_CIRCLE.inactive;
-  const glowSize = focused ? ACTIVE_GLOW : INACTIVE_GLOW;
+  const innerCircleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0.9, 1]),
+    borderColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      ['rgba(94, 234, 212, 0.2)', 'rgba(94, 234, 212, 0.36)'],
+    ),
+  }));
 
   return (
     <View style={styles.iconSlot} pointerEvents="none">
-      <Animated.View
-        style={[
-          styles.elevated,
-          { width: circleSize, height: circleSize },
-          elevatedStyle,
-        ]}>
-        <Animated.View
-          style={[
-            styles.glow,
-            {
-              width: glowSize,
-              height: glowSize,
-              borderRadius: glowSize / 2,
-            },
-            glowStyle,
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.circle,
-            {
-              width: circleSize,
-              height: circleSize,
-              borderRadius: circleSize / 2,
-            },
-            circleStyle,
-          ]}
-        />
-        <View style={[styles.iconCenter, { width: circleSize, height: circleSize }]}>
-          <AnalysisIcon emblemSize={emblemSize} />
+      <View style={styles.outer}>
+        <Animated.View style={[styles.layer, styles.glow, glowStyle]} />
+        <Animated.View style={[styles.layer, styles.innerCircle, innerCircleStyle]} />
+        <View style={[styles.layer, styles.iconLayer]}>
+          <Image
+            source={ANALYSIS_TAB_ICON}
+            style={styles.icon}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
         </View>
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -144,47 +65,57 @@ export const TabBarAnalisesIcon = memo(TabBarAnalisesIconComponent);
 
 const styles = StyleSheet.create({
   iconSlot: {
-    width: ANALYSIS_TAB_CIRCLE.active,
+    width: OUTER_SIZE,
     height: ICON_SLOT_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
   },
-  elevated: {
-    position: 'absolute',
+  outer: {
+    width: OUTER_SIZE,
+    height: OUTER_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
     elevation: Platform.OS === 'android' ? 4 : 0,
   },
-  glow: {
+  layer: {
     position: 'absolute',
+    width: OUTER_SIZE,
+    height: OUTER_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glow: {
+    width: OUTER_SIZE,
+    height: OUTER_SIZE,
+    borderRadius: OUTER_SIZE / 2,
     backgroundColor: colors.primaryGlow,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.18,
     shadowRadius: 10,
-    elevation: Platform.OS === 'android' ? 3 : 0,
-  },
-  circle: {
-    position: 'absolute',
-    backgroundColor: 'rgba(10, 16, 26, 0.96)',
-    borderWidth: 1,
-    borderColor: 'rgba(94, 234, 212, 0.3)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.14,
-    shadowRadius: 5,
     elevation: Platform.OS === 'android' ? 2 : 0,
   },
-  iconCenter: {
-    position: 'absolute',
+  innerCircle: {
+    width: INNER_SIZE,
+    height: INNER_SIZE,
+    borderRadius: INNER_SIZE / 2,
+    backgroundColor: 'rgba(10, 16, 26, 0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(94, 234, 212, 0.24)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: Platform.OS === 'android' ? 2 : 0,
+  },
+  iconLayer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconClip: {
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
+  icon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
   },
 });
