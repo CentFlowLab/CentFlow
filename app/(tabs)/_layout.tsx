@@ -11,7 +11,7 @@ import {
 
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
-import { TabBarAnalisesTab } from '@/components/layout';
+import { TabBarAnalisesIcon } from '@/components/layout';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
 import { colors, spacing, typography } from '@/lib/theme';
@@ -98,8 +98,20 @@ function TabLayoutInner() {
         name="analises"
         options={{
           title: 'Análises',
-          tabBarShowLabel: false,
-          tabBarIcon: ({ focused }) => <TabBarAnalisesTab focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
+          tabBarLabel: ({ focused, children }) => (
+            <Text
+              style={[
+                typography.tabLabel,
+                styles.tabLabel,
+                {
+                  color: focused ? colors.primary : colors.textMuted,
+                  fontWeight: focused ? '600' : '400',
+                },
+              ]}>
+              {children}
+            </Text>
+          ),
           tabBarItemStyle: styles.analisesTabItem,
           tabBarButton: (props) => (
             <TabBarAnalisesButton {...(props as PressableProps)} />
@@ -157,11 +169,11 @@ function TabBarAnalisesButton(props: PressableProps) {
     <Pressable
       {...rest}
       android_ripple={{
-        color: `${colors.primary}36`,
+        color: `${colors.primary}30`,
         borderless: true,
-        radius: 38,
+        radius: 32,
       }}
-      hitSlop={{ top: 4, bottom: 0, left: 6, right: 6 }}
+      hitSlop={{ top: 8, bottom: 4, left: 4, right: 4 }}
       style={(state) => [
         styles.analisesTabButton,
         typeof style === 'function' ? style(state) : style,
@@ -221,15 +233,15 @@ const styles = StyleSheet.create({
   },
   tabBarItem: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: Platform.OS === 'android' ? spacing.xs : spacing.sm,
+    paddingVertical: spacing.xs,
   },
   analisesTabItem: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: Platform.OS === 'android' ? 0 : spacing.xs,
+    paddingVertical: spacing.xs,
     overflow: 'visible',
   },
   tabLabel: {
@@ -243,7 +255,7 @@ const styles = StyleSheet.create({
   analisesTabContent: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     overflow: 'visible',
   },
   tabButton: {

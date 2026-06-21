@@ -12,9 +12,7 @@ import {
   ANALYSIS_TAB_EMBLEM,
   ANALYSIS_TAB_LIFT,
 } from '@/lib/layout/device-metrics';
-import { colors, typography } from '@/lib/theme';
-
-import { Text } from '@/components/ui/Text';
+import { colors } from '@/lib/theme';
 
 /** Asset oficial fornecido pelo utilizador — não substituir nem regenerar. */
 const ANALYSIS_TAB_ICON = require('@/assets/navigation/analysis-tab-icon.png');
@@ -23,12 +21,12 @@ const ANIM_DURATION = 220;
 /** Emblema hexagonal ocupa ~52% superior do PNG. */
 const EMBLEM_TOP_RATIO = 0.52;
 
-const ACTIVE_GLOW = 80;
-const INACTIVE_GLOW = 70;
+const ICON_SLOT_HEIGHT = 28;
+const ACTIVE_GLOW = 68;
+const INACTIVE_GLOW = 62;
 
-type TabBarAnalisesTabProps = {
+type TabBarAnalisesIconProps = {
   focused: boolean;
-  label?: string;
 };
 
 const AnalysisIcon = memo(function AnalysisIcon({
@@ -38,12 +36,12 @@ const AnalysisIcon = memo(function AnalysisIcon({
 }) {
   const imageWidth = emblemSize;
   const imageHeight = emblemSize / EMBLEM_TOP_RATIO;
-  const topNudge = -(imageHeight * (1 - EMBLEM_TOP_RATIO) * 0.04);
+  const topNudge = -(imageHeight * (1 - EMBLEM_TOP_RATIO) * 0.05);
 
   return (
     <View
       style={[
-        styles.analysisIconClip,
+        styles.iconClip,
         {
           width: emblemSize,
           height: emblemSize,
@@ -64,17 +62,14 @@ const AnalysisIcon = memo(function AnalysisIcon({
   );
 });
 
-function TabBarAnalisesTabComponent({
-  focused,
-  label = 'Análises',
-}: TabBarAnalisesTabProps) {
+function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
     progress.value = withTiming(focused ? 1 : 0, { duration: ANIM_DURATION });
   }, [focused, progress]);
 
-  const circleContainerStyle = useAnimatedStyle(() => ({
+  const elevatedStyle = useAnimatedStyle(() => ({
     transform: [
       {
         translateY: interpolate(
@@ -83,18 +78,16 @@ function TabBarAnalisesTabComponent({
           [-ANALYSIS_TAB_LIFT.inactive, -ANALYSIS_TAB_LIFT.active],
         ),
       },
-      { scale: interpolate(progress.value, [0, 1], [1, 1.04]) },
+      { scale: interpolate(progress.value, [0, 1], [1, 1.03]) },
     ],
   }));
 
   const circleStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.82, 1]),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.97, 1]) }],
+    opacity: interpolate(progress.value, [0, 1], [0.88, 1]),
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.28, 0.48]),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.96, 1.06]) }],
+    opacity: interpolate(progress.value, [0, 1], [0.22, 0.36]),
   }));
 
   const emblemSize = focused
@@ -106,16 +99,16 @@ function TabBarAnalisesTabComponent({
   const glowSize = focused ? ACTIVE_GLOW : INACTIVE_GLOW;
 
   return (
-    <View style={styles.analysisTabWrapper} pointerEvents="none">
+    <View style={styles.iconSlot} pointerEvents="none">
       <Animated.View
         style={[
-          styles.analysisCircleContainer,
+          styles.elevated,
           { width: circleSize, height: circleSize },
-          circleContainerStyle,
+          elevatedStyle,
         ]}>
         <Animated.View
           style={[
-            styles.analysisGlow,
+            styles.glow,
             {
               width: glowSize,
               height: glowSize,
@@ -126,7 +119,7 @@ function TabBarAnalisesTabComponent({
         />
         <Animated.View
           style={[
-            styles.analysisCircle,
+            styles.circle,
             {
               width: circleSize,
               height: circleSize,
@@ -135,78 +128,56 @@ function TabBarAnalisesTabComponent({
             circleStyle,
           ]}
         />
-        <View style={styles.analysisIcon}>
+        <View style={styles.iconCenter}>
           <AnalysisIcon emblemSize={emblemSize} />
         </View>
       </Animated.View>
-
-      <Text
-        variant="caption"
-        style={[
-          typography.tabLabel,
-          styles.analysisLabel,
-          {
-            color: focused ? colors.primary : colors.textMuted,
-            fontWeight: focused ? '700' : '500',
-            opacity: focused ? 1 : 0.9,
-          },
-        ]}>
-        {label}
-      </Text>
     </View>
   );
 }
 
-/** Tab central premium — ícone elevado + círculo + glow + label. */
-export const TabBarAnalisesTab = memo(TabBarAnalisesTabComponent);
-
-/** @deprecated Usar TabBarAnalisesTab */
-export const TabBarAnalisesIcon = TabBarAnalisesTab;
+export const TabBarAnalisesIcon = memo(TabBarAnalisesIconComponent);
 
 const styles = StyleSheet.create({
-  analysisTabWrapper: {
+  iconSlot: {
+    width: ANALYSIS_TAB_CIRCLE.active,
+    height: ICON_SLOT_HEIGHT,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    width: ANALYSIS_TAB_CIRCLE.active + 8,
-    minHeight: ANALYSIS_TAB_CIRCLE.active + 22,
+    justifyContent: 'center',
     overflow: 'visible',
   },
-  analysisCircleContainer: {
+  elevated: {
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
-    elevation: Platform.OS === 'android' ? 6 : 0,
+    elevation: Platform.OS === 'android' ? 4 : 0,
   },
-  analysisGlow: {
+  glow: {
     position: 'absolute',
     backgroundColor: colors.primaryGlow,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.42,
-    shadowRadius: 14,
-    elevation: Platform.OS === 'android' ? 5 : 0,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: Platform.OS === 'android' ? 3 : 0,
   },
-  analysisCircle: {
+  circle: {
     position: 'absolute',
-    backgroundColor: '#0A101A',
-    borderWidth: 1.5,
-    borderColor: 'rgba(94, 234, 212, 0.38)',
+    backgroundColor: 'rgba(10, 16, 26, 0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(94, 234, 212, 0.3)',
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: Platform.OS === 'android' ? 4 : 0,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+    shadowRadius: 5,
+    elevation: Platform.OS === 'android' ? 2 : 0,
   },
-  analysisIcon: {
+  iconCenter: {
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
   },
-  analysisIconClip: {
+  iconClip: {
     overflow: 'hidden',
-  },
-  analysisLabel: {
-    marginTop: 6,
-    zIndex: 1,
   },
 });

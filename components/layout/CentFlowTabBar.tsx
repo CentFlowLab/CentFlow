@@ -43,7 +43,7 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const innerStyle: ViewStyle = {
     height: contentHeight,
     minHeight: contentHeight,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     overflow: 'visible',
   };
 
