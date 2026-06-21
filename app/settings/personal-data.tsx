@@ -5,14 +5,14 @@ import {
   SettingsHero,
   SettingsScreenLayout,
 } from '@/components/settings/SettingsScreenLayout';
-import { Button, Card, LoadingSpinner, Text, TextField } from '@/components/ui';
+import { Button, Card, ErrorState, LoadingSpinner, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useUpdateProfile } from '@/hooks/mutations/useProfileMutations';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { spacing } from '@/lib/theme';
 
 export default function PersonalDataScreen() {
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
   const updateProfile = useUpdateProfile();
   const { showToast } = useToast();
   const [name, setName] = useState('');
@@ -46,6 +46,19 @@ export default function PersonalDataScreen() {
     return (
       <SettingsScreenLayout title="Dados pessoais" subtitle="Nome, email e identidade da conta">
         <LoadingSpinner message="A carregar perfil..." />
+      </SettingsScreenLayout>
+    );
+  }
+
+  if (isError && !profile) {
+    return (
+      <SettingsScreenLayout title="Dados pessoais" subtitle="Nome, email e identidade da conta">
+        <ErrorState
+          context="generic"
+          error={error}
+          onRetry={() => refetch()}
+          retryLoading={isRefetching}
+        />
       </SettingsScreenLayout>
     );
   }

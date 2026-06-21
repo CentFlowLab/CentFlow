@@ -9,7 +9,11 @@
  * A lógica de redireccionamento vive em `OnboardingGateEffect` (app/_layout.tsx).
  */
 
+import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
+
 export function isOnboardingGateBypassed(): boolean {
+  // Bypass só em variantes de desenvolvimento — nunca em beta/produção.
+  if (isRealDataOnlyVariant()) return false;
   return process.env.EXPO_PUBLIC_SKIP_ONBOARDING === 'true';
 }
 

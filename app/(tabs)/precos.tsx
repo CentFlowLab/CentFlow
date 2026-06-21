@@ -5,7 +5,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { CreditFormModal, CreditsSection } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
-import { ErrorState, ScreenContainer } from '@/components/ui';
+import { ErrorState, LoadingSpinner, ScreenContainer } from '@/components/ui';
 import { useDeleteCredit, useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import type { Credit } from '@/lib/domain/types';
@@ -16,7 +16,7 @@ export default function PrecosScreen() {
   const [creditFormVisible, setCreditFormVisible] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
 
-  const { data, isError, error, refetch, isRefetching } = useLiabilities();
+  const { data, isLoading, isError, error, refetch, isRefetching } = useLiabilities();
   const deleteCredit = useDeleteCredit();
   const credits = data?.credits ?? [];
 
@@ -58,6 +58,10 @@ export default function PrecosScreen() {
             onRetry={() => refetch()}
             retryLoading={isRefetching}
           />
+        </View>
+      ) : isLoading && !data ? (
+        <View style={styles.centered}>
+          <LoadingSpinner message="A carregar créditos..." />
         </View>
       ) : (
         <ScrollView

@@ -55,8 +55,8 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
       title: change >= 0 ? 'Património em alta' : 'Património em queda',
       description:
         change >= 0
-          ? `O teu património cresceu ${formatPercent(change, 1, true)} desde o mês passado.`
-          : `O teu património desceu ${formatPercent(Math.abs(change), 1, false)} desde o mês passado.`,
+          ? `O teu património cresceu ${formatPercent(change, 1, true)} este mês.`
+          : `O teu património desceu ${formatPercent(Math.abs(change), 1, false)} este mês.`,
     });
   }
 

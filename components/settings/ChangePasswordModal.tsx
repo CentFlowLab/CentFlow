@@ -6,8 +6,10 @@ import { Button, Text, TextField } from '@/components/ui';
 import { useChangePassword } from '@/hooks/mutations/useProfileMutations';
 import { useFormDismiss } from '@/hooks/useFormDismiss';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/lib/auth';
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
 import { formHasAnyText } from '@/lib/forms';
+import { validatePassword, PASSWORD_POLICY_HINT } from '@/lib/security/passwordPolicy';
 import { spacing } from '@/lib/theme';
 
 type ChangePasswordModalProps = {
@@ -17,6 +19,7 @@ type ChangePasswordModalProps = {
 
 export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalProps) {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const changePassword = useChangePassword();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,8 +43,12 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
   const dismiss = useFormDismiss(handleClose, isDirty);
 
   async function handleSubmit() {
-    if (newPassword.length < 8) {
-      showToast('A palavra-passe deve ter pelo menos 8 caracteres.', 'error');
+    const validation = validatePassword(newPassword, {
+      email: user?.email,
+      name: user?.name,
+    });
+    if (!validation.valid) {
+      showToast(validation.errors[0] ?? PASSWORD_POLICY_HINT, 'error');
       return;
     }
 
@@ -78,7 +85,7 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
           <View style={styles.headerText}>
             <Text variant="h3">Alterar palavra-passe</Text>
             <Text variant="caption" color="textMuted">
-              Escolhe uma palavra-passe segura com pelo menos 8 caracteres.
+              {PASSWORD_POLICY_HINT}
             </Text>
           </View>
         </View>

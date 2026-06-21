@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { AuthScreenLayout } from '@/components/auth';
@@ -21,6 +21,7 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const handledRef = useRef(false);
 
   const passwordValidation = useMemo(() => validatePassword(password), [password]);
   const canSubmit = passwordValidation.valid && password === confirmPassword && sessionReady;
@@ -29,6 +30,9 @@ export default function ResetPasswordScreen() {
     let mounted = true;
 
     async function bootstrapRecovery(url: string | null) {
+      // Evita processar o mesmo link duas vezes (getInitialURL + listener).
+      if (handledRef.current) return;
+
       if (!url || !url.includes('reset-password')) {
         if (mounted) {
           setApiError('Link de recuperação inválido. Pede um novo email de redefinição.');
@@ -37,6 +41,8 @@ export default function ResetPasswordScreen() {
         return;
       }
 
+      handledRef.current = true;
+
       try {
         await authService.completePasswordRecoveryFromUrl(url);
         if (mounted) {
@@ -44,6 +50,7 @@ export default function ResetPasswordScreen() {
           setApiError(null);
         }
       } catch (error) {
+        handledRef.current = false;
         logSecurityError('password_recovery_link_failed', error);
         if (mounted) {
           setApiError(getAuthErrorMessage(error));

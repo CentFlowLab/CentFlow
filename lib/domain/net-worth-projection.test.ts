@@ -107,6 +107,32 @@ test('exemplo do utilizador: salário 01/07 não entra no PL actual em 19/06', (
   assert.equal(result.projection.netWorth, 11090);
 });
 
+test('objetivo não duplica dinheiro: receita 500 + goal.current 500 → PL 500', () => {
+  const result = composeDashboardFromLocalSources({
+    transactions: [tx('1', '2026-06-10', 'income', 500)],
+    assets: {
+      goals: [
+        {
+          id: 'goal-1',
+          name: 'Fundo de emergência',
+          current: 500,
+          target: 1000,
+        } as never,
+      ],
+      inventory: [],
+      subscriptions: [],
+      warranties: [],
+      credits: [],
+    },
+    credits: [],
+    asOf: AS_OF,
+  });
+
+  // O dinheiro do objetivo já está no saldo de movimentos — não deve somar de novo.
+  assert.equal(result.netWorth.netWorth, 500);
+  assert.equal(result.netWorth.breakdown.savings, 0);
+});
+
 test('isTransactionOccurred e isTransactionFuture são complementares', () => {
   assert.equal(isTransactionOccurred('2026-06-19', AS_OF), true);
   assert.equal(isTransactionFuture('2026-06-19', AS_OF), false);

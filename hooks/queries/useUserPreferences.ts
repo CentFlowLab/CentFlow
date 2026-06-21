@@ -21,8 +21,10 @@ export function useUpdatePreferences() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: (patch: Partial<UserPreferences>) =>
-      updateUserPreferences(user!.id, patch),
+    mutationFn: (patch: Partial<UserPreferences>) => {
+      if (!user?.id) throw new Error('Sessão inválida. Inicia sessão novamente.');
+      return updateUserPreferences(user.id, patch);
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.preferences, data);
     },

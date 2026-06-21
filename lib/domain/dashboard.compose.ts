@@ -1,4 +1,4 @@
-import { calculateNetWorth, buildNetWorthProjection, sumGoalSavings } from './net-worth.service';
+import { calculateNetWorth, buildNetWorthProjection } from './net-worth.service';
 import { buildAttentionItems } from './attention-items';
 import { calculateMonthlyNetWorthMetrics } from './net-worth-monthly';
 import type { AssetsData } from './assets.types';
@@ -46,9 +46,13 @@ export function composeDashboardFromLocalSources(input: {
     'future',
     asOf,
   );
-  const goalSavings = sumGoalSavings(input.assets.goals);
   const credits = input.credits ?? [];
 
+  // Objetivos são alocação virtual do saldo (mental accounting), não um ativo
+  // adicional. O dinheiro guardado num objetivo já está contabilizado no saldo
+  // de movimentos — somá-lo outra vez duplicaria o património. Por isso o PL
+  // NÃO inclui `goal.current` (savings: 0). Os objetivos continuam visíveis no
+  // ecrã Ativos com o seu progresso próprio.
   const netWorth = calculateNetWorth({
     accounts: [
       {
@@ -60,7 +64,7 @@ export function composeDashboardFromLocalSources(input: {
     ],
     inventory: input.assets.inventory,
     investments: [],
-    savings: goalSavings,
+    savings: 0,
     credits,
   });
 
@@ -72,7 +76,7 @@ export function composeDashboardFromLocalSources(input: {
       inventory: input.assets.inventory,
       investments: [],
       credits,
-      savings: goalSavings,
+      savings: 0,
     },
     netWorth.netWorth,
     asOf,

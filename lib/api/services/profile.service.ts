@@ -1,5 +1,6 @@
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
 import type { User } from '@/lib/auth/types';
+import { validatePassword, PASSWORD_POLICY_HINT } from '@/lib/security/passwordPolicy';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
 import { mapProfileToUser } from '@/lib/supabase/mappers';
 
@@ -112,8 +113,9 @@ export async function updateProfileCurrency(
 }
 
 export async function changePassword(input: ChangePasswordInput): Promise<void> {
-  if (input.newPassword.length < 8) {
-    throw new Error('A palavra-passe deve ter pelo menos 8 caracteres.');
+  const validation = validatePassword(input.newPassword);
+  if (!validation.valid) {
+    throw new Error(validation.errors[0] ?? PASSWORD_POLICY_HINT);
   }
 
   if (isMockAuthEnabled() || !isSupabaseEnabled()) {

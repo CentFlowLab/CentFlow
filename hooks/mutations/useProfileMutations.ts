@@ -14,7 +14,10 @@ export function useUpdateProfile() {
   const { user, refreshUser } = useAuth();
 
   return useMutation({
-    mutationFn: (input: UpdateProfileInput) => updateProfile(user!.id, input, user!),
+    mutationFn: (input: UpdateProfileInput) => {
+      if (!user?.id) throw new Error('Sessão inválida. Inicia sessão novamente.');
+      return updateProfile(user.id, input, user);
+    },
     onSuccess: async (result) => {
       await refreshUser({
         name: result.name,
@@ -36,8 +39,10 @@ export function useUpdateCurrency() {
   const { user, refreshUser } = useAuth();
 
   return useMutation({
-    mutationFn: (currency: SupportedCurrency) =>
-      updateProfileCurrency(user!.id, currency, user!),
+    mutationFn: (currency: SupportedCurrency) => {
+      if (!user?.id) throw new Error('Sessão inválida. Inicia sessão novamente.');
+      return updateProfileCurrency(user.id, currency, user);
+    },
     onSuccess: async (updatedUser) => {
       await refreshUser({ currency: updatedUser.currency });
       queryClient.invalidateQueries({ queryKey: queryKeys.profile });

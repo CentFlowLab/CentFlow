@@ -44,3 +44,7 @@ supabase/.branches/
 ci-artifacts/
 .expo-export-test/
 
+# build logs (podem conter URLs/chaves anon — não commitar)
+build-log*.txt
+eas-build-output.txt
+

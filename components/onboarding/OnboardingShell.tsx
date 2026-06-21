@@ -61,13 +61,13 @@ export function OnboardingShell({
       ) : null}
 
       <KeyboardAvoidingView
-        style={styles.body}
+        style={styles.kav}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={insets.top + 56}>
-        {children}
-      </KeyboardAvoidingView>
+        <View style={styles.body}>{children}</View>
 
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
+        {footer ? <View style={styles.footer}>{footer}</View> : null}
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -94,6 +94,9 @@ const styles = StyleSheet.create({
   progressWrap: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
+  },
+  kav: {
+    flex: 1,
   },
   body: {
     flex: 1,
