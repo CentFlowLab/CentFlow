@@ -1,16 +1,28 @@
 import { Dimensions } from 'react-native';
 
+import { spacing } from '@/lib/theme';
+
+/** Largura mínima (dp) a partir da qual tratamos o aparelho como tablet. */
+export const TABLET_MIN_WIDTH = 600;
+
+/** Altura (dp) abaixo da qual tratamos como ecrã pequeno (ex. Galaxy A12 ~640dp). */
+export const SMALL_SCREEN_MAX_HEIGHT = 700;
+
 export type DeviceDimensions = {
   screenWidth: number;
   screenHeight: number;
   windowWidth: number;
   windowHeight: number;
   systemUiGap: number;
+  isTablet: boolean;
+  isSmallScreen: boolean;
 };
 
 export function getDeviceDimensions(): DeviceDimensions {
   const screen = Dimensions.get('screen');
   const window = Dimensions.get('window');
+
+  const minWindowEdge = Math.min(window.width, window.height);
 
   return {
     screenWidth: screen.width,
@@ -18,7 +30,14 @@ export function getDeviceDimensions(): DeviceDimensions {
     windowWidth: window.width,
     windowHeight: window.height,
     systemUiGap: Math.max(0, screen.height - window.height),
+    isTablet: minWindowEdge >= TABLET_MIN_WIDTH,
+    isSmallScreen: window.height < SMALL_SCREEN_MAX_HEIGHT,
   };
+}
+
+/** Padding horizontal dos ecrãs — maior em tablets para não esticar conteúdo. */
+export function resolveScreenHorizontalPadding(isTablet: boolean): number {
+  return isTablet ? spacing['2xl'] : spacing.lg;
 }
 
 /** Altura do conteúdo da tab bar (ícones + labels). */

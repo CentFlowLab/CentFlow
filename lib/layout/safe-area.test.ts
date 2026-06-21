@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   ANDROID_MIN_BOTTOM_INSET,
+  ANDROID_TAB_BAR_GESTURE_MAX,
   ANDROID_TAB_BAR_INSET_MAX,
   ANDROID_TAB_BAR_INSET_MIN,
   resolveBottomActionPadding,
@@ -73,6 +74,8 @@ test('resolveTabBarBottomInset fallback mínimo Android', () => {
 });
 
 test('resolveTabBarBottomInset prefere insets.bottom e não soma gap', () => {
+  // inset 20 é tratado como gestos (< limiar 3 botões) e clampado ao máx de
+  // gestos (18). O importante: não soma o gap (não devolve 20+48).
   assert.equal(
     resolveTabBarBottomInset({
       platform: 'android',
@@ -80,7 +83,7 @@ test('resolveTabBarBottomInset prefere insets.bottom e não soma gap', () => {
       screenHeight: 800,
       windowHeight: 752,
     }),
-    20,
+    ANDROID_TAB_BAR_GESTURE_MAX,
   );
 });
 

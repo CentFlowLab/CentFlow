@@ -23,6 +23,7 @@ import {
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
 import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
@@ -40,6 +41,7 @@ export default function AtivosScreen() {
   const [quickAddVisible, setQuickAddVisible] = useState(false);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
+  const { contentBottomPadding } = useResponsiveLayout();
   const deleteGoal = useDeleteGoal();
   const deleteWarranty = useDeleteWarranty();
   const deleteInventory = useDeleteInventoryItem();
@@ -187,7 +189,7 @@ export default function AtivosScreen() {
           }
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: spacing['2xl'] },
+            { paddingBottom: contentBottomPadding },
           ]}>
           <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
             <View style={styles.overviewSection}>

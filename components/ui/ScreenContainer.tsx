@@ -23,12 +23,12 @@ export function ScreenContainer({
   children,
   ...props
 }: ScreenContainerProps) {
-  const { navigationBarInset } = useResponsiveLayout();
+  const { navigationBarInset, contentBottomPadding } = useResponsiveLayout();
 
   const bottomPadding = edges.includes('bottom')
     ? applyBottomSafeInset
       ? Math.max(navigationBarInset, spacing.lg)
-      : spacing.lg
+      : contentBottomPadding
     : 0;
 
   const contentStyle = [

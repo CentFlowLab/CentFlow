@@ -27,6 +27,7 @@ import {
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useSubscriptionDetection } from '@/hooks/useSubscriptionDetection';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { MovementsView, Subscription } from '@/lib/domain/assets.types';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import { colors, spacing } from '@/lib/theme';
@@ -55,6 +56,7 @@ export default function MovimentosScreen() {
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
+  const { contentBottomPadding } = useResponsiveLayout();
   const { refreshing, onRefresh } = usePullToRefresh(refetch);
   const deleteMutation = useDeleteTransaction();
   const { showToast } = useToast();
@@ -255,7 +257,7 @@ export default function MovimentosScreen() {
               contentContainerStyle={[
                 styles.listContent,
                 isEmpty && styles.listContentEmpty,
-                { paddingBottom: spacing.lg },
+                { paddingBottom: contentBottomPadding },
               ]}
               showsVerticalScrollIndicator={false}
               refreshControl={
@@ -294,7 +296,7 @@ export default function MovimentosScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.sectionContent,
-            { paddingBottom: spacing['2xl'] },
+            { paddingBottom: contentBottomPadding },
           ]}
           refreshControl={
             <RefreshControl

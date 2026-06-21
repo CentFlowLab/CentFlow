@@ -30,6 +30,7 @@ import {
   SectionHeader,
   EmptyState,
 } from '@/components/ui';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
@@ -62,6 +63,7 @@ export default function InicioScreen() {
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
 
   const { score, levelProgress, assistant } = useCentFlowIntelligence();
+  const { contentBottomPadding } = useResponsiveLayout();
 
   const header = (
     <AppHeader
@@ -244,7 +246,7 @@ export default function InicioScreen() {
         }
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: spacing['2xl'] },
+          { paddingBottom: contentBottomPadding },
         ]}>
         <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}

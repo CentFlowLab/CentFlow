@@ -8,6 +8,7 @@ import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { ErrorState, LoadingSpinner, ScreenContainer } from '@/components/ui';
 import { useDeleteCredit, useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { Credit } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 
@@ -17,6 +18,7 @@ export default function PrecosScreen() {
   const [quickAddVisible, setQuickAddVisible] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useLiabilities();
+  const { contentBottomPadding } = useResponsiveLayout();
   const deleteCredit = useDeleteCredit();
   const credits = data?.credits ?? [];
 
@@ -68,7 +70,7 @@ export default function PrecosScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: spacing['2xl'] },
+            { paddingBottom: contentBottomPadding },
           ]}
           refreshControl={
             <RefreshControl
