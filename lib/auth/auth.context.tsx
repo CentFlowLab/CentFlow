@@ -30,6 +30,7 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<boolean>;
   completeGoogleSignInFromCallback: (url: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signOutAllDevices: () => Promise<void>;
   refreshUser: (patch: Partial<User>) => Promise<void>;
   retryBootstrap: () => void;
 };
@@ -167,6 +168,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  const signOutAllDevices = useCallback(async () => {
+    signingOutRef.current = true;
+    try {
+      await authService.logoutAllDevices();
+      setUser(null);
+      setSessionExpiredMessage(null);
+      resetAnalytics();
+      queryClient.clear();
+      logSecurityEvent('sign_out_all_devices');
+    } finally {
+      signingOutRef.current = false;
+    }
+  }, []);
+
   const refreshUser = useCallback(async (patch: Partial<User>) => {
     setUser((current) => {
       if (!current) return current;
@@ -196,6 +211,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signInWithGoogle,
       completeGoogleSignInFromCallback,
       signOut,
+      signOutAllDevices,
       refreshUser,
       retryBootstrap,
     }),
@@ -209,6 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signInWithGoogle,
       completeGoogleSignInFromCallback,
       signOut,
+      signOutAllDevices,
       refreshUser,
       retryBootstrap,
     ],

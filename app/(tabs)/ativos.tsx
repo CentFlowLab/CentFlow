@@ -22,9 +22,9 @@ import {
   useDeleteInventoryItem,
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
-import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { getAssetsQuickAddActions } from '@/lib/layout/contextual-add';
+import type { QuickAddScreenContext } from '@/lib/navigation/quick-add-context';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
 import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
@@ -39,7 +39,6 @@ export default function AtivosScreen() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [inventoryFormVisible, setInventoryFormVisible] = useState(false);
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
-  const [quickAddVisible, setQuickAddVisible] = useState(false);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
   const { contentBottomPadding } = useResponsiveLayout();
@@ -145,21 +144,18 @@ export default function AtivosScreen() {
     setEditingInventory(null);
   }
 
-  const handleQuickAdd = useQuickAddActions({
+  const assetsQuickAddContext: QuickAddScreenContext =
+    activeTab === 'garantias'
+      ? 'ativos_garantias'
+      : activeTab === 'inventario'
+        ? 'ativos_inventario'
+        : 'ativos_objetivos';
+
+  const quickAdd = useContextualQuickAdd(assetsQuickAddContext, {
     onGoal: openCreateGoal,
-    onAsset: openCreateInventory,
     onWarranty: openCreateWarranty,
+    onAsset: openCreateInventory,
   });
-
-  const assetsQuickAddActions = getAssetsQuickAddActions(activeTab);
-
-  function handleHeaderAddPress() {
-    if (assetsQuickAddActions.length === 1) {
-      handleQuickAdd(assetsQuickAddActions[0]);
-      return;
-    }
-    setQuickAddVisible(true);
-  }
 
   return (
     <View style={styles.screen}>
@@ -172,8 +168,8 @@ export default function AtivosScreen() {
               size={26}
             />
           ),
-          onPress: handleHeaderAddPress,
-          accessibilityLabel: 'Adicionar',
+          onPress: quickAdd.handlePress,
+          accessibilityLabel: quickAdd.accessibilityLabel,
         }}
       />
 
@@ -269,10 +265,10 @@ export default function AtivosScreen() {
       />
 
       <QuickAddMenuSheet
-        visible={quickAddVisible}
-        onClose={() => setQuickAddVisible(false)}
-        onSelect={handleQuickAdd}
-        allowedActions={assetsQuickAddActions}
+        visible={quickAdd.sheetVisible}
+        onClose={() => quickAdd.setSheetVisible(false)}
+        onSelect={quickAdd.onSelect}
+        actions={quickAdd.actions}
       />
     </View>
   );

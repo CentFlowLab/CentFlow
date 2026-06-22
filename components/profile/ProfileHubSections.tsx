@@ -117,18 +117,6 @@ export function ProfileHubSections({
           <Text variant="caption" color="textSecondary">
             {email}
           </Text>
-          <Text variant="caption" color="textMuted">
-            {currency} · {getCountryLabel(region)}
-          </Text>
-          <Pressable
-            onPress={() => router.push('/settings/personal-data')}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Editar perfil">
-            <Text variant="caption" color="primary" style={styles.editLink}>
-              Editar perfil
-            </Text>
-          </Pressable>
           <View style={styles.metaRow}>
             <View style={styles.statusPill}>
               <Text variant="caption" color="primary">
@@ -143,6 +131,56 @@ export function ProfileHubSections({
           </View>
         </View>
       </Card>
+
+      <View style={styles.section}>
+        <SectionHeader title="Preferências" />
+        <Card variant="outlined" padding="sm">
+          <Pressable
+            onPress={() => router.push('/settings/currency-region')}
+            style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Moeda e região">
+            <SymbolView
+              name={{ ios: 'eurosign.circle', android: 'euro', web: 'euro' }}
+              tintColor={colors.textSecondary}
+              size={22}
+            />
+            <View style={styles.menuText}>
+              <Text variant="bodyMedium">Moeda e região</Text>
+              <Text variant="caption" color="textMuted">
+                {currency} · {getCountryLabel(region)}
+              </Text>
+            </View>
+            <SymbolView
+              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+              tintColor={colors.textMuted}
+              size={16}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/settings/personal-data')}
+            style={({ pressed }) => [styles.menuRow, styles.menuRowBorder, pressed && styles.menuRowPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Dados pessoais">
+            <SymbolView
+              name={{ ios: 'person.crop.circle', android: 'person', web: 'person' }}
+              tintColor={colors.textSecondary}
+              size={22}
+            />
+            <View style={styles.menuText}>
+              <Text variant="bodyMedium">Dados pessoais</Text>
+              <Text variant="caption" color="textMuted">
+                Nome, email e conta
+              </Text>
+            </View>
+            <SymbolView
+              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+              tintColor={colors.textMuted}
+              size={16}
+            />
+          </Pressable>
+        </Card>
+      </View>
 
       <View style={styles.section}>
         <SectionHeader title="A tua CentFlow" />
@@ -256,9 +294,6 @@ const styles = StyleSheet.create({
   identityInfo: {
     flex: 1,
     gap: spacing.xs,
-  },
-  editLink: {
-    marginTop: spacing.xs,
   },
   metaRow: {
     flexDirection: 'row',

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
-  ActionCenterSheet,
   DashboardHeaderLeading,
   DashboardSkeleton,
   DemoModeBadge,
@@ -14,19 +13,14 @@ import {
 } from '@/components/dashboard';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal } from '@/components/movements';
-import {
-  ErrorState,
-  RefetchingIndicator,
-  ScreenContainer,
-} from '@/components/ui';
+import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
+import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
+import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
-import { useQuickAddActions } from '@/hooks/useQuickAddActions';
-import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import type { AssistantActionId } from '@/lib/domain/financial';
-import { getHomeQuickAddActions } from '@/lib/layout/contextual-add';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import { colors, spacing } from '@/lib/theme';
 
@@ -34,15 +28,11 @@ export default function InicioScreen() {
   useDiagnosticScreen('home');
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
-
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
-  const [quickAddVisible, setQuickAddVisible] = useState(false);
-  const [actionCenterVisible, setActionCenterVisible] = useState(false);
 
   const { assistant } = useCentFlowIntelligence();
   const { contentBottomPadding } = useResponsiveLayout();
-  const homeQuickAddActions = getHomeQuickAddActions();
 
   const openAddMovement = () => {
     traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: false });
@@ -56,18 +46,40 @@ export default function InicioScreen() {
     setAddMovementVisible(true);
   };
 
-  const handleQuickAdd = useQuickAddActions({
+  const closeAddMovement = () => {
+    setAddMovementVisible(false);
+    setStartWithReceiptPicker(false);
+  };
+
+  const quickAdd = useContextualQuickAdd('home', {
     onMovement: openAddMovement,
-    onGoal: () => router.push('/(tabs)/ativos?action=new-goal'),
     onAsset: () => router.push('/(tabs)/ativos?action=new-asset'),
+    onGoal: () => router.push('/(tabs)/ativos?action=new-goal'),
   });
 
-  function handleHeaderAddPress() {
-    if (homeQuickAddActions.length === 1) {
-      handleQuickAdd(homeQuickAddActions[0]);
-      return;
+  function handleAssistantAction(actionId: AssistantActionId) {
+    switch (actionId) {
+      case 'add_expense':
+        openAddMovement();
+        break;
+      case 'scan_receipt':
+        openReceiptScanner();
+        break;
+      case 'create_goal':
+        router.push('/(tabs)/ativos?action=new-goal');
+        break;
+      case 'add_subscription':
+        router.push('/(tabs)/movimentos?view=subscricoes&action=new-subscription');
+        break;
+      case 'review_subscriptions':
+        router.push('/(tabs)/movimentos?view=subscricoes');
+        break;
+      case 'view_warranties':
+        router.push('/(tabs)/ativos?tab=garantias');
+        break;
+      default:
+        break;
     }
-    setQuickAddVisible(true);
   }
 
   const header = (
@@ -82,8 +94,8 @@ export default function InicioScreen() {
             size={26}
           />
         ),
-        onPress: handleHeaderAddPress,
-        accessibilityLabel: 'Adicionar',
+        onPress: quickAdd.handlePress,
+        accessibilityLabel: quickAdd.accessibilityLabel,
       }}
     />
   );
@@ -122,43 +134,10 @@ export default function InicioScreen() {
     weeklySpending,
     netWorthChangeThisMonth,
     assetsSummary,
-    recentTransactions,
     dataSource,
   } = data;
 
-  function handleAssistantAction(actionId: AssistantActionId) {
-    switch (actionId) {
-      case 'add_expense':
-        openAddMovement();
-        break;
-      case 'scan_receipt':
-        openReceiptScanner();
-        break;
-      case 'create_goal':
-        router.push('/(tabs)/ativos?action=new-goal');
-        break;
-      case 'add_subscription':
-        router.push('/(tabs)/movimentos?view=subscricoes&action=new-subscription');
-        break;
-      case 'review_subscriptions':
-        router.push('/(tabs)/movimentos?view=subscricoes');
-        break;
-      case 'view_warranties':
-        router.push('/(tabs)/ativos?tab=garantias');
-        break;
-      case 'view_plan':
-        setActionCenterVisible(true);
-        break;
-    }
-  }
-
-  const closeAddMovement = () => {
-    setAddMovementVisible(false);
-    setStartWithReceiptPicker(false);
-  };
-
   const hasActivity =
-    recentTransactions.length > 0 ||
     assetsSummary.goalsCount > 0 ||
     assetsSummary.warrantiesCount > 0 ||
     assetsSummary.inventoryCount > 0;
@@ -197,20 +176,13 @@ export default function InicioScreen() {
           <HomeAssistantCard
             plan={assistant}
             onAction={handleAssistantAction}
-            onOpenActionCenter={() => setActionCenterVisible(true)}
+            onOpenActionCenter={() => openAddMovement()}
           />
 
           <HomeQuickActions
             onAddMovement={openAddMovement}
-            onViewMovements={() => router.push('/(tabs)/movimentos')}
-            onNewGoal={() => router.push('/(tabs)/ativos?action=new-goal')}
-            recommendedActions={[
-              {
-                key: 'asset',
-                label: 'Novo ativo',
-                onPress: () => router.push('/(tabs)/ativos?action=new-asset'),
-              },
-            ]}
+            onAddAsset={() => router.push('/(tabs)/ativos?action=new-asset')}
+            onAddGoal={() => router.push('/(tabs)/ativos?action=new-goal')}
           />
 
           <RefetchingIndicator visible={isRefetching} />
@@ -224,16 +196,10 @@ export default function InicioScreen() {
       />
 
       <QuickAddMenuSheet
-        visible={quickAddVisible}
-        onClose={() => setQuickAddVisible(false)}
-        onSelect={handleQuickAdd}
-        allowedActions={homeQuickAddActions}
-      />
-
-      <ActionCenterSheet
-        visible={actionCenterVisible}
-        onClose={() => setActionCenterVisible(false)}
-        onSelect={handleAssistantAction}
+        visible={quickAdd.sheetVisible}
+        onClose={() => quickAdd.setSheetVisible(false)}
+        onSelect={quickAdd.onSelect}
+        actions={quickAdd.actions}
       />
     </View>
   );
@@ -252,8 +218,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.xl,
   },
 });

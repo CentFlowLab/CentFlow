@@ -6,6 +6,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppHeader } from '@/components/layout';
 import { FinancialProfileDetailSheet, FinancialProfileProgress, ProfileHubSections } from '@/components/profile';
 import {
+  Button,
   Card,
   ErrorState,
   ProfileSkeleton,
@@ -20,6 +21,7 @@ import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
+import { useAuth } from '@/lib/auth';
 import { isDiagnosticsEnabled } from '@/lib/diagnostics';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
 import { colors, spacing } from '@/lib/theme';
@@ -35,8 +37,28 @@ const MENU_SECTIONS: Array<{
   items: MenuItem[];
 }> = [
   {
+    title: 'Perfil',
+    items: [
+      {
+        icon: { ios: 'person.fill', android: 'person', web: 'person' },
+        label: 'Dados pessoais',
+        route: '/settings/personal-data',
+      },
+      {
+        icon: { ios: 'globe', android: 'language', web: 'language' },
+        label: 'Moeda e região',
+        route: '/settings/currency-region',
+      },
+    ],
+  },
+  {
     title: 'Definições',
     items: [
+      {
+        icon: { ios: 'lock.fill', android: 'lock', web: 'lock' },
+        label: 'Segurança',
+        route: '/settings/security',
+      },
       {
         icon: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
         label: 'Notificações',
@@ -46,11 +68,6 @@ const MENU_SECTIONS: Array<{
         icon: { ios: 'paintbrush.fill', android: 'palette', web: 'palette' },
         label: 'Aparência',
         route: '/settings/appearance',
-      },
-      {
-        icon: { ios: 'lock.fill', android: 'lock', web: 'lock' },
-        label: 'Segurança',
-        route: '/settings/security',
       },
       {
         icon: { ios: 'hand.raised.fill', android: 'privacy_tip', web: 'privacy_tip' },
@@ -96,12 +113,14 @@ function getMenuSections() {
 export default function PerfilScreen() {
   useDiagnosticScreen('profile');
 
+  const { signOut } = useAuth();
   const { reset: resetOnboarding } = useOnboarding();
   const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
 
   // Keeps analytics user context fresh when the user visits Profile
   useAnalytics();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
+  const [loggingOut, setLoggingOut] = useState(false);
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
   const { showToast } = useToast();
   const { activateFeature } = useFeatureAreas();
@@ -150,6 +169,15 @@ export default function PerfilScreen() {
     }
 
     router.push(route as never);
+  }
+
+  async function handleSignOut() {
+    setLoggingOut(true);
+    try {
+      await signOut();
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -231,9 +259,13 @@ export default function PerfilScreen() {
             </View>
           ))}
 
-          <Text variant="caption" color="textMuted" style={styles.settingsHint}>
-            Termina sessão em Definições → Segurança.
-          </Text>
+          <Button
+            label="Terminar sessão"
+            variant="danger"
+            onPress={handleSignOut}
+            loading={loggingOut}
+            fullWidth
+          />
         </ScreenContainer>
       )}
 
@@ -277,9 +309,5 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     flex: 1,
-  },
-  settingsHint: {
-    marginTop: spacing.md,
-    textAlign: 'center',
   },
 });

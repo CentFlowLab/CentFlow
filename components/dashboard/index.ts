@@ -9,7 +9,7 @@ export { HomeGoalHighlightCard } from './HomeGoalHighlightCard';
 export { HomePersonalizedInsightCard } from './HomePersonalizedInsightCard';
 export { HomeChangesSheet } from './HomeChangesSheet';
 export { HomeAttentionSheet } from './HomeAttentionSheet';
-export { HomeQuickActions, type RecommendedQuickAction } from './HomeQuickActions';
+export { HomeQuickActions } from './HomeQuickActions';
 export { DashboardGreeting } from './DashboardGreeting';
 export { DashboardHeaderLeading } from './DashboardHeaderLeading';
 export { DashboardFinancialSnapshot } from './DashboardFinancialSnapshot';

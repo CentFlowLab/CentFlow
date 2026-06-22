@@ -26,9 +26,8 @@ import {
 } from '@/hooks/queries/useTransactions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useSubscriptionDetection } from '@/hooks/useSubscriptionDetection';
-import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { getMovementsQuickAddActions } from '@/lib/layout/contextual-add';
 import type { MovementsView, Subscription } from '@/lib/domain/assets.types';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import { colors, spacing } from '@/lib/theme';
@@ -53,7 +52,6 @@ export default function MovimentosScreen() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
-  const [quickAddVisible, setQuickAddVisible] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
@@ -142,25 +140,17 @@ export default function MovimentosScreen() {
     router.setParams({ action: '' });
   }, [action, openSubscriptionForm]);
 
-  const handleQuickAdd = useQuickAddActions({
+  const quickAddContext = activeView === 'subscricoes' ? 'subscricoes' : 'movimentos';
+
+  const quickAdd = useContextualQuickAdd(quickAddContext, {
     onMovement: () => openAddModal(false),
     onSubscription: () => openSubscriptionForm(null),
   });
 
-  const movementsQuickAddActions = getMovementsQuickAddActions(activeView);
-
-  function handleHeaderAddPress() {
-    if (movementsQuickAddActions.length === 1) {
-      handleQuickAdd(movementsQuickAddActions[0]);
-      return;
-    }
-    setQuickAddVisible(true);
-  }
-
   const showDetectionModal =
     activeDetection !== null &&
     !subscriptionFormVisible &&
-    !quickAddVisible &&
+    !quickAdd.sheetVisible &&
     !modalVisible &&
     !suppressDetectionRef.current;
 
@@ -218,8 +208,8 @@ export default function MovimentosScreen() {
               size={22}
             />
           ),
-          onPress: handleHeaderAddPress,
-          accessibilityLabel: 'Adicionar',
+          onPress: quickAdd.handlePress,
+          accessibilityLabel: quickAdd.accessibilityLabel,
         }}
       />
 
@@ -356,10 +346,10 @@ export default function MovimentosScreen() {
       />
 
       <QuickAddMenuSheet
-        visible={quickAddVisible}
-        onClose={() => setQuickAddVisible(false)}
-        onSelect={handleQuickAdd}
-        allowedActions={movementsQuickAddActions}
+        visible={quickAdd.sheetVisible}
+        onClose={() => quickAdd.setSheetVisible(false)}
+        onSelect={quickAdd.onSelect}
+        actions={quickAdd.actions}
       />
     </View>
   );

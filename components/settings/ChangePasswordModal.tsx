@@ -1,12 +1,19 @@
-import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+/**
+ * @deprecated Alteração de password in-app desactivada por segurança.
+ * Usar fluxo por email em Definições → Segurança → Enviar email de alteração.
+ */
+import { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Text } from '@/components/ui';
+import { Button, Text, TextField } from '@/components/ui';
+import { useChangePassword } from '@/hooks/mutations/useProfileMutations';
+import { useFormDismiss } from '@/hooks/useFormDismiss';
 import { useToast } from '@/components/ui/Toast';
-import { authService, useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
-import { logSecurityError, logSecurityEvent } from '@/lib/security';
+import { formHasAnyText } from '@/lib/forms';
+import { validatePassword, PASSWORD_POLICY_HINT } from '@/lib/security/passwordPolicy';
 import { spacing } from '@/lib/theme';
 
 type ChangePasswordModalProps = {
@@ -14,79 +21,111 @@ type ChangePasswordModalProps = {
   onClose: () => void;
 };
 
-/**
- * Alteração de password apenas via email seguro — nunca in-app.
- */
 export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalProps) {
   const { showToast } = useToast();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const changePassword = useChangePassword();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  function handleRequestEmail() {
-    if (!user?.email) {
-      showToast('Email da conta indisponível.', 'error');
+  useEffect(() => {
+    if (!visible) return;
+    setNewPassword('');
+    setConfirmPassword('');
+  }, [visible]);
+
+  function handleClose() {
+    setNewPassword('');
+    setConfirmPassword('');
+    onClose();
+  }
+
+  const isDirty = useMemo(
+    () => formHasAnyText(newPassword, confirmPassword),
+    [newPassword, confirmPassword],
+  );
+  const dismiss = useFormDismiss(handleClose, isDirty);
+
+  async function handleSubmit() {
+    const validation = validatePassword(newPassword, {
+      email: user?.email,
+      name: user?.name,
+    });
+    if (!validation.valid) {
+      showToast(validation.errors[0] ?? PASSWORD_POLICY_HINT, 'error');
       return;
     }
 
-    Alert.alert(
-      'Alterar palavra-passe',
-      `Enviaremos um email para ${user.email} com um link seguro para definires uma nova palavra-passe.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Enviar email',
-          onPress: () => {
-            setLoading(true);
-            void authService
-              .requestPasswordReset(user.email)
-              .then(() => {
-                logSecurityEvent('password_reset_requested');
-                showToast(
-                  'Enviámos um email com instruções para redefinir a palavra-passe.',
-                  'success',
-                );
-                onClose();
-              })
-              .catch((error: unknown) => {
-                logSecurityError('password_reset_request_failed', error);
-                showToast('Não foi possível enviar o email. Tenta novamente.', 'error');
-              })
-              .finally(() => setLoading(false));
-          },
-        },
-      ],
-    );
+    if (newPassword !== confirmPassword) {
+      showToast('As palavras-passe não coincidem.', 'error');
+      return;
+    }
+
+    try {
+      await changePassword.mutateAsync({ newPassword });
+      showToast(
+        isMockAuthEnabled()
+          ? 'Palavra-passe actualizada (modo demonstração).'
+          : 'Palavra-passe actualizada com sucesso.',
+        'success',
+      );
+      handleClose();
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Não foi possível alterar a palavra-passe.',
+        'error',
+      );
+    }
   }
 
   return (
     <DraggableBottomSheet
       visible={visible}
-      onClose={onClose}
-      maxHeight="50%"
-      header={() => (
+      onClose={handleClose}
+      isDirty={isDirty}
+      maxHeight="70%"
+      header={(requestClose) => (
         <View style={styles.header}>
-          <Text variant="h3">Alterar palavra-passe</Text>
-          <Text variant="caption" color="textMuted">
-            Por segurança, enviamos um link por email. Nunca alteramos a palavra-passe
-            directamente na app.
-          </Text>
+          <View style={styles.headerText}>
+            <Text variant="h3">Alterar palavra-passe</Text>
+            <Text variant="caption" color="textMuted">
+              {PASSWORD_POLICY_HINT}
+            </Text>
+          </View>
         </View>
       )}>
+      <TextField
+        label="Nova palavra-passe"
+        value={newPassword}
+        onChangeText={setNewPassword}
+        secureTextEntry
+        autoCapitalize="none"
+      />
+      <TextField
+        label="Confirmar palavra-passe"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+        autoCapitalize="none"
+      />
+
       <Button
-        label={loading ? 'A enviar...' : 'Enviar email de redefinição'}
-        onPress={handleRequestEmail}
-        loading={loading}
-        disabled={isMockAuthEnabled() || loading}
+        label="Guardar palavra-passe"
+        onPress={handleSubmit}
+        loading={changePassword.isPending}
         fullWidth
       />
-      <Button label="Cancelar" variant="ghost" onPress={onClose} fullWidth />
+      <Button label="Cancelar" variant="ghost" onPress={dismiss} fullWidth />
     </DraggableBottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    gap: spacing.sm,
+    gap: spacing.xs,
     marginBottom: spacing.lg,
+  },
+  headerText: {
+    gap: spacing.xs,
   },
 });

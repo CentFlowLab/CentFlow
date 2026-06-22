@@ -12,7 +12,8 @@ export async function sendViaResend(input: {
   text: string;
 }): Promise<{ messageId?: string; error?: string }> {
   const apiKey = Deno.env.get('RESEND_API_KEY');
-  const from = Deno.env.get('EMAIL_FROM') ?? 'CentFlow <onboarding@resend.dev>';
+  const from =
+    Deno.env.get('EMAIL_FROM') ?? 'CentFlow <noreply@centflow.app>';
 
   if (!apiKey) {
     return { error: 'RESEND_API_KEY não configurada' };

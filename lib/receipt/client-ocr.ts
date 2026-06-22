@@ -1,5 +1,4 @@
 import type { ReceiptDraft, ReceiptOcrResult } from '@/lib/domain/receipt.types';
-import { OCR_READ_FAILURE_MESSAGE } from '@/lib/receipt/ocr-messages';
 import { getReceiptOcrUri, isPdfReceipt } from '@/lib/receipt/receipt-image-preprocess';
 import { parseReceiptFromRawText, sanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
 
@@ -48,11 +47,11 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
 export function getClientOcrUnavailableMessage(reason?: ClientOcrOutcome['unavailableReason']): string {
   switch (reason) {
     case 'pdf':
-      return `${OCR_READ_FAILURE_MESSAGE} Para PDFs, preenche os campos manualmente — o ficheiro fica guardado.`;
+      return 'Não conseguimos ler este talão (PDF). Preenche manualmente — o ficheiro fica guardado.';
     case 'empty':
-      return `${OCR_READ_FAILURE_MESSAGE} Tenta outra foto com melhor luz e foco.`;
+      return 'Não conseguimos ler este talão. Tenta outra foto com melhor luz e foco.';
     case 'module':
     default:
-      return `${OCR_READ_FAILURE_MESSAGE} Preenche os campos manualmente.`;
+      return 'Não conseguimos ler este talão.';
   }
 }

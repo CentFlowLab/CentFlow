@@ -24,10 +24,12 @@ export {
   traceFinancialMutationStep,
   traceFinancialMutationError,
   traceOcrFailure,
+  traceOcrStep,
   FINANCIAL_MUTATION_SOURCE,
   OCR_FLOW_SOURCE,
   type FinancialMutationAction,
   type FinancialTraceContext,
+  type OcrFlowStep,
 } from './financial-mutation-trace';
 
 export {

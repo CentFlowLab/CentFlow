@@ -2,7 +2,6 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
-import { OCR_READ_FAILURE_MESSAGE } from '@/lib/receipt/ocr-messages';
 import { colors, spacing } from '@/lib/theme';
 
 type OcrFailureCardProps = {
@@ -11,7 +10,7 @@ type OcrFailureCardProps = {
 };
 
 export function OcrFailureCard({
-  message = OCR_READ_FAILURE_MESSAGE,
+  message = 'Não conseguimos ler este talão. Preenche os campos abaixo — o talão original fica anexado.',
   showOriginalNote = true,
 }: OcrFailureCardProps) {
   return (
@@ -27,7 +26,7 @@ export function OcrFailureCard({
           size={22}
         />
         <View style={styles.text}>
-          <Text variant="bodyMedium">{OCR_READ_FAILURE_MESSAGE}</Text>
+          <Text variant="bodyMedium">Não conseguimos ler este talão</Text>
           <Text variant="caption" color="textMuted">
             {message}
           </Text>

@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
@@ -13,7 +12,6 @@ import { useActiveSessions } from '@/hooks/queries/useActiveSessions';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { authService, useAuth } from '@/lib/auth';
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
-import { signOutAllDevices } from '@/lib/api/services/profile.service';
 import {
   getBiometricSupport,
   logSecurityError,
@@ -23,14 +21,14 @@ import {
 import { spacing } from '@/lib/theme';
 
 export default function SecurityScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, signOutAllDevices } = useAuth();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences();
   const { data: sessions, isLoading: sessionsLoading } = useActiveSessions();
   const updatePreferences = useUpdatePreferences();
   const { showToast } = useToast();
   const [resetLoading, setResetLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [loggingOutAll, setLoggingOutAll] = useState(false);
+  const [signOutAllLoading, setSignOutAllLoading] = useState(false);
 
   async function handleToggleBiometrics(value: boolean) {
     if (value) {
@@ -46,8 +44,8 @@ export default function SecurityScreen() {
       await setBiometricLockEnabled(value);
       showToast(
         value
-          ? 'Biometria activada. Será pedida ao abrir a app.'
-          : 'Biometria desactivada.',
+          ? 'Protecção activada. Será pedida ao abrir a app.'
+          : 'Protecção desactivada.',
         'success',
       );
     } catch {
@@ -62,8 +60,8 @@ export default function SecurityScreen() {
     }
 
     Alert.alert(
-      'Redefinir password',
-      `Enviaremos um email para ${user.email} com instruções para redefinir a password.`,
+      'Alterar password',
+      `Enviaremos um email seguro para ${user.email} com instruções para definires uma nova password.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -90,6 +88,28 @@ export default function SecurityScreen() {
     );
   }
 
+  function handleSignOutAllDevices() {
+    Alert.alert(
+      'Terminar sessão em todos os dispositivos',
+      'Isto desliga a tua conta em todos os telemóveis e browsers. Terás de iniciar sessão novamente.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Terminar todas',
+          style: 'destructive',
+          onPress: () => {
+            setSignOutAllLoading(true);
+            void signOutAllDevices()
+              .catch(() => {
+                showToast('Não foi possível terminar todas as sessões.', 'error');
+              })
+              .finally(() => setSignOutAllLoading(false));
+          },
+        },
+      ],
+    );
+  }
+
   async function handleSecureSignOut() {
     setLoggingOut(true);
     try {
@@ -98,34 +118,6 @@ export default function SecurityScreen() {
     } finally {
       setLoggingOut(false);
     }
-  }
-
-  function handleSignOutAllDevices() {
-    Alert.alert(
-      'Terminar sessão em todos os dispositivos',
-      'Isto encerra a tua conta em todos os telemóveis e browsers. Terás de iniciar sessão novamente.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Terminar todas',
-          style: 'destructive',
-          onPress: () => {
-            setLoggingOutAll(true);
-            void signOutAllDevices()
-              .then(() => signOut())
-              .then(() => {
-                logSecurityEvent('global_sign_out');
-                showToast('Sessão terminada em todos os dispositivos.', 'success');
-              })
-              .catch((error) => {
-                logSecurityError('global_sign_out_failed', error);
-                showToast('Não foi possível terminar todas as sessões.', 'error');
-              })
-              .finally(() => setLoggingOutAll(false));
-          },
-        },
-      ],
-    );
   }
 
   if (prefsLoading && !preferences) {
@@ -141,19 +133,19 @@ export default function SecurityScreen() {
       <SettingsHero
         icon={{ ios: 'lock.fill', android: 'lock', web: 'lock' }}
         title="Controlo de acesso"
-        description="Credenciais, bloqueio local e sessão."
+        description="Credenciais, bloqueio local e sessões."
       />
 
       <View style={styles.section}>
         <Card variant="elevated" style={styles.card}>
-          <Text variant="bodyMedium">Redefinir password</Text>
+          <Text variant="bodyMedium">Alterar password</Text>
           <Text variant="caption" color="textMuted">
             {isMockAuthEnabled()
               ? 'Indisponível em modo demonstração.'
-              : 'Recebe um email seguro para definires uma nova palavra-passe forte.'}
+              : 'Por segurança, alteramos a password apenas via email com link seguro.'}
           </Text>
           <Button
-            label={resetLoading ? 'A enviar...' : 'Redefinir password'}
+            label={resetLoading ? 'A enviar...' : 'Enviar email de alteração'}
             variant="secondary"
             onPress={handleResetPassword}
             loading={resetLoading}
@@ -166,20 +158,17 @@ export default function SecurityScreen() {
         <Card variant="outlined" style={styles.card}>
           <SettingsToggleRow
             label="Proteger aplicação"
-            description="Face ID ou impressão digital ao abrir a app"
+            description="Face ID ou impressão digital ao abrir a CentFlow"
             value={preferences?.biometricsEnabled ?? false}
             onValueChange={handleToggleBiometrics}
             disabled={updatePreferences.isPending}
           />
-          <Text variant="caption" color="textMuted">
-            PIN local estará disponível em breve como alternativa.
-          </Text>
         </Card>
       </View>
 
       <View style={styles.section}>
         <Card variant="outlined" style={styles.card}>
-          <Text variant="bodyMedium">Sessões activas</Text>
+          <Text variant="bodyMedium">Dispositivos ligados</Text>
           {sessionsLoading ? (
             <Text variant="caption" color="textMuted">
               A verificar sessões...
@@ -187,8 +176,8 @@ export default function SecurityScreen() {
           ) : (
             <>
               <Text variant="caption" color="textMuted">
-                {sessions?.count ?? 1} dispositivo{(sessions?.count ?? 1) === 1 ? '' : 's'} ligado
-                {(sessions?.count ?? 1) === 1 ? '' : 's'}
+                Este dispositivo está activo. Outros dispositivos com sessão aberta podem
+                continuar ligados até terminares todas as sessões.
               </Text>
               <View style={styles.sessionRow}>
                 <Text variant="body">{sessions?.currentDeviceLabel ?? 'Este dispositivo'}</Text>
@@ -197,33 +186,19 @@ export default function SecurityScreen() {
                 </Text>
               </View>
               <Button
-                label={loggingOutAll ? 'A terminar...' : 'Terminar sessão em todos os dispositivos'}
+                label={signOutAllLoading ? 'A terminar...' : 'Terminar sessão em todos'}
                 variant="secondary"
                 onPress={handleSignOutAllDevices}
-                loading={loggingOutAll}
-                disabled={isMockAuthEnabled() || loggingOutAll}
+                loading={signOutAllLoading}
+                disabled={isMockAuthEnabled() || signOutAllLoading}
               />
             </>
           )}
         </Card>
       </View>
 
-      <View style={styles.section}>
-        <Card variant="outlined" style={styles.card}>
-          <Text variant="bodyMedium">Privacidade dos dados</Text>
-          <Text variant="caption" color="textMuted">
-            Exportação, consentimentos e política de privacidade.
-          </Text>
-          <Button
-            label="Abrir privacidade"
-            variant="secondary"
-            onPress={() => router.push('/settings/privacy' as never)}
-          />
-        </Card>
-      </View>
-
       <Button
-        label={loggingOut ? 'A terminar sessão...' : 'Terminar sessão em segurança'}
+        label={loggingOut ? 'A terminar sessão...' : 'Terminar sessão neste dispositivo'}
         variant="danger"
         onPress={handleSecureSignOut}
         loading={loggingOut}

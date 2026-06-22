@@ -7,10 +7,7 @@ export type LifecycleEmailType =
   | 'warranty_expiring'
   | 'subscription_renewal'
   | 'credit_payment_due'
-  | 'weekly_digest'
-  | 'premium_upgrade'
-  | 'premium_renewal'
-  | 'premium_payment_failed';
+  | 'weekly_digest';
 
 export type EmailPreferences = {
   email_important: boolean;

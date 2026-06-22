@@ -111,20 +111,10 @@ export async function updateProfileCurrency(
   return { ...current, currency };
 }
 
-export async function changePassword(input: ChangePasswordInput): Promise<void> {
-  void input;
+export async function changePassword(_input: ChangePasswordInput): Promise<void> {
   throw new Error(
-    'Por segurança, altera a palavra-passe através do email de redefinição em Definições → Segurança.',
+    'Para alterar a password, usa "Redefinir password" em Segurança — enviamos um email seguro.',
   );
-}
-
-export async function signOutAllDevices(): Promise<void> {
-  if (isMockAuthEnabled() || !isSupabaseEnabled()) {
-    return;
-  }
-
-  const { logoutAllDevices } = await import('@/lib/auth/auth.service');
-  await logoutAllDevices();
 }
 
 export async function getActiveSessions(): Promise<ActiveSessionInfo> {

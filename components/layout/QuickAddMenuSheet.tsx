@@ -1,5 +1,5 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout/DraggableBottomSheet';
@@ -36,7 +36,7 @@ const ALL_ITEMS: QuickAddItem[] = [
   {
     id: 'credit',
     label: 'Novo crédito',
-    description: 'Regista um empréstimo ou prestação',
+    description: 'Regista prestações e custos fixos',
     icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
     color: colors.accent,
     bg: colors.accentMuted,
@@ -68,7 +68,7 @@ const ALL_ITEMS: QuickAddItem[] = [
   {
     id: 'warranty',
     label: 'Nova garantia',
-    description: 'Guarda uma garantia com alertas',
+    description: 'Guarda garantias com alertas',
     icon: { ios: 'shield.fill', android: 'verified_user', web: 'verified_user' },
     color: colors.primary,
     bg: colors.primaryMuted,
@@ -87,23 +87,21 @@ type QuickAddMenuSheetProps = {
   visible: boolean;
   onClose: () => void;
   onSelect: (action: QuickAddActionId) => void;
-  /** Quando definido, mostra apenas estas acções (botão + contextual). */
-  allowedActions?: QuickAddActionId[];
+  /** Filtra acções — só mostra opções relevantes ao ecrã actual. */
+  actions?: QuickAddActionId[];
 };
 
 export function QuickAddMenuSheet({
   visible,
   onClose,
   onSelect,
-  allowedActions,
+  actions,
 }: QuickAddMenuSheetProps) {
   const pendingActionRef = useRef<QuickAddActionId | null>(null);
 
-  const items = useMemo(() => {
-    if (!allowedActions?.length) return ALL_ITEMS;
-    const allowed = new Set(allowedActions);
-    return ALL_ITEMS.filter((item) => allowed.has(item.id));
-  }, [allowedActions]);
+  const items = actions?.length
+    ? ALL_ITEMS.filter((item) => actions.includes(item.id))
+    : ALL_ITEMS;
 
   const handleDismissed = useCallback(() => {
     const action = pendingActionRef.current;
@@ -123,14 +121,21 @@ export function QuickAddMenuSheet({
       onClose={onClose}
       onDismissed={handleDismissed}
       maxHeight="72%"
-      header={() => (
+      header={(requestClose) => (
         <View style={styles.header}>
           <View>
             <Text variant="h2">Adicionar</Text>
             <Text variant="caption" color="textMuted">
-              Escolhe o que queres registar
+              {items.length === 1 ? items[0]?.label : 'Escolhe o que queres registar'}
             </Text>
           </View>
+          <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
+            <SymbolView
+              name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+              tintColor={colors.textMuted}
+              size={28}
+            />
+          </Pressable>
         </View>
       )}>
       <View style={styles.list}>

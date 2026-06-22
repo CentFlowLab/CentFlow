@@ -74,6 +74,33 @@ export function traceFinancialMutationError(
   );
 }
 
+export type OcrFlowStep =
+  | 'image_selected'
+  | 'upload_start'
+  | 'upload_success'
+  | 'parse_success'
+  | 'parse_failed';
+
+/** Passo estruturado no fluxo OCR — visível no Doctor. */
+export function traceOcrStep(
+  step: OcrFlowStep,
+  context: {
+    screen?: string;
+    action?: FinancialMutationAction;
+    severity?: AppLogSeverity;
+    component?: string;
+    payload?: Record<string, unknown>;
+    receiptId?: string;
+    engine?: string;
+  },
+): void {
+  traceFinancialMutationStep(step, {
+    ...context,
+    action: context.action ?? 'ocr_process',
+    screen: context.screen ?? 'movement_create',
+  });
+}
+
 /** OCR sem resultado útil — nunca silencioso. */
 export function traceOcrFailure(
   reason: string,

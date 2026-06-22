@@ -3,7 +3,6 @@ import { loadMockProfileOverlay } from '@/lib/api/services/profile.service';
 import { getAccessToken, setAccessToken } from '@/lib/api/token';
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { isSupabaseEnabled, supabaseAuth } from '@/lib/supabase';
-import { validatePassword, PASSWORD_POLICY_HINT } from '@/lib/security/passwordPolicy';
 
 import { AUTH_ENDPOINTS } from './constants';
 import { createMockSession, createMockGoogleSession, isMockAuthEnabled } from './mock-auth';
@@ -211,14 +210,6 @@ export async function completePasswordRecoveryFromUrl(url: string): Promise<void
 
 export async function updatePasswordAfterRecovery(newPassword: string): Promise<void> {
   if (isSupabaseEnabled()) {
-    const user = await getCurrentUser();
-    const validation = validatePassword(newPassword, {
-      email: user?.email,
-      name: user?.name,
-    });
-    if (!validation.valid) {
-      throw new Error(validation.errors[0] ?? PASSWORD_POLICY_HINT);
-    }
     await supabaseAuth.updatePassword(newPassword);
     return;
   }
@@ -273,9 +264,10 @@ export async function logout(): Promise<void> {
   await clearSession();
 }
 
+/** Termina sessão em todos os dispositivos ligados à conta. */
 export async function logoutAllDevices(): Promise<void> {
   if (isSupabaseEnabled()) {
-    await supabaseAuth.logoutAllDevices();
+    await supabaseAuth.logoutAllSessions();
   }
   await clearSession();
 }

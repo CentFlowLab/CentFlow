@@ -338,11 +338,11 @@ export async function restoreSession(): Promise<AuthSession | null> {
 
 export async function logout(): Promise<void> {
   const supabase = getSupabaseClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: 'local' });
 }
 
-/** Termina sessão em todos os dispositivos (Supabase global sign-out). */
-export async function logoutAllDevices(): Promise<void> {
+/** Termina sessão em todos os dispositivos (revoga refresh tokens). */
+export async function logoutAllSessions(): Promise<void> {
   const supabase = getSupabaseClient();
   await supabase.auth.signOut({ scope: 'global' });
 }
