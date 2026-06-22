@@ -217,13 +217,13 @@ export const WOW_ACTION_CONFIG: Record<WowActionId, WowCardConfig> = {
 };
 
 export const STEP_PROGRESS: Record<string, number> = {
-  name: 8,
-  welcome: 18,
-  primary_objective: 30,
-  profile: 42,
-  life_areas: 54,
-  ambition: 66,
-  smart_config: 78,
-  reveal: 90,
-  wow: 98,
+  welcome: 10,
+  primary_objective: 22,
+  profile: 36,
+  name: 48,
+  life_areas: 60,
+  ambition: 72,
+  smart_config: 84,
+  reveal: 94,
+  wow: 99,
 };

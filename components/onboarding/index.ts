@@ -1,8 +1,10 @@
 export { AnimatedAssistantMessage } from './AnimatedAssistantMessage';
 export { FeatureAreaCard } from './FeatureAreaCard';
 export { OnboardingGateEffect } from './OnboardingGateEffect';
+export { OnboardingPlanLoading } from './OnboardingPlanLoading';
 export { OnboardingProgressBar } from './OnboardingProgressBar';
 export { OnboardingShell } from './OnboardingShell';
 export { OnboardingStepHeader } from './OnboardingStepHeader';
+export { OnboardingValueCard } from './OnboardingValueCard';
 export { SelectableCard } from './SelectableCard';
 export { ValuePromiseSection } from './ValuePromiseSection';

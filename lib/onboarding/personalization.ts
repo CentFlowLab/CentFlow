@@ -1,6 +1,7 @@
 import {
   AMBITION_OPTIONS,
   FEATURE_AREA_CONFIG,
+  PRIMARY_OBJECTIVE_OPTIONS,
   PROFILE_OPTIONS,
   WOW_ACTION_CONFIG,
   type WowCardConfig,
@@ -10,6 +11,7 @@ import type {
   AmbitionId,
   FeatureAreaId,
   OnboardingAnswers,
+  PrimaryObjectiveId,
   ProfileTagId,
   WowActionId,
 } from './types';
@@ -53,6 +55,114 @@ export function getOnboardingInsights(answers: OnboardingAnswers): string[] {
   }
 
   return [...new Set(insights)].slice(0, 6);
+}
+
+const PRIMARY_OBJECTIVE_BY_ID = Object.fromEntries(
+  PRIMARY_OBJECTIVE_OPTIONS.map((o) => [o.id, o]),
+) as Record<PrimaryObjectiveId, (typeof PRIMARY_OBJECTIVE_OPTIONS)[number]>;
+
+export type PrimaryObjectiveSummary = {
+  emoji: string;
+  label: string;
+  description: string;
+};
+
+/** Resumo do objetivo principal (para o ecrã "o teu espaço está pronto"). */
+export function getPrimaryObjectiveSummary(
+  answers: OnboardingAnswers,
+): PrimaryObjectiveSummary | null {
+  if (!answers.primaryObjective) return null;
+  const option = PRIMARY_OBJECTIVE_BY_ID[answers.primaryObjective];
+  if (!option) return null;
+  return {
+    emoji: option.emoji,
+    label: option.label,
+    description: option.description ?? '',
+  };
+}
+
+export type OnboardingValueEstimate = {
+  emoji: string;
+  headline: string;
+  detail: string;
+};
+
+/**
+ * Estimativa de valor mostrada antes de terminar — cria a sensação de
+ * "valeu a pena responder". Linguagem propositadamente suave (estimativa,
+ * médias) para não prometer números garantidos.
+ */
+export function getOnboardingValueEstimate(
+  answers: OnboardingAnswers,
+): OnboardingValueEstimate {
+  const objective = answers.primaryObjective;
+  const ambitions = new Set(answers.ambitions);
+
+  if (
+    objective === 'organize_credits' ||
+    answers.hasDebt === true ||
+    ambitions.has('reduce_debt')
+  ) {
+    return {
+      emoji: '🏦',
+      headline: 'A tua maior oportunidade está nos créditos',
+      detail:
+        'Organizar prestações e custos fixos costuma libertar dezenas de euros por mês.',
+    };
+  }
+
+  if (
+    objective === 'save_more' ||
+    ambitions.has('more_savings') ||
+    answers.hasSavings === true
+  ) {
+    return {
+      emoji: '💰',
+      headline: 'Acreditamos que consegues poupar mais todos os meses',
+      detail:
+        'Com metas claras, muitas pessoas poupam 10–15% do que gastam — quase sem esforço.',
+    };
+  }
+
+  if (objective === 'control_spending') {
+    return {
+      emoji: '💳',
+      headline: 'Vais recuperar o controlo dos teus gastos',
+      detail: 'Quem acompanha os gastos reduz, em média, ~15% logo no primeiro mês.',
+    };
+  }
+
+  if (objective === 'subscriptions') {
+    return {
+      emoji: '📱',
+      headline: 'Há custos recorrentes à espera de serem cortados',
+      detail: 'As subscrições esquecidas pesam, em média, 20–40€ por mês.',
+    };
+  }
+
+  if (objective === 'receipts_warranties') {
+    return {
+      emoji: '🧾',
+      headline: 'Vais deixar de perder dinheiro em garantias',
+      detail:
+        'Talões digitalizados = devoluções e garantias que normalmente se perdem.',
+    };
+  }
+
+  if (objective === 'track_wealth') {
+    return {
+      emoji: '📈',
+      headline: 'Vais ver o teu património com clareza total',
+      detail:
+        'Juntar contas, bens e objetivos revela oportunidades que passam despercebidas.',
+    };
+  }
+
+  return {
+    emoji: '✨',
+    headline: 'Preparámos um plano à tua medida',
+    detail: 'Quanto mais usares a CentFlow, mais afinadas ficam as recomendações.',
+  };
 }
 
 export type PriorityFeature = {

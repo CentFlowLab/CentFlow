@@ -10,11 +10,11 @@ export type ValuePromiseBullet = {
 };
 
 export function getValuePromiseMessages(firstName: string): string[] {
+  const hasName = Boolean(firstName) && firstName !== 'Utilizador';
   return [
-    `Olá ${firstName} 👋`,
-    'Sou a CentFlow.',
-    'Vou ajudar-te a ter uma visão clara da tua vida financeira.',
-    'Vamos preparar tudo em menos de 1 minuto.',
+    hasName ? `Olá, ${firstName} 👋` : 'Bem-vindo à CentFlow 👋',
+    'Vamos criar o teu espaço financeiro pessoal.',
+    'Em menos de 1 minuto, adaptamos tudo a ti.',
   ];
 }
 
