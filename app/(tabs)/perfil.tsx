@@ -6,7 +6,6 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppHeader } from '@/components/layout';
 import { FinancialProfileDetailSheet, FinancialProfileProgress, ProfileHubSections } from '@/components/profile';
 import {
-  Button,
   Card,
   ErrorState,
   ProfileSkeleton,
@@ -21,7 +20,6 @@ import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
-import { useAuth } from '@/lib/auth';
 import { isDiagnosticsEnabled } from '@/lib/diagnostics';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
 import { colors, spacing } from '@/lib/theme';
@@ -98,14 +96,12 @@ function getMenuSections() {
 export default function PerfilScreen() {
   useDiagnosticScreen('profile');
 
-  const { signOut } = useAuth();
   const { reset: resetOnboarding } = useOnboarding();
   const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
 
   // Keeps analytics user context fresh when the user visits Profile
   useAnalytics();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
-  const [loggingOut, setLoggingOut] = useState(false);
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
   const { showToast } = useToast();
   const { activateFeature } = useFeatureAreas();
@@ -154,15 +150,6 @@ export default function PerfilScreen() {
     }
 
     router.push(route as never);
-  }
-
-  async function handleSignOut() {
-    setLoggingOut(true);
-    try {
-      await signOut();
-    } finally {
-      setLoggingOut(false);
-    }
   }
 
   return (
@@ -244,13 +231,9 @@ export default function PerfilScreen() {
             </View>
           ))}
 
-          <Button
-            label="Terminar sessão"
-            variant="danger"
-            onPress={handleSignOut}
-            loading={loggingOut}
-            fullWidth
-          />
+          <Text variant="caption" color="textMuted" style={styles.settingsHint}>
+            Termina sessão em Definições → Segurança.
+          </Text>
         </ScreenContainer>
       )}
 
@@ -294,5 +277,9 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     flex: 1,
+  },
+  settingsHint: {
+    marginTop: spacing.md,
+    textAlign: 'center',
   },
 });

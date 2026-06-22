@@ -1,12 +1,19 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout/DraggableBottomSheet';
 import { Text } from '@/components/ui';
 import { colors, radius, spacing } from '@/lib/theme';
 
-export type QuickAddActionId = 'movement' | 'subscription' | 'product' | 'goal';
+export type QuickAddActionId =
+  | 'movement'
+  | 'subscription'
+  | 'product'
+  | 'goal'
+  | 'credit'
+  | 'asset'
+  | 'warranty';
 
 type QuickAddItem = {
   id: QuickAddActionId;
@@ -17,22 +24,54 @@ type QuickAddItem = {
   bg: string;
 };
 
-const ITEMS: QuickAddItem[] = [
+const ALL_ITEMS: QuickAddItem[] = [
   {
     id: 'movement',
-    label: 'Movimento',
+    label: 'Novo movimento',
     description: 'Regista uma despesa ou receita',
     icon: { ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' },
     color: colors.primary,
     bg: colors.primaryMuted,
   },
   {
+    id: 'credit',
+    label: 'Novo crédito',
+    description: 'Regista um empréstimo ou prestação',
+    icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
+    color: colors.accent,
+    bg: colors.accentMuted,
+  },
+  {
     id: 'subscription',
-    label: 'Subscrição',
+    label: 'Nova subscrição',
     description: 'Controla custos recorrentes',
     icon: { ios: 'repeat.circle.fill', android: 'autorenew', web: 'autorenew' },
     color: colors.accent,
     bg: colors.accentMuted,
+  },
+  {
+    id: 'goal',
+    label: 'Novo objetivo',
+    description: 'Define uma meta de poupança',
+    icon: { ios: 'target', android: 'flag', web: 'flag' },
+    color: colors.warning,
+    bg: 'rgba(251, 191, 36, 0.12)',
+  },
+  {
+    id: 'asset',
+    label: 'Novo ativo',
+    description: 'Regista um bem no inventário',
+    icon: { ios: 'shippingbox.fill', android: 'inventory_2', web: 'inventory_2' },
+    color: colors.success,
+    bg: colors.successMuted,
+  },
+  {
+    id: 'warranty',
+    label: 'Nova garantia',
+    description: 'Guarda uma garantia com alertas',
+    icon: { ios: 'shield.fill', android: 'verified_user', web: 'verified_user' },
+    color: colors.primary,
+    bg: colors.primaryMuted,
   },
   {
     id: 'product',
@@ -42,24 +81,29 @@ const ITEMS: QuickAddItem[] = [
     color: colors.success,
     bg: colors.successMuted,
   },
-  {
-    id: 'goal',
-    label: 'Objetivo',
-    description: 'Define uma meta de poupança',
-    icon: { ios: 'target', android: 'flag', web: 'flag' },
-    color: colors.warning,
-    bg: 'rgba(251, 191, 36, 0.12)',
-  },
 ];
 
 type QuickAddMenuSheetProps = {
   visible: boolean;
   onClose: () => void;
   onSelect: (action: QuickAddActionId) => void;
+  /** Quando definido, mostra apenas estas acções (botão + contextual). */
+  allowedActions?: QuickAddActionId[];
 };
 
-export function QuickAddMenuSheet({ visible, onClose, onSelect }: QuickAddMenuSheetProps) {
+export function QuickAddMenuSheet({
+  visible,
+  onClose,
+  onSelect,
+  allowedActions,
+}: QuickAddMenuSheetProps) {
   const pendingActionRef = useRef<QuickAddActionId | null>(null);
+
+  const items = useMemo(() => {
+    if (!allowedActions?.length) return ALL_ITEMS;
+    const allowed = new Set(allowedActions);
+    return ALL_ITEMS.filter((item) => allowed.has(item.id));
+  }, [allowedActions]);
 
   const handleDismissed = useCallback(() => {
     const action = pendingActionRef.current;
@@ -79,7 +123,7 @@ export function QuickAddMenuSheet({ visible, onClose, onSelect }: QuickAddMenuSh
       onClose={onClose}
       onDismissed={handleDismissed}
       maxHeight="72%"
-      header={(requestClose) => (
+      header={() => (
         <View style={styles.header}>
           <View>
             <Text variant="h2">Adicionar</Text>
@@ -87,17 +131,10 @@ export function QuickAddMenuSheet({ visible, onClose, onSelect }: QuickAddMenuSh
               Escolhe o que queres registar
             </Text>
           </View>
-          <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
-            <SymbolView
-              name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
-              tintColor={colors.textMuted}
-              size={28}
-            />
-          </Pressable>
         </View>
       )}>
       <View style={styles.list}>
-        {ITEMS.map((item) => (
+        {items.map((item) => (
           <Pressable
             key={item.id}
             onPress={() => handleSelect(item.id)}

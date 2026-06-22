@@ -341,6 +341,12 @@ export async function logout(): Promise<void> {
   await supabase.auth.signOut();
 }
 
+/** Termina sessão em todos os dispositivos (Supabase global sign-out). */
+export async function logoutAllDevices(): Promise<void> {
+  const supabase = getSupabaseClient();
+  await supabase.auth.signOut({ scope: 'global' });
+}
+
 export async function getAccessToken(): Promise<string | null> {
   const supabase = getSupabaseClient();
   const { data } = await supabase.auth.getSession();

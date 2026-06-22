@@ -1,6 +1,5 @@
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
 import type { User } from '@/lib/auth/types';
-import { validatePassword, PASSWORD_POLICY_HINT } from '@/lib/security/passwordPolicy';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
 import { mapProfileToUser } from '@/lib/supabase/mappers';
 
@@ -113,19 +112,19 @@ export async function updateProfileCurrency(
 }
 
 export async function changePassword(input: ChangePasswordInput): Promise<void> {
-  const validation = validatePassword(input.newPassword);
-  if (!validation.valid) {
-    throw new Error(validation.errors[0] ?? PASSWORD_POLICY_HINT);
-  }
+  void input;
+  throw new Error(
+    'Por segurança, altera a palavra-passe através do email de redefinição em Definições → Segurança.',
+  );
+}
 
+export async function signOutAllDevices(): Promise<void> {
   if (isMockAuthEnabled() || !isSupabaseEnabled()) {
     return;
   }
 
-  const supabase = getSupabaseClient();
-  const { error } = await supabase.auth.updateUser({ password: input.newPassword });
-
-  if (error) throw new Error(error.message);
+  const { logoutAllDevices } = await import('@/lib/auth/auth.service');
+  await logoutAllDevices();
 }
 
 export async function getActiveSessions(): Promise<ActiveSessionInfo> {

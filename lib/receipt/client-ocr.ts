@@ -1,4 +1,5 @@
 import type { ReceiptDraft, ReceiptOcrResult } from '@/lib/domain/receipt.types';
+import { OCR_READ_FAILURE_MESSAGE } from '@/lib/receipt/ocr-messages';
 import { getReceiptOcrUri, isPdfReceipt } from '@/lib/receipt/receipt-image-preprocess';
 import { parseReceiptFromRawText, sanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
 
@@ -47,12 +48,11 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
 export function getClientOcrUnavailableMessage(reason?: ClientOcrOutcome['unavailableReason']): string {
   switch (reason) {
     case 'pdf':
-      return 'OCR de PDF no telemóvel ainda não está disponível. Preenche os campos manualmente — o PDF fica guardado.';
+      return `${OCR_READ_FAILURE_MESSAGE} Para PDFs, preenche os campos manualmente — o ficheiro fica guardado.`;
     case 'empty':
-      return 'Não foi possível ler texto na imagem. Tenta outra foto com melhor luz e foco.';
+      return `${OCR_READ_FAILURE_MESSAGE} Tenta outra foto com melhor luz e foco.`;
     case 'module':
-      return 'OCR no dispositivo indisponível nesta versão. Preenche manualmente ou liga a API.';
     default:
-      return 'OCR indisponível. Preenche os campos manualmente.';
+      return `${OCR_READ_FAILURE_MESSAGE} Preenche os campos manualmente.`;
   }
 }

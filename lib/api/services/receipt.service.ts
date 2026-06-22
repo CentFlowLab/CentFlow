@@ -25,6 +25,7 @@ import {
 } from '@/lib/receipt/ocr-sanitize';
 import { resolveReceiptOcr } from '@/lib/receipt/resolve-receipt-ocr';
 import { RECEIPT_PREPROCESS_VERSION } from '@/lib/receipt/receipt-image-preprocess';
+import { traceOcrStep } from '@/lib/receipt/ocr-trace';
 import { traceFinancialMutationError, traceOcrFailure } from '@/lib/doctor/financial-mutation-trace';
 import { DEFAULT_OCR_UNAVAILABLE_MESSAGE } from '@/lib/receipt/ocr-messages';
 import type { RawReceiptOcrPayload, RawReceiptResponse } from '@/lib/types/receipt.api';
@@ -202,7 +203,10 @@ export async function processReceiptFlow(
   options?: { onPhase?: (phase: ProcessReceiptPhase) => void },
 ): Promise<ProcessedReceipt> {
   options?.onPhase?.('uploading_receipt');
+  traceOcrStep('upload_start', { component: 'receipt.service' });
+
   const upload = await uploadReceipt(draft);
+  traceOcrStep('upload_success', { component: 'receipt.service', receiptId: upload.id });
 
   options?.onPhase?.('processing_ocr');
 
@@ -266,6 +270,26 @@ export async function processReceiptFlow(
         });
       }
     }
+  }
+
+  if (ocrResult) {
+    traceOcrStep('parse_success', {
+      component: 'receipt.service',
+      receiptId: upload.id,
+      hasMerchant: Boolean(ocrResult.merchantName),
+      hasAmount: Boolean(ocrResult.totalAmount),
+      hasDate: Boolean(ocrResult.date),
+    });
+  } else {
+    traceOcrStep(
+      'parse_failed',
+      {
+        component: 'receipt.service',
+        receiptId: upload.id,
+        reason: ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE,
+      },
+      'warn',
+    );
   }
 
   return {

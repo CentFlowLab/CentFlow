@@ -1,6 +1,7 @@
 import type { ReceiptDraft, ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import { isMockOcrDemoEnabled } from '@/lib/auth';
 import { traceFinancialMutationError, traceOcrFailure } from '@/lib/doctor/financial-mutation-trace';
+import { traceOcrStep } from '@/lib/receipt/ocr-trace';
 import { isSupabaseEnabled, supabaseReceipts } from '@/lib/supabase';
 import { getClientOcrUnavailableMessage, runClientOcr } from '@/lib/receipt/client-ocr';
 import {
@@ -55,6 +56,7 @@ export async function resolveReceiptOcr(
     }
 
     if (cloud && isAcceptableOcrResult(cloud)) {
+      traceOcrStep('parse_success', { component: 'resolve-receipt-ocr', engine: 'cloud', receiptId });
       return { result: cloud, engine: 'cloud' };
     }
 
@@ -62,6 +64,9 @@ export async function resolveReceiptOcr(
     const device = client.result ? sanitizeOcrResult(client.result) : null;
 
     if (device && ocrQualityScore(device) >= ocrQualityScore(cloud)) {
+      if (device) {
+        traceOcrStep('parse_success', { component: 'resolve-receipt-ocr', engine: 'device', receiptId });
+      }
       return {
         result: device,
         engine: 'device',

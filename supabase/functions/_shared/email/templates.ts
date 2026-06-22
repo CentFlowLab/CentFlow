@@ -110,6 +110,36 @@ export function buildEmailTemplate(
         ctaUrl: buildDeepLink('(tabs)/'),
       });
 
+    case 'premium_upgrade':
+      return wrap({
+        subject: 'Bem-vindo ao CentFlow Premium',
+        preheader: 'Desbloqueaste funcionalidades avançadas.',
+        greeting,
+        body: 'Obrigado por subscreveres o CentFlow Premium. Tens agora acesso a análises avançadas, exportações e suporte prioritário.',
+        ctaLabel: 'Explorar Premium',
+        ctaUrl: buildDeepLink('(tabs)/'),
+      });
+
+    case 'premium_renewal':
+      return wrap({
+        subject: 'A tua subscrição Premium foi renovada',
+        preheader: 'Continua a aproveitar todas as funcionalidades.',
+        greeting,
+        body: 'A tua subscrição CentFlow Premium foi renovada com sucesso. Obrigado pela confiança.',
+        ctaLabel: 'Abrir a CentFlow',
+        ctaUrl: buildDeepLink('(tabs)/'),
+      });
+
+    case 'premium_payment_failed':
+      return wrap({
+        subject: 'Problema com o pagamento Premium',
+        preheader: 'Actualiza o método de pagamento para manter o acesso.',
+        greeting,
+        body: 'Não conseguimos processar a renovação do teu plano Premium. Actualiza o método de pagamento para não perderes funcionalidades.',
+        ctaLabel: 'Gerir subscrição',
+        ctaUrl: buildDeepLink('perfil'),
+      });
+
     default:
       return wrap({
         subject: 'CentFlow',

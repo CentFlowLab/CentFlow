@@ -28,6 +28,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useSubscriptionDetection } from '@/hooks/useSubscriptionDetection';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { getMovementsQuickAddActions } from '@/lib/layout/contextual-add';
 import type { MovementsView, Subscription } from '@/lib/domain/assets.types';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import { colors, spacing } from '@/lib/theme';
@@ -146,6 +147,16 @@ export default function MovimentosScreen() {
     onSubscription: () => openSubscriptionForm(null),
   });
 
+  const movementsQuickAddActions = getMovementsQuickAddActions(activeView);
+
+  function handleHeaderAddPress() {
+    if (movementsQuickAddActions.length === 1) {
+      handleQuickAdd(movementsQuickAddActions[0]);
+      return;
+    }
+    setQuickAddVisible(true);
+  }
+
   const showDetectionModal =
     activeDetection !== null &&
     !subscriptionFormVisible &&
@@ -207,7 +218,7 @@ export default function MovimentosScreen() {
               size={22}
             />
           ),
-          onPress: () => setQuickAddVisible(true),
+          onPress: handleHeaderAddPress,
           accessibilityLabel: 'Adicionar',
         }}
       />
@@ -348,6 +359,7 @@ export default function MovimentosScreen() {
         visible={quickAddVisible}
         onClose={() => setQuickAddVisible(false)}
         onSelect={handleQuickAdd}
+        allowedActions={movementsQuickAddActions}
       />
     </View>
   );

@@ -5,46 +5,28 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   ActionCenterSheet,
-  CentFlowScoreCard,
-  CentFlowScoreSheet,
   DashboardHeaderLeading,
-  DashboardFinancialSnapshot,
   DashboardSkeleton,
   DemoModeBadge,
   HomeAssistantCard,
-  HomeAttentionSheet,
-  HomeGoalHighlightCard,
-  HomePersonalizedInsightCard,
   HomeQuickActions,
-  type RecommendedQuickAction,
-  SuggestionCard,
   NetWorthHeroCard,
-  AttentionCard,
 } from '@/components/dashboard';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
-import { AddTransactionModal, TransactionListItem } from '@/components/movements';
+import { AddTransactionModal } from '@/components/movements';
 import {
   ErrorState,
   RefetchingIndicator,
   ScreenContainer,
-  SectionHeader,
-  EmptyState,
 } from '@/components/ui';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
-import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
-import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
+import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import type { AssistantActionId } from '@/lib/domain/financial';
-import {
-  getContextualNoTransactionsMessage,
-  getHomePersonalizedInsight,
-  getPersonalizedFallbackSuggestions,
-  getRecommendedHomeActions,
-} from '@/lib/onboarding/personalization';
+import { getHomeQuickAddActions } from '@/lib/layout/contextual-add';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import { colors, spacing } from '@/lib/theme';
 
@@ -52,18 +34,41 @@ export default function InicioScreen() {
   useDiagnosticScreen('home');
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
-  const { data: analysisData } = useAnalysisData();
-  const { data: onboardingAnswers } = useOnboardingAnswers();
 
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [actionCenterVisible, setActionCenterVisible] = useState(false);
-  const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
-  const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
 
-  const { score, levelProgress, assistant } = useCentFlowIntelligence();
+  const { assistant } = useCentFlowIntelligence();
   const { contentBottomPadding } = useResponsiveLayout();
+  const homeQuickAddActions = getHomeQuickAddActions();
+
+  const openAddMovement = () => {
+    traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: false });
+    setStartWithReceiptPicker(false);
+    setAddMovementVisible(true);
+  };
+
+  const openReceiptScanner = () => {
+    traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: true });
+    setStartWithReceiptPicker(true);
+    setAddMovementVisible(true);
+  };
+
+  const handleQuickAdd = useQuickAddActions({
+    onMovement: openAddMovement,
+    onGoal: () => router.push('/(tabs)/ativos?action=new-goal'),
+    onAsset: () => router.push('/(tabs)/ativos?action=new-asset'),
+  });
+
+  function handleHeaderAddPress() {
+    if (homeQuickAddActions.length === 1) {
+      handleQuickAdd(homeQuickAddActions[0]);
+      return;
+    }
+    setQuickAddVisible(true);
+  }
 
   const header = (
     <AppHeader
@@ -77,7 +82,7 @@ export default function InicioScreen() {
             size={26}
           />
         ),
-        onPress: () => setQuickAddVisible(true),
+        onPress: handleHeaderAddPress,
         accessibilityLabel: 'Adicionar',
       }}
     />
@@ -116,23 +121,10 @@ export default function InicioScreen() {
     netWorthChangePercent,
     weeklySpending,
     netWorthChangeThisMonth,
-    attentionItems,
-    suggestions,
     assetsSummary,
     recentTransactions,
-    featuredGoal,
     dataSource,
   } = data;
-
-  const openAddMovement = () => {
-    traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: false });
-    setStartWithReceiptPicker(false);
-    setAddMovementVisible(true);
-  };
-
-  const handleQuickAdd = useQuickAddActions({
-    onMovement: openAddMovement,
-  });
 
   function handleAssistantAction(actionId: AssistantActionId) {
     switch (actionId) {
@@ -160,76 +152,16 @@ export default function InicioScreen() {
     }
   }
 
-  const openReceiptScanner = () => {
-    traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: true });
-    setStartWithReceiptPicker(true);
-    setAddMovementVisible(true);
-  };
-
   const closeAddMovement = () => {
     setAddMovementVisible(false);
     setStartWithReceiptPicker(false);
   };
-
-  const homeInsight = getHomePersonalizedInsight(onboardingAnswers ?? null, {
-    goalsCount: assetsSummary.goalsCount,
-    warrantiesCount: assetsSummary.warrantiesCount,
-    hasFeaturedGoal: Boolean(featuredGoal),
-  });
-  const showGoalHighlight = featuredGoal !== null;
-  const showInsight = homeInsight && !showGoalHighlight;
 
   const hasActivity =
     recentTransactions.length > 0 ||
     assetsSummary.goalsCount > 0 ||
     assetsSummary.warrantiesCount > 0 ||
     assetsSummary.inventoryCount > 0;
-
-  const fallbackSuggestions = getPersonalizedFallbackSuggestions(onboardingAnswers ?? null);
-
-  const recommendedRaw = getRecommendedHomeActions(onboardingAnswers ?? null);
-  const recommendedActions: RecommendedQuickAction[] = recommendedRaw.map((rec) => {
-    if (rec.key === 'receipt') {
-      return {
-        key: rec.key,
-        label: rec.label,
-        onPress: openReceiptScanner,
-      };
-    }
-    if (rec.key === 'goal') {
-      return {
-        key: rec.key,
-        label: rec.label,
-        onPress: () => router.push('/(tabs)/ativos?action=new-goal'),
-      };
-    }
-    if (rec.key === 'warranty') {
-      return {
-        key: rec.key,
-        label: rec.label,
-        onPress: () => router.push('/(tabs)/ativos?action=new-warranty'),
-      };
-    }
-    if (rec.key === 'asset') {
-      return {
-        key: rec.key,
-        label: rec.label,
-        onPress: () => router.push('/(tabs)/ativos?action=new-asset'),
-      };
-    }
-    return {
-      key: rec.key,
-      label: rec.label,
-      onPress: openAddMovement,
-    };
-  });
-
-  const hasGoalRecommendation = recommendedActions.some((action) => action.key === 'goal');
-
-  const noTransactionsMessage = getContextualNoTransactionsMessage(
-    onboardingAnswers ?? null,
-    'all',
-  );
 
   return (
     <View style={styles.screen}>
@@ -268,111 +200,17 @@ export default function InicioScreen() {
             onOpenActionCenter={() => setActionCenterVisible(true)}
           />
 
-          {attentionItems.length > 0 ? (
-            <View style={styles.section}>
-              <SectionHeader
-                title="Precisa atenção"
-                subtitle={`${attentionItems.length} alerta${attentionItems.length > 1 ? 's' : ''}`}
-                actionLabel={attentionItems.length > 2 ? 'Ver todos' : undefined}
-                onAction={
-                  attentionItems.length > 2
-                    ? () => setAttentionSheetVisible(true)
-                    : undefined
-                }
-              />
-              {attentionItems.slice(0, 2).map((item) => (
-                <AttentionCard key={item.id} item={item} />
-              ))}
-            </View>
-          ) : null}
-
-          <CentFlowScoreCard
-            score={score}
-            levelLabel={levelProgress.level.label}
-            nextLevelLabel={levelProgress.nextLevel?.label ?? null}
-            progressPercent={levelProgress.progressPercent}
-            onPress={() => setScoreSheetVisible(true)}
-          />
-
-          <DashboardFinancialSnapshot trends={analysisData?.trends ?? null} />
-
-          {showInsight && homeInsight ? (
-            <HomePersonalizedInsightCard insight={homeInsight} />
-          ) : null}
-
-          {showGoalHighlight && featuredGoal ? (
-            <HomeGoalHighlightCard goal={featuredGoal} />
-          ) : null}
-
-          <SectionHeader
-            title="Últimos movimentos"
-            subtitle="Actividade recente"
-            actionLabel={recentTransactions.length > 0 ? 'Ver todos' : undefined}
-            onAction={
-              recentTransactions.length > 0
-                ? () => router.push('/(tabs)/movimentos')
-                : undefined
-            }
-          />
-
-          {recentTransactions.length > 0 ? (
-            recentTransactions.map((transaction) => (
-              <TransactionListItem key={transaction.id} transaction={transaction} />
-            ))
-          ) : (
-            <EmptyState
-              compact
-              icon={
-                <SymbolView
-                  name={{
-                    ios: 'list.bullet.rectangle',
-                    android: 'receipt_long',
-                    web: 'receipt_long',
-                  }}
-                  tintColor={colors.primary}
-                  size={28}
-                />
-              }
-              title="Sem movimentos recentes"
-              description={noTransactionsMessage}
-              actionLabel="Adicionar movimento"
-              onAction={openAddMovement}
-              secondaryActionLabel="Digitalizar talão"
-              onSecondaryAction={openReceiptScanner}
-            />
-          )}
-
-          <View style={styles.section}>
-            <SectionHeader title="O que devo fazer?" subtitle="Sugestões para ti" />
-            {suggestions.length > 0 ? (
-              suggestions.map((suggestion) => (
-                <SuggestionCard key={suggestion.id} suggestion={suggestion} />
-              ))
-            ) : (
-              fallbackSuggestions.map((suggestion) => (
-                <SuggestionCard
-                  key={suggestion.id}
-                  suggestion={{
-                    id: suggestion.id,
-                    title: suggestion.title,
-                    description: suggestion.description,
-                    type: suggestion.type,
-                    actionLabel: suggestion.actionLabel,
-                  }}
-                />
-              ))
-            )}
-          </View>
-
           <HomeQuickActions
-            onAddMovement={() => setActionCenterVisible(true)}
+            onAddMovement={openAddMovement}
             onViewMovements={() => router.push('/(tabs)/movimentos')}
-            onNewGoal={
-              !hasGoalRecommendation
-                ? () => router.push('/(tabs)/ativos?action=new-goal')
-                : undefined
-            }
-            recommendedActions={recommendedActions}
+            onNewGoal={() => router.push('/(tabs)/ativos?action=new-goal')}
+            recommendedActions={[
+              {
+                key: 'asset',
+                label: 'Novo ativo',
+                onPress: () => router.push('/(tabs)/ativos?action=new-asset'),
+              },
+            ]}
           />
 
           <RefetchingIndicator visible={isRefetching} />
@@ -389,25 +227,13 @@ export default function InicioScreen() {
         visible={quickAddVisible}
         onClose={() => setQuickAddVisible(false)}
         onSelect={handleQuickAdd}
+        allowedActions={homeQuickAddActions}
       />
 
       <ActionCenterSheet
         visible={actionCenterVisible}
         onClose={() => setActionCenterVisible(false)}
         onSelect={handleAssistantAction}
-      />
-
-      <CentFlowScoreSheet
-        visible={scoreSheetVisible}
-        score={score}
-        levelLabel={levelProgress.level.label}
-        onClose={() => setScoreSheetVisible(false)}
-      />
-
-      <HomeAttentionSheet
-        visible={attentionSheetVisible}
-        onClose={() => setAttentionSheetVisible(false)}
-        items={attentionItems}
       />
     </View>
   );

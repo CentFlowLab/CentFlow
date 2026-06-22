@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
+import { OCR_READ_FAILURE_MESSAGE } from '@/lib/receipt/ocr-messages';
 import { colors, spacing } from '@/lib/theme';
 
 type OcrFailureCardProps = {
@@ -10,7 +11,7 @@ type OcrFailureCardProps = {
 };
 
 export function OcrFailureCard({
-  message = 'O OCR não conseguiu ler dados úteis nesta imagem.',
+  message = OCR_READ_FAILURE_MESSAGE,
   showOriginalNote = true,
 }: OcrFailureCardProps) {
   return (
@@ -26,7 +27,7 @@ export function OcrFailureCard({
           size={22}
         />
         <View style={styles.text}>
-          <Text variant="bodyMedium">Leitura automática indisponível</Text>
+          <Text variant="bodyMedium">{OCR_READ_FAILURE_MESSAGE}</Text>
           <Text variant="caption" color="textMuted">
             {message}
           </Text>

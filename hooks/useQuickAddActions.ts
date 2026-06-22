@@ -8,6 +8,9 @@ type QuickAddHandlers = {
   onSubscription?: () => void;
   onProduct?: () => void;
   onGoal?: () => void;
+  onCredit?: () => void;
+  onAsset?: () => void;
+  onWarranty?: () => void;
 };
 
 export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
@@ -29,12 +32,11 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
           router.push('/(tabs)/movimentos?view=subscricoes&action=new-subscription');
         }
         break;
-      case 'product':
-        if (handlers.onProduct) {
-          handlers.onProduct();
+      case 'credit':
+        if (handlers.onCredit) {
+          handlers.onCredit();
         } else {
-          router.push('/(tabs)/precos');
-          showToast('Regista movimentos para monitorizar preços.', 'info');
+          router.push('/(tabs)/precos?action=new-credit');
         }
         break;
       case 'goal':
@@ -42,6 +44,28 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
           handlers.onGoal();
         } else {
           router.push('/(tabs)/ativos?action=new-goal');
+        }
+        break;
+      case 'asset':
+        if (handlers.onAsset) {
+          handlers.onAsset();
+        } else {
+          router.push('/(tabs)/ativos?action=new-asset');
+        }
+        break;
+      case 'warranty':
+        if (handlers.onWarranty) {
+          handlers.onWarranty();
+        } else {
+          router.push('/(tabs)/ativos?action=new-warranty');
+        }
+        break;
+      case 'product':
+        if (handlers.onProduct) {
+          handlers.onProduct();
+        } else {
+          router.push('/(tabs)/precos');
+          showToast('Regista movimentos para monitorizar preços.', 'info');
         }
         break;
     }

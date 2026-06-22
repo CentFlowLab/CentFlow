@@ -24,6 +24,7 @@ import {
 } from '@/hooks/queries/useAssets';
 import { useQuickAddActions } from '@/hooks/useQuickAddActions';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { getAssetsQuickAddActions } from '@/lib/layout/contextual-add';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
 import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
@@ -146,7 +147,19 @@ export default function AtivosScreen() {
 
   const handleQuickAdd = useQuickAddActions({
     onGoal: openCreateGoal,
+    onAsset: openCreateInventory,
+    onWarranty: openCreateWarranty,
   });
+
+  const assetsQuickAddActions = getAssetsQuickAddActions(activeTab);
+
+  function handleHeaderAddPress() {
+    if (assetsQuickAddActions.length === 1) {
+      handleQuickAdd(assetsQuickAddActions[0]);
+      return;
+    }
+    setQuickAddVisible(true);
+  }
 
   return (
     <View style={styles.screen}>
@@ -159,7 +172,7 @@ export default function AtivosScreen() {
               size={26}
             />
           ),
-          onPress: () => setQuickAddVisible(true),
+          onPress: handleHeaderAddPress,
           accessibilityLabel: 'Adicionar',
         }}
       />
@@ -259,6 +272,7 @@ export default function AtivosScreen() {
         visible={quickAddVisible}
         onClose={() => setQuickAddVisible(false)}
         onSelect={handleQuickAdd}
+        allowedActions={assetsQuickAddActions}
       />
     </View>
   );

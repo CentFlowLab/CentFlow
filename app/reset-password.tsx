@@ -21,9 +21,15 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [recoveryUser, setRecoveryUser] = useState<{ email?: string; name?: string } | null>(
+    null,
+  );
   const handledRef = useRef(false);
 
-  const passwordValidation = useMemo(() => validatePassword(password), [password]);
+  const passwordValidation = useMemo(
+    () => validatePassword(password, recoveryUser ?? undefined),
+    [password, recoveryUser],
+  );
   const canSubmit = passwordValidation.valid && password === confirmPassword && sessionReady;
 
   useEffect(() => {
@@ -45,7 +51,9 @@ export default function ResetPasswordScreen() {
 
       try {
         await authService.completePasswordRecoveryFromUrl(url);
+        const user = await authService.getCurrentUser();
         if (mounted) {
+          setRecoveryUser({ email: user?.email, name: user?.name });
           setSessionReady(true);
           setApiError(null);
         }
@@ -89,6 +97,13 @@ export default function ResetPasswordScreen() {
     }
 
     setErrors({});
+
+    const policy = validatePassword(result.data.password, recoveryUser ?? undefined);
+    if (!policy.valid) {
+      setErrors({ password: policy.errors[0] ?? PASSWORD_POLICY_HINT });
+      return;
+    }
+
     setLoading(true);
 
     try {

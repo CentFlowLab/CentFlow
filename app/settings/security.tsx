@@ -13,6 +13,7 @@ import { useActiveSessions } from '@/hooks/queries/useActiveSessions';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { authService, useAuth } from '@/lib/auth';
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
+import { signOutAllDevices } from '@/lib/api/services/profile.service';
 import {
   getBiometricSupport,
   logSecurityError,
@@ -29,6 +30,7 @@ export default function SecurityScreen() {
   const { showToast } = useToast();
   const [resetLoading, setResetLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [loggingOutAll, setLoggingOutAll] = useState(false);
 
   async function handleToggleBiometrics(value: boolean) {
     if (value) {
@@ -98,6 +100,34 @@ export default function SecurityScreen() {
     }
   }
 
+  function handleSignOutAllDevices() {
+    Alert.alert(
+      'Terminar sessão em todos os dispositivos',
+      'Isto encerra a tua conta em todos os telemóveis e browsers. Terás de iniciar sessão novamente.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Terminar todas',
+          style: 'destructive',
+          onPress: () => {
+            setLoggingOutAll(true);
+            void signOutAllDevices()
+              .then(() => signOut())
+              .then(() => {
+                logSecurityEvent('global_sign_out');
+                showToast('Sessão terminada em todos os dispositivos.', 'success');
+              })
+              .catch((error) => {
+                logSecurityError('global_sign_out_failed', error);
+                showToast('Não foi possível terminar todas as sessões.', 'error');
+              })
+              .finally(() => setLoggingOutAll(false));
+          },
+        },
+      ],
+    );
+  }
+
   if (prefsLoading && !preferences) {
     return (
       <SettingsScreenLayout title="Segurança" subtitle="Protege a tua conta e dados">
@@ -135,7 +165,7 @@ export default function SecurityScreen() {
       <View style={styles.section}>
         <Card variant="outlined" style={styles.card}>
           <SettingsToggleRow
-            label="Desbloqueio biométrico"
+            label="Proteger aplicação"
             description="Face ID ou impressão digital ao abrir a app"
             value={preferences?.biometricsEnabled ?? false}
             onValueChange={handleToggleBiometrics}
@@ -166,6 +196,13 @@ export default function SecurityScreen() {
                   Actual
                 </Text>
               </View>
+              <Button
+                label={loggingOutAll ? 'A terminar...' : 'Terminar sessão em todos os dispositivos'}
+                variant="secondary"
+                onPress={handleSignOutAllDevices}
+                loading={loggingOutAll}
+                disabled={isMockAuthEnabled() || loggingOutAll}
+              />
             </>
           )}
         </Card>

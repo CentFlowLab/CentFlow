@@ -14,6 +14,7 @@ export type AppLogEntry = {
 };
 
 import { withDiagnosticContext, getDiagnosticRuntimeContext } from './runtime-context';
+import { sanitizeLogContext, sanitizeLogMessage } from '@/lib/security/log-sanitize';
 
 const MAX_ENTRIES = 250;
 const listeners = new Set<(entries: AppLogEntry[]) => void>();
@@ -51,14 +52,16 @@ function severityForLevel(level: AppLogLevel, context?: Record<string, unknown>)
 }
 
 function pushEntry(entry: Omit<AppLogEntry, 'id' | 'timestamp' | 'severity'> & { timestamp?: string; severity?: AppLogSeverity }) {
-  const mergedContext = entry.context ? withDiagnosticContext(entry.context) : withDiagnosticContext();
+  const mergedContext = entry.context
+    ? withDiagnosticContext(sanitizeLogContext(entry.context) ?? {})
+    : withDiagnosticContext();
   const next: AppLogEntry = {
     id: `${Date.now()}-${++seq}`,
     timestamp: entry.timestamp ?? new Date().toISOString(),
     level: entry.level,
     severity: entry.severity ?? severityForLevel(entry.level, mergedContext),
     source: entry.source,
-    message: entry.message,
+    message: sanitizeLogMessage(entry.message),
     stack: entry.stack,
     context: mergedContext,
   };
@@ -115,7 +118,7 @@ function captureConsoleStack(): string | undefined {
 }
 
 export function logFromConsole(level: AppLogLevel, args: unknown[], source = 'console') {
-  const message = args.map(formatArg).join(' ');
+  const message = sanitizeLogMessage(args.map(formatArg).join(' '));
   const stack = level === 'warn' || level === 'error' ? captureConsoleStack() : undefined;
   return pushEntry({ level, source, message, stack });
 }

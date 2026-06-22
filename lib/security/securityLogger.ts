@@ -1,18 +1,8 @@
 import { logAppError, logAppEvent } from '@/lib/diagnostics';
-
-const SENSITIVE_PATTERN =
-  /password|token|secret|authorization|bearer|otp|magic|iban|account|refresh_token|access_token/i;
+import { sanitizeLogContext } from '@/lib/security/log-sanitize';
 
 function sanitizeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
-  if (!context) return undefined;
-
-  const safe: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(context)) {
-    if (SENSITIVE_PATTERN.test(key)) continue;
-    if (typeof value === 'string' && SENSITIVE_PATTERN.test(value)) continue;
-    safe[key] = value;
-  }
-  return safe;
+  return sanitizeLogContext(context);
 }
 
 export function logSecurityEvent(

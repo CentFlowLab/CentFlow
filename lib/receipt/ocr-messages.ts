@@ -1,9 +1,21 @@
+/** Mensagem principal quando o OCR não consegue extrair dados. */
+export const OCR_READ_FAILURE_MESSAGE = 'Não conseguimos ler este talão.';
+
 /** Mensagem padrão quando o OCR não extrai dados utilizáveis. */
 export const DEFAULT_OCR_UNAVAILABLE_MESSAGE =
-  'Não foi possível ler o talão automaticamente. Verifica a imagem (bem iluminada e focada) e preenche os campos manualmente.';
+  `${OCR_READ_FAILURE_MESSAGE} Verifica a imagem (bem iluminada e focada) e preenche os campos manualmente.`;
 
 export function resolveOcrUserMessage(reason?: string): string {
   if (!reason?.trim()) return DEFAULT_OCR_UNAVAILABLE_MESSAGE;
-  if (reason.includes('Preenche manualmente')) return reason;
-  return `${reason} Preenche os campos manualmente.`;
+
+  const lower = reason.toLowerCase();
+  if (
+    lower.includes('não conseguimos ler') ||
+    lower.includes('preenche manualmente') ||
+    lower.includes('preenche os campos')
+  ) {
+    return reason;
+  }
+
+  return `${OCR_READ_FAILURE_MESSAGE} Preenche os campos manualmente.`;
 }
