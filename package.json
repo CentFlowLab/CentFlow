@@ -75,7 +75,9 @@
     "eas:build:production:android": "node scripts/eas-run.cjs build --profile production --platform android",
     "eas:update:preview": "node scripts/eas-run.cjs update --channel preview --environment preview --message",
     "eas:update:production": "node scripts/eas-run.cjs update --channel production --environment production --message",
-    "eas:update:list": "node scripts/eas-run.cjs update:list"
+    "eas:update:list": "node scripts/eas-run.cjs update:list",
+    "email:setup": "node scripts/setup-resend-email.mjs",
+    "email:deploy": "npx supabase functions deploy send-email email-jobs"
   },
   "private": true
 }

@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 import { dispatchLifecycleEmail } from '../_shared/email/dispatch.ts';
+import { getEmailProviderStatus } from '../_shared/email/status.ts';
 import type { EmailUserContext, LifecycleEmailType } from '../_shared/email/types.ts';
 
 const corsHeaders = {
@@ -67,9 +68,25 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const authHeader = req.headers.get('Authorization') ?? '';
+
+  if (req.method === 'GET') {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: userData } = await userClient.auth.getUser();
+    if (!userData.user) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+
+    return json(getEmailProviderStatus());
+  }
+
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const cronSecret = Deno.env.get('EMAIL_CRON_SECRET');
-  const authHeader = req.headers.get('Authorization') ?? '';
   const cronHeader = req.headers.get('x-cron-secret') ?? '';
 
   const isService = serviceKey && authHeader === `Bearer ${serviceKey}`;

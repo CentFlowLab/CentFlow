@@ -23,8 +23,11 @@ import {
 import {
   EMAIL_STATUS_LABELS,
   EMAIL_TYPE_LABELS,
+  describeEmailProviderStatus,
+  fetchEmailProviderStatus,
   invokeTestEmail,
   isEmailDevToolsEnabled,
+  type EmailProviderStatus,
   type LifecycleEmailType,
 } from '@/lib/email';
 import { useEmailEvents } from '@/hooks/queries/useEmailEvents';
@@ -47,6 +50,7 @@ export default function DiagnosticsSettingsScreen() {
   const [financialOnly, setFinancialOnly] = useState(true);
   const [emailLoading, setEmailLoading] = useState<LifecycleEmailType | null>(null);
   const [emailPreviewMode, setEmailPreviewMode] = useState(true);
+  const [emailProviderStatus, setEmailProviderStatus] = useState<EmailProviderStatus | null>(null);
   const { data: emailEvents, refetch: refetchEmailEvents } = useEmailEvents();
 
   const visibleEntries = financialOnly
@@ -87,6 +91,11 @@ export default function DiagnosticsSettingsScreen() {
     }
     return subscribeAppLog(setEntries);
   }, []);
+
+  useEffect(() => {
+    if (!isEmailDevToolsEnabled()) return;
+    void fetchEmailProviderStatus().then(setEmailProviderStatus);
+  }, [emailLoading]);
 
   async function handleShare() {
     try {
@@ -144,6 +153,12 @@ export default function DiagnosticsSettingsScreen() {
           {isEmailDevToolsEnabled() ? (
             <View style={styles.emailSection}>
               <Text variant="label" color="textMuted">
+                Resend / lifecycle
+              </Text>
+              <Text variant="caption" color={emailProviderStatus?.resendConfigured ? 'primary' : 'warning'}>
+                {describeEmailProviderStatus(emailProviderStatus)}
+              </Text>
+              <Text variant="label" color="textMuted" style={styles.emailHistoryTitle}>
                 Testar emails lifecycle
               </Text>
               <Button

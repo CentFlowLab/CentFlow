@@ -53,7 +53,9 @@ Exemplos:
 
 ## Configuração (produção)
 
-### Secrets Supabase
+Ver guia completo: **[docs/resend-setup.md](./resend-setup.md)** — `npm run email:setup` após colocar `RESEND_API_KEY` em `supabase/secrets.env`.
+
+### Secrets Supabase (alternativa manual)
 
 ```bash
 supabase secrets set RESEND_API_KEY=re_...

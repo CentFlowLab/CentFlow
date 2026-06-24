@@ -13,6 +13,13 @@ export type LifecycleEmailType =
 
 export type EmailEventStatus = 'sent' | 'failed' | 'skipped' | 'preview';
 
+export type EmailProviderStatus = {
+  resendConfigured: boolean;
+  cronConfigured: boolean;
+  emailFromDomain: string;
+  sandboxMode: boolean;
+};
+
 export type EmailPreferences = {
   emailImportant: boolean;
   emailWeeklyDigest: boolean;

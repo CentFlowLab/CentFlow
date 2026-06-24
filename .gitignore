@@ -37,6 +37,8 @@ yarn-error.*
 # Supabase CLI (local cache — não commitar)
 supabase/.temp/
 supabase/.branches/
+supabase/secrets.env
+supabase/.secrets.deploy.env
 
 # typescript
 *.tsbuildinfo

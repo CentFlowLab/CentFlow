@@ -43,3 +43,10 @@ export type SendEmailResult = {
   providerMessageId?: string;
   error?: string;
 };
+
+export type EmailProviderStatus = {
+  resendConfigured: boolean;
+  cronConfigured: boolean;
+  emailFromDomain: string;
+  sandboxMode: boolean;
+};

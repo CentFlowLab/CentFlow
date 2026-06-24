@@ -51,6 +51,7 @@
   ],
   "pending": [
     "Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)",
+    "Colocar RESEND_API_KEY em supabase/secrets.env e correr npm run email:setup",
     "Etapa 2 — Melhorar UI do ecrã ConfirmReceiptModal",
     "Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)",
     "Google OAuth (expo-auth-session — preparado)",

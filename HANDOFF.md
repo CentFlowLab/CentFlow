@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-24T22:47:05.700Z -->
-<!-- Git: 6f4cd36 (2026-06-24T23:28:00+01:00) -->
+<!-- Última geração: 2026-06-24T23:11:27.465Z -->
+<!-- Git: 812dbe8 (2026-06-24T23:48:00+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 5 — Movimentos (OCR melhorado → UI confirmação)** |
-| Última geração | 2026-06-24T22:47:05.700Z |
+| Última geração | 2026-06-24T23:11:27.465Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `6f4cd36` (2026-06-24T23:28:00+01:00) |
+| Git commit | `812dbe8` (2026-06-24T23:48:00+01:00) |
 
 ---
 
@@ -481,6 +481,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     dev-tools.ts
     events.service.ts
     index.ts
+    provider-status.ts
     trigger.ts
     types.ts
   export/
@@ -660,6 +661,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ### 🔲 Pendente
 - Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)
+- Colocar RESEND_API_KEY em supabase/secrets.env e correr npm run email:setup
 - Etapa 2 — Melhorar UI do ecrã ConfirmReceiptModal
 - Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)
 - Google OAuth (expo-auth-session — preparado)
