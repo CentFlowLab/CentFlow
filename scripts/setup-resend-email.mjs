@@ -28,16 +28,49 @@ function fail(msg) {
   process.exit(1);
 }
 
-function runSupabase(args, { allowFail = false } = {}) {
+function runSupabase(args, { allowFail = false, capture = false } = {}) {
   const result = spawnSync('npx', ['supabase', ...args], {
     cwd: ROOT,
-    stdio: 'inherit',
+    stdio: capture ? 'pipe' : 'inherit',
     shell: process.platform === 'win32',
+    encoding: capture ? 'utf8' : undefined,
   });
   if (result.status !== 0 && !allowFail) {
     fail(`supabase ${args.join(' ')} falhou (código ${result.status ?? 'unknown'}).`);
   }
+  return result;
+}
+
+function isSupabaseAuthenticated() {
+  if (process.env.SUPABASE_ACCESS_TOKEN?.trim()) {
+    return true;
+  }
+  const result = runSupabase(['projects', 'list', '-o', 'json'], {
+    allowFail: true,
+    capture: true,
+  });
   return result.status === 0;
+}
+
+function ensureSupabaseAuth() {
+  if (isSupabaseAuthenticated()) {
+    return;
+  }
+
+  fail(
+    'Supabase CLI não autenticado.\n\n' +
+      '  Opção A (recomendada) — login interactivo:\n' +
+      '    npx supabase login\n' +
+      '    npm run email:setup\n\n' +
+      '  Opção B — access token (sem browser):\n' +
+      '    1. https://supabase.com/dashboard/account/tokens → Generate new token\n' +
+      '    2. PowerShell:\n' +
+      '       $env:SUPABASE_ACCESS_TOKEN="sbp_..."\n' +
+      '       npm run email:setup\n\n' +
+      '  Opção C — manual no Dashboard:\n' +
+      '    https://supabase.com/dashboard/project/oxhjfwmhcwadlltinlck/settings/functions\n' +
+      '    Adiciona RESEND_API_KEY, EMAIL_FROM, EMAIL_CRON_SECRET (valores em supabase/secrets.env)',
+  );
 }
 
 function parseEnvFile(content) {
@@ -154,6 +187,8 @@ function main() {
 
   const deployEnv = buildDeployEnv(refreshed, emailFrom);
   const deployFile = writeDeployEnvFile(deployEnv);
+
+  ensureSupabaseAuth();
 
   log('\n→ A ligar projecto Supabase...');
   runSupabase(['link', '--project-ref', PROJECT_REF], { allowFail: true });
