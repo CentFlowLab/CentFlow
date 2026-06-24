@@ -128,6 +128,15 @@ export function sanitizeOcrResult(raw: ReceiptOcrResult | null): ReceiptOcrResul
   return hasSignal ? result : null;
 }
 
+/** Sanitização segura — nunca propaga excepções do parser. */
+export function safeSanitizeOcrResult(raw: ReceiptOcrResult | null): ReceiptOcrResult | null {
+  try {
+    return sanitizeOcrResult(raw);
+  } catch {
+    return null;
+  }
+}
+
 /** Score de qualidade — usado para decidir fallback on-device */
 export function ocrQualityScore(result: ReceiptOcrResult | null): number {
   if (!result) return 0;

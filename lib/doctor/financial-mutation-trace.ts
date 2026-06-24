@@ -1,4 +1,4 @@
-import { logAppError, logAppEvent } from '@/lib/diagnostics';
+import { logAppError, logAppEvent } from '@/lib/diagnostics/app-log';
 import type { AppLogSeverity } from '@/lib/diagnostics/app-log';
 import { setDiagnosticAction } from '@/lib/diagnostics/runtime-context';
 
@@ -38,24 +38,50 @@ function resolveSource(action: string): string {
   return action.startsWith('ocr') ? OCR_FLOW_SOURCE : FINANCIAL_MUTATION_SOURCE;
 }
 
+/** Doctor tracing must never crash user flows. */
+function safeDiagnosticCall(fn: () => void): void {
+  try {
+    fn();
+  } catch {
+    // ignore — tracing is best-effort only
+  }
+}
+
+function sanitizeOcrTraceContext(
+  context: Record<string, unknown>,
+): Record<string, unknown> {
+  const safe: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(context)) {
+    if (/token|password|secret|authorization|base64|image/i.test(key)) continue;
+    if (typeof value === 'string' && value.length > 200) {
+      safe[key] = `${value.slice(0, 200)}…`;
+      continue;
+    }
+    safe[key] = value;
+  }
+  return safe;
+}
+
 /** Passo estruturado em mutações financeiras — visível no Doctor. */
 export function traceFinancialMutationStep(
   message: string,
   context: FinancialTraceContext,
   level: 'info' | 'warn' | 'error' = 'info',
 ): void {
-  setDiagnosticAction(context.action);
+  safeDiagnosticCall(() => {
+    setDiagnosticAction(context.action);
 
-  const merged = {
-    ...context,
-    severity: context.severity ?? (level === 'warn' ? 'medium' : 'low'),
-  };
+    const merged = sanitizeOcrTraceContext({
+      ...context,
+      severity: context.severity ?? (level === 'warn' ? 'medium' : 'low'),
+    });
 
-  if (level === 'error') {
-    logAppError(resolveSource(context.action), new Error(message), merged);
-  } else {
-    logAppEvent(level, resolveSource(context.action), message, merged);
-  }
+    if (level === 'error') {
+      logAppError(resolveSource(context.action), new Error(message), merged);
+    } else {
+      logAppEvent(level, resolveSource(context.action), message, merged);
+    }
+  });
 }
 
 /** Erro em mutação financeira — stack + contexto no Doctor. */
@@ -63,23 +89,30 @@ export function traceFinancialMutationError(
   error: unknown,
   context: FinancialTraceContext,
 ): void {
-  setDiagnosticAction(context.action);
-  logAppError(
-    resolveSource(context.action),
-    error instanceof Error ? error : new Error(String(error)),
-    {
-      ...context,
-      severity: context.severity ?? 'high',
-    },
-  );
+  safeDiagnosticCall(() => {
+    setDiagnosticAction(context.action);
+    logAppError(
+      resolveSource(context.action),
+      error instanceof Error ? error : new Error(String(error)),
+      sanitizeOcrTraceContext({
+        ...context,
+        severity: context.severity ?? 'high',
+        errorName: error instanceof Error ? error.name : 'unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  });
 }
 
 export type OcrFlowStep =
   | 'image_selected'
+  | 'ocr_start'
   | 'upload_start'
   | 'upload_success'
+  | 'parse_start'
   | 'parse_success'
-  | 'parse_failed';
+  | 'parse_failed'
+  | 'ocr_error';
 
 /** Passo estruturado no fluxo OCR — visível no Doctor. */
 export function traceOcrStep(
@@ -106,12 +139,19 @@ export function traceOcrFailure(
   reason: string,
   context: Omit<FinancialTraceContext, 'action'> & { action?: FinancialMutationAction },
 ): void {
-  setDiagnosticAction(context.action ?? 'ocr_process');
-  logAppEvent('warn', OCR_FLOW_SOURCE, reason, {
-    screen: context.screen ?? 'movement_create',
-    action: context.action ?? 'ocr_process',
-    severity: context.severity ?? 'medium',
-    component: context.component ?? 'receipt.service',
-    ...context,
+  safeDiagnosticCall(() => {
+    setDiagnosticAction(context.action ?? 'ocr_process');
+    logAppEvent(
+      'warn',
+      OCR_FLOW_SOURCE,
+      reason,
+      sanitizeOcrTraceContext({
+        screen: context.screen ?? 'movement_create',
+        action: context.action ?? 'ocr_process',
+        severity: context.severity ?? 'medium',
+        component: context.component ?? 'receipt.service',
+        ...context,
+      }),
+    );
   });
 }

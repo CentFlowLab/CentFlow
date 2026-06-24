@@ -6,7 +6,7 @@ import {
   type ProcessReceiptPhase,
 } from '@/lib/api/services/receipt.service';
 import { logDoctorMutationFailure, traceOcrFailure } from '@/lib/doctor';
-import { DEFAULT_OCR_UNAVAILABLE_MESSAGE } from '@/lib/receipt/ocr-messages';
+import { DEFAULT_OCR_FAILED_MESSAGE } from '@/lib/receipt/ocr-messages';
 import type { ProcessedReceipt, ReceiptDraft } from '@/lib/domain/receipt.types';
 
 const PHASE_LABELS: Record<ProcessReceiptPhase, string> = {
@@ -23,25 +23,56 @@ export function useProcessReceipt() {
   const [phase, setPhase] = useState<ProcessReceiptPhase | null>(null);
 
   const mutation = useMutation({
-    mutationFn: (draft: ReceiptDraft) =>
-      processReceiptFlow(draft, { onPhase: setPhase }),
+    mutationFn: async (draft: ReceiptDraft) => {
+      try {
+        return await processReceiptFlow(draft, { onPhase: setPhase });
+      } catch (error) {
+        try {
+          logDoctorMutationFailure(error, {
+            action: 'ocr_process',
+            screen: 'movement_create',
+            severity: 'high',
+            payload: {
+              hasImage: true,
+              imageUriPresent: Boolean(draft.localUri),
+              source: 'processReceiptFlow',
+            },
+          });
+        } catch {
+          // Doctor must never crash OCR
+        }
+        throw error;
+      }
+    },
     onSuccess: (data) => {
       if (!data.ocrResult) {
-        traceOcrFailure(data.ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, {
-          screen: 'movement_create',
-          action: 'ocr_process',
-          component: 'useProcessReceipt',
-          receiptId: data.receiptId,
-        });
+        try {
+          traceOcrFailure(data.ocrUnavailableReason ?? DEFAULT_OCR_FAILED_MESSAGE, {
+            screen: 'movement_create',
+            action: 'ocr_process',
+            component: 'useProcessReceipt',
+            receiptId: data.receiptId || undefined,
+          });
+        } catch {
+          // ignore
+        }
       }
     },
     onError: (error, draft) => {
-      logDoctorMutationFailure(error, {
-        action: 'ocr_process',
-        screen: 'movement_create',
-        severity: 'high',
-        payload: { localUri: draft.localUri?.slice(-32) },
-      });
+      try {
+        logDoctorMutationFailure(error, {
+          action: 'ocr_process',
+          screen: 'movement_create',
+          severity: 'high',
+          payload: {
+            hasImage: true,
+            imageUriPresent: Boolean(draft.localUri),
+            source: 'useProcessReceipt',
+          },
+        });
+      } catch {
+        // ignore
+      }
     },
     onSettled: () => setPhase(null),
   });

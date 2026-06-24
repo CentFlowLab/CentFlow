@@ -1,21 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { DEFAULT_OCR_UNAVAILABLE_MESSAGE, resolveOcrUserMessage } from '@/lib/receipt/ocr-messages';
+import { DEFAULT_OCR_FAILED_MESSAGE, DEFAULT_OCR_UNAVAILABLE_MESSAGE, resolveOcrUserMessage } from '@/lib/receipt/ocr-messages';
 import {
   getContextualQuickAddActions,
   getQuickAddContextLabel,
 } from '@/lib/navigation/quick-add-context';
 
 test('OCR failure message is user-friendly, not technical', () => {
-  assert.match(DEFAULT_OCR_UNAVAILABLE_MESSAGE, /Não conseguimos ler este talão/);
-  assert.doesNotMatch(DEFAULT_OCR_UNAVAILABLE_MESSAGE, /indisponível|stack|error/i);
+  assert.match(DEFAULT_OCR_FAILED_MESSAGE, /Não conseguimos ler este talão/);
+  assert.match(DEFAULT_OCR_FAILED_MESSAGE, /preencher os dados manualmente/);
+  assert.doesNotMatch(DEFAULT_OCR_FAILED_MESSAGE, /indisponível|stack|error/i);
+  assert.equal(DEFAULT_OCR_UNAVAILABLE_MESSAGE, DEFAULT_OCR_FAILED_MESSAGE);
 });
 
 test('resolveOcrUserMessage sanitizes technical errors', () => {
   assert.equal(
     resolveOcrUserMessage('OCR indisponível nesta versão'),
-    DEFAULT_OCR_UNAVAILABLE_MESSAGE,
+    DEFAULT_OCR_FAILED_MESSAGE,
   );
 });
 

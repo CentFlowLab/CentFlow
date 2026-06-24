@@ -21,12 +21,13 @@ import { getClientOcrUnavailableMessage, runClientOcr } from '@/lib/receipt/clie
 import {
   isAcceptableOcrResult,
   ocrQualityScore,
+  safeSanitizeOcrResult,
   sanitizeOcrResult,
 } from '@/lib/receipt/ocr-sanitize';
 import { resolveReceiptOcr } from '@/lib/receipt/resolve-receipt-ocr';
 import { RECEIPT_PREPROCESS_VERSION } from '@/lib/receipt/receipt-image-preprocess';
 import { traceFinancialMutationError, traceOcrFailure, traceOcrStep } from '@/lib/doctor/financial-mutation-trace';
-import { DEFAULT_OCR_UNAVAILABLE_MESSAGE } from '@/lib/receipt/ocr-messages';
+import { DEFAULT_OCR_FAILED_MESSAGE } from '@/lib/receipt/ocr-messages';
 import type { RawReceiptOcrPayload, RawReceiptResponse } from '@/lib/types/receipt.api';
 import { toIsoDateString } from '@/lib/utils/format';
 
@@ -138,6 +139,138 @@ function createMockOcrResult(): ReceiptOcrResult {
   return sanitizeOcrResult({ ...raw, source: 'demo' }) ?? { ...raw, source: 'demo' };
 }
 
+function buildProcessedReceipt(
+  upload: ReceiptUpload,
+  draft: ReceiptDraft,
+  ocrResult: ReceiptOcrResult | null,
+  ocrUnavailableReason?: string,
+): ProcessedReceipt {
+  return {
+    receiptId: upload.id,
+    receiptUrl: upload.url,
+    receiptImage: upload.localUri ?? draft.originalLocalUri ?? draft.localUri,
+    ocrResult,
+    ocrUnavailableReason,
+    draft,
+  };
+}
+
+async function runOcrPhase(
+  upload: ReceiptUpload,
+  draft: ReceiptDraft,
+): Promise<{ ocrResult: ReceiptOcrResult | null; ocrUnavailableReason?: string }> {
+  traceOcrStep('ocr_start', {
+    screen: 'movement_create',
+    component: 'receipt.service',
+    receiptId: upload.id,
+  });
+  traceOcrStep('parse_start', {
+    screen: 'movement_create',
+    component: 'receipt.service',
+    receiptId: upload.id,
+  });
+
+  try {
+    if (isMockOcrDemoEnabled()) {
+      await delay(700);
+      return { ocrResult: createMockOcrResult() };
+    }
+
+    if (isMockAuthEnabled()) {
+      const client = await runClientOcr(draft);
+      const ocrResult = client.result ? safeSanitizeOcrResult(client.result) : null;
+      if (!ocrResult) {
+        const reason =
+          getClientOcrUnavailableMessage(client.unavailableReason) ?? DEFAULT_OCR_FAILED_MESSAGE;
+        traceOcrFailure(reason, {
+          screen: 'movement_create',
+          action: 'ocr_process',
+          component: 'receipt.service',
+          receiptId: upload.id,
+          engine: 'device',
+        });
+        return { ocrResult: null, ocrUnavailableReason: reason };
+      }
+      return { ocrResult };
+    }
+
+    if (isSupabaseEnabled()) {
+      const resolved = await resolveReceiptOcr(upload.id, draft, upload.ocrResult);
+      if (!resolved.result) {
+        const reason = resolved.unavailableReason ?? DEFAULT_OCR_FAILED_MESSAGE;
+        traceOcrFailure(reason, {
+          screen: 'movement_create',
+          action: 'ocr_process',
+          component: 'receipt.service',
+          receiptId: upload.id,
+          engine: resolved.engine,
+        });
+        return { ocrResult: null, ocrUnavailableReason: reason };
+      }
+      return { ocrResult: resolved.result, ocrUnavailableReason: resolved.unavailableReason };
+    }
+
+    let ocrResult: ReceiptOcrResult | null = null;
+
+    try {
+      ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
+    } catch (error) {
+      ocrResult = null;
+      traceFinancialMutationError(error, {
+        screen: 'movement_create',
+        action: 'ocr_process',
+        component: 'receipt.service',
+        receiptId: upload.id,
+        severity: 'high',
+      });
+    }
+
+    if (!ocrResult) {
+      const client = await runClientOcr(draft);
+      ocrResult = client.result ? safeSanitizeOcrResult(client.result) : null;
+      if (!ocrResult) {
+        const reason =
+          getClientOcrUnavailableMessage(client.unavailableReason) ?? DEFAULT_OCR_FAILED_MESSAGE;
+        traceOcrFailure(reason, {
+          screen: 'movement_create',
+          action: 'ocr_process',
+          component: 'receipt.service',
+          receiptId: upload.id,
+          engine: 'device_fallback',
+        });
+        return { ocrResult: null, ocrUnavailableReason: reason };
+      }
+    }
+
+    return { ocrResult };
+  } catch (error) {
+    traceFinancialMutationError(error, {
+      screen: 'movement_create',
+      action: 'ocr_process',
+      component: 'receipt.service',
+      receiptId: upload.id,
+      severity: 'high',
+    });
+    traceOcrStep('ocr_error', {
+      screen: 'movement_create',
+      component: 'receipt.service',
+      receiptId: upload.id,
+      severity: 'high',
+      payload: {
+        errorName: error instanceof Error ? error.name : 'unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    });
+    traceOcrFailure(DEFAULT_OCR_FAILED_MESSAGE, {
+      screen: 'movement_create',
+      action: 'ocr_process',
+      component: 'receipt.service',
+      receiptId: upload.id,
+    });
+    return { ocrResult: null, ocrUnavailableReason: DEFAULT_OCR_FAILED_MESSAGE };
+  }
+}
+
 function isOcrStillProcessing(payload?: RawReceiptOcrPayload | null): boolean {
   if (!payload) return false;
   const status = payload.status?.toLowerCase();
@@ -156,7 +289,7 @@ async function pollOcrResult(receiptId: string): Promise<ReceiptOcrResult | null
       if (isOcrStillProcessing(result)) continue;
 
       const mapped = mapReceiptOcrResult(result);
-      if (mapped) return sanitizeOcrResult(mapped);
+      if (mapped) return safeSanitizeOcrResult(mapped);
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) return null;
       if (attempt === OCR_POLL_ATTEMPTS - 1) return null;
@@ -185,7 +318,7 @@ async function triggerOcrAttempt(
     }
 
     const mapped = mapReceiptOcrResult(triggered);
-    if (mapped) return sanitizeOcrResult(mapped);
+    if (mapped) return safeSanitizeOcrResult(mapped);
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
       return null;
@@ -204,6 +337,10 @@ export async function processReceiptFlow(
   traceOcrStep('upload_start', {
     screen: 'movement_create',
     component: 'receipt.service',
+    payload: {
+      hasImage: true,
+      imageUriPresent: Boolean(draft.localUri),
+    },
   });
 
   options?.onPhase?.('uploading_receipt');
@@ -217,67 +354,7 @@ export async function processReceiptFlow(
 
   options?.onPhase?.('processing_ocr');
 
-  let ocrResult: ReceiptOcrResult | null = null;
-  let ocrUnavailableReason: string | undefined;
-
-  if (isMockOcrDemoEnabled()) {
-    await delay(700);
-    ocrResult = createMockOcrResult();
-  } else if (isMockAuthEnabled()) {
-    const client = await runClientOcr(draft);
-    ocrResult = client.result ? sanitizeOcrResult(client.result) : null;
-    if (!ocrResult) {
-      ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
-      traceOcrFailure(ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, {
-        screen: 'movement_create',
-        action: 'ocr_process',
-        component: 'receipt.service',
-        receiptId: upload.id,
-        engine: 'device',
-      });
-    }
-  } else if (isSupabaseEnabled()) {
-    const resolved = await resolveReceiptOcr(upload.id, draft, upload.ocrResult);
-    ocrResult = resolved.result;
-    ocrUnavailableReason = resolved.unavailableReason;
-    if (!ocrResult) {
-      traceOcrFailure(ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, {
-        screen: 'movement_create',
-        action: 'ocr_process',
-        component: 'receipt.service',
-        receiptId: upload.id,
-        engine: resolved.engine,
-      });
-    }
-  } else {
-    try {
-      ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
-    } catch (error) {
-      ocrResult = null;
-      traceFinancialMutationError(error, {
-        screen: 'movement_create',
-        action: 'ocr_process',
-        component: 'receipt.service',
-        receiptId: upload.id,
-        severity: 'high',
-      });
-    }
-
-    if (!ocrResult) {
-      const client = await runClientOcr(draft);
-      ocrResult = client.result ? sanitizeOcrResult(client.result) : null;
-      if (!ocrResult) {
-        ocrUnavailableReason = getClientOcrUnavailableMessage(client.unavailableReason);
-        traceOcrFailure(ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, {
-          screen: 'movement_create',
-          action: 'ocr_process',
-          component: 'receipt.service',
-          receiptId: upload.id,
-          engine: 'device_fallback',
-        });
-      }
-    }
-  }
+  const { ocrResult, ocrUnavailableReason } = await runOcrPhase(upload, draft);
 
   if (ocrResult) {
     traceOcrStep('parse_success', {
@@ -299,14 +376,7 @@ export async function processReceiptFlow(
     });
   }
 
-  return {
-    receiptId: upload.id,
-    receiptUrl: upload.url,
-    receiptImage: upload.localUri ?? draft.originalLocalUri ?? draft.localUri,
-    ocrResult,
-    ocrUnavailableReason,
-    draft,
-  };
+  return buildProcessedReceipt(upload, draft, ocrResult, ocrUnavailableReason);
 }
 
 /** Upload sem OCR — para preenchimento manual com talão anexado. */
@@ -368,7 +438,7 @@ export async function uploadReceipt(draft: ReceiptDraft): Promise<ReceiptUpload>
     }
 
     if (upload.ocrResult) {
-      upload.ocrResult = sanitizeOcrResult(upload.ocrResult);
+      upload.ocrResult = safeSanitizeOcrResult(upload.ocrResult);
     }
 
     return upload;
@@ -387,7 +457,7 @@ export async function processReceiptOcr(
   inlineResult?: ReceiptOcrResult | null,
 ): Promise<ReceiptOcrResult | null> {
   if (inlineResult) {
-    return sanitizeOcrResult(inlineResult);
+    return safeSanitizeOcrResult(inlineResult);
   }
 
   if (isMockOcrDemoEnabled()) {
@@ -401,7 +471,7 @@ export async function processReceiptOcr(
 
   if (isSupabaseEnabled()) {
     const result = await supabaseReceipts.processReceiptOcr(receiptId, inlineResult);
-    return result ? sanitizeOcrResult(result) : null;
+    return result ? safeSanitizeOcrResult(result) : null;
   }
 
   let best: ReceiptOcrResult | null = null;

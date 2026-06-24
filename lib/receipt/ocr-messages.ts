@@ -1,6 +1,9 @@
 /** Mensagem padrão quando o OCR não extrai dados utilizáveis. */
-export const DEFAULT_OCR_UNAVAILABLE_MESSAGE =
-  'Não conseguimos ler este talão. Podes preencher os campos manualmente — o talão fica anexado.';
+export const DEFAULT_OCR_FAILED_MESSAGE =
+  'Não conseguimos ler este talão. Podes preencher os dados manualmente.';
+
+/** @deprecated Preferir DEFAULT_OCR_FAILED_MESSAGE */
+export const DEFAULT_OCR_UNAVAILABLE_MESSAGE = DEFAULT_OCR_FAILED_MESSAGE;
 
 export function resolveOcrUserMessage(reason?: string): string {
   if (!reason?.trim()) return DEFAULT_OCR_UNAVAILABLE_MESSAGE;

@@ -27,7 +27,7 @@ import {
   ReceiptUploadError,
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
-import { resolveOcrUserMessage, DEFAULT_OCR_UNAVAILABLE_MESSAGE } from '@/lib/receipt/ocr-messages';
+import { resolveOcrUserMessage, DEFAULT_OCR_FAILED_MESSAGE } from '@/lib/receipt/ocr-messages';
 import { colors, radius, spacing } from '@/lib/theme';
 import { logDoctorValidationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
 import { setDiagnosticAction } from '@/lib/diagnostics';
@@ -165,35 +165,35 @@ export function AddTransactionModal({
 
     try {
       const processed = await processReceipt.mutateAsync(receiptImage.draft);
+      const humanMessage = resolveOcrUserMessage(
+        processed.ocrUnavailableReason ?? DEFAULT_OCR_FAILED_MESSAGE,
+      );
       const withMessage = processed.ocrResult
         ? processed
         : {
             ...processed,
-            ocrUnavailableReason: resolveOcrUserMessage(
-              processed.ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE,
-            ),
+            ocrUnavailableReason: humanMessage,
           };
       setProcessedReceipt(withMessage);
       setConfirmVisible(true);
       if (!processed.ocrResult) {
-        showToast(withMessage.ocrUnavailableReason ?? DEFAULT_OCR_UNAVAILABLE_MESSAGE, 'info');
+        showToast(humanMessage, 'info');
       }
-    } catch (error) {
+    } catch {
       try {
         const processed = await uploadReceiptOnly(receiptImage.draft);
+        const humanMessage = DEFAULT_OCR_FAILED_MESSAGE;
         setProcessedReceipt({
           ...processed,
-          ocrUnavailableReason:
-            error instanceof ReceiptUploadError
-              ? `${getReceiptUploadErrorMessage(error)} Preenche manualmente.`
-              : `${getApiErrorMessage(error, 'o OCR')}. Preenche manualmente.`,
+          ocrUnavailableReason: humanMessage,
         });
         setConfirmVisible(true);
+        showToast(humanMessage, 'info');
       } catch (uploadError) {
         if (uploadError instanceof ReceiptUploadError) {
           setApiError(getReceiptUploadErrorMessage(uploadError));
         } else {
-          setApiError(getApiErrorMessage(uploadError, 'o talão'));
+          setApiError('Não foi possível enviar o talão. Tenta novamente ou preenche sem anexo.');
         }
       }
     }

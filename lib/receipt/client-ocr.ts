@@ -1,6 +1,6 @@
 import type { ReceiptDraft, ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import { getReceiptOcrUri, isPdfReceipt } from '@/lib/receipt/receipt-image-preprocess';
-import { parseReceiptFromRawText, sanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
+import { parseReceiptFromRawText, safeSanitizeOcrResult } from '@/lib/receipt/ocr-sanitize';
 
 export type ClientOcrOutcome = {
   result: ReceiptOcrResult | null;
@@ -28,7 +28,7 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
     }
 
     const parsed = parseReceiptFromRawText(rawText);
-    const result = sanitizeOcrResult({
+    const result = safeSanitizeOcrResult({
       ...parsed,
       rawText,
       confidence: rawText.length > 100 ? 0.74 : rawText.length > 40 ? 0.68 : 0.52,
