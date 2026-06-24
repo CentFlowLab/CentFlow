@@ -59,6 +59,7 @@ export async function dispatchLifecycleEmail(
       subscription_renewal: 7 * 24,
       credit_payment_due: 7 * 24,
       weekly_digest: 6 * 24,
+      tips_insight: 7 * 24,
     };
 
     const hours = dedupeHours[emailType] ?? 24;

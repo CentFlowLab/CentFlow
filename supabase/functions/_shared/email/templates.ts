@@ -110,6 +110,17 @@ export function buildEmailTemplate(
         ctaUrl: buildDeepLink('(tabs)/'),
       });
 
+    case 'tips_insight':
+      return wrap({
+        subject: 'Uma dica para as tuas finanças',
+        preheader: extras.tip ?? 'Sugestão personalizada na CentFlow.',
+        greeting,
+        body: extras.tip ??
+          'Temos uma sugestão que pode ajudar-te a organizar melhor as tuas finanças. Vê os insights na app.',
+        ctaLabel: 'Ver insights',
+        ctaUrl: buildDeepLink('analises'),
+      });
+
     default:
       return wrap({
         subject: 'CentFlow',

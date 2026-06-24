@@ -8,9 +8,12 @@ export {
 
 export {
   EMAIL_TYPE_LABELS,
+  EMAIL_STATUS_LABELS,
   type LifecycleEmailType,
   type EmailEventStatus,
   type EmailPreferences,
 } from './types';
 
-export { invokeTestEmail, isEmailDevToolsEnabled } from './dev-tools';
+export { invokeTestEmail, isEmailDevToolsEnabled, type TestEmailOptions, type TestEmailResult } from './dev-tools';
+export { fetchEmailEvents, type EmailEventRow } from './events.service';
+export { triggerLifecycleEmail, triggerWelcomeEmail } from './trigger';

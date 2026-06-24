@@ -21,11 +21,13 @@ import {
   OCR_FLOW_SOURCE,
 } from '@/lib/doctor';
 import {
+  EMAIL_STATUS_LABELS,
   EMAIL_TYPE_LABELS,
   invokeTestEmail,
   isEmailDevToolsEnabled,
   type LifecycleEmailType,
 } from '@/lib/email';
+import { useEmailEvents } from '@/hooks/queries/useEmailEvents';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const FINANCIAL_SOURCES = new Set([
@@ -44,6 +46,8 @@ export default function DiagnosticsSettingsScreen() {
   const [entries, setEntries] = useState<AppLogEntry[]>([]);
   const [financialOnly, setFinancialOnly] = useState(true);
   const [emailLoading, setEmailLoading] = useState<LifecycleEmailType | null>(null);
+  const [emailPreviewMode, setEmailPreviewMode] = useState(true);
+  const { data: emailEvents, refetch: refetchEmailEvents } = useEmailEvents();
 
   const visibleEntries = financialOnly
     ? entries.filter((e) => FINANCIAL_SOURCES.has(e.source))
@@ -56,8 +60,16 @@ export default function DiagnosticsSettingsScreen() {
   async function handleTestEmail(type: LifecycleEmailType) {
     setEmailLoading(type);
     try {
-      await invokeTestEmail(type);
-      showToast(`Email «${EMAIL_TYPE_LABELS[type]}» registado (preview/envio).`, 'success');
+      const result = await invokeTestEmail(type, { preview: emailPreviewMode });
+      await refetchEmailEvents();
+      const mode = result.preview ? 'preview' : 'envio real';
+      if (result.skipped) {
+        showToast(`Email «${EMAIL_TYPE_LABELS[type]}» ignorado (${result.reason ?? 'regra anti-spam'}).`, 'info');
+      } else if (result.error) {
+        showToast(result.error, 'error');
+      } else {
+        showToast(`Email «${EMAIL_TYPE_LABELS[type]}» — ${mode} OK.`, 'success');
+      }
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : 'Falha ao testar email.',
@@ -134,6 +146,12 @@ export default function DiagnosticsSettingsScreen() {
               <Text variant="label" color="textMuted">
                 Testar emails lifecycle
               </Text>
+              <Button
+                label={emailPreviewMode ? 'Modo: preview (sem enviar)' : 'Modo: envio real (Resend)'}
+                variant="ghost"
+                onPress={() => setEmailPreviewMode((v) => !v)}
+                fullWidth
+              />
               {emailTestTypes.map((type) => (
                 <Button
                   key={type}
@@ -145,6 +163,32 @@ export default function DiagnosticsSettingsScreen() {
                   fullWidth
                 />
               ))}
+
+              <Text variant="label" color="textMuted" style={styles.emailHistoryTitle}>
+                Histórico de emails (sem dados sensíveis)
+              </Text>
+              {(emailEvents ?? []).length === 0 ? (
+                <Text variant="caption" color="textMuted">
+                  Sem eventos registados. Testa um tipo acima.
+                </Text>
+              ) : (
+                (emailEvents ?? []).map((event) => (
+                  <View key={event.id} style={styles.emailEvent}>
+                    <Text variant="caption" color="textMuted">
+                      {EMAIL_STATUS_LABELS[event.status]} ·{' '}
+                      {EMAIL_TYPE_LABELS[event.emailType as LifecycleEmailType] ?? event.emailType}
+                    </Text>
+                    <Text variant="caption" color="textSecondary">
+                      {new Date(event.sentAt).toLocaleString('pt-PT')}
+                    </Text>
+                    {event.error ? (
+                      <Text variant="caption" color="danger">
+                        {event.error}
+                      </Text>
+                    ) : null}
+                  </View>
+                ))
+              )}
             </View>
           ) : null}
 
@@ -217,6 +261,17 @@ const styles = StyleSheet.create({
   emailSection: {
     gap: spacing.sm,
     marginBottom: spacing.lg,
+  },
+  emailHistoryTitle: {
+    marginTop: spacing.sm,
+  },
+  emailEvent: {
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceElevated,
+    gap: 2,
   },
   list: {
     gap: spacing.md,

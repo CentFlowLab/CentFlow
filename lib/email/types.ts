@@ -8,7 +8,8 @@ export type LifecycleEmailType =
   | 'warranty_expiring'
   | 'subscription_renewal'
   | 'credit_payment_due'
-  | 'weekly_digest';
+  | 'weekly_digest'
+  | 'tips_insight';
 
 export type EmailEventStatus = 'sent' | 'failed' | 'skipped' | 'preview';
 
@@ -31,4 +32,12 @@ export const EMAIL_TYPE_LABELS: Record<LifecycleEmailType, string> = {
   subscription_renewal: 'Subscrição a renovar',
   credit_payment_due: 'Prestação próxima',
   weekly_digest: 'Resumo semanal',
+  tips_insight: 'Dicas e insights',
+};
+
+export const EMAIL_STATUS_LABELS: Record<EmailEventStatus, string> = {
+  sent: 'Enviado',
+  failed: 'Falhou',
+  skipped: 'Ignorado',
+  preview: 'Preview',
 };

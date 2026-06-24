@@ -40,8 +40,10 @@ export function canSendByPreferences(
       return prefs.email_subscription_renewals;
     case 'credit_payment_due':
       return prefs.email_credit_payments;
-    default:
+    case 'tips_insight':
       return prefs.email_tips_insights;
+    default:
+      return true;
   }
 }
 

@@ -31,6 +31,7 @@ App mobile
 | `subscription_renewal` | Renova ≤ 7 dias | `email_subscription_renewals` |
 | `credit_payment_due` | Prestação ≤ 7 dias | `email_credit_payments` |
 | `weekly_digest` | Domingo UTC + dados | `email_weekly_digest` |
+| `tips_insight` | Quarta-feira UTC + dados | `email_tips_insights` |
 
 Emails de **segurança** (reset password, etc.) continuam via **Supabase Auth** — não são geridos aqui.
 
@@ -90,7 +91,7 @@ Em dev/beta (`isDiagnosticsEnabled()`):
 
 1. Abrir **CentFlow Doctor** no Perfil
 2. Secção «Testar emails lifecycle»
-3. Chama `send-email` com JWT do utilizador (preview ou envio real se Resend configurado)
+3. Chama `send-email` com JWT do utilizador (preview ou envio real via toggle no Doctor)
 
 ## Privacidade
 

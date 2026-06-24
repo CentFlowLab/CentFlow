@@ -128,6 +128,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const session = await authService.register(credentials);
       applySession(session);
+      const { triggerWelcomeEmail } = await import('@/lib/email/trigger');
+      triggerWelcomeEmail();
     } catch (error) {
       throw new Error(getAuthErrorMessage(error));
     }

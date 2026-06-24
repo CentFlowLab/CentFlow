@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-18T22:19:11.232Z -->
-<!-- Git: e7785b4 (2026-06-18T22:58:51+01:00) -->
+<!-- Última geração: 2026-06-24T22:47:05.700Z -->
+<!-- Git: 6f4cd36 (2026-06-24T23:28:00+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 5 — Movimentos (OCR melhorado → UI confirmação)** |
-| Última geração | 2026-06-18T22:19:11.232Z |
-| Path do projeto | `C:\Users\EMANU\Documents\CentFlow App\centflow` |
-| Git commit | `e7785b4` (2026-06-18T22:58:51+01:00) |
+| Última geração | 2026-06-24T22:47:05.700Z |
+| Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
+| Git commit | `6f4cd36` (2026-06-24T23:28:00+01:00) |
 
 ---
 
@@ -72,6 +72,7 @@ Património Líq.  = Total Ativos − Total Passivos
 - `sumCreditLiabilities()`
 - `sumGoalSavings()`
 - `calculateNetWorth()`
+- `buildNetWorthProjection()`
 - `calculateNetWorthChangePercent()`
 
 ### Breakdown para donut (`assetsByCategory`)
@@ -221,9 +222,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     FeatureAreaGate.tsx
     index.ts
   icons/
+    AnalysisIconMark.tsx
     TabIcon.tsx
   layout/
     AppHeader.tsx
+    BottomSheetScrollContext.tsx
     CentFlowTabBar.tsx
     DraggableBottomSheet.tsx
     ProfileMenuSheet.tsx
@@ -263,9 +266,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AnimatedAssistantMessage.tsx
     FeatureAreaCard.tsx
     OnboardingGateEffect.tsx
+    OnboardingPlanLoading.tsx
     OnboardingProgressBar.tsx
     OnboardingShell.tsx
     OnboardingStepHeader.tsx
+    OnboardingValueCard.tsx
     SelectableCard.tsx
     ValuePromiseSection.tsx
     index.ts
@@ -285,8 +290,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     SettingsToggleRow.tsx
     index.ts
   ui/
+    BottomActionSheet.tsx
     Button.tsx
     Card.tsx
+    CentFlowCalendar.tsx
     DatePickerField.tsx
     EmptyState.tsx
     ErrorState.tsx
@@ -318,6 +325,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useAssets.ts
     useDashboard.ts
     useDashboardData.ts
+    useEmailEvents.ts
     useFinancialProfile.ts
     useHomeScreenData.ts
     useLiabilities.ts
@@ -329,20 +337,22 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useTransactions.ts
     useUserPreferences.ts
   useCentFlowIntelligence.ts
+  useContextualQuickAdd.ts
   useDiagnosticScreen.ts
   useFeatureAreas.ts
   useFormDismiss.ts
   useImportCsv.ts
   useKeyboardVisible.ts
+  useMovementRenderProbe.ts
   useOnboarding.ts
   useProcessReceipt.ts
   usePullToRefresh.ts
   useQuickAddActions.ts
   useReceiptImage.ts
+  useResponsiveLayout.ts
   useSubscriptionDetection.ts
   useTabBarBottomInset.ts
-  analises-tab-icon/
-    analises-tab-icon.context.tsx
+  useTabBarMetrics.ts
   analytics/
     analytics.service.ts
     events.ts
@@ -380,6 +390,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       receipt.service.ts
       transaction.service.ts
     token.ts
+    transaction-cache.test.ts
+    transaction-cache.ts
+    transaction-invalidation.ts
     upload.ts
   app/
     intro-session.ts
@@ -422,14 +435,18 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
     runtime-context.ts
   doctor/
+    financial-mutation-trace.ts
     index.ts
     log-mutation.ts
+    movement-flow-trace.ts
   domain/
     analysis.compose.ts
     analysis.insights.ts
     analysis.types.ts
     assets.schema.ts
     assets.types.ts
+    attention-items.test.ts
+    attention-items.ts
     dashboard.compose.ts
     date-input.schema.ts
     financial/
@@ -444,21 +461,27 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     goal.utils.ts
     home.types.ts
     index.ts
+    net-worth-monthly.ts
+    net-worth-projection.test.ts
     net-worth.service.test.ts
     net-worth.service.ts
     receipt-confirmation.schema.ts
     receipt-confirmation.ts
     receipt-items.schema.ts
     receipt.types.ts
+    transaction-date.utils.ts
     transaction-form.ts
     transaction.schema.ts
     transaction.types.ts
     types.ts
     warranty.utils.ts
   email/
+    addresses.ts
     deep-links.ts
     dev-tools.ts
+    events.service.ts
     index.ts
+    trigger.ts
     types.ts
   export/
     export.service.ts
@@ -471,6 +494,14 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     light-impact.ts
   home/
     smart-summary.ts
+  launch-readiness.test.ts
+  layout/
+    device-metrics.ts
+    responsive-layout.test.ts
+    safe-area.test.ts
+    safe-area.ts
+    tab-bar-metrics.test.ts
+    tab-bar-metrics.ts
   liabilities/
     liabilities.service.ts
   migrations/
@@ -479,11 +510,15 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     onboardingMigrations.ts
     profileMigrations.ts
     settingsMigrations.ts
+  navigation/
+    quick-add-context.ts
   onboarding/
     answers.service.ts
     constants.ts
+    copy.ts
     features.ts
     gate.ts
+    onboarding-premium.test.ts
     personalization.ts
     storage.ts
     types.ts
@@ -499,6 +534,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   receipt/
     client-ocr.ts
     ocr-confidence.ts
+    ocr-failure.test.ts
+    ocr-messages.ts
     ocr-sanitize.ts
     parse-receipt-pt.ts
     receipt-exif.ts
@@ -524,6 +561,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   subscriptions/
     detect-subscriptions.test.ts
     detect-subscriptions.ts
+    renewal.constants.ts
+    renewal.utils.test.ts
+    renewal.utils.ts
     subscription-utils.ts
   supabase/
     app-config.ts
@@ -557,6 +597,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
     updateStatus.ts
   utils/
+    calendar.test.ts
+    calendar.ts
     format.ts
   widgets/
     widget-data.ts
@@ -613,6 +655,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - OCR multi-motor (google_vision → vision → auto → tesseract) + polling 8×
 - docs/backend/ocr_preprocess.py — deskew/binarização/Tesseract para equipa server
 - EAS Build + EAS Update configurado (eas.json, expo-updates, docs/build.md)
+- Emails lifecycle — Resend, Edge Functions, preferências, anti-spam, deep links
+- Emails — welcome no registo, tips_insight, resumo semanal agregado, Doctor com histórico
 
 ### 🔲 Pendente
 - Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)

@@ -60,6 +60,27 @@ function bump(stats: JobStats, key: string) {
   stats[key] = (stats[key] ?? 0) + 1;
 }
 
+async function buildWeeklyDigestSummary(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string> {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { count: movementCount } = await supabase
+    .from('transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', weekAgo);
+
+  const movements = movementCount ?? 0;
+  const movementLine =
+    movements > 0
+      ? `Esta semana registaste ${movements} movimento${movements === 1 ? '' : 's'}. `
+      : '';
+
+  return `${movementLine}Abre a CentFlow para rever objectivos, prazos e evolução do património — sem expor valores sensíveis por email.`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -332,9 +353,36 @@ Deno.serve(async (req) => {
       );
 
       const result = await dispatchLifecycleEmail(supabase, context, 'weekly_digest', {
-        summary: 'Consulta movimentos, objectivos e próximos prazos na app.',
+        summary: await buildWeeklyDigestSummary(supabase, profile.id),
       });
       bump(stats, result.skipped ? 'weekly_skipped' : result.ok ? 'weekly_sent' : 'weekly_failed');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Dicas e insights — quarta-feira UTC, utilizadores com dados
+  // -------------------------------------------------------------------------
+  if (now.getUTCDay() === 3) {
+    for (const profile of allProfiles ?? []) {
+      const { data: hasData } = await supabase.rpc('user_has_any_financial_data', {
+        p_user_id: profile.id,
+      });
+      if (!hasData) continue;
+
+      const { data: authData } = await supabase.auth.admin.getUserById(profile.id);
+      if (!authData.user?.email) continue;
+
+      const context = await loadUserContext(
+        supabase,
+        profile.id,
+        authData.user.email,
+        profile.name ?? 'Utilizador',
+      );
+
+      const result = await dispatchLifecycleEmail(supabase, context, 'tips_insight', {
+        tip: 'Revê a aba Análises para veres como o teu património está distribuído e onde podes optimizar.',
+      });
+      bump(stats, result.skipped ? 'tips_skipped' : result.ok ? 'tips_sent' : 'tips_failed');
     }
   }
 
