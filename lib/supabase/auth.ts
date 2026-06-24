@@ -2,8 +2,11 @@ import type { AuthSession, LoginCredentials, RegisterCredentials, User } from '@
 import { getGoogleAuthRedirectUri } from '@/lib/auth/google-oauth.config';
 import {
   openGoogleOAuthBrowser,
-  parseGoogleOAuthCallbackUrl,
 } from '@/lib/auth/google-oauth';
+import {
+  assertOAuthCallbackNoError,
+  parseOAuthCallbackUrl,
+} from '@/lib/auth/oauth-callback';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import { Platform } from 'react-native';
 
@@ -102,23 +105,11 @@ export async function login(credentials: LoginCredentials): Promise<AuthSession>
 
 async function createSessionFromOAuthUrl(url: string): Promise<AuthSession> {
   const supabase = getSupabaseClient();
-  const { params, errorCode } = QueryParams.getQueryParams(url);
+  const parsed = parseOAuthCallbackUrl(url);
+  assertOAuthCallbackNoError(parsed);
 
-  if (errorCode) {
-    throw new Error(String(errorCode));
-  }
-
-  if (params.error_description) {
-    throw new Error(String(params.error_description));
-  }
-
-  if (params.error) {
-    throw new Error(String(params.error));
-  }
-
-  // Supabase usa PKCE por defeito — o callback traz ?code=, não access_token.
-  if (params.code) {
-    const { data, error } = await supabase.auth.exchangeCodeForSession(String(params.code));
+  if (parsed.code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(parsed.code);
 
     if (error) throw new Error(error.message);
     if (!data.session?.access_token || !data.session.user) {
@@ -134,26 +125,27 @@ async function createSessionFromOAuthUrl(url: string): Promise<AuthSession> {
     return toAuthSession(data.session.access_token, user);
   }
 
-  // Fallback: fluxo implícito (legado) com tokens no URL.
-  const tokens = parseGoogleOAuthCallbackUrl(url);
+  if (parsed.accessToken) {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: parsed.accessToken,
+      refresh_token: parsed.refreshToken ?? '',
+    });
 
-  const { data, error } = await supabase.auth.setSession({
-    access_token: tokens.accessToken,
-    refresh_token: tokens.refreshToken ?? '',
-  });
+    if (error) throw new Error(error.message);
+    if (!data.session?.access_token || !data.session.user) {
+      throw new Error('Sessão Google inválida');
+    }
 
-  if (error) throw new Error(error.message);
-  if (!data.session?.access_token || !data.session.user) {
-    throw new Error('Sessão Google inválida');
+    const user = await fetchProfileUser(
+      data.session.user.id,
+      data.session.user.email ?? '',
+      data.session.user.user_metadata,
+    );
+
+    return toAuthSession(data.session.access_token, user);
   }
 
-  const user = await fetchProfileUser(
-    data.session.user.id,
-    data.session.user.email ?? '',
-    data.session.user.user_metadata,
-  );
-
-  return toAuthSession(data.session.access_token, user);
+  throw new Error('URL de callback OAuth em falta — tenta iniciar sessão com Google outra vez.');
 }
 
 /** Web: redireciona a janela para o fluxo OAuth (callback em /auth/callback). */

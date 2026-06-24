@@ -31,6 +31,7 @@ import {
   type LifecycleEmailType,
 } from '@/lib/email';
 import { useEmailEvents } from '@/hooks/queries/useEmailEvents';
+import { useAuth } from '@/lib/auth';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const FINANCIAL_SOURCES = new Set([
@@ -46,11 +47,13 @@ export default function DiagnosticsSettingsScreen() {
 
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [entries, setEntries] = useState<AppLogEntry[]>([]);
   const [financialOnly, setFinancialOnly] = useState(true);
   const [emailLoading, setEmailLoading] = useState<LifecycleEmailType | null>(null);
   const [emailPreviewMode, setEmailPreviewMode] = useState(true);
   const [emailProviderStatus, setEmailProviderStatus] = useState<EmailProviderStatus | null>(null);
+  const [emailStatusLine, setEmailStatusLine] = useState<string | null>(null);
   const { data: emailEvents, refetch: refetchEmailEvents } = useEmailEvents();
 
   const visibleEntries = financialOnly
@@ -63,22 +66,32 @@ export default function DiagnosticsSettingsScreen() {
 
   async function handleTestEmail(type: LifecycleEmailType) {
     setEmailLoading(type);
+    const modeLabel = emailPreviewMode ? 'preview' : 'envio real';
+    setEmailStatusLine(`A enviar (${modeLabel})…`);
     try {
       const result = await invokeTestEmail(type, { preview: emailPreviewMode });
       await refetchEmailEvents();
-      const mode = result.preview ? 'preview' : 'envio real';
+      void fetchEmailProviderStatus().then(setEmailProviderStatus);
+
       if (result.skipped) {
-        showToast(`Email «${EMAIL_TYPE_LABELS[type]}» ignorado (${result.reason ?? 'regra anti-spam'}).`, 'info');
+        const msg = `Ignorado (${result.reason ?? 'anti-spam'})`;
+        setEmailStatusLine(`❌ ${msg}`);
+        showToast(`Email «${EMAIL_TYPE_LABELS[type]}» ${msg}.`, 'info');
       } else if (result.error) {
+        setEmailStatusLine(`❌ Erro: ${result.error}`);
         showToast(result.error, 'error');
+      } else if (result.preview) {
+        setEmailStatusLine('✅ Preview registado em email_events');
+        showToast(`Preview «${EMAIL_TYPE_LABELS[type]}» OK.`, 'success');
       } else {
-        showToast(`Email «${EMAIL_TYPE_LABELS[type]}» — ${mode} OK.`, 'success');
+        const target = user?.email ?? 'a tua conta';
+        setEmailStatusLine(`✅ Enviado para ${target}`);
+        showToast(`Email «${EMAIL_TYPE_LABELS[type]}» enviado para ${target}.`, 'success');
       }
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Falha ao testar email.',
-        'error',
-      );
+      const message = error instanceof Error ? error.message : 'Falha ao testar email.';
+      setEmailStatusLine(`❌ Erro: ${message}`);
+      showToast(message, 'error');
     } finally {
       setEmailLoading(null);
     }
@@ -158,6 +171,16 @@ export default function DiagnosticsSettingsScreen() {
               <Text variant="caption" color={emailProviderStatus?.resendConfigured ? 'primary' : 'warning'}>
                 {describeEmailProviderStatus(emailProviderStatus)}
               </Text>
+              {emailStatusLine ? (
+                <Text variant="caption" color="textSecondary">
+                  {emailStatusLine}
+                </Text>
+              ) : null}
+              {user?.email ? (
+                <Text variant="caption" color="textMuted">
+                  Conta: {user.email}
+                </Text>
+              ) : null}
               <Text variant="label" color="textMuted" style={styles.emailHistoryTitle}>
                 Testar emails lifecycle
               </Text>

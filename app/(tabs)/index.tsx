@@ -7,8 +7,10 @@ import {
   DashboardHeaderLeading,
   DashboardSkeleton,
   DemoModeBadge,
+  HomeAlertsSection,
   HomeAssistantCard,
   HomeQuickActions,
+  HomeAttentionSheet,
   NetWorthHeroCard,
 } from '@/components/dashboard';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
@@ -30,6 +32,7 @@ export default function InicioScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
+  const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
 
   const { assistant } = useCentFlowIntelligence();
   const { contentBottomPadding } = useResponsiveLayout();
@@ -135,6 +138,8 @@ export default function InicioScreen() {
     netWorthChangeThisMonth,
     assetsSummary,
     dataSource,
+    attentionItems,
+    suggestions,
   } = data;
 
   const hasActivity =
@@ -173,6 +178,12 @@ export default function InicioScreen() {
             onScanReceipt={openReceiptScanner}
           />
 
+          <HomeAlertsSection
+            attentionItems={attentionItems}
+            suggestions={suggestions}
+            onOpenAllAttention={() => setAttentionSheetVisible(true)}
+          />
+
           <HomeAssistantCard
             plan={assistant}
             onAction={handleAssistantAction}
@@ -200,6 +211,12 @@ export default function InicioScreen() {
         onClose={() => quickAdd.setSheetVisible(false)}
         onSelect={quickAdd.onSelect}
         actions={quickAdd.actions}
+      />
+
+      <HomeAttentionSheet
+        visible={attentionSheetVisible}
+        onClose={() => setAttentionSheetVisible(false)}
+        items={attentionItems}
       />
     </View>
   );

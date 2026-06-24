@@ -62,8 +62,12 @@ function mapSupabaseAuthMessage(message: string): string {
     );
   }
 
-  if (lower.includes('user already registered') || lower.includes('already been registered')) {
-    return 'Este email já está registado. Usa «Entrar» com a tua password.';
+  if (
+    lower.includes('identity is already linked') ||
+    lower.includes('email address is already registered') ||
+    lower.includes('user already registered')
+  ) {
+    return 'Este email já tem conta CentFlow. Entra com email e password ou usa a mesma conta Google.';
   }
 
   if (lower.includes('invalid login credentials')) {

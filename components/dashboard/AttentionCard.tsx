@@ -36,9 +36,9 @@ const PRIORITY_BORDER: Record<AttentionItem['priority'], string> = {
 };
 
 function getAttentionRoute(type: AttentionType): string | null {
-  if (type === 'credit') return '/(tabs)/movimentos?view=creditos';
+  if (type === 'credit') return '/(tabs)/precos';
   if (type === 'subscription') return '/(tabs)/movimentos?view=subscricoes';
-  if (type === 'warranty') return '/(tabs)/ativos';
+  if (type === 'warranty') return '/(tabs)/ativos?tab=garantias';
   if (type === 'goal') return '/(tabs)/ativos?tab=objetivos';
   return null;
 }

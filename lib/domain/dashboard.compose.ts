@@ -1,5 +1,6 @@
 import { calculateNetWorth, buildNetWorthProjection } from './net-worth.service';
 import { buildAttentionItems } from './attention-items';
+import type { Suggestion } from './types';
 import { calculateMonthlyNetWorthMetrics } from './net-worth-monthly';
 import type { AssetsData } from './assets.types';
 import type { DashboardData } from './types';
@@ -90,6 +91,12 @@ export function composeDashboardFromLocalSources(input: {
     asOf,
   });
 
+  const suggestions = buildHomeSuggestions({
+    goals: input.assets.goals,
+    weeklySpending: sumWeeklyExpenses(input.transactions, asOf),
+    netWorthChangePercent: monthlyMetrics.netWorthChangePercent,
+  });
+
   return {
     netWorth,
     projection,
@@ -99,8 +106,48 @@ export function composeDashboardFromLocalSources(input: {
     netWorthChangeThisMonth: monthlyMetrics.netWorthChangeThisMonth,
     personalInflation: null,
     attentionItems,
-    suggestions: [],
+    suggestions,
   };
+}
+
+function buildHomeSuggestions(input: {
+  goals: AssetsData['goals'];
+  weeklySpending: number;
+  netWorthChangePercent: number;
+}): Suggestion[] {
+  const suggestions: Suggestion[] = [];
+
+  if (input.goals.length === 0) {
+    suggestions.push({
+      id: 'sug-first-goal',
+      title: 'Define o teu primeiro objetivo',
+      description: 'Um alvo concreto ajuda-te a poupar com mais foco.',
+      actionLabel: 'Criar objetivo',
+      type: 'goal',
+    });
+  }
+
+  if (input.weeklySpending > 0 && input.netWorthChangePercent < 0) {
+    suggestions.push({
+      id: 'sug-review-spending',
+      title: 'Revê os gastos desta semana',
+      description: 'Identifica onde podes optimizar antes do fim do mês.',
+      actionLabel: 'Ver análises',
+      type: 'savings',
+    });
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push({
+      id: 'sug-analyses',
+      title: 'Explora as tuas análises',
+      description: 'Vê como o património está distribuído entre categorias.',
+      actionLabel: 'Abrir análises',
+      type: 'general',
+    });
+  }
+
+  return suggestions.slice(0, 2);
 }
 
 /** Movimentos já ocorridos — reutilizável em análises e score. */

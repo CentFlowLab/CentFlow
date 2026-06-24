@@ -8,6 +8,7 @@ export { HomeAssetsSummaryCard } from './HomeAssetsSummaryCard';
 export { HomeGoalHighlightCard } from './HomeGoalHighlightCard';
 export { HomePersonalizedInsightCard } from './HomePersonalizedInsightCard';
 export { HomeChangesSheet } from './HomeChangesSheet';
+export { HomeAlertsSection } from './HomeAlertsSection';
 export { HomeAttentionSheet } from './HomeAttentionSheet';
 export { HomeQuickActions } from './HomeQuickActions';
 export { DashboardGreeting } from './DashboardGreeting';

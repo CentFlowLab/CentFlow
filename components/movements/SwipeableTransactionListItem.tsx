@@ -131,7 +131,29 @@ export function SwipeableTransactionListItem({
   );
 
   if (Platform.OS === 'web') {
-    return <View style={styles.wrapper}>{row}</View>;
+    return (
+      <View style={styles.wrapper}>
+        {row}
+        <View style={styles.webActions}>
+          <Pressable
+            onPress={() => onEdit(transaction)}
+            style={[styles.webActionBtn, styles.editAction]}
+            accessibilityLabel="Editar movimento">
+            <Text variant="caption" style={styles.webActionText}>
+              Editar
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={confirmDelete}
+            style={[styles.webActionBtn, styles.deleteAction]}
+            accessibilityLabel="Eliminar movimento">
+            <Text variant="caption" style={styles.webActionText}>
+              Eliminar
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -200,5 +222,22 @@ const styles = StyleSheet.create({
   actionPressed: {
     opacity: 0.88,
     transform: [{ scale: 0.96 }],
+  },
+  webActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  webActionBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+  },
+  webActionText: {
+    color: ACTION_ICON_COLOR,
+    fontWeight: '600',
   },
 });

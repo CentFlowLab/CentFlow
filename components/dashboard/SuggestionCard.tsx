@@ -1,7 +1,9 @@
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
+import { openSuggestionRoute } from '@/lib/navigation/dashboard-routes';
 import type { Suggestion } from '@/lib/domain';
 import { colors, spacing } from '@/lib/theme';
 
@@ -18,28 +20,33 @@ type SuggestionCardProps = {
 
 export function SuggestionCard({ suggestion }: SuggestionCardProps) {
   return (
-    <Card variant="elevated" style={styles.card}>
-      <View style={styles.iconBox}>
-        <SymbolView
-          name={TYPE_ICON[suggestion.type]}
-          tintColor={colors.primary}
-          size={20}
-        />
-      </View>
-      <View style={styles.content}>
-        <Text variant="bodyMedium" style={styles.title}>
-          {suggestion.title}
-        </Text>
-        <Text variant="caption" color="textSecondary">
-          {suggestion.description}
-        </Text>
-        {suggestion.actionLabel && (
-          <Text variant="caption" color="primary" style={styles.action}>
-            {suggestion.actionLabel} →
+    <Pressable
+      onPress={() => openSuggestionRoute(suggestion.type)}
+      accessibilityRole="button"
+      accessibilityLabel={suggestion.title}>
+      <Card variant="elevated" style={styles.card}>
+        <View style={styles.iconBox}>
+          <SymbolView
+            name={TYPE_ICON[suggestion.type]}
+            tintColor={colors.primary}
+            size={20}
+          />
+        </View>
+        <View style={styles.content}>
+          <Text variant="bodyMedium" style={styles.title}>
+            {suggestion.title}
           </Text>
-        )}
-      </View>
-    </Card>
+          <Text variant="caption" color="textSecondary">
+            {suggestion.description}
+          </Text>
+          {suggestion.actionLabel ? (
+            <Text variant="caption" color="primary" style={styles.action}>
+              {suggestion.actionLabel} →
+            </Text>
+          ) : null}
+        </View>
+      </Card>
+    </Pressable>
   );
 }
 

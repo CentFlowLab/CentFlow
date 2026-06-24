@@ -47,11 +47,18 @@
     "docs/backend/ocr_preprocess.py — deskew/binarização/Tesseract para equipa server",
     "EAS Build + EAS Update configurado (eas.json, expo-updates, docs/build.md)",
     "Emails lifecycle — Resend, Edge Functions, preferências, anti-spam, deep links",
-    "Emails — welcome no registo, tips_insight, resumo semanal agregado, Doctor com histórico"
+    "Emails — welcome no registo, tips_insight, resumo semanal agregado, Doctor com histórico",
+    "Resend configurado — npm run email:setup, secrets Supabase, deploy send-email + email-jobs",
+    "Google OAuth — callback PKCE/hash, docs google-oauth-setup.md",
+    "Dashboard — alertas atenção + sugestões com navegação contextual",
+    "Movimentos — swipe editar/eliminar + acções web"
   ],
   "pending": [
+    "Activar Google Provider no Supabase Dashboard (instruções em docs/google-oauth-setup.md)",
+    "Testar envio real Resend no Doctor (modo sandbox)",
+    "EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)",
+    "Produção email — verificar mail.centflow.app no Resend + EMAIL_MODE=production",
     "Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)",
-    "Colocar RESEND_API_KEY em supabase/secrets.env e correr npm run email:setup",
     "Etapa 2 — Melhorar UI do ecrã ConfirmReceiptModal",
     "Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)",
     "Google OAuth (expo-auth-session — preparado)",

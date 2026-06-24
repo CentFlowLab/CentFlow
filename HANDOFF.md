@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-24T23:11:27.465Z -->
-<!-- Git: 812dbe8 (2026-06-24T23:48:00+01:00) -->
+<!-- Última geração: 2026-06-24T23:56:13.972Z -->
+<!-- Git: 8ef03dc (2026-06-25T00:21:35+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 5 — Movimentos (OCR melhorado → UI confirmação)** |
-| Última geração | 2026-06-24T23:11:27.465Z |
+| Última geração | 2026-06-24T23:56:13.972Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `812dbe8` (2026-06-24T23:48:00+01:00) |
+| Git commit | `8ef03dc` (2026-06-25T00:21:35+01:00) |
 
 ---
 
@@ -202,6 +202,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     DashboardHeaderLeading.tsx
     DashboardSkeleton.tsx
     DemoModeBadge.tsx
+    HomeAlertsSection.tsx
     HomeAssetsSummaryCard.tsx
     HomeAssistantCard.tsx
     HomeAttentionSheet.tsx
@@ -405,6 +406,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     google-oauth.ts
     index.ts
     mock-auth.ts
+    oauth-callback.ts
     schemas.ts
     storage.ts
     supabase-oauth.config.ts
@@ -512,6 +514,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     profileMigrations.ts
     settingsMigrations.ts
   navigation/
+    dashboard-routes.ts
     quick-add-context.ts
   onboarding/
     answers.service.ts
@@ -658,10 +661,17 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - EAS Build + EAS Update configurado (eas.json, expo-updates, docs/build.md)
 - Emails lifecycle — Resend, Edge Functions, preferências, anti-spam, deep links
 - Emails — welcome no registo, tips_insight, resumo semanal agregado, Doctor com histórico
+- Resend configurado — npm run email:setup, secrets Supabase, deploy send-email + email-jobs
+- Google OAuth — callback PKCE/hash, docs google-oauth-setup.md
+- Dashboard — alertas atenção + sugestões com navegação contextual
+- Movimentos — swipe editar/eliminar + acções web
 
 ### 🔲 Pendente
+- Activar Google Provider no Supabase Dashboard (instruções em docs/google-oauth-setup.md)
+- Testar envio real Resend no Doctor (modo sandbox)
+- EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)
+- Produção email — verificar mail.centflow.app no Resend + EMAIL_MODE=production
 - Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)
-- Colocar RESEND_API_KEY em supabase/secrets.env e correr npm run email:setup
 - Etapa 2 — Melhorar UI do ecrã ConfirmReceiptModal
 - Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)
 - Google OAuth (expo-auth-session — preparado)
