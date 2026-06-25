@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 
 import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
@@ -15,7 +15,7 @@ import {
   SwipeableTransactionListItem,
   TransactionsSkeleton,
 } from '@/components/movements';
-import { EmptyState, ErrorState } from '@/components/ui';
+import { EmptyState, ErrorState, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
@@ -30,7 +30,12 @@ import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { MovementsView, Subscription } from '@/lib/domain/assets.types';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
+import {
+  groupTransactionsByDay,
+  summarizeCurrentMonth,
+} from '@/lib/domain/transaction-grouping';
 import { colors, spacing } from '@/lib/theme';
+import { formatCurrency } from '@/lib/utils/format';
 
 const FILTER_SEGMENTS = [
   { key: 'expense' as const, label: 'Despesas' },
@@ -76,6 +81,8 @@ export default function MovimentosScreen() {
   const subscriptions = liabilities?.subscriptions ?? [];
   const transactions = useMemo(() => data ?? [], [data]);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
+  const sections = useMemo(() => groupTransactionsByDay(transactions), [transactions]);
+  const monthSummary = useMemo(() => summarizeCurrentMonth(transactions), [transactions]);
 
   useEffect(() => {
     if (view === 'creditos') {
@@ -245,9 +252,10 @@ export default function MovimentosScreen() {
               />
             </View>
           ) : (
-            <FlatList
-              data={transactions}
+            <SectionList
+              sections={sections}
               keyExtractor={(item) => item.id}
+              stickySectionHeadersEnabled={false}
               renderItem={({ item }) => (
                 <SwipeableTransactionListItem
                   transaction={item}
@@ -255,6 +263,39 @@ export default function MovimentosScreen() {
                   onDelete={handleDelete}
                 />
               )}
+              renderSectionHeader={({ section }) => (
+                <View style={styles.sectionHeader}>
+                  <Text variant="label" color="textSecondary">
+                    {section.title}
+                  </Text>
+                  <Text
+                    variant="caption"
+                    color={section.dayTotal >= 0 ? 'success' : 'textMuted'}>
+                    {section.dayTotal > 0 ? '+' : ''}
+                    {formatCurrency(section.dayTotal)}
+                  </Text>
+                </View>
+              )}
+              ListHeaderComponent={
+                isEmpty ? null : (
+                  <View style={styles.monthSummary}>
+                    <Text variant="caption" color="textMuted">
+                      Este mês
+                    </Text>
+                    <View style={styles.monthSummaryRow}>
+                      <Text
+                        variant="bodyMedium"
+                        color={monthSummary.net >= 0 ? 'success' : 'text'}>
+                        {monthSummary.net > 0 ? '+' : ''}
+                        {formatCurrency(monthSummary.net)}
+                      </Text>
+                      <Text variant="caption" color="textMuted">
+                        {monthSummary.count} movimento{monthSummary.count === 1 ? '' : 's'}
+                      </Text>
+                    </View>
+                  </View>
+                )
+              }
               contentContainerStyle={[
                 styles.listContent,
                 isEmpty && styles.listContentEmpty,
@@ -379,6 +420,23 @@ const styles = StyleSheet.create({
   listContentEmpty: {
     flex: 1,
     justifyContent: 'center',
+  },
+  monthSummary: {
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  monthSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
   },
   sectionContent: {
     paddingHorizontal: spacing.lg,
