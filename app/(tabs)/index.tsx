@@ -8,6 +8,7 @@ import {
   DashboardSkeleton,
   DemoModeBadge,
   HomeAlertsSection,
+  HomeAssetsSummaryCard,
   HomeAssistantCard,
   HomeQuickActions,
   HomeAttentionSheet,
@@ -177,6 +178,8 @@ export default function InicioScreen() {
             onAddMovement={openAddMovement}
             onScanReceipt={openReceiptScanner}
           />
+
+          {hasActivity ? <HomeAssetsSummaryCard summary={assetsSummary} /> : null}
 
           <HomeAlertsSection
             attentionItems={attentionItems}
