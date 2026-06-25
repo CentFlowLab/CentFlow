@@ -1,4 +1,5 @@
 export { CreditFormModal } from './CreditFormModal';
+export { RegisterCreditPaymentModal } from './RegisterCreditPaymentModal';
 export { SubscriptionFormModal } from './SubscriptionFormModal';
 export { CreditsSection } from './CreditsSection';
 export { SubscriptionsSection } from './SubscriptionsSection';

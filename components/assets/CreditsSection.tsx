@@ -2,9 +2,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
-import { Card, Text } from '@/components/ui';
+import { Button, Card, Text } from '@/components/ui';
 import type { Credit } from '@/lib/domain/types';
-import { colors, spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
 type CreditsSectionProps = {
@@ -13,7 +13,16 @@ type CreditsSectionProps = {
   onEdit?: (credit: Credit) => void;
   onLearnMore?: () => void;
   onDelete?: (credit: Credit) => void;
+  onRegisterPayment?: (credit: Credit) => void;
 };
+
+/** Percentagem amortizada (0–1) com base no montante original. */
+function getRepaidProgress(credit: Credit): number | null {
+  if (!credit.originalAmount || credit.originalAmount <= 0) return null;
+  const repaid = credit.originalAmount - credit.outstandingBalance;
+  if (repaid <= 0) return 0;
+  return Math.min(1, repaid / credit.originalAmount);
+}
 
 export function CreditsSection({
   credits,
@@ -21,6 +30,7 @@ export function CreditsSection({
   onEdit,
   onLearnMore,
   onDelete,
+  onRegisterPayment,
 }: CreditsSectionProps) {
   if (credits.length === 0) {
     return (
@@ -71,7 +81,24 @@ export function CreditsSection({
                 <Text variant="caption" color="textMuted">
                   Saldo: {formatCurrency(credit.outstandingBalance)}
                 </Text>
-        {credit.interestRateAnnual !== undefined ? (
+                {(() => {
+                  const progress = getRepaidProgress(credit);
+                  if (progress === null) return null;
+                  return (
+                    <View style={styles.progressBlock}>
+                      <View style={styles.progressTrack}>
+                        <View
+                          style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]}
+                        />
+                      </View>
+                      <Text variant="caption" color="textSecondary">
+                        {Math.round(progress * 100)}% pago de{' '}
+                        {formatCurrency(credit.originalAmount!)}
+                      </Text>
+                    </View>
+                  );
+                })()}
+                {credit.interestRateAnnual !== undefined ? (
                   <Text variant="caption" color="textSecondary">
                     TAEG: {credit.interestRateAnnual.toFixed(2)}%
                   </Text>
@@ -82,6 +109,15 @@ export function CreditsSection({
                     {credit.nextPaymentAmount ? formatCurrency(credit.nextPaymentAmount) : '—'}
                     {credit.nextPaymentDate ? ` · ${formatDateShort(credit.nextPaymentDate)}` : ''}
                   </Text>
+                ) : null}
+                {onRegisterPayment ? (
+                  <Button
+                    label="Registar pagamento"
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => onRegisterPayment(credit)}
+                    style={styles.payButton}
+                  />
                 ) : null}
               </Card>
             </Pressable>
@@ -105,5 +141,24 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     gap: spacing.xs,
+  },
+  progressBlock: {
+    gap: spacing.xs,
+    marginVertical: spacing.xs,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceHighlight,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+  },
+  payButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
   },
 });

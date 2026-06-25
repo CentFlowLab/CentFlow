@@ -2,7 +2,11 @@ import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
-import { CreditFormModal, CreditsSection } from '@/components/assets';
+import {
+  CreditFormModal,
+  CreditsSection,
+  RegisterCreditPaymentModal,
+} from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader } from '@/components/layout';
 import { ErrorState, LoadingSpinner, ScreenContainer } from '@/components/ui';
@@ -14,6 +18,8 @@ import { colors, spacing } from '@/lib/theme';
 export default function PrecosScreen() {
   const [editingCredit, setEditingCredit] = useState<Credit | null>(null);
   const [creditFormVisible, setCreditFormVisible] = useState(false);
+  const [paymentCredit, setPaymentCredit] = useState<Credit | null>(null);
+  const [paymentVisible, setPaymentVisible] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useLiabilities();
   const { contentBottomPadding } = useResponsiveLayout();
@@ -80,6 +86,10 @@ export default function PrecosScreen() {
                   setCreditFormVisible(true);
                 }}
                 onDelete={(credit) => deleteCredit.mutate(credit.id)}
+                onRegisterPayment={(credit) => {
+                  setPaymentCredit(credit);
+                  setPaymentVisible(true);
+                }}
               />
             </FeatureAreaGate>
           </ScreenContainer>
@@ -92,6 +102,15 @@ export default function PrecosScreen() {
         onClose={() => {
           setCreditFormVisible(false);
           setEditingCredit(null);
+        }}
+      />
+
+      <RegisterCreditPaymentModal
+        visible={paymentVisible}
+        credit={paymentCredit}
+        onClose={() => {
+          setPaymentVisible(false);
+          setPaymentCredit(null);
         }}
       />
     </View>
