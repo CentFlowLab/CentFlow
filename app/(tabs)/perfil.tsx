@@ -37,21 +37,6 @@ const MENU_SECTIONS: Array<{
   items: MenuItem[];
 }> = [
   {
-    title: 'Perfil',
-    items: [
-      {
-        icon: { ios: 'person.fill', android: 'person', web: 'person' },
-        label: 'Dados pessoais',
-        route: '/settings/personal-data',
-      },
-      {
-        icon: { ios: 'globe', android: 'language', web: 'language' },
-        label: 'Moeda e região',
-        route: '/settings/currency-region',
-      },
-    ],
-  },
-  {
     title: 'Definições',
     items: [
       {
