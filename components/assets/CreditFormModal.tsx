@@ -298,11 +298,18 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
       return;
     }
 
+    // Amortização antecipada: subtrai ao saldo real (não é só simulação).
+    const earlyAmortizationAmount = parseOptionalAmount(earlyAmortization);
+    const appliesAmortization = Boolean(earlyAmortizationAmount && earlyAmortizationAmount > 0);
+    const effectiveBalance = appliesAmortization
+      ? Math.max(0, outstandingBalance - earlyAmortizationAmount!)
+      : outstandingBalance;
+
     try {
       await saveCredit.mutateAsync({
         id: credit?.id,
         name: resolvedName,
-        outstandingBalance,
+        outstandingBalance: effectiveBalance,
         creditType,
         lender: lender.trim() || undefined,
         originalAmount: parseOptionalAmount(originalAmount),
@@ -318,7 +325,14 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
         startDate: parsedStartDate,
         notes: notes.trim() || undefined,
       });
-      showToast(isEditing ? 'Crédito actualizado.' : 'Crédito adicionado.', 'success');
+      showToast(
+        appliesAmortization
+          ? `Amortização aplicada — novo saldo ${formatCurrency(effectiveBalance)}.`
+          : isEditing
+            ? 'Crédito actualizado.'
+            : 'Crédito adicionado.',
+        'success',
+      );
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'o crédito'));
@@ -562,7 +576,15 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
           ) : null}
 
           <Button
-            label={isSaving ? 'A guardar...' : isEditing ? 'Guardar alterações' : 'Adicionar crédito'}
+            label={
+              isSaving
+                ? 'A guardar...'
+                : earlyAmortization.trim()
+                  ? 'Aplicar amortização'
+                  : isEditing
+                    ? 'Guardar alterações'
+                    : 'Adicionar crédito'
+            }
             onPress={handleSave}
             loading={isSaving}
             disabled={isSaving || isDeleting}
