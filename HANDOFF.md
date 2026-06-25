@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-25T23:25:24.613Z -->
-<!-- Git: a4ca724 (2026-06-26T00:24:12+01:00) -->
+<!-- Última geração: 2026-06-25T23:35:44.897Z -->
+<!-- Git: 0d1c59d (2026-06-26T00:26:07+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)** |
-| Última geração | 2026-06-25T23:25:24.613Z |
+| Última geração | 2026-06-25T23:35:44.897Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `a4ca724` (2026-06-26T00:24:12+01:00) |
+| Git commit | `0d1c59d` (2026-06-26T00:26:07+01:00) |
 
 ---
 
@@ -677,6 +677,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - UX 3 — fluxo de ficheiro do Novo movimento sem modais sobrepostos
 - UX 4 — Movimentos agrupados por dia (SectionList) + resumo do mês
 - UX 5 — Análises com selector de período, gráfico de barras e donut interactivo
+- Segurança — redacção de tokens/chaves/credenciais nos logs do Doctor (dev/beta)
 
 ### 🔲 Pendente
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)

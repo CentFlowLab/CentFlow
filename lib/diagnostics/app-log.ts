@@ -41,6 +41,53 @@ function formatArg(value: unknown): string {
   }
 }
 
+/**
+ * Redação de dados sensíveis antes de armazenar/exportar logs.
+ * Defesa em profundidade: o Doctor está limitado a dev/beta, mas testers
+ * podem exportar logs — tokens, chaves e credenciais nunca devem persistir.
+ */
+const SENSITIVE_KEY_RE =
+  /(authorization|password|passwd|secret|token|api[_-]?key|anon[_-]?key|access[_-]?token|refresh[_-]?token|service[_-]?role|cron[_-]?secret)/i;
+
+const SENSITIVE_VALUE_PATTERNS: RegExp[] = [
+  /Bearer\s+[A-Za-z0-9._-]+/gi,
+  /eyJ[A-Za-z0-9._-]{10,}/g, // JWT
+  /sb_(?:publishable|secret)_[A-Za-z0-9._-]+/g,
+  /sbp_[A-Za-z0-9]+/g,
+  /\bre_[A-Za-z0-9_-]{8,}/g, // Resend API key
+];
+
+const REDACTED = '[REDACTED]';
+
+function redactString(input: string): string {
+  let output = input;
+  for (const pattern of SENSITIVE_VALUE_PATTERNS) {
+    output = output.replace(pattern, REDACTED);
+  }
+  return output;
+}
+
+function redactValue(value: unknown, depth = 0): unknown {
+  if (depth > 4) return value;
+  if (typeof value === 'string') return redactString(value);
+  if (Array.isArray(value)) return value.map((item) => redactValue(item, depth + 1));
+  if (value && typeof value === 'object') {
+    const output: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      output[key] = SENSITIVE_KEY_RE.test(key) ? REDACTED : redactValue(val, depth + 1);
+    }
+    return output;
+  }
+  return value;
+}
+
+function redactContext(
+  context?: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  if (!context) return context;
+  return redactValue(context) as Record<string, unknown>;
+}
+
 function severityForLevel(level: AppLogLevel, context?: Record<string, unknown>): AppLogSeverity {
   if (level === 'error') {
     if (context?.isFatal === true) return 'critical';
@@ -58,9 +105,9 @@ function pushEntry(entry: Omit<AppLogEntry, 'id' | 'timestamp' | 'severity'> & {
     level: entry.level,
     severity: entry.severity ?? severityForLevel(entry.level, mergedContext),
     source: entry.source,
-    message: entry.message,
-    stack: entry.stack,
-    context: mergedContext,
+    message: redactString(entry.message),
+    stack: entry.stack ? redactString(entry.stack) : undefined,
+    context: redactContext(mergedContext),
   };
 
   entries = [next, ...entries].slice(0, MAX_ENTRIES);
