@@ -649,9 +649,10 @@ export function AddTransactionModal({
           </>
         ) : (
           <Card variant="outlined" style={styles.hintCard}>
+            <Text variant="bodyMedium">Ficheiro anexado</Text>
             <Text variant="caption" color="textSecondary">
-              Com talão anexado, analisa a imagem para extrair dados automaticamente ou
-              preenche manualmente no passo seguinte.
+              Analisa com OCR para extrair valor, data e loja automaticamente — ou preenche
+              manualmente. O ficheiro fica sempre guardado no movimento.
             </Text>
           </Card>
         )}
@@ -676,7 +677,7 @@ export function AddTransactionModal({
 
         {hasReceipt && !manualFillMode ? (
           <Button
-            label={processPhaseLabel ?? 'Analisar talão'}
+            label={processPhaseLabel ?? 'Analisar com OCR'}
             onPress={handleProcessReceipt}
             loading={isProcessing}
             disabled={receiptImage.isPicking || isBusy}
@@ -698,9 +699,7 @@ export function AddTransactionModal({
 
         {hasReceipt && !manualFillMode ? (
           <Button
-            label={
-              isUploadingOnly ? 'A guardar talão...' : 'Ignorar OCR e preencher manualmente'
-            }
+            label={isUploadingOnly ? 'A guardar ficheiro...' : 'Preencher manualmente'}
             variant="secondary"
             onPress={() => void handleManualWithoutOcr()}
             loading={isUploadingOnly}
@@ -788,6 +787,7 @@ const styles = StyleSheet.create({
   },
   hintCard: {
     borderColor: colors.border,
+    gap: spacing.xs,
   },
   errorCard: {
     borderColor: colors.danger,
