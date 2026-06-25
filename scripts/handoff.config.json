@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 5 — Movimentos (OCR melhorado → UI confirmação)",
+  "currentPhase": "Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -51,22 +51,26 @@
     "Resend configurado — npm run email:setup, secrets Supabase, deploy send-email + email-jobs",
     "Google OAuth — callback PKCE/hash, docs google-oauth-setup.md",
     "Dashboard — alertas atenção + sugestões com navegação contextual",
-    "Movimentos — swipe editar/eliminar + acções web"
+    "Movimentos — swipe editar/eliminar + acções web",
+    "BUG 5 — Definições sem secções do Perfil duplicadas",
+    "BUG 6 — Início com HomeAssetsSummaryCard (resumo de ativos)",
+    "BUG 2 — amortização antecipada actualiza saldo real do crédito",
+    "BUG 1 — OCR de PDFs via Google Vision files:annotate (process-receipt deployed)",
+    "UX 1 — tab Créditos com barra de progresso + Registar pagamento",
+    "UX 2 — simulador de crédito com campos avançados colapsáveis",
+    "UX 3 — fluxo de ficheiro do Novo movimento sem modais sobrepostos",
+    "UX 4 — Movimentos agrupados por dia (SectionList) + resumo do mês",
+    "UX 5 — Análises com selector de período, gráfico de barras e donut interactivo"
   ],
   "pending": [
-    "Activar Google Provider no Supabase Dashboard (instruções em docs/google-oauth-setup.md)",
-    "Testar envio real Resend no Doctor (modo sandbox)",
+    "Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)",
+    "Confirmar GOOGLE_VISION_API_KEY nos secrets Supabase (necessário para OCR de PDFs/imagens)",
+    "Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)",
     "EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)",
     "Produção email — verificar mail.centflow.app no Resend + EMAIL_MODE=production",
-    "Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)",
-    "Etapa 2 — Melhorar UI do ecrã ConfirmReceiptModal",
     "Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)",
-    "Google OAuth (expo-auth-session — preparado)",
-    "Validar contrato exacto da API com backend em produção",
     "Edição linha a linha de itens do talão",
-    "Editar e eliminar movimentos",
-    "Ativos — CRUD objetivos, garantias, inventário",
-    "Navegação funcional em alertas e sugestões do Dashboard"
+    "Ativos — CRUD objetivos, garantias, inventário"
   ],
   "outputFile": "HANDOFF.md"
 }

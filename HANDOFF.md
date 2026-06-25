@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-24T23:56:13.972Z -->
-<!-- Git: 8ef03dc (2026-06-25T00:21:35+01:00) -->
+<!-- Última geração: 2026-06-25T23:25:24.613Z -->
+<!-- Git: a4ca724 (2026-06-26T00:24:12+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 5 — Movimentos (OCR melhorado → UI confirmação)** |
-| Última geração | 2026-06-24T23:56:13.972Z |
+| Fase atual | **Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)** |
+| Última geração | 2026-06-25T23:25:24.613Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `8ef03dc` (2026-06-25T00:21:35+01:00) |
+| Git commit | `a4ca724` (2026-06-26T00:24:12+01:00) |
 
 ---
 
@@ -172,6 +172,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     PatrimonyAllocationCard.tsx
     PricesInsightsSection.tsx
     SpendingCategoryCard.tsx
+    SpendingTrendBars.tsx
     TrendsSummaryCard.tsx
     index.ts
   app/
@@ -442,6 +443,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     log-mutation.ts
     movement-flow-trace.ts
   domain/
+    analysis-period.ts
     analysis.compose.ts
     analysis.insights.ts
     analysis.types.ts
@@ -473,6 +475,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     receipt.types.ts
     transaction-date.utils.ts
     transaction-form.ts
+    transaction-grouping.ts
     transaction.schema.ts
     transaction.types.ts
     types.ts
@@ -613,7 +616,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 5 — Movimentos (OCR melhorado → UI confirmação)
+## Fase atual: Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -665,21 +668,25 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Google OAuth — callback PKCE/hash, docs google-oauth-setup.md
 - Dashboard — alertas atenção + sugestões com navegação contextual
 - Movimentos — swipe editar/eliminar + acções web
+- BUG 5 — Definições sem secções do Perfil duplicadas
+- BUG 6 — Início com HomeAssetsSummaryCard (resumo de ativos)
+- BUG 2 — amortização antecipada actualiza saldo real do crédito
+- BUG 1 — OCR de PDFs via Google Vision files:annotate (process-receipt deployed)
+- UX 1 — tab Créditos com barra de progresso + Registar pagamento
+- UX 2 — simulador de crédito com campos avançados colapsáveis
+- UX 3 — fluxo de ficheiro do Novo movimento sem modais sobrepostos
+- UX 4 — Movimentos agrupados por dia (SectionList) + resumo do mês
+- UX 5 — Análises com selector de período, gráfico de barras e donut interactivo
 
 ### 🔲 Pendente
-- Activar Google Provider no Supabase Dashboard (instruções em docs/google-oauth-setup.md)
-- Testar envio real Resend no Doctor (modo sandbox)
+- Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
+- Confirmar GOOGLE_VISION_API_KEY nos secrets Supabase (necessário para OCR de PDFs/imagens)
+- Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)
 - EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)
 - Produção email — verificar mail.centflow.app no Resend + EMAIL_MODE=production
-- Correr npx eas init no projecto Expo (liga repo + projectId + updates URL)
-- Etapa 2 — Melhorar UI do ecrã ConfirmReceiptModal
 - Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)
-- Google OAuth (expo-auth-session — preparado)
-- Validar contrato exacto da API com backend em produção
 - Edição linha a linha de itens do talão
-- Editar e eliminar movimentos
 - Ativos — CRUD objetivos, garantias, inventário
-- Navegação funcional em alertas e sugestões do Dashboard
 
 ---
 
