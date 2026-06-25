@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -6,9 +7,10 @@ import {
   InsightsSection,
   PricesInsightsSection,
   SpendingCategoryCard,
+  SpendingTrendBars,
   TrendsSummaryCard,
 } from '@/components/analysis';
-import { AppHeader } from '@/components/layout';
+import { AppHeader, SegmentedControl } from '@/components/layout';
 import {
   ErrorState,
   RefetchingIndicator,
@@ -17,12 +19,38 @@ import {
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { usePricesData } from '@/hooks/queries/usePricesData';
+import { useTransactions } from '@/hooks/queries/useTransactions';
+import {
+  ANALYSIS_PERIOD_OPTIONS,
+  computeSpendingByCategory,
+  computeSpendingBuckets,
+  getPeriodOption,
+  type AnalysisPeriodKey,
+} from '@/lib/domain/analysis-period';
 import { router } from 'expo-router';
 import { spacing, colors } from '@/lib/theme';
+
+const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
+  key: option.key,
+  label: option.label,
+}));
 
 export default function AnalisesScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
   const { data: pricesData } = usePricesData();
+  const { data: transactions = [] } = useTransactions('all');
+
+  const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
+  const periodOption = getPeriodOption(period);
+
+  const periodCategories = useMemo(
+    () => computeSpendingByCategory(transactions, periodOption.days),
+    [transactions, periodOption.days],
+  );
+  const spendingBuckets = useMemo(
+    () => computeSpendingBuckets(transactions, periodOption),
+    [transactions, periodOption],
+  );
 
   return (
     <View style={styles.screen}>
@@ -43,7 +71,15 @@ export default function AnalisesScreen() {
         </View>
       ) : (
         <ScreenContainer applyBottomSafeInset={false}>
-          <SectionHeader title="Análises" subtitle={data.periodLabel} />
+          <SectionHeader title="Análises" subtitle={`Últimos · ${periodOption.label}`} />
+
+          <View style={styles.periodSelector}>
+            <SegmentedControl
+              segments={PERIOD_SEGMENTS}
+              value={period}
+              onChange={setPeriod}
+            />
+          </View>
 
           <TrendsSummaryCard
             trends={data.trends}
@@ -51,9 +87,11 @@ export default function AnalisesScreen() {
             showNetWorthChange={false}
           />
 
+          <SpendingTrendBars buckets={spendingBuckets} periodLabel={periodOption.label} />
+
           <SpendingCategoryCard
-            categories={data.trends.spendingByCategory}
-            periodLabel={data.periodLabel}
+            categories={periodCategories}
+            periodLabel={periodOption.label}
           />
 
           <SectionHeader
@@ -109,5 +147,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.md,
     marginBottom: spacing['2xl'],
+  },
+  periodSelector: {
+    marginBottom: spacing.lg,
   },
 });
