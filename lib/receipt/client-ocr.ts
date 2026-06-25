@@ -47,7 +47,7 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
 export function getClientOcrUnavailableMessage(reason?: ClientOcrOutcome['unavailableReason']): string {
   switch (reason) {
     case 'pdf':
-      return 'Não conseguimos ler este talão (PDF). Preenche manualmente — o ficheiro fica guardado.';
+      return 'PDF detectado — confirma os dados abaixo. O ficheiro fica anexado ao movimento.';
     case 'empty':
       return 'Não conseguimos ler este talão. Tenta outra foto com melhor luz e foco.';
     case 'module':

@@ -87,6 +87,58 @@ async function runGoogleVision(
   return toOcrResponse(parsed, 'google_vision');
 }
 
+/**
+ * OCR de PDFs via Google Vision `files:annotate` (suporte nativo, síncrono até 5 páginas).
+ * Lê as primeiras páginas e concatena o texto detectado.
+ */
+async function runGoogleVisionPdf(
+  pdfBase64: string,
+  apiKey: string,
+): Promise<OcrResponse | null> {
+  const response = await fetch(
+    `https://vision.googleapis.com/v1/files:annotate?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          {
+            inputConfig: {
+              mimeType: 'application/pdf',
+              content: pdfBase64,
+            },
+            features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+            imageContext: { languageHints: ['pt', 'en'] },
+            // Vision síncrono aceita no máximo 5 páginas por pedido.
+            pages: [1, 2, 3, 4, 5],
+          },
+        ],
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    console.error('Google Vision (PDF) error', await response.text());
+    return null;
+  }
+
+  const data = await response.json();
+  const pageResponses = data?.responses?.[0]?.responses ?? [];
+  const rawText = pageResponses
+    .map(
+      (page: Record<string, unknown>) =>
+        (page?.fullTextAnnotation as { text?: string } | undefined)?.text ?? '',
+    )
+    .filter((text: string) => text.length > 0)
+    .join('\n')
+    .trim();
+
+  if (!rawText || rawText.length < 8) return null;
+
+  const parsed = parseReceiptFromRawText(rawText);
+  return toOcrResponse(parsed, 'google_vision');
+}
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = '';
   const chunk = 0x8000;
@@ -155,15 +207,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Receipt not found' }, 404);
     }
 
-    if (receipt.mime_type === 'application/pdf') {
-      return jsonResponse(
-        {
-          error: 'PDF OCR not supported yet',
-          hint: 'Use photo of receipt or fill manually',
-        },
-        422,
-      );
-    }
+    const isPdf = receipt.mime_type === 'application/pdf';
 
     await admin
       .from('receipts')
@@ -176,17 +220,26 @@ Deno.serve(async (req) => {
 
     if (downloadError || !fileData) {
       await admin.from('receipts').update({ status: 'failed' }).eq('id', receiptId);
-      return jsonResponse({ error: 'Failed to download receipt image' }, 500);
+      return jsonResponse({ error: 'Failed to download receipt file' }, 500);
     }
 
     const buffer = await fileData.arrayBuffer();
-    const imageBase64 = bytesToBase64(new Uint8Array(buffer));
+    const contentBase64 = bytesToBase64(new Uint8Array(buffer));
 
-    const ocr = await runGoogleVision(imageBase64, googleVisionKey);
+    const ocr = isPdf
+      ? await runGoogleVisionPdf(contentBase64, googleVisionKey)
+      : await runGoogleVision(contentBase64, googleVisionKey);
 
     if (!ocr) {
       await admin.from('receipts').update({ status: 'failed' }).eq('id', receiptId);
-      return jsonResponse({ error: 'Google Vision returned no text' }, 422);
+      return jsonResponse(
+        {
+          error: isPdf
+            ? 'Google Vision returned no text from PDF'
+            : 'Google Vision returned no text',
+        },
+        422,
+      );
     }
 
     const { data: ocrRow, error: ocrError } = await admin
