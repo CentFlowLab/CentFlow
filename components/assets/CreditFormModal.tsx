@@ -75,6 +75,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
   const [startDate, setStartDate] = useState('');
   const [notes, setNotes] = useState('');
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const isSaving = saveCredit.isPending;
   const isDeleting = deleteCredit.isPending;
@@ -168,6 +169,22 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
     }
 
     setApiError(null);
+    // Expande automaticamente se o crédito já tem dados avançados preenchidos.
+    setShowAdvanced(
+      Boolean(
+        credit &&
+          (credit.lender ||
+            credit.indexRate !== undefined ||
+            credit.spread !== undefined ||
+            credit.monthlyPayment ||
+            credit.insuranceMonthly ||
+            credit.monthlyIncome ||
+            credit.nextPaymentAmount ||
+            credit.nextPaymentDate ||
+            credit.startDate ||
+            credit.notes),
+      ),
+    );
     saveCredit.reset();
     deleteCredit.reset();
   }, [visible, credit?.id]);
@@ -416,12 +433,6 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
           ) : null}
 
           <TextField
-            label="Instituição (opcional)"
-            value={lender}
-            onChangeText={setLender}
-            placeholder="Ex.: Banco X"
-          />
-          <TextField
             label="Montante original (opcional)"
             value={originalAmount}
             onChangeText={setOriginalAmount}
@@ -436,25 +447,11 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
             placeholder="0,00"
           />
           <TextField
-            label="TAEG anual % (opcional)"
+            label="TAEG anual %"
             value={interestRateAnnual}
             onChangeText={setInterestRateAnnual}
             keyboardType="decimal-pad"
             placeholder="Ex.: 5,2"
-          />
-          <TextField
-            label="Euribor / indexante % (opcional)"
-            value={indexRate}
-            onChangeText={setIndexRate}
-            keyboardType="decimal-pad"
-            placeholder="Ex.: 3,2"
-          />
-          <TextField
-            label="Spread % (opcional)"
-            value={spread}
-            onChangeText={setSpread}
-            keyboardType="decimal-pad"
-            placeholder="Ex.: 1,1"
           />
           <TextField
             label="Prazo total (meses)"
@@ -463,58 +460,102 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
             keyboardType="number-pad"
             placeholder="Ex.: 360"
           />
-          <TextField
-            label="Prestação mensal (opcional)"
-            value={monthlyPayment}
-            onChangeText={setMonthlyPayment}
-            keyboardType="decimal-pad"
-            placeholder="Calculada automaticamente se vazia"
-          />
-          <TextField
-            label="Seguro mensal (opcional)"
-            value={insuranceMonthly}
-            onChangeText={setInsuranceMonthly}
-            keyboardType="decimal-pad"
-            placeholder="0,00"
-          />
-          <TextField
-            label="Rendimento mensal líquido (opcional)"
-            value={monthlyIncome}
-            onChangeText={setMonthlyIncome}
-            keyboardType="decimal-pad"
-            placeholder="Para taxa de esforço"
-          />
-          <TextField
-            label="Próximo pagamento (opcional)"
-            value={nextAmount}
-            onChangeText={setNextAmount}
-            keyboardType="decimal-pad"
-            placeholder="0,00"
-          />
-          <DatePickerField
-            label="Data do próximo pagamento (opcional)"
-            value={nextDate}
-            onChange={setNextDate}
-          />
-          <DatePickerField
-            label="Data de início (opcional)"
-            value={startDate}
-            onChange={setStartDate}
-          />
-          <TextField
-            label="Simular amortização antecipada (opcional)"
-            value={earlyAmortization}
-            onChangeText={setEarlyAmortization}
-            keyboardType="decimal-pad"
-            placeholder="Montante extra a amortizar"
-          />
-          <TextField
-            label="Notas (opcional)"
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Condições especiais, indexante..."
-            multiline
-          />
+
+          <Pressable
+            onPress={() => setShowAdvanced((open) => !open)}
+            style={styles.advancedToggle}
+            accessibilityRole="button"
+            accessibilityLabel={showAdvanced ? 'Ocultar dados avançados' : 'Mostrar dados avançados'}>
+            <Text variant="bodyMedium" color="primary">
+              {showAdvanced ? 'Ocultar dados avançados' : 'Mostrar dados avançados'}
+            </Text>
+            <SymbolView
+              name={{
+                ios: showAdvanced ? 'chevron.up' : 'chevron.down',
+                android: showAdvanced ? 'expand_less' : 'expand_more',
+                web: showAdvanced ? 'expand_less' : 'expand_more',
+              }}
+              tintColor={colors.primary}
+              size={16}
+            />
+          </Pressable>
+
+          {showAdvanced ? (
+            <>
+              <TextField
+                label="Instituição (opcional)"
+                value={lender}
+                onChangeText={setLender}
+                placeholder="Ex.: Banco X"
+              />
+              <TextField
+                label="Euribor / indexante % (opcional)"
+                value={indexRate}
+                onChangeText={setIndexRate}
+                keyboardType="decimal-pad"
+                placeholder="Ex.: 3,2"
+              />
+              <TextField
+                label="Spread % (opcional)"
+                value={spread}
+                onChangeText={setSpread}
+                keyboardType="decimal-pad"
+                placeholder="Ex.: 1,1"
+              />
+              <TextField
+                label="Prestação mensal (opcional)"
+                value={monthlyPayment}
+                onChangeText={setMonthlyPayment}
+                keyboardType="decimal-pad"
+                placeholder="Calculada automaticamente se vazia"
+              />
+              <TextField
+                label="Seguro mensal (opcional)"
+                value={insuranceMonthly}
+                onChangeText={setInsuranceMonthly}
+                keyboardType="decimal-pad"
+                placeholder="0,00"
+              />
+              <TextField
+                label="Rendimento mensal líquido (opcional)"
+                value={monthlyIncome}
+                onChangeText={setMonthlyIncome}
+                keyboardType="decimal-pad"
+                placeholder="Para taxa de esforço"
+              />
+              <TextField
+                label="Próximo pagamento (opcional)"
+                value={nextAmount}
+                onChangeText={setNextAmount}
+                keyboardType="decimal-pad"
+                placeholder="0,00"
+              />
+              <DatePickerField
+                label="Data do próximo pagamento (opcional)"
+                value={nextDate}
+                onChange={setNextDate}
+              />
+              <DatePickerField
+                label="Data de início (opcional)"
+                value={startDate}
+                onChange={setStartDate}
+              />
+              <TextField
+                label="Simular amortização antecipada (opcional)"
+                value={earlyAmortization}
+                onChangeText={setEarlyAmortization}
+                keyboardType="decimal-pad"
+                placeholder="Montante extra a amortizar"
+              />
+              <TextField
+                label="Notas (opcional)"
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Condições especiais, indexante..."
+                multiline
+              />
+            </>
+          ) : null}
 
           {analysis ? (
             <Card variant="outlined" style={styles.analysisCard}>
@@ -633,6 +674,13 @@ const styles = StyleSheet.create({
   typeChipActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryMuted,
+  },
+  advancedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   analysisCard: {
     gap: spacing.sm,
