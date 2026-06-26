@@ -23,9 +23,9 @@ export function openAttentionItemRoute(type: AttentionItem['type']): void {
 export function openSuggestionRoute(type: Suggestion['type']): void {
   switch (type) {
     case 'goal':
-    case 'savings':
       router.push('/(tabs)/ativos?tab=objetivos');
       break;
+    case 'savings':
     case 'investment':
       router.push('/(tabs)/analises');
       break;
