@@ -3,6 +3,7 @@ export { ConfirmReceiptModal } from './ConfirmReceiptModal';
 export { EditTransactionModal } from './EditTransactionModal';
 export { MOVEMENTS_EMPTY_CONFIG, MOVEMENTS_VIEW_SEGMENTS } from './movements.config';
 export { PendingSubscriptionModal } from './PendingSubscriptionModal';
+export { QuickExpenseSheet } from './QuickExpenseSheet';
 export { OcrDetectionSummary } from './OcrDetectionSummary';
 export { OcrFailureCard, OcrFieldBadge, OcrFieldsChecklist } from './ocr';
 export { OcrResultCard } from './OcrResultCard';

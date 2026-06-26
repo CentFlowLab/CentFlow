@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)",
+  "currentPhase": "Fase 7 — Gasto rápido + Disponível este mês (orçamento mensal, deep link, Back Tap)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -67,7 +67,12 @@
     "BUG 4 — Definições dedicadas (/settings) sem dados de perfil duplicados",
     "BUG 3 — Início deixa de sugerir onboarding quando já há movimentos",
     "BUG 1 — erro real da Edge Function OCR exposto no Doctor (root cause: falta GOOGLE_VISION_API_KEY)",
-    "BUG 6 — amortização com taxa de comissão dinâmica + poupança estimada (coluna commission_rate_early_repayment)"
+    "BUG 6 — amortização com taxa de comissão dinâmica + poupança estimada (coluna commission_rate_early_repayment)",
+    "Orçamento mensal — calculateMonthlySpendable() puro + 8 testes deterministas (lib/budget)",
+    "Disponível este mês — MonthlySpendableCard na Home + MonthlySpendableSheet (receitas/despesas previstas, projeção, warnings)",
+    "Quick Add — QuickExpenseSheet independente (valor grande, 8 categorias em grid, nota, animação Reanimated, telemetria Doctor)",
+    "Deep link centflow://quick-expense (rota app/quick-expense) + acesso na Home e menu Movimentos",
+    "Definições → Atalhos rápidos — instruções Back Tap (iOS Shortcuts) + copiar/partilhar URL"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-26T00:04:02.470Z -->
-<!-- Git: e2e01ca (2026-06-26T00:36:07+01:00) -->
+<!-- Última geração: 2026-06-26T18:35:39.256Z -->
+<!-- Git: a77c4f2 (2026-06-26T01:06:22+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)** |
-| Última geração | 2026-06-26T00:04:02.470Z |
+| Fase atual | **Fase 7 — Gasto rápido + Disponível este mês (orçamento mensal, deep link, Back Tap)** |
+| Última geração | 2026-06-26T18:35:39.256Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `e2e01ca` (2026-06-26T00:36:07+01:00) |
+| Git commit | `a77c4f2` (2026-06-26T01:06:22+01:00) |
 
 ---
 
@@ -153,6 +153,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     callback.tsx
   index.tsx
   onboarding.tsx
+  quick-expense.tsx
   reset-password.tsx
   settings/
     _layout.tsx
@@ -166,6 +167,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     personal-data.tsx
     privacy.tsx
     security.tsx
+    shortcuts.tsx
   analysis/
     AnalysisMetricCard.tsx
     AnalysisSkeleton.tsx
@@ -190,6 +192,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AuthScreenLayout.tsx
     AuthSocialDivider.tsx
     GoogleSignInButton.tsx
+    index.ts
+  budget/
+    MonthlySpendableCard.tsx
+    MonthlySpendableSheet.tsx
     index.ts
   charts/
     DonutChart.tsx
@@ -246,6 +252,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     OcrDetectionSummary.tsx
     OcrResultCard.tsx
     PendingSubscriptionModal.tsx
+    QuickExpenseSheet.tsx
     ReceiptAttachmentField.tsx
     ReceiptDataForm.tsx
     ReceiptDigitizePreview.tsx
@@ -346,6 +353,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useFormDismiss.ts
   useImportCsv.ts
   useKeyboardVisible.ts
+  useMonthlySpendable.ts
   useMovementRenderProbe.ts
   useOnboarding.ts
   useProcessReceipt.ts
@@ -414,6 +422,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     supabase-oauth.config.ts
     types.ts
     useAuth.ts
+  budget/
+    calculateMonthlySpendable.test.ts
+    calculateMonthlySpendable.ts
   config/
     app-variant.ts
     data-mode.ts
@@ -443,6 +454,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
     log-mutation.ts
     movement-flow-trace.ts
+    quick-expense-trace.ts
   domain/
     analysis-period.ts
     analysis.compose.ts
@@ -617,7 +629,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)
+## Fase atual: Fase 7 — Gasto rápido + Disponível este mês (orçamento mensal, deep link, Back Tap)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -685,6 +697,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - BUG 3 — Início deixa de sugerir onboarding quando já há movimentos
 - BUG 1 — erro real da Edge Function OCR exposto no Doctor (root cause: falta GOOGLE_VISION_API_KEY)
 - BUG 6 — amortização com taxa de comissão dinâmica + poupança estimada (coluna commission_rate_early_repayment)
+- Orçamento mensal — calculateMonthlySpendable() puro + 8 testes deterministas (lib/budget)
+- Disponível este mês — MonthlySpendableCard na Home + MonthlySpendableSheet (receitas/despesas previstas, projeção, warnings)
+- Quick Add — QuickExpenseSheet independente (valor grande, 8 categorias em grid, nota, animação Reanimated, telemetria Doctor)
+- Deep link centflow://quick-expense (rota app/quick-expense) + acesso na Home e menu Movimentos
+- Definições → Atalhos rápidos — instruções Back Tap (iOS Shortcuts) + copiar/partilhar URL
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

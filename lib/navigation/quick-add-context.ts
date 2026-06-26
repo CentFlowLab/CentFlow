@@ -17,7 +17,7 @@ export function getContextualQuickAddActions(
     case 'home':
       return ['movement', 'asset', 'goal'];
     case 'movimentos':
-      return ['movement'];
+      return ['quick-expense', 'movement'];
     case 'subscricoes':
       return ['subscription'];
     case 'creditos':

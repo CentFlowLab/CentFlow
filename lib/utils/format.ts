@@ -154,9 +154,9 @@ export function formatRelativeDays(days: number): string {
   return `Em ${days} dias`;
 }
 
-export function daysUntil(dateIso: string): number {
+export function daysUntil(dateIso: string, asOf: Date = new Date()): number {
   const target = new Date(dateIso);
-  const today = new Date();
+  const today = new Date(asOf);
   today.setHours(0, 0, 0, 0);
   target.setHours(0, 0, 0, 0);
   return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));

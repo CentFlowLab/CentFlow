@@ -14,8 +14,9 @@ import {
   HomeAttentionSheet,
   NetWorthHeroCard,
 } from '@/components/dashboard';
+import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
-import { AddTransactionModal } from '@/components/movements';
+import { AddTransactionModal, QuickExpenseSheet } from '@/components/movements';
 import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
@@ -34,6 +35,8 @@ export default function InicioScreen() {
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
+  const [quickExpenseVisible, setQuickExpenseVisible] = useState(false);
+  const [spendableVisible, setSpendableVisible] = useState(false);
 
   const { assistant } = useCentFlowIntelligence();
   const { contentBottomPadding } = useResponsiveLayout();
@@ -182,6 +185,11 @@ export default function InicioScreen() {
             onScanReceipt={openReceiptScanner}
           />
 
+          <MonthlySpendableCard
+            onQuickExpense={() => setQuickExpenseVisible(true)}
+            onOpenDetails={() => setSpendableVisible(true)}
+          />
+
           {hasActivity ? <HomeAssetsSummaryCard summary={assetsSummary} /> : null}
 
           <HomeAlertsSection
@@ -223,6 +231,16 @@ export default function InicioScreen() {
         visible={attentionSheetVisible}
         onClose={() => setAttentionSheetVisible(false)}
         items={attentionItems}
+      />
+
+      <QuickExpenseSheet
+        visible={quickExpenseVisible}
+        onClose={() => setQuickExpenseVisible(false)}
+      />
+
+      <MonthlySpendableSheet
+        visible={spendableVisible}
+        onClose={() => setSpendableVisible(false)}
       />
     </View>
   );

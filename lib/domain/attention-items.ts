@@ -36,7 +36,7 @@ export function buildAttentionItems(input: {
   const items: AttentionItem[] = [];
 
   for (const warranty of input.warranties) {
-    const daysLeft = daysUntil(warranty.expiresAt);
+    const daysLeft = daysUntil(warranty.expiresAt, asOf);
     if (daysLeft < 0 || daysLeft > WARRANTY_CRITICAL_DAYS) continue;
 
     items.push({
@@ -51,7 +51,7 @@ export function buildAttentionItems(input: {
 
   for (const credit of input.credits) {
     if (!credit.nextPaymentDate) continue;
-    const daysLeft = daysUntil(credit.nextPaymentDate);
+    const daysLeft = daysUntil(credit.nextPaymentDate, asOf);
     if (daysLeft < 0 || daysLeft > CREDIT_DUE_DAYS) continue;
 
     items.push({

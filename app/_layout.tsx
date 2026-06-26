@@ -140,6 +140,10 @@ function RootNavigator() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" />
+          <Stack.Screen
+            name="quick-expense"
+            options={{ presentation: 'transparentModal', animation: 'fade' }}
+          />
         </Stack.Protected>
 
         <Stack.Protected guard={!isAuthenticated}>

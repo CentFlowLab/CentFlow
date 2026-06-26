@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/Toast';
 import type { QuickAddActionId } from '@/components/layout/QuickAddMenuSheet';
 
 export type QuickAddHandlers = {
+  onQuickExpense?: () => void;
   onMovement?: () => void;
   onSubscription?: () => void;
   onProduct?: () => void;
@@ -18,6 +19,13 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
 
   return (action: QuickAddActionId) => {
     switch (action) {
+      case 'quick-expense':
+        if (handlers.onQuickExpense) {
+          handlers.onQuickExpense();
+        } else {
+          router.push('/quick-expense');
+        }
+        break;
       case 'movement':
         if (handlers.onMovement) {
           handlers.onMovement();

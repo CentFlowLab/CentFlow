@@ -39,6 +39,11 @@ const MENU_SECTIONS: Array<{
         route: '/settings/appearance',
       },
       {
+        icon: { ios: 'hand.tap.fill', android: 'touch_app', web: 'touch_app' },
+        label: 'Atalhos rápidos',
+        route: '/settings/shortcuts',
+      },
+      {
         icon: { ios: 'hand.raised.fill', android: 'privacy_tip', web: 'privacy_tip' },
         label: 'Privacidade',
         route: '/settings/privacy',

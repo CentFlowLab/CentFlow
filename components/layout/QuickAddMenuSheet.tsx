@@ -7,6 +7,7 @@ import { Text } from '@/components/ui';
 import { colors, radius, spacing } from '@/lib/theme';
 
 export type QuickAddActionId =
+  | 'quick-expense'
   | 'movement'
   | 'subscription'
   | 'product'
@@ -25,6 +26,14 @@ type QuickAddItem = {
 };
 
 const ALL_ITEMS: QuickAddItem[] = [
+  {
+    id: 'quick-expense',
+    label: 'Despesa rápida',
+    description: 'Regista uma despesa em segundos',
+    icon: { ios: 'bolt.fill', android: 'bolt', web: 'bolt' },
+    color: colors.primary,
+    bg: colors.primaryMuted,
+  },
   {
     id: 'movement',
     label: 'Novo movimento',
