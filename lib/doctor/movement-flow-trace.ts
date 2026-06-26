@@ -117,6 +117,7 @@ export function traceMovementStep(
     step === 'mutation_success' ||
     step === 'mutation_error' ||
     step === 'mutation_settled' ||
+    step === 'cache_invalidate_done' ||
     step === 'modal_close' ||
     step === 'validation_fail' ||
     step === 'form_close_request'
