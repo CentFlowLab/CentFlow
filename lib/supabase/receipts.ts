@@ -91,6 +91,40 @@ export async function uploadReceipt(draft: ReceiptDraft): Promise<ReceiptUpload>
   return mapReceiptRow(updatedReceipt, signedUrl, localUri);
 }
 
+/**
+ * Extrai o corpo real de um erro da Edge Function (status + JSON), em vez do
+ * genérico "Edge Function returned a non-2xx status code". Permite ao Doctor
+ * mostrar a causa raiz (ex.: 503 GOOGLE_VISION_API_KEY not configured).
+ */
+async function describeFunctionError(error: {
+  message: string;
+  context?: unknown;
+}): Promise<string> {
+  const context = error.context;
+  if (context instanceof Response) {
+    const status = context.status;
+    try {
+      const body = await context.clone().json();
+      const detail =
+        typeof body?.error === 'string'
+          ? typeof body?.hint === 'string'
+            ? `${body.error} — ${body.hint}`
+            : body.error
+          : JSON.stringify(body);
+      return `process-receipt ${status}: ${detail}`;
+    } catch {
+      try {
+        const text = await context.clone().text();
+        if (text) return `process-receipt ${status}: ${text}`;
+      } catch {
+        // ignora — cai no fallback abaixo
+      }
+      return `process-receipt ${status}: ${error.message}`;
+    }
+  }
+  return error.message;
+}
+
 export async function invokeVisionOcr(receiptId: string): Promise<ReceiptOcrResult | null> {
   const supabase = getSupabaseClient();
 
@@ -99,7 +133,7 @@ export async function invokeVisionOcr(receiptId: string): Promise<ReceiptOcrResu
   });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(await describeFunctionError(error));
   }
 
   if (data?.error) {
