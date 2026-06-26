@@ -1,7 +1,7 @@
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
 import { FinancialProfileDetailSheet, FinancialProfileProgress, ProfileHubSections } from '@/components/profile';
@@ -19,87 +19,15 @@ import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
-import { isDiagnosticsEnabled } from '@/lib/diagnostics';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
 import { colors, spacing } from '@/lib/theme';
-
-type MenuItem = {
-  icon: SymbolViewProps['name'];
-  label: string;
-  route: string;
-};
-
-const MENU_SECTIONS: Array<{
-  title: string;
-  items: MenuItem[];
-}> = [
-  {
-    title: 'Definições',
-    items: [
-      {
-        icon: { ios: 'lock.fill', android: 'lock', web: 'lock' },
-        label: 'Segurança',
-        route: '/settings/security',
-      },
-      {
-        icon: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
-        label: 'Notificações',
-        route: '/settings/notifications',
-      },
-      {
-        icon: { ios: 'paintbrush.fill', android: 'palette', web: 'palette' },
-        label: 'Aparência',
-        route: '/settings/appearance',
-      },
-      {
-        icon: { ios: 'hand.raised.fill', android: 'privacy_tip', web: 'privacy_tip' },
-        label: 'Privacidade',
-        route: '/settings/privacy',
-      },
-      {
-        icon: { ios: 'doc.richtext', android: 'picture_as_pdf', web: 'picture_as_pdf' },
-        label: 'Exportar PDF',
-        route: '/settings/export-pdf',
-      },
-      {
-        icon: { ios: 'square.and.arrow.up', android: 'upload', web: 'upload' },
-        label: 'Exportar dados',
-        route: '/settings/export-data',
-      },
-      {
-        icon: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
-        label: 'Repetir onboarding',
-        route: '__redo_onboarding__',
-      },
-    ],
-  },
-];
-
-function getMenuSections() {
-  const sections = [...MENU_SECTIONS];
-  if (isDiagnosticsEnabled()) {
-    sections.push({
-      title: 'Testes',
-      items: [
-        {
-          icon: { ios: 'ladybug.fill', android: 'bug_report', web: 'bug_report' },
-          label: 'CentFlow Doctor',
-          route: '/settings/diagnostics',
-        },
-      ],
-    });
-  }
-  return sections;
-}
 
 export default function PerfilScreen() {
   useDiagnosticScreen('profile');
 
   const { signOut } = useAuth();
-  const { reset: resetOnboarding } = useOnboarding();
   const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
 
   // Keeps analytics user context fresh when the user visits Profile
@@ -110,7 +38,6 @@ export default function PerfilScreen() {
   const { showToast } = useToast();
   const { activateFeature } = useFeatureAreas();
   const [activatingFeature, setActivatingFeature] = useState<FeatureAreaId | null>(null);
-  const [resettingOnboarding, setResettingOnboarding] = useState(false);
 
   async function handleActivateFeature(feature: FeatureAreaId) {
     setActivatingFeature(feature);
@@ -124,36 +51,9 @@ export default function PerfilScreen() {
     }
   }
 
-  function handleRedoOnboarding() {
-    Alert.alert(
-      'Repetir onboarding?',
-      'Voltas a responder às perguntas de personalização. Os teus dados financeiros não são afectados.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Repetir',
-          onPress: () => {
-            setResettingOnboarding(true);
-            void resetOnboarding()
-              .then(() => router.replace('/onboarding'))
-              .finally(() => setResettingOnboarding(false));
-          },
-        },
-      ],
-    );
-  }
-
-  function handleMenuPress(route: string) {
-    if (route === '__redo_onboarding__') {
-      handleRedoOnboarding();
-      return;
-    }
-
-    if (route.startsWith('/settings')) {
-      track(AnalyticsEvents.SETTINGS_OPENED);
-    }
-
-    router.push(route as never);
+  function handleOpenSettings() {
+    track(AnalyticsEvents.SETTINGS_OPENED);
+    router.push('/settings');
   }
 
   async function handleSignOut() {
@@ -205,44 +105,33 @@ export default function PerfilScreen() {
             activatingFeature={activatingFeature}
           />
 
-          {getMenuSections().map((section) => (
-            <View key={section.title} style={styles.section}>
-              <SectionHeader title={section.title} />
-              <Card variant="outlined" padding="sm">
-                {section.items.map((item, itemIndex) => (
-                  <Pressable
-                    key={item.label}
-                    onPress={() => handleMenuPress(item.route)}
-                    disabled={item.route === '__redo_onboarding__' && resettingOnboarding}
-                    style={({ pressed }) => [
-                      styles.menuItem,
-                      itemIndex < section.items.length - 1 && styles.menuItemBorder,
-                      pressed && styles.menuItemPressed,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={item.label}>
-                    <SymbolView
-                      name={item.icon}
-                      tintColor={colors.textSecondary}
-                      size={22}
-                    />
-                    <Text variant="bodyMedium" style={styles.menuLabel}>
-                      {item.label}
-                    </Text>
-                    <SymbolView
-                      name={{
-                        ios: 'chevron.right',
-                        android: 'chevron_right',
-                        web: 'chevron_right',
-                      }}
-                      tintColor={colors.textMuted}
-                      size={16}
-                    />
-                  </Pressable>
-                ))}
-              </Card>
-            </View>
-          ))}
+          <View style={styles.section}>
+            <SectionHeader title="Definições" />
+            <Card variant="outlined" padding="sm">
+              <Pressable
+                onPress={handleOpenSettings}
+                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Definições">
+                <SymbolView
+                  name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
+                  tintColor={colors.textSecondary}
+                  size={22}
+                />
+                <View style={styles.menuLabel}>
+                  <Text variant="bodyMedium">Definições</Text>
+                  <Text variant="caption" color="textMuted">
+                    Segurança, notificações, aparência e dados
+                  </Text>
+                </View>
+                <SymbolView
+                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                  tintColor={colors.textMuted}
+                  size={16}
+                />
+              </Pressable>
+            </Card>
+          </View>
 
           <Button
             label="Terminar sessão"

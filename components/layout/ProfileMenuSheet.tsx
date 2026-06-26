@@ -58,7 +58,7 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
       icon: { ios: 'person.circle', android: 'account_circle', web: 'account_circle' },
       onPress: () => {
         onClose();
-        router.push('/settings/personal-data');
+        router.push('/(tabs)/perfil');
       },
     },
     {
@@ -67,7 +67,7 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
       icon: { ios: 'gearshape.fill', android: 'settings', web: 'settings' },
       onPress: () => {
         onClose();
-        router.push('/(tabs)/perfil');
+        router.push('/settings');
       },
     },
     {
