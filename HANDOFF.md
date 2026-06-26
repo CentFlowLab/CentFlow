@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-25T23:35:44.897Z -->
-<!-- Git: 0d1c59d (2026-06-26T00:26:07+01:00) -->
+<!-- Última geração: 2026-06-26T00:04:02.470Z -->
+<!-- Git: e2e01ca (2026-06-26T00:36:07+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 6 — Correcção de bugs críticos + melhorias UX (créditos, movimentos, análises)** |
-| Última geração | 2026-06-25T23:35:44.897Z |
+| Última geração | 2026-06-26T00:04:02.470Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `0d1c59d` (2026-06-26T00:26:07+01:00) |
+| Git commit | `e2e01ca` (2026-06-26T00:36:07+01:00) |
 
 ---
 
@@ -161,6 +161,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     diagnostics.tsx
     export-data.tsx
     export-pdf.tsx
+    index.tsx
     notifications.tsx
     personal-data.tsx
     privacy.tsx
@@ -678,10 +679,17 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - UX 4 — Movimentos agrupados por dia (SectionList) + resumo do mês
 - UX 5 — Análises com selector de período, gráfico de barras e donut interactivo
 - Segurança — redacção de tokens/chaves/credenciais nos logs do Doctor (dev/beta)
+- BUG 2 — fim dos falsos STALL após guardar movimento (stall watch limpo em cache_invalidate_done)
+- BUG 5 — sugestão 'Ver análises' (savings) navega para Análises (não Objetivos)
+- BUG 4 — Definições dedicadas (/settings) sem dados de perfil duplicados
+- BUG 3 — Início deixa de sugerir onboarding quando já há movimentos
+- BUG 1 — erro real da Edge Function OCR exposto no Doctor (root cause: falta GOOGLE_VISION_API_KEY)
+- BUG 6 — amortização com taxa de comissão dinâmica + poupança estimada (coluna commission_rate_early_repayment)
 
 ### 🔲 Pendente
+- OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
+- Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push)
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
-- Confirmar GOOGLE_VISION_API_KEY nos secrets Supabase (necessário para OCR de PDFs/imagens)
 - Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)
 - EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)
 - Produção email — verificar mail.centflow.app no Resend + EMAIL_MODE=production
