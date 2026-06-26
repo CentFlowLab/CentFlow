@@ -57,6 +57,11 @@ export interface Credit {
   startDate?: string;
   /** Rendimento mensal líquido para taxa de esforço. */
   monthlyIncome?: number;
+  /**
+   * Taxa de comissão de amortização antecipada (fracção: 0.005 = 0,5%).
+   * Default legal PT: 0,5% (taxa fixa) / 0,25% (taxa variável). Editável por crédito.
+   */
+  earlyRepaymentCommissionRate?: number;
   notes?: string;
 }
 

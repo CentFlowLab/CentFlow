@@ -340,6 +340,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
         nextPaymentAmount: parseOptionalAmount(nextAmount),
         nextPaymentDate: parsedNextDate,
         startDate: parsedStartDate,
+        earlyRepaymentCommissionRate: credit?.earlyRepaymentCommissionRate,
         notes: notes.trim() || undefined,
       });
       showToast(

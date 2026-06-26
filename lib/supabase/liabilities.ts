@@ -22,6 +22,7 @@ type CreditRow = {
   lender: string | null;
   start_date: string | null;
   monthly_income: number | null;
+  commission_rate_early_repayment: number | null;
   notes: string | null;
 };
 
@@ -60,6 +61,10 @@ function mapCreditRow(row: CreditRow): Credit {
     lender: row.lender ?? undefined,
     startDate: row.start_date ?? undefined,
     monthlyIncome: row.monthly_income ? Number(row.monthly_income) : undefined,
+    earlyRepaymentCommissionRate:
+      row.commission_rate_early_repayment != null
+        ? Number(row.commission_rate_early_repayment)
+        : undefined,
     notes: row.notes ?? undefined,
   };
 }
@@ -95,6 +100,7 @@ function creditToInsert(credit: Credit, userId: string): TablesInsert<'credits'>
     lender: credit.lender ?? null,
     start_date: credit.startDate ?? null,
     monthly_income: credit.monthlyIncome ?? null,
+    commission_rate_early_repayment: credit.earlyRepaymentCommissionRate ?? null,
     notes: credit.notes ?? null,
   };
 }

@@ -58,6 +58,7 @@ export function useSaveCredit() {
         lender: input.lender,
         startDate: input.startDate,
         monthlyIncome: input.monthlyIncome,
+        earlyRepaymentCommissionRate: input.earlyRepaymentCommissionRate,
         notes: input.notes,
       };
 

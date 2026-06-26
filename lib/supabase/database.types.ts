@@ -52,6 +52,7 @@ export type Database = {
       }
       credits: {
         Row: {
+          commission_rate_early_repayment: number | null
           created_at: string
           credit_type: string | null
           id: string
@@ -74,6 +75,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          commission_rate_early_repayment?: number | null
           created_at?: string
           credit_type?: string | null
           id?: string
@@ -96,6 +98,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          commission_rate_early_repayment?: number | null
           created_at?: string
           credit_type?: string | null
           id?: string
