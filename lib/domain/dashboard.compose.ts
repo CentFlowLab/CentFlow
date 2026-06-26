@@ -93,6 +93,7 @@ export function composeDashboardFromLocalSources(input: {
 
   const suggestions = buildHomeSuggestions({
     goals: input.assets.goals,
+    hasTransactions: input.transactions.length > 0,
     weeklySpending: sumWeeklyExpenses(input.transactions, asOf),
     netWorthChangePercent: monthlyMetrics.netWorthChangePercent,
   });
@@ -112,12 +113,15 @@ export function composeDashboardFromLocalSources(input: {
 
 function buildHomeSuggestions(input: {
   goals: AssetsData['goals'];
+  hasTransactions: boolean;
   weeklySpending: number;
   netWorthChangePercent: number;
 }): Suggestion[] {
   const suggestions: Suggestion[] = [];
 
-  if (input.goals.length === 0) {
+  // Sugestão de onboarding — só para quem ainda não tem objetivos NEM movimentos.
+  // Quem já regista movimentos não deve ver o convite de "primeiro objetivo".
+  if (input.goals.length === 0 && !input.hasTransactions) {
     suggestions.push({
       id: 'sug-first-goal',
       title: 'Define o teu primeiro objetivo',

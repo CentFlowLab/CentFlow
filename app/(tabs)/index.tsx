@@ -141,9 +141,12 @@ export default function InicioScreen() {
     dataSource,
     attentionItems,
     suggestions,
+    recentTransactions,
   } = data;
 
   const hasActivity =
+    recentTransactions.length > 0 ||
+    netWorth.netWorth !== 0 ||
     assetsSummary.goalsCount > 0 ||
     assetsSummary.warrantiesCount > 0 ||
     assetsSummary.inventoryCount > 0;
