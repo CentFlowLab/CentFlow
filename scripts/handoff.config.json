@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 8 — Limpeza da Home, bug de créditos, abas de créditos, pluralização e gramática",
+  "currentPhase": "Fase 9 — Onboarding premium redesenhado de raiz (17 passos, wheel picker, plano com gráfico)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -78,7 +78,13 @@
     "Precisa de atenção — objetivos excluídos (têm destaque próprio na Home)",
     "Pluralização correta de subscrições (corrigido 'subscriçãões') + util lib/utils/pluralize",
     "BUG créditos — novo crédito deixava de aparecer: insert Supabase enviava coluna inexistente (commission_rate_early_repayment); agora só é enviada quando preenchida + log de diagnóstico no fallback",
-    "Créditos — abas Créditos / Cartões de Crédito (tipo 'card' no modelo + formulário)"
+    "Créditos — abas Créditos / Cartões de Crédito (tipo 'card' no modelo + formulário)",
+    "Onboarding premium redesenhado de raiz — 17 passos modulares (welcome, curiosidade, problema, objetivo, histórico, objetivo de poupança, prazo, rendimento, plano, IA, OCR, créditos, investimentos, segurança, construção, resultado, primeiro arranque)",
+    "Motor do plano puro lib/onboarding/plan.ts (objetivo + prazo + rendimento → poupança/mês, livre/mês, viabilidade) + 7 testes",
+    "WheelPicker custom estilo iOS (Reanimated, OTA-safe) + BigAmountInput (número gigante)",
+    "PlanResult com donut SVG animado; BuildSequence com inicialização real (persiste respostas, sem loading falso)",
+    "OnboardingAnswers estendido (spendAwareness, financialHistory, savingsGoal, savingsMonths, monthlyIncome, creditTypes, investmentTypes) — retrocompatível",
+    "Wrapper de háptica OTA-safe (no-op) pronto para expo-haptics no IPA nativo"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
@@ -89,7 +95,9 @@
     "Produção email — verificar mail.centflow.app no Resend + EMAIL_MODE=production",
     "Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)",
     "Edição linha a linha de itens do talão",
-    "Ativos — CRUD objetivos, garantias, inventário"
+    "Ativos — CRUD objetivos, garantias, inventário",
+    "Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass), expo-apple-authentication (Apple Sign In no login): instalar + novo IPA (não entram por OTA)",
+    "Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal"
   ],
   "outputFile": "HANDOFF.md"
 }

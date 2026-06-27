@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T11:19:39.257Z -->
-<!-- Git: 488cf61 (2026-06-26T23:41:31+01:00) -->
+<!-- Última geração: 2026-06-27T14:25:31.620Z -->
+<!-- Git: e094b6d (2026-06-27T12:20:58+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 8 — Limpeza da Home, bug de créditos, abas de créditos, pluralização e gramática** |
-| Última geração | 2026-06-27T11:19:39.257Z |
+| Fase atual | **Fase 9 — Onboarding premium redesenhado de raiz (17 passos, wheel picker, plano com gráfico)** |
+| Última geração | 2026-06-27T14:25:31.620Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `488cf61` (2026-06-26T23:41:31+01:00) |
+| Git commit | `e094b6d` (2026-06-27T12:20:58+01:00) |
 
 ---
 
@@ -284,6 +284,13 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     SelectableCard.tsx
     ValuePromiseSection.tsx
     index.ts
+    premium/
+      BigAmountInput.tsx
+      BuildSequence.tsx
+      PlanResult.tsx
+      WheelPicker.tsx
+      index.ts
+      primitives.tsx
   profile/
     FinancialProfileDetailSheet.tsx
     FinancialProfileDimensionRow.tsx
@@ -540,6 +547,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     gate.ts
     onboarding-premium.test.ts
     personalization.ts
+    plan.test.ts
+    plan.ts
+    premium-constants.ts
     storage.ts
     types.ts
     welcome.ts
@@ -611,6 +621,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
     receipt.api.ts
     transaction.api.ts
+  ui/
+    haptics.ts
   updates/
     applyUpdateSafely.ts
     checkForUpdates.ts
@@ -631,7 +643,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 8 — Limpeza da Home, bug de créditos, abas de créditos, pluralização e gramática
+## Fase atual: Fase 9 — Onboarding premium redesenhado de raiz (17 passos, wheel picker, plano com gráfico)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -710,6 +722,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Pluralização correta de subscrições (corrigido 'subscriçãões') + util lib/utils/pluralize
 - BUG créditos — novo crédito deixava de aparecer: insert Supabase enviava coluna inexistente (commission_rate_early_repayment); agora só é enviada quando preenchida + log de diagnóstico no fallback
 - Créditos — abas Créditos / Cartões de Crédito (tipo 'card' no modelo + formulário)
+- Onboarding premium redesenhado de raiz — 17 passos modulares (welcome, curiosidade, problema, objetivo, histórico, objetivo de poupança, prazo, rendimento, plano, IA, OCR, créditos, investimentos, segurança, construção, resultado, primeiro arranque)
+- Motor do plano puro lib/onboarding/plan.ts (objetivo + prazo + rendimento → poupança/mês, livre/mês, viabilidade) + 7 testes
+- WheelPicker custom estilo iOS (Reanimated, OTA-safe) + BigAmountInput (número gigante)
+- PlanResult com donut SVG animado; BuildSequence com inicialização real (persiste respostas, sem loading falso)
+- OnboardingAnswers estendido (spendAwareness, financialHistory, savingsGoal, savingsMonths, monthlyIncome, creditTypes, investmentTypes) — retrocompatível
+- Wrapper de háptica OTA-safe (no-op) pronto para expo-haptics no IPA nativo
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
@@ -721,6 +739,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)
 - Edição linha a linha de itens do talão
 - Ativos — CRUD objetivos, garantias, inventário
+- Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass), expo-apple-authentication (Apple Sign In no login): instalar + novo IPA (não entram por OTA)
+- Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal
 
 ---
 

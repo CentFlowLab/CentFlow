@@ -1,707 +1,627 @@
 import { type Href, router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
+import { OnboardingShell } from '@/components/onboarding';
 import {
-  FeatureAreaCard,
-  OnboardingPlanLoading,
-  OnboardingShell,
-  OnboardingStepHeader,
-  OnboardingValueCard,
-  SelectableCard,
-  ValuePromiseSection,
-} from '@/components/onboarding';
-import { Button, Card, Text, TextField } from '@/components/ui';
+  BigAmountInput,
+  BuildSequence,
+  ChoiceCard,
+  ChoiceList,
+  PlanResult,
+  PremiumHeader,
+  WheelPicker,
+  type BuildStep,
+  type WheelItem,
+} from '@/components/onboarding/premium';
+import { Button, Text } from '@/components/ui';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useOnboarding, useOnboardingAnswersState } from '@/hooks/useOnboarding';
-import { useUpdateProfile } from '@/hooks/mutations/useProfileMutations';
-import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
+import { enrichOnboardingAnswers } from '@/lib/onboarding/features';
 import {
-  AMBITION_OPTIONS,
-  LIFE_AREA_OPTIONS,
-  PRIMARY_OBJECTIVE_OPTIONS,
-  PROFILE_OPTIONS,
-  STEP_PROGRESS,
-} from '@/lib/onboarding/constants';
+  fetchOnboardingAnswers,
+  saveOnboardingAnswersForUser,
+} from '@/lib/onboarding/answers.service';
 import {
-  getProgressLabel,
-  getStepLabel,
-  PRIMARY_OBJECTIVE_REWARD,
-  STEP_REASONS,
-} from '@/lib/onboarding/copy';
-import {
-  enrichOnboardingAnswers,
-  getFeatureRevealCards,
-  hintsFromPrimaryObjective,
-} from '@/lib/onboarding/features';
-import {
-  getOnboardingInsights,
-  getOnboardingValueEstimate,
-  getPriorityFeatures,
-  getPrimaryObjectiveSummary,
-  getVictoryActionCards,
-} from '@/lib/onboarding/personalization';
-import { saveOnboardingAnswersForUser, fetchOnboardingAnswers } from '@/lib/onboarding/answers.service';
+  BUILD_STEPS,
+  HISTORY_OPTIONS,
+  OBJECTIVE_OPTIONS,
+  ONBOARDING_CREDIT_OPTIONS,
+  ONBOARDING_INVESTMENT_OPTIONS,
+  PROBLEM_OPTIONS,
+  RESULT_CARDS,
+  SECURITY_ITEMS,
+  type ObjectiveOption,
+} from '@/lib/onboarding/premium-constants';
 import type {
-  AmbitionId,
-  GenderId,
-  IncomeAnswer,
+  FinancialHistoryId,
   LifeAreaId,
-  OnboardingStepId,
-  PrimaryObjectiveId,
-  WowActionId,
+  OnboardingAnswers,
+  OnboardingCreditId,
+  OnboardingInvestmentId,
+  ProfileTagId,
+  SpendAwarenessId,
 } from '@/lib/onboarding/types';
-import { GENDER_OPTIONS, getValuePromiseMessages } from '@/lib/onboarding/welcome';
 import { colors, radius, spacing } from '@/lib/theme';
 
-const STEPS: OnboardingStepId[] = [
+type StepId =
+  | 'welcome'
+  | 'curiosity'
+  | 'problem'
+  | 'objective'
+  | 'history'
+  | 'goal'
+  | 'timeline'
+  | 'income'
+  | 'plan'
+  | 'ai'
+  | 'ocr'
+  | 'credits'
+  | 'investments'
+  | 'security'
+  | 'build'
+  | 'result'
+  | 'first_run';
+
+const STEPS: StepId[] = [
   'welcome',
-  'primary_objective',
-  'profile',
-  'name',
-  'life_areas',
-  'ambition',
-  'smart_config',
-  'reveal',
-  'wow',
+  'curiosity',
+  'problem',
+  'objective',
+  'history',
+  'goal',
+  'timeline',
+  'income',
+  'plan',
+  'ai',
+  'ocr',
+  'credits',
+  'investments',
+  'security',
+  'build',
+  'result',
+  'first_run',
 ];
 
-const WELCOME_GATE_MS = 2400;
+const PROGRESS_FROM = 1;
+const PROGRESS_TO = 13;
 
-function toggleItem<T extends string>(list: T[], id: T): T[] {
-  return list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
+const YEAR_ITEMS: WheelItem[] = Array.from({ length: 11 }, (_, i) => ({
+  value: i,
+  label: String(i),
+}));
+const MONTH_ITEMS: WheelItem[] = Array.from({ length: 12 }, (_, i) => ({
+  value: i,
+  label: String(i),
+}));
+
+function toggle<T>(list: T[], item: T): T[] {
+  return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
 }
 
 function getFirstName(name: string): string {
-  return name.trim().split(' ')[0] || 'Utilizador';
+  return name.trim().split(' ')[0] || '';
+}
+
+function firstRunMessage(answers: OnboardingAnswers, firstName: string): string {
+  const hello = firstName ? `Olá, ${firstName}.` : 'Olá.';
+  let focus =
+    'acredito que o maior impacto para ti será controlar melhor as despesas variáveis e acompanhar o teu património líquido.';
+
+  if (answers.creditTypes.length > 0 || answers.primaryObjective === 'organize_credits') {
+    focus =
+      'o maior impacto para ti será ganhar visibilidade sobre os créditos e os custos fixos do mês.';
+  } else if (answers.primaryObjective === 'save_more') {
+    focus =
+      'o maior impacto para ti será transformar o teu objetivo de poupança num plano que acompanhas todos os meses.';
+  } else if (answers.primaryObjective === 'track_wealth') {
+    focus =
+      'o maior impacto para ti será reunir bens, contas e objetivos para veres o teu património com clareza.';
+  }
+
+  return `${hello} Com base nas tuas respostas, ${focus}`;
 }
 
 export default function OnboardingScreen() {
   const { complete, userId } = useOnboarding();
   const { data: profile } = useProfile();
-  const updateProfile = useUpdateProfile();
 
-  // Ensures user is identified for analytics as soon as they enter onboarding
-  useAnalytics();
-
-  const hasTrackedStart = useRef(false);
-  const userEditedName = useRef(false);
   const [stepIndex, setStepIndex] = useState(0);
-  const [welcomeReady, setWelcomeReady] = useState(false);
-  const [showGenderOptions, setShowGenderOptions] = useState(false);
-  const [revealPhase, setRevealPhase] = useState<'loading' | 'summary'>('loading');
-  const [selectedWow, setSelectedWow] = useState<WowActionId | null>(null);
+  const [finishing, setFinishing] = useState(false);
+  const { answers, patch, setAnswers } = useOnboardingAnswersState();
 
   const step = STEPS[stepIndex];
-  const showProgress = stepIndex >= STEPS.indexOf('primary_objective');
-  const progress = STEP_PROGRESS[step] ?? 0;
-  const progressLabel = getProgressLabel(progress);
+  const firstName = getFirstName(answers.displayName || profile?.name || '');
 
-  const { answers, patch, setAnswers } = useOnboardingAnswersState();
+  // Prefill a partir do perfil + respostas guardadas (sessão já existe).
+  useEffect(() => {
+    if (profile?.name && !answers.displayName) {
+      patch({ displayName: profile.name });
+    }
+  }, [answers.displayName, patch, profile?.name]);
 
   useEffect(() => {
     if (!userId) return;
-
     let cancelled = false;
-
     void (async () => {
       const saved = await fetchOnboardingAnswers(userId);
       if (cancelled || saved.completed) return;
-
       setAnswers((current) => ({
         ...saved,
-        displayName: current.displayName || saved.displayName || '',
-        gender: current.gender ?? saved.gender ?? 'neutral',
-        primaryObjective: saved.primaryObjective ?? current.primaryObjective,
-        enabledFeatures: saved.enabledFeatures ?? [],
-        smartConfigSkipped: saved.smartConfigSkipped ?? false,
+        displayName: current.displayName || saved.displayName || profile?.name || '',
       }));
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [setAnswers, userId]);
-
-  useEffect(() => {
-    if (userEditedName.current || answers.displayName.trim()) return;
-    if (!profile?.name) return;
-    patch({ displayName: profile.name });
-  }, [answers.displayName, patch, profile?.name]);
-
-  const firstName = getFirstName(answers.displayName);
-
-  const valuePromiseMessages = useMemo(
-    () => getValuePromiseMessages(firstName),
-    [firstName],
-  );
-
-  const enrichedAnswers = useMemo(() => enrichOnboardingAnswers(answers), [answers]);
+  }, [profile?.name, setAnswers, userId]);
 
   const persistAnswers = useCallback(
-    async (partial = answers) => {
+    async (partial: OnboardingAnswers = answers) => {
       if (!userId) return;
       await saveOnboardingAnswersForUser(userId, enrichOnboardingAnswers(partial));
     },
-    [userId, answers],
+    [answers, userId],
   );
 
   const goNext = useCallback(() => {
-    setStepIndex((index) => Math.min(index + 1, STEPS.length - 1));
+    setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
+  }, []);
+  const goBack = useCallback(() => {
+    setStepIndex((i) => Math.max(i - 1, 0));
   }, []);
 
-  const goBack = useCallback(() => {
-    if (step === 'reveal') {
-      setRevealPhase('loading');
+  // Timeline (anos + meses)
+  const totalMonths = answers.savingsMonths ?? 12;
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  const setTimeline = useCallback(
+    (y: number, m: number) => {
+      patch({ savingsMonths: Math.max(1, y * 12 + m) });
+    },
+    [patch],
+  );
+
+  function selectObjective(option: ObjectiveOption) {
+    patch({
+      primaryObjective: option.primary,
+      ambitions: [option.ambition],
+    });
+  }
+
+  function toggleInvestment(id: OnboardingInvestmentId) {
+    if (id === 'none') {
+      patch({ investmentTypes: ['none'] });
+      return;
     }
-    setStepIndex((index) => Math.max(index - 1, 0));
-  }, [step]);
-
-  useEffect(() => {
-    if (step !== 'welcome') return;
-
-    setWelcomeReady(false);
-    const timer = setTimeout(() => setWelcomeReady(true), WELCOME_GATE_MS);
-    return () => clearTimeout(timer);
-  }, [step]);
-
-  useEffect(() => {
-    if (step !== 'reveal') return;
-    setRevealPhase('loading');
-  }, [step]);
-
-  async function handleNameContinue() {
-    const name = answers.displayName.trim();
-    if (!name) return;
-
-    const gender = answers.gender ?? 'neutral';
-
-    if (profile && name !== profile.name) {
-      try {
-        await updateProfile.mutateAsync({ name });
-      } catch {
-        // Continua mesmo se o perfil remoto falhar — nome fica nas respostas
-      }
-    }
-
-    await persistAnswers({ ...answers, displayName: name, gender });
-    goNext();
+    const next = toggle(answers.investmentTypes.filter((i) => i !== 'none'), id);
+    patch({ investmentTypes: next });
   }
 
-  async function handlePrimaryObjectiveContinue() {
-    if (!answers.primaryObjective) return;
-    await persistAnswers();
-    goNext();
-  }
+  const buildSteps = useMemo<BuildStep[]>(
+    () =>
+      BUILD_STEPS.map((s) => ({
+        id: s.id,
+        label: s.label,
+        task: s.id === 'sync' ? () => persistAnswers() : undefined,
+      })),
+    [persistAnswers],
+  );
 
-  function handleSelectPrimaryObjective(objective: PrimaryObjectiveId) {
-    const hints = hintsFromPrimaryObjective(objective, answers);
-    patch({ ...hints, primaryObjective: objective });
-  }
+  async function handleFinish() {
+    if (finishing) return;
+    setFinishing(true);
 
-  async function handleProfileContinue() {
-    if (answers.profileTags.length === 0) return;
-    await persistAnswers();
-    goNext();
-  }
+    const lifeAreas = new Set<LifeAreaId>(answers.lifeAreas);
+    if (answers.creditTypes.length > 0) lifeAreas.add('credits');
+    if (answers.investmentTypes.some((i) => i !== 'none')) lifeAreas.add('investments');
+    if ((answers.savingsGoal ?? 0) > 0) lifeAreas.add('savings_goals');
 
-  async function handleLifeAreasContinue() {
-    if (answers.lifeAreas.length === 0) return;
-    await persistAnswers();
-    goNext();
-  }
-
-  async function handleSmartConfigContinue() {
-    const debtOk = skipDebtQuestion || answers.hasDebt !== null;
-    if (!answers.smartConfigSkipped) {
-      if (answers.hasMonthlyIncome === null || answers.hasSavings === null || !debtOk) {
-        return;
-      }
-    }
-
-    const payload = skipDebtQuestion
-      ? { ...answers, hasDebt: answers.smartConfigSkipped ? answers.hasDebt : false }
-      : answers;
-
-    await persistAnswers(payload);
-    if (skipDebtQuestion && !answers.smartConfigSkipped) patch({ hasDebt: false });
-    goNext();
-  }
-
-  async function handleSmartConfigSkip() {
-    const payload = {
+    const final = enrichOnboardingAnswers({
       ...answers,
-      smartConfigSkipped: true,
-      hasMonthlyIncome: answers.hasMonthlyIncome ?? 'prefer_not',
-      hasSavings: answers.hasSavings,
-      hasDebt: skipDebtQuestion ? false : answers.hasDebt,
-    };
-    patch(payload);
-    await persistAnswers(payload);
-    goNext();
-  }
-
-  async function handleAmbitionContinue() {
-    const hasAmbition =
-      answers.ambitions.some((item) => item !== 'other') ||
-      (answers.ambitions.includes('other') && answers.ambitionOther.trim().length > 0);
-    if (!hasAmbition) return;
-    await persistAnswers();
-    goNext();
-  }
-
-  async function handleRevealContinue() {
-    await persistAnswers();
-    goNext();
-  }
-
-  async function handleWowFinish(action: WowActionId) {
-    const finalAnswers = enrichOnboardingAnswers({
-      ...answers,
-      firstAction: action,
+      lifeAreas: Array.from(lifeAreas),
+      hasDebt: answers.creditTypes.length > 0,
+      hasMonthlyIncome: (answers.monthlyIncome ?? 0) > 0 ? 'yes' : answers.hasMonthlyIncome,
       completed: true,
       skipped: false,
       completedAt: new Date().toISOString(),
     });
 
-    await saveOnboardingAnswersForUser(userId!, finalAnswers);
-    await complete(finalAnswers);
-
-    track(AnalyticsEvents.ONBOARDING_COMPLETED, {
-      skipped: false,
-      profile_tags: answers.profileTags,
-    });
-
+    if (userId) {
+      await saveOnboardingAnswersForUser(userId, final);
+      await complete(final);
+    }
     router.replace('/(tabs)/' as Href);
   }
 
-  const insights = getOnboardingInsights(enrichedAnswers);
-  const featureCards = getFeatureRevealCards(enrichedAnswers);
-  const activeFeatureCards = featureCards.filter((card) => card.status === 'active');
-  const wowCards = getVictoryActionCards(enrichedAnswers);
-  const valueEstimate = getOnboardingValueEstimate(enrichedAnswers);
-  const objectiveSummary = getPrimaryObjectiveSummary(enrichedAnswers);
-  const priorityFeatures = getPriorityFeatures(enrichedAnswers);
+  const progress = useMemo(() => {
+    const clamped = Math.min(PROGRESS_TO, Math.max(PROGRESS_FROM, stepIndex));
+    return Math.round(((clamped - PROGRESS_FROM) / (PROGRESS_TO - PROGRESS_FROM)) * 100);
+  }, [stepIndex]);
 
-  const skipDebtQuestion =
-    !answers.profileTags.includes('credits_costs') &&
-    !answers.lifeAreas.includes('credits');
+  const showProgress = stepIndex >= PROGRESS_FROM && stepIndex <= PROGRESS_TO;
+  const showBack =
+    stepIndex > 0 && step !== 'build' && step !== 'first_run' && !finishing;
 
-  // Fire onboarding_started exactly once when the user lands on the flow
-  useEffect(() => {
-    if (!hasTrackedStart.current) {
-      hasTrackedStart.current = true;
-      track(AnalyticsEvents.ONBOARDING_STARTED);
-    }
-  }, []);
+  return (
+    <OnboardingShell
+      showBack={showBack}
+      onBack={goBack}
+      showProgress={showProgress}
+      progress={progress}
+      progressLabel="A preparar o teu plano"
+      footer={renderFooter()}>
+      <Animated.View key={step} entering={FadeIn.duration(260)} style={styles.stepRoot}>
+        {renderStep()}
+      </Animated.View>
+    </OnboardingShell>
+  );
 
   function renderStep() {
     switch (step) {
       case 'welcome':
         return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollStep}>
-            <Animated.View entering={FadeIn.duration(300)}>
-              <ValuePromiseSection messages={valuePromiseMessages} />
-            </Animated.View>
-          </ScrollView>
+          <Hero
+            emoji="🪙"
+            title="A tua vida financeira, finalmente organizada."
+            subtitle="Bem-vindo à CentFlow — o teu copiloto financeiro premium."
+          />
         );
 
-      case 'primary_objective':
+      case 'curiosity':
         return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollStep}>
-            <OnboardingStepHeader
-              eyebrow={getStepLabel('primary_objective')}
-              title="O que gostavas de melhorar primeiro?"
-              lead="Escolhe o foco principal — adaptamos a CentFlow ao que mais importa para ti."
-              reason={STEP_REASONS.primary_objective}
+          <View style={styles.centeredStep}>
+            <PremiumHeader
+              eyebrow="Uma pergunta rápida"
+              title="Sabes exatamente quanto podes gastar hoje sem comprometer o resto do mês?"
             />
-            <View style={styles.cardList}>
-              {PRIMARY_OBJECTIVE_OPTIONS.map((option, index) => (
-                <SelectableCard
-                  key={option.id}
-                  emoji={option.emoji}
-                  label={option.label}
-                  description={option.description}
-                  selected={answers.primaryObjective === option.id}
+            <ChoiceList>
+              {(['yes', 'no'] as SpendAwarenessId[]).map((id, index) => (
+                <ChoiceCard
+                  key={id}
+                  label={id === 'yes' ? 'Sim' : 'Não'}
+                  selected={answers.spendAwareness === id}
                   index={index}
-                  size="large"
-                  onPress={() => handleSelectPrimaryObjective(option.id)}
+                  onPress={() => patch({ spendAwareness: id })}
                 />
               ))}
-            </View>
-            {answers.primaryObjective ? (
-              <Animated.View entering={FadeIn.duration(300)}>
-                <View style={styles.rewardCard}>
-                  <Text style={styles.rewardEmoji}>✨</Text>
-                  <Text variant="caption" color="textSecondary" style={styles.rewardText}>
-                    {PRIMARY_OBJECTIVE_REWARD[answers.primaryObjective]}
-                  </Text>
-                </View>
+            </ChoiceList>
+            {answers.spendAwareness ? (
+              <Animated.View entering={FadeIn.duration(320)}>
+                <Text variant="h3" color="primary" align="center" style={styles.revealLine}>
+                  Vamos descobrir.
+                </Text>
               </Animated.View>
             ) : null}
-          </ScrollView>
+          </View>
         );
 
-      case 'profile':
+      case 'problem':
         return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollStep}>
-            <OnboardingStepHeader
-              eyebrow={getStepLabel('profile')}
-              title="Onde estás agora?"
-              lead="Ajuda-nos a perceber onde estás hoje. Escolhe tudo o que se aplica."
-              reason={STEP_REASONS.profile}
-              context="Podes alterar estas preferências mais tarde."
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <PremiumHeader
+              eyebrow="O que acontece contigo?"
+              title="Escolhe tudo o que sentes."
             />
-            <View style={styles.cardList}>
-              {PROFILE_OPTIONS.map((option, index) => (
-                <SelectableCard
+            <ChoiceList>
+              {PROBLEM_OPTIONS.map((option, index) => (
+                <ChoiceCard
                   key={option.id}
                   emoji={option.emoji}
                   label={option.label}
                   selected={answers.profileTags.includes(option.id)}
                   index={index}
+                  compact
                   onPress={() =>
-                    patch({
-                      profileTags: toggleItem(answers.profileTags, option.id),
-                    })
+                    patch({ profileTags: toggle(answers.profileTags, option.id as ProfileTagId) })
                   }
                 />
               ))}
-            </View>
+            </ChoiceList>
           </ScrollView>
         );
 
-      case 'name':
+      case 'objective':
         return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollStep}>
-            <OnboardingStepHeader
-              eyebrow={getStepLabel('name')}
-              title="Como queres que te chamemos?"
-              lead="Usamos o teu nome para tornar a experiência pessoal."
-              reason={STEP_REASONS.name}
-            />
-            <TextField
-              label="O teu nome"
-              value={answers.displayName}
-              onChangeText={(value) => {
-                userEditedName.current = true;
-                patch({ displayName: value });
-              }}
-              placeholder="Ex: Emanuel"
-              autoCapitalize="words"
-              autoFocus
-            />
-
-            {showGenderOptions ? (
-              <View style={styles.genderBlock}>
-                <Text variant="bodyMedium" style={styles.smartLabel}>
-                  Tratamento preferido
-                </Text>
-                <View style={styles.smartOptions}>
-                  {GENDER_OPTIONS.map((option) => {
-                    const selected = (answers.gender ?? 'neutral') === option.id;
-                    return (
-                      <Pressable
-                        key={option.id}
-                        onPress={() => patch({ gender: option.id as GenderId })}
-                        style={[styles.smartChip, selected && styles.smartChipSelected]}>
-                        <Text
-                          variant="caption"
-                          color={selected ? 'text' : 'textMuted'}
-                          style={selected ? styles.smartChipTextSelected : undefined}>
-                          {option.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                <Text variant="caption" color="textMuted">
-                  Opcional — podes alterar isto depois.
-                </Text>
-              </View>
-            ) : (
-              <Pressable onPress={() => setShowGenderOptions(true)} hitSlop={8}>
-                <Text variant="caption" color="textMuted" style={styles.genderToggle}>
-                  Preferes personalizar o tratamento?
-                </Text>
-              </Pressable>
-            )}
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <PremiumHeader eyebrow="Objetivo principal" title="Qual é o teu maior objetivo?" />
+            <ChoiceList>
+              {OBJECTIVE_OPTIONS.map((option, index) => {
+                const selected =
+                  answers.primaryObjective === option.primary &&
+                  answers.ambitions.includes(option.ambition);
+                return (
+                  <ChoiceCard
+                    key={option.id}
+                    emoji={option.emoji}
+                    label={option.label}
+                    selected={selected}
+                    index={index}
+                    compact
+                    onPress={() => selectObjective(option)}
+                  />
+                );
+              })}
+            </ChoiceList>
           </ScrollView>
         );
 
-      case 'life_areas':
+      case 'history':
         return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollStep}>
-            <OnboardingStepHeader
-              eyebrow={getStepLabel('life_areas')}
-              title={`${firstName}, o que faz parte da tua vida hoje?`}
-              lead="Selecciona as áreas relevantes — mostramos primeiro o que interessa."
-              reason={STEP_REASONS.life_areas}
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <PremiumHeader
+              eyebrow="Histórico"
+              title="Já usaste alguma aplicação financeira?"
             />
-            <View style={styles.cardList}>
-              {LIFE_AREA_OPTIONS.map((option, index) => (
-                <SelectableCard
+            <ChoiceList>
+              {HISTORY_OPTIONS.map((option, index) => (
+                <ChoiceCard
                   key={option.id}
                   emoji={option.emoji}
                   label={option.label}
-                  selected={answers.lifeAreas.includes(option.id)}
+                  selected={answers.financialHistory === option.id}
                   index={index}
+                  compact
                   onPress={() =>
-                    patch({
-                      lifeAreas: toggleItem(answers.lifeAreas, option.id),
-                    })
+                    patch({ financialHistory: option.id as FinancialHistoryId })
                   }
                 />
               ))}
-            </View>
+            </ChoiceList>
           </ScrollView>
         );
 
-      case 'smart_config':
+      case 'goal':
         return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollStep}>
-            <OnboardingStepHeader
-              eyebrow={getStepLabel('smart_config')}
-              title="Dados financeiros (opcional)"
-              lead="Três perguntas rápidas para calibrar o teu plano."
-              reason={STEP_REASONS.smart_config}
-              context="É opcional — podes responder ou saltar por agora."
+          <View style={styles.centeredStep}>
+            <PremiumHeader
+              eyebrow="Objetivo de poupança"
+              title="Quanto gostarias de poupar?"
+              align="center"
             />
-
-            <SmartQuestion
-              label="Tens rendimento mensal?"
-              value={answers.hasMonthlyIncome}
-              options={[
-                { key: 'yes', label: 'Sim' },
-                { key: 'no', label: 'Não' },
-                { key: 'prefer_not', label: 'Prefiro não dizer' },
-              ]}
-              onChange={(value) => patch({ hasMonthlyIncome: value as IncomeAnswer })}
-            />
-
-            <SmartQuestion
-              label="Tens poupanças actualmente?"
-              value={answers.hasSavings}
-              options={[
-                { key: true, label: 'Sim' },
-                { key: false, label: 'Não' },
-              ]}
-              onChange={(value) => patch({ hasSavings: value as boolean })}
-            />
-
-            {!skipDebtQuestion ? (
-              <SmartQuestion
-                label="Tens créditos ou dívidas?"
-                value={answers.hasDebt}
-                options={[
-                  { key: true, label: 'Sim' },
-                  { key: false, label: 'Não' },
-                ]}
-                onChange={(value) => patch({ hasDebt: value as boolean })}
+            <View style={styles.amountWrap}>
+              <BigAmountInput
+                value={answers.savingsGoal}
+                onChange={(value) => patch({ savingsGoal: value })}
               />
-            ) : (
-              <Card variant="outlined" style={styles.hintCard}>
+            </View>
+          </View>
+        );
+
+      case 'timeline':
+        return (
+          <View style={styles.centeredStep}>
+            <PremiumHeader eyebrow="Prazo" title="Em quanto tempo?" align="center" />
+            <View style={styles.wheelsRow}>
+              <View style={styles.wheelCol}>
+                <WheelPicker
+                  data={YEAR_ITEMS}
+                  value={years}
+                  onChange={(y) => setTimeline(y, months)}
+                  width={120}
+                />
                 <Text variant="caption" color="textMuted">
-                  Como não indicaste créditos, omitimos perguntas sobre dívidas por agora.
+                  anos
                 </Text>
-              </Card>
-            )}
-          </ScrollView>
-        );
-
-      case 'ambition':
-        return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollStep}>
-            <OnboardingStepHeader
-              eyebrow={getStepLabel('ambition')}
-              title="O que queres alcançar nos próximos 12 meses?"
-              lead="Escolhe uma ou mais ambições — orientam as sugestões no teu painel."
-              reason={STEP_REASONS.ambition}
-            />
-            <View style={styles.cardList}>
-              {AMBITION_OPTIONS.map((option, index) => (
-                <SelectableCard
-                  key={option.id}
-                  emoji={option.emoji}
-                  label={option.label}
-                  selected={answers.ambitions.includes(option.id)}
-                  index={index}
-                  onPress={() =>
-                    patch({
-                      ambitions: toggleItem(answers.ambitions, option.id as AmbitionId),
-                    })
-                  }
-                />
-              ))}
-            </View>
-            {answers.ambitions.includes('other') ? (
-              <TextField
-                label="Descreve a tua ambição"
-                value={answers.ambitionOther}
-                onChangeText={(value) => patch({ ambitionOther: value })}
-                placeholder="Ex: Criar um fundo de emergência"
-              />
-            ) : null}
-          </ScrollView>
-        );
-
-      case 'reveal':
-        if (revealPhase === 'loading') {
-          return (
-            <OnboardingPlanLoading onComplete={() => setRevealPhase('summary')} />
-          );
-        }
-
-        return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollStep}>
-            <Animated.View entering={FadeInDown.duration(400)} style={styles.revealHeader}>
-              <Text variant="h1" style={styles.question}>
-                O teu espaço está pronto ✨
-              </Text>
-              <Text variant="body" color="textSecondary" style={styles.lead}>
-                {firstName !== 'Utilizador' ? `${firstName}, ` : ''}com base nas tuas
-                respostas, preparámos isto para ti:
-              </Text>
-            </Animated.View>
-
-            <OnboardingValueCard estimate={valueEstimate} />
-
-            {objectiveSummary ? (
-              <Animated.View entering={FadeInDown.delay(80).duration(360)}>
-                <View style={styles.objectiveCard}>
-                  <Text style={styles.objectiveEmoji}>{objectiveSummary.emoji}</Text>
-                  <View style={styles.objectiveBody}>
-                    <Text variant="label" color="textMuted" style={styles.objectiveEyebrow}>
-                      Objetivo principal
-                    </Text>
-                    <Text variant="bodyMedium" style={styles.objectiveLabel}>
-                      {objectiveSummary.label}
-                    </Text>
-                    {objectiveSummary.description ? (
-                      <Text variant="caption" color="textMuted">
-                        {objectiveSummary.description}
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
-              </Animated.View>
-            ) : null}
-
-            {priorityFeatures.length > 0 ? (
-              <View style={styles.prioritySection}>
-                <Text variant="bodyMedium" style={styles.sectionTitle}>
-                  Áreas prioritárias
-                </Text>
-                <View style={styles.priorityRow}>
-                  {priorityFeatures.map((feature) => (
-                    <View key={feature.label} style={styles.priorityChip}>
-                      <Text style={styles.priorityEmoji}>{feature.emoji}</Text>
-                      <Text variant="caption" color="textSecondary">
-                        {feature.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
               </View>
-            ) : null}
-
-            <Text variant="bodyMedium" style={styles.sectionTitle}>
-              Funcionalidades activadas
+              <View style={styles.wheelCol}>
+                <WheelPicker
+                  data={MONTH_ITEMS}
+                  value={months}
+                  onChange={(m) => setTimeline(years, m)}
+                  width={120}
+                />
+                <Text variant="caption" color="textMuted">
+                  meses
+                </Text>
+              </View>
+            </View>
+            <Text variant="bodyMedium" color="primary" align="center">
+              ≈ {totalMonths} {totalMonths === 1 ? 'mês' : 'meses'}
             </Text>
-            <View style={styles.featureList}>
-              {activeFeatureCards.map((feature, index) => (
-                <FeatureAreaCard key={feature.id} feature={feature} index={index} />
-              ))}
-            </View>
+          </View>
+        );
 
-            {insights.length > 0 ? (
-              <Card variant="outlined" style={styles.insightsCard}>
-                <Text variant="caption" color="textMuted" style={styles.insightsTitle}>
-                  Personalizámos com base em ti
-                </Text>
-                {insights.map((insight) => (
-                  <View key={insight} style={styles.insightRow}>
-                    <Text variant="bodyMedium" color="success">
-                      ✓
-                    </Text>
-                    <Text variant="body" color="textSecondary" style={styles.insightText}>
-                      {insight}
-                    </Text>
-                  </View>
-                ))}
-              </Card>
-            ) : null}
+      case 'income':
+        return (
+          <View style={styles.centeredStep}>
+            <PremiumHeader
+              eyebrow="Rendimento"
+              title="Quanto recebes por mês?"
+              align="center"
+            />
+            <View style={styles.amountWrap}>
+              <BigAmountInput
+                value={answers.monthlyIncome}
+                onChange={(value) => patch({ monthlyIncome: value })}
+              />
+            </View>
+            <View style={styles.privacyNotes}>
+              <PrivacyNote
+                text="Isto nunca ficará público."
+                name={{ ios: 'lock.fill', android: 'lock', web: 'lock' }}
+              />
+              <PrivacyNote
+                text="Podes alterar mais tarde."
+                name={{ ios: 'arrow.triangle.2.circlepath', android: 'sync', web: 'sync' }}
+              />
+            </View>
+          </View>
+        );
+
+      case 'plan':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <PremiumHeader
+              eyebrow="O teu plano"
+              title="Feito à tua medida."
+              align="center"
+            />
+            <PlanResult
+              savingsGoal={answers.savingsGoal ?? 0}
+              months={totalMonths}
+              monthlyIncome={answers.monthlyIncome}
+              firstName={firstName}
+            />
           </ScrollView>
         );
 
-      case 'wow':
+      case 'ai':
         return (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollStep}>
-            <OnboardingStepHeader
-              title="Vamos conquistar a tua primeira vitória"
-              lead="Escolhe um primeiro passo concreto — guiamo-te a partir daí."
+          <Hero
+            emoji="🤖"
+            title="A IA da CentFlow trabalha por ti."
+            subtitle="Analisa automaticamente os teus hábitos e encontra oportunidades para poupares mais."
+          />
+        );
+
+      case 'ocr':
+        return (
+          <Hero
+            emoji="🧾"
+            title="Despesas em segundos."
+            subtitle="Fotografa um talão e o OCR adiciona a despesa automaticamente."
+          />
+        );
+
+      case 'credits':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <PremiumHeader
+              eyebrow="Créditos (opcional)"
+              title="Tens algum destes créditos?"
             />
-            <View style={styles.cardList}>
-              {wowCards.map((card, index) => (
-                <Animated.View key={card.id} entering={FadeInDown.delay(index * 60)}>
-                  <Pressable
-                    onPress={() => setSelectedWow(card.id)}
-                    style={({ pressed }) => [
-                      styles.wowCard,
-                      selectedWow === card.id && styles.wowCardSelected,
-                      pressed && styles.wowCardPressed,
-                    ]}>
-                    <Text style={styles.wowEmoji}>{card.emoji}</Text>
-                    <View style={styles.wowText}>
-                      <Text variant="bodyMedium" style={styles.wowTitle}>
-                        {card.title}
-                      </Text>
-                      <Text variant="caption" color="textMuted">
-                        {card.subtitle}
-                      </Text>
-                    </View>
-                    <SymbolView
-                      name={{ ios: 'arrow.right.circle.fill', android: 'arrow_forward', web: 'arrow_forward' }}
-                      tintColor={selectedWow === card.id ? colors.primary : colors.textMuted}
-                      size={24}
-                    />
-                  </Pressable>
+            <ChoiceList>
+              {ONBOARDING_CREDIT_OPTIONS.map((option, index) => (
+                <ChoiceCard
+                  key={option.id}
+                  emoji={option.emoji}
+                  label={option.label}
+                  selected={answers.creditTypes.includes(option.id)}
+                  index={index}
+                  compact
+                  onPress={() =>
+                    patch({ creditTypes: toggle(answers.creditTypes, option.id as OnboardingCreditId) })
+                  }
+                />
+              ))}
+            </ChoiceList>
+          </ScrollView>
+        );
+
+      case 'investments':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <PremiumHeader eyebrow="Investimentos" title="Onde investes?" />
+            <ChoiceList>
+              {ONBOARDING_INVESTMENT_OPTIONS.map((option, index) => (
+                <ChoiceCard
+                  key={option.id}
+                  emoji={option.emoji}
+                  label={option.label}
+                  selected={answers.investmentTypes.includes(option.id)}
+                  index={index}
+                  compact
+                  onPress={() => toggleInvestment(option.id as OnboardingInvestmentId)}
+                />
+              ))}
+            </ChoiceList>
+          </ScrollView>
+        );
+
+      case 'security':
+        return (
+          <View style={styles.centeredStep}>
+            <Hero
+              emoji="🔐"
+              title="Os teus dados, protegidos."
+              subtitle="Segurança ao nível de um banco — sempre contigo."
+            />
+            <View style={styles.securityList}>
+              {SECURITY_ITEMS.map((item, index) => (
+                <Animated.View
+                  key={item.title}
+                  entering={FadeInDown.duration(360).delay(index * 90)}
+                  style={styles.securityRow}>
+                  <Text style={styles.securityEmoji}>{item.emoji}</Text>
+                  <View style={styles.securityText}>
+                    <Text variant="bodyMedium">{item.title}</Text>
+                    <Text variant="caption" color="textMuted">
+                      {item.description}
+                    </Text>
+                  </View>
                 </Animated.View>
               ))}
             </View>
-            {selectedWow ? (
-              <Animated.View entering={FadeIn.duration(300)}>
-                <Card variant="outlined" style={styles.encourageCard}>
-                  <Text variant="body" color="textSecondary">
-                    Excelente, {firstName}! Este é o caminho certo para começares com
-                    impacto.
+          </View>
+        );
+
+      case 'build':
+        return (
+          <View style={styles.centeredStep}>
+            <PremiumHeader
+              title="Estamos a preparar o teu espaço."
+              align="center"
+            />
+            <BuildSequence steps={buildSteps} onComplete={goNext} />
+          </View>
+        );
+
+      case 'result':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <PremiumHeader
+              eyebrow="Tudo pronto"
+              title="O teu plano financeiro está pronto."
+            />
+            <View style={styles.resultList}>
+              {RESULT_CARDS.map((card, index) => (
+                <Animated.View
+                  key={card.label}
+                  entering={FadeInDown.duration(340).delay(index * 70)}
+                  style={styles.resultRow}>
+                  <View style={styles.resultCheck}>
+                    <SymbolView
+                      name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                      tintColor={colors.success}
+                      size={16}
+                    />
+                  </View>
+                  <Text style={styles.resultEmoji}>{card.emoji}</Text>
+                  <Text variant="bodyMedium" style={styles.resultLabel}>
+                    {card.label}
                   </Text>
-                </Card>
-              </Animated.View>
-            ) : null}
+                </Animated.View>
+              ))}
+            </View>
           </ScrollView>
+        );
+
+      case 'first_run':
+        return (
+          <View style={styles.centeredStep}>
+            <Animated.View entering={FadeIn.duration(500)} style={styles.aiBubble}>
+              <Text style={styles.aiAvatar}>🤖</Text>
+            </Animated.View>
+            <Animated.View entering={FadeInDown.duration(500).delay(200)}>
+              <Text variant="display" align="center" style={styles.firstRunTitle}>
+                {firstName ? `Olá, ${firstName}.` : 'Olá.'}
+              </Text>
+            </Animated.View>
+            <Animated.View entering={FadeInDown.duration(500).delay(400)}>
+              <Text variant="body" color="textSecondary" align="center" style={styles.firstRunBody}>
+                {firstRunMessage(answers, firstName)}
+              </Text>
+            </Animated.View>
+            <Animated.View entering={FadeIn.duration(500).delay(700)}>
+              <Text variant="caption" color="textMuted" align="center">
+                O teu primeiro passo demora menos de um minuto.
+              </Text>
+            </Animated.View>
+          </View>
         );
 
       default:
@@ -712,355 +632,303 @@ export default function OnboardingScreen() {
   function renderFooter() {
     switch (step) {
       case 'welcome':
+        return <Button label="Começar" onPress={goNext} fullWidth size="lg" />;
+      case 'curiosity':
         return (
           <Button
-            label="Vamos começar"
+            label="Continuar"
             onPress={goNext}
-            disabled={!welcomeReady}
+            disabled={!answers.spendAwareness}
             fullWidth
             size="lg"
           />
         );
-
-      case 'primary_objective':
+      case 'problem':
         return (
           <Button
             label="Continuar"
-            onPress={() => void handlePrimaryObjectiveContinue()}
-            disabled={!answers.primaryObjective}
-            fullWidth
-            size="lg"
-          />
-        );
-
-      case 'profile':
-        return (
-          <Button
-            label="Continuar"
-            onPress={() => void handleProfileContinue()}
+            onPress={goNext}
             disabled={answers.profileTags.length === 0}
             fullWidth
             size="lg"
           />
         );
-
-      case 'name':
+      case 'objective':
         return (
           <Button
             label="Continuar"
-            onPress={() => void handleNameContinue()}
-            disabled={!answers.displayName.trim()}
-            loading={updateProfile.isPending}
+            onPress={goNext}
+            disabled={!answers.primaryObjective}
             fullWidth
             size="lg"
           />
         );
-
-      case 'life_areas':
+      case 'history':
         return (
           <Button
             label="Continuar"
-            onPress={() => void handleLifeAreasContinue()}
-            disabled={answers.lifeAreas.length === 0}
+            onPress={goNext}
+            disabled={!answers.financialHistory}
             fullWidth
             size="lg"
           />
         );
-
-      case 'smart_config':
-        return (
-          <View style={styles.footerStack}>
-            <Button
-              label="Continuar"
-              onPress={() => void handleSmartConfigContinue()}
-              disabled={
-                answers.smartConfigSkipped
-                  ? false
-                  : answers.hasMonthlyIncome === null ||
-                    answers.hasSavings === null ||
-                    (skipDebtQuestion ? false : answers.hasDebt === null)
-              }
-              fullWidth
-              size="lg"
-            />
-            <Button
-              label="Saltar por agora"
-              variant="ghost"
-              onPress={() => void handleSmartConfigSkip()}
-              fullWidth
-              size="lg"
-            />
-          </View>
-        );
-
-      case 'ambition':
+      case 'goal':
         return (
           <Button
             label="Continuar"
-            onPress={() => void handleAmbitionContinue()}
-            disabled={
-              answers.ambitions.some((item) => item !== 'other') ||
-              (answers.ambitions.includes('other') && answers.ambitionOther.trim().length > 0)
-                ? false
-                : true
-            }
+            onPress={goNext}
+            disabled={(answers.savingsGoal ?? 0) <= 0}
             fullWidth
             size="lg"
           />
         );
-
-      case 'reveal':
-        return revealPhase === 'summary' ? (
+      case 'timeline':
+        return <Button label="Continuar" onPress={goNext} fullWidth size="lg" />;
+      case 'income':
+        return (
           <Button
-            label="Ver o meu espaço"
-            onPress={() => void handleRevealContinue()}
+            label="Continuar"
+            onPress={goNext}
+            disabled={(answers.monthlyIncome ?? 0) <= 0}
             fullWidth
             size="lg"
           />
-        ) : null;
-
-      case 'wow':
-        return selectedWow ? (
+        );
+      case 'plan':
+        return <Button label="Continuar" onPress={goNext} fullWidth size="lg" />;
+      case 'ai':
+      case 'ocr':
+        return <Button label="Continuar" onPress={goNext} fullWidth size="lg" />;
+      case 'credits':
+        return (
           <Button
-            label="Vamos a isso"
-            onPress={() => void handleWowFinish(selectedWow)}
+            label={answers.creditTypes.length > 0 ? 'Continuar' : 'Saltar'}
+            onPress={goNext}
+            variant={answers.creditTypes.length > 0 ? 'primary' : 'secondary'}
+            fullWidth
+            size="lg"
+          />
+        );
+      case 'investments':
+        return (
+          <Button
+            label={answers.investmentTypes.length > 0 ? 'Continuar' : 'Saltar'}
+            onPress={goNext}
+            variant={answers.investmentTypes.length > 0 ? 'primary' : 'secondary'}
+            fullWidth
+            size="lg"
+          />
+        );
+      case 'security':
+        return <Button label="Continuar" onPress={goNext} fullWidth size="lg" />;
+      case 'build':
+        return null;
+      case 'result':
+        return <Button label="Continuar" onPress={goNext} fullWidth size="lg" />;
+      case 'first_run':
+        return (
+          <Button
+            label="Começar"
+            onPress={() => void handleFinish()}
             variant="success"
+            loading={finishing}
             fullWidth
             size="lg"
           />
-        ) : null;
-
+        );
       default:
         return null;
     }
   }
+}
 
+function Hero({
+  emoji,
+  title,
+  subtitle,
+}: {
+  emoji: string;
+  title: string;
+  subtitle?: string;
+}) {
   return (
-    <OnboardingShell
-      showBack={stepIndex > 0 && step !== 'reveal'}
-      onBack={goBack}
-      showProgress={showProgress}
-      progress={progress}
-      progressLabel={progressLabel}
-      footer={renderFooter()}>
-      {renderStep()}
-    </OnboardingShell>
+    <View style={styles.hero}>
+      <Animated.View entering={FadeIn.duration(600)}>
+        <LinearGradient
+          colors={[colors.primaryMuted, 'transparent'] as const}
+          style={styles.heroGlow}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}>
+          <View style={styles.heroCircle}>
+            <Text style={styles.heroEmoji}>{emoji}</Text>
+          </View>
+        </LinearGradient>
+      </Animated.View>
+      <Animated.View entering={FadeInDown.duration(520).delay(150)}>
+        <Text variant="display" align="center" style={styles.heroTitle}>
+          {title}
+        </Text>
+      </Animated.View>
+      {subtitle ? (
+        <Animated.View entering={FadeInDown.duration(520).delay(280)}>
+          <Text variant="body" color="textSecondary" align="center" style={styles.heroSubtitle}>
+            {subtitle}
+          </Text>
+        </Animated.View>
+      ) : null}
+    </View>
   );
 }
 
-function SmartQuestion<T extends string | boolean>({
-  label,
-  value,
-  options,
-  onChange,
+function PrivacyNote({
+  text,
+  name,
 }: {
-  label: string;
-  value: T | null;
-  options: { key: T; label: string }[];
-  onChange: (value: T) => void;
+  text: string;
+  name: React.ComponentProps<typeof SymbolView>['name'];
 }) {
   return (
-    <View style={styles.smartQuestion}>
-      <Text variant="bodyMedium" style={styles.smartLabel}>
-        {label}
+    <View style={styles.privacyNote}>
+      <SymbolView name={name} tintColor={colors.textMuted} size={14} />
+      <Text variant="caption" color="textMuted">
+        {text}
       </Text>
-      <View style={styles.smartOptions}>
-        {options.map((option) => {
-          const selected = value === option.key;
-          return (
-            <Pressable
-              key={String(option.key)}
-              onPress={() => onChange(option.key)}
-              style={[styles.smartChip, selected && styles.smartChipSelected]}>
-              <Text
-                variant="caption"
-                color={selected ? 'text' : 'textMuted'}
-                style={selected ? styles.smartChipTextSelected : undefined}>
-                {option.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollStep: {
-    gap: spacing.lg,
-    paddingTop: spacing.md,
+  stepRoot: {
+    flex: 1,
+  },
+  scroll: {
     paddingBottom: spacing.xl,
   },
-  question: {
-    lineHeight: 34,
+  centeredStep: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: spacing.xl,
   },
-  lead: {
-    lineHeight: 24,
+  revealLine: {
+    marginTop: spacing.lg,
   },
-  cardList: {
-    gap: spacing.md,
+  amountWrap: {
+    paddingVertical: spacing.xl,
   },
-  hintCard: {
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  rewardCard: {
+  wheelsRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xl,
+  },
+  wheelCol: {
     alignItems: 'center',
     gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.successMuted,
-    borderWidth: 1,
-    borderColor: colors.success,
   },
-  rewardEmoji: {
-    fontSize: 18,
-  },
-  rewardText: {
-    flex: 1,
-    lineHeight: 19,
-  },
-  smartQuestion: {
+  privacyNotes: {
     gap: spacing.sm,
-  },
-  smartLabel: {
-    fontWeight: '600',
-  },
-  smartOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  smartChip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  smartChipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryMuted,
-  },
-  smartChipTextSelected: {
-    fontWeight: '600',
-  },
-  genderBlock: {
-    gap: spacing.sm,
-  },
-  genderToggle: {
-    textDecorationLine: 'underline',
-  },
-  footerStack: {
-    gap: spacing.sm,
-  },
-  revealHeader: {
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    marginTop: spacing.sm,
-  },
-  featureList: {
-    gap: spacing.md,
-  },
-  objectiveCard: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
   },
-  objectiveEmoji: {
-    fontSize: 30,
-    width: 40,
-    textAlign: 'center',
-  },
-  objectiveBody: {
-    flex: 1,
-    gap: 2,
-  },
-  objectiveEyebrow: {
-    letterSpacing: 0.5,
-  },
-  objectiveLabel: {
-    fontWeight: '700',
-  },
-  prioritySection: {
-    gap: spacing.sm,
-  },
-  priorityRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  priorityChip: {
+  privacyNote: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceElevated,
   },
-  priorityEmoji: {
-    fontSize: 16,
-  },
-  insightsCard: {
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-  },
-  insightsTitle: {
-    letterSpacing: 0.4,
-  },
-  insightRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  insightText: {
+  hero: {
     flex: 1,
-    lineHeight: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
   },
-  wowCard: {
+  heroGlow: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroEmoji: {
+    fontSize: 56,
+  },
+  heroTitle: {
+    lineHeight: 40,
+  },
+  heroSubtitle: {
+    lineHeight: 23,
+    paddingHorizontal: spacing.md,
+  },
+  securityList: {
+    gap: spacing.md,
+  },
+  securityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     padding: spacing.lg,
     borderRadius: radius.lg,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
   },
-  wowCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryMuted,
-  },
-  wowCardPressed: {
-    opacity: 0.9,
-  },
-  wowEmoji: {
-    fontSize: 28,
+  securityEmoji: {
+    fontSize: 26,
     width: 36,
     textAlign: 'center',
   },
-  wowText: {
+  securityText: {
     flex: 1,
     gap: 2,
   },
-  wowTitle: {
-    fontWeight: '600',
+  resultList: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
-  encourageCard: {
-    borderColor: colors.primaryMuted,
-    backgroundColor: colors.backgroundElevated,
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  resultCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    backgroundColor: colors.successMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultEmoji: {
+    fontSize: 20,
+  },
+  resultLabel: {
+    flex: 1,
+  },
+  aiBubble: {
+    alignSelf: 'center',
+  },
+  aiAvatar: {
+    fontSize: 64,
+  },
+  firstRunTitle: {
+    lineHeight: 40,
+  },
+  firstRunBody: {
+    lineHeight: 24,
+    paddingHorizontal: spacing.sm,
   },
 });

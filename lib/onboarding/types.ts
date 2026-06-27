@@ -38,6 +38,25 @@ export type WowActionId =
 
 export type GenderId = 'male' | 'female' | 'neutral';
 
+/** Curiosidade inicial — "sabes quanto podes gastar hoje?". */
+export type SpendAwarenessId = 'yes' | 'no';
+
+/** Histórico — já usaste alguma app financeira? */
+export type FinancialHistoryId = 'never' | 'excel' | 'bank' | 'other_app' | 'paper';
+
+/** Tipos de crédito assinalados no onboarding (passo Créditos). */
+export type OnboardingCreditId = 'mortgage' | 'auto' | 'personal' | 'card';
+
+/** Tipos de investimento assinalados no onboarding. */
+export type OnboardingInvestmentId =
+  | 'stocks'
+  | 'etf'
+  | 'crypto'
+  | 'ppr'
+  | 'funds'
+  | 'real_estate'
+  | 'none';
+
 /** Objetivo principal escolhido no início da personalização. */
 export type PrimaryObjectiveId =
   | 'control_spending'
@@ -84,6 +103,22 @@ export type OnboardingAnswers = {
   completed: boolean;
   completedAt: string | null;
   skipped: boolean;
+
+  // --- Onboarding premium (campos opcionais, retrocompatíveis) ---
+  /** Curiosidade inicial. */
+  spendAwareness: SpendAwarenessId | null;
+  /** Histórico financeiro. */
+  financialHistory: FinancialHistoryId | null;
+  /** Objetivo de poupança (€). */
+  savingsGoal: number | null;
+  /** Prazo do objetivo em meses. */
+  savingsMonths: number | null;
+  /** Rendimento mensal líquido (€) — privado. */
+  monthlyIncome: number | null;
+  /** Tipos de crédito assinalados. */
+  creditTypes: OnboardingCreditId[];
+  /** Tipos de investimento assinalados. */
+  investmentTypes: OnboardingInvestmentId[];
 };
 
 export const EMPTY_ONBOARDING_ANSWERS: OnboardingAnswers = {
@@ -103,4 +138,11 @@ export const EMPTY_ONBOARDING_ANSWERS: OnboardingAnswers = {
   completed: false,
   completedAt: null,
   skipped: false,
+  spendAwareness: null,
+  financialHistory: null,
+  savingsGoal: null,
+  savingsMonths: null,
+  monthlyIncome: null,
+  creditTypes: [],
+  investmentTypes: [],
 };
