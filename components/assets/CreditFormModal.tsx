@@ -12,8 +12,13 @@ import { analyzeCredit } from '@/lib/credit/credit-analysis';
 import {
   CREDIT_TYPE_OPTIONS,
   inferCreditTypeFromName,
+  isCardCredit,
   resolveCreditName,
 } from '@/lib/credit/credit-type.utils';
+import {
+  firstDayOfNextMonthIso,
+  nextOccurrenceOfDayIso,
+} from '@/lib/credit/credit-dates';
 import type { Credit, CreditType } from '@/lib/domain/types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import { colors, spacing } from '@/lib/theme';
@@ -32,7 +37,9 @@ type CreditFormModalProps = {
   initialCreditType?: CreditType;
 };
 
-const CREDIT_TYPES = CREDIT_TYPE_OPTIONS;
+// Os chips do formulário de crédito normal excluem o cartão — os cartões têm
+// formulário próprio e são criados a partir da aba "Cartões de Crédito".
+const CREDIT_TYPES = CREDIT_TYPE_OPTIONS.filter((option) => option.key !== 'card');
 
 function parseOptionalAmount(value: string): number | undefined {
   if (!value.trim()) return undefined;
@@ -81,8 +88,14 @@ export function CreditFormModal({
   const [nextDate, setNextDate] = useState('');
   const [startDate, setStartDate] = useState('');
   const [notes, setNotes] = useState('');
+  // Cartão de crédito: dia de vencimento (1–31). O dia de fecho do extrato é
+  // guardado em `termMonths` e a TAN mensal em `interestRateAnnual` (reutilização
+  // de colunas existentes — sem necessidade de migração).
+  const [dueDay, setDueDay] = useState('');
   const [apiError, setApiError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const isCard = isCardCredit(creditType);
 
   const isSaving = saveCredit.isPending;
   const isDeleting = deleteCredit.isPending;
@@ -105,6 +118,7 @@ export function CreditFormModal({
     nextDate: '',
     startDate: '',
     notes: '',
+    dueDay: '',
   });
 
   useEffect(() => {
@@ -128,14 +142,20 @@ export function CreditFormModal({
       setNextDate(String(snapshot.nextDate ?? ''));
       setStartDate(String(snapshot.startDate ?? ''));
       setNotes(String(snapshot.notes ?? ''));
+      setDueDay(String(snapshot.dueDay ?? ''));
       baselineRef.current = snapshot;
     };
 
     if (credit) {
       const type = credit.creditType ?? inferCreditTypeFromName(credit.name);
+      const usesCustomName = type === 'other' || type === 'card';
+      const dueDayValue =
+        type === 'card' && credit.nextPaymentDate
+          ? String(new Date(credit.nextPaymentDate).getDate())
+          : '';
       applySnapshot({
         creditType: type,
-        customName: type === 'other' ? credit.name : '',
+        customName: usesCustomName ? credit.name : '',
         lender: credit.lender ?? '',
         originalAmount: credit.originalAmount ? String(credit.originalAmount) : '',
         balance: String(credit.outstandingBalance),
@@ -152,6 +172,7 @@ export function CreditFormModal({
         nextDate: formatInputDate(credit.nextPaymentDate),
         startDate: formatInputDate(credit.startDate),
         notes: credit.notes ?? '',
+        dueDay: dueDayValue,
       });
     } else {
       applySnapshot({
@@ -172,6 +193,7 @@ export function CreditFormModal({
         nextDate: '',
         startDate: '',
         notes: '',
+        dueDay: '',
       });
     }
 
@@ -216,6 +238,7 @@ export function CreditFormModal({
       nextDate,
       startDate,
       notes,
+      dueDay,
     };
     const baseline = baselineRef.current;
 
@@ -241,6 +264,7 @@ export function CreditFormModal({
       nextDate,
       startDate,
       notes,
+      dueDay,
     );
   }, [
     visible,
@@ -262,6 +286,7 @@ export function CreditFormModal({
     nextDate,
     startDate,
     notes,
+    dueDay,
   ]);
 
   const analysis = useMemo(() => {
@@ -295,7 +320,62 @@ export function CreditFormModal({
     earlyAmortization,
   ]);
 
+  async function handleSaveCard() {
+    setApiError(null);
+
+    const resolvedName = resolveCreditName('card', customName);
+    const limit = parseOptionalAmount(originalAmount);
+    const cardBalance = balance.trim() ? parseGoalAmount(balance) : 0;
+    const statementDay = parseOptionalInt(termMonths);
+    const dueDayNum = parseOptionalInt(dueDay);
+    const monthlyRate = parseOptionalRate(interestRateAnnual);
+
+    if (!limit || limit <= 0) {
+      setApiError('Indica o limite de crédito do cartão.');
+      return;
+    }
+    if (Number.isNaN(cardBalance) || cardBalance < 0) {
+      setApiError('Saldo em dívida inválido.');
+      return;
+    }
+    if (statementDay !== undefined && (statementDay < 1 || statementDay > 31)) {
+      setApiError('Dia de fecho do extrato deve estar entre 1 e 31.');
+      return;
+    }
+    if (dueDayNum !== undefined && (dueDayNum < 1 || dueDayNum > 31)) {
+      setApiError('Dia de vencimento deve estar entre 1 e 31.');
+      return;
+    }
+
+    const nextPaymentDate = dueDayNum ? nextOccurrenceOfDayIso(dueDayNum) : undefined;
+
+    try {
+      await saveCredit.mutateAsync({
+        id: credit?.id,
+        name: resolvedName,
+        outstandingBalance: cardBalance,
+        creditType: 'card',
+        lender: lender.trim() || undefined,
+        originalAmount: limit,
+        interestRateAnnual: monthlyRate,
+        termMonths: statementDay,
+        nextPaymentDate,
+        notes: notes.trim() || undefined,
+      });
+      showToast(isEditing ? 'Cartão actualizado.' : 'Cartão adicionado.', 'success');
+      onClose();
+    } catch (error) {
+      setApiError(getApiErrorMessage(error, 'o cartão'));
+      showToast('Não conseguimos guardar este cartão. Tenta novamente.', 'error');
+    }
+  }
+
   async function handleSave() {
+    if (isCard) {
+      await handleSaveCard();
+      return;
+    }
+
     setApiError(null);
 
     const outstandingBalance = parseGoalAmount(balance);
@@ -310,10 +390,14 @@ export function CreditFormModal({
       return;
     }
 
-    const parsedNextDate = nextDate.trim() ? inputDateToIso(nextDate.trim()) : undefined;
+    // T6: se a data do próximo pagamento ficar vazia, assume o dia 1 do mês seguinte.
+    let parsedNextDate = nextDate.trim() ? inputDateToIso(nextDate.trim()) : undefined;
     if (nextDate.trim() && !parsedNextDate) {
       setApiError('Data do próximo pagamento inválida.');
       return;
+    }
+    if (!parsedNextDate) {
+      parsedNextDate = firstDayOfNextMonthIso();
     }
 
     const parsedStartDate = startDate.trim() ? inputDateToIso(startDate.trim()) : undefined;
@@ -368,7 +452,7 @@ export function CreditFormModal({
   function confirmDelete() {
     if (!credit) return;
 
-    Alert.alert('Eliminar crédito', `Queres remover «${credit.name}»?`, [
+    Alert.alert(isCard ? 'Eliminar cartão' : 'Eliminar crédito', `Queres remover «${credit.name}»?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -395,9 +479,19 @@ export function CreditFormModal({
       header={(requestClose) => (
         <View style={styles.header}>
           <View>
-            <Text variant="h2">{isEditing ? 'Editar crédito' : 'Simulador de crédito'}</Text>
+            <Text variant="h2">
+              {isCard
+                ? isEditing
+                  ? 'Editar cartão'
+                  : 'Novo cartão de crédito'
+                : isEditing
+                  ? 'Editar crédito'
+                  : 'Simulador de crédito'}
+            </Text>
             <Text variant="caption" color="textMuted">
-              Dados completos para análise de critérios
+              {isCard
+                ? 'Limite, saldo e datas do extrato'
+                : 'Dados completos para análise de critérios'}
             </Text>
           </View>
           <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
@@ -410,6 +504,68 @@ export function CreditFormModal({
         </View>
       )}>
       <View style={styles.form}>
+        {isCard ? (
+          <>
+            <TextField
+              label="Nome do cartão *"
+              value={customName}
+              onChangeText={setCustomName}
+              placeholder="Ex.: Cartão Visa CGD"
+            />
+            <TextField
+              label="Banco / Emissor"
+              value={lender}
+              onChangeText={setLender}
+              placeholder="Ex.: CGD, Millennium, Santander"
+            />
+            <TextField
+              label="Limite de crédito *"
+              value={originalAmount}
+              onChangeText={setOriginalAmount}
+              keyboardType="decimal-pad"
+              placeholder="0,00"
+            />
+            <TextField
+              label="Saldo em dívida atual"
+              value={balance}
+              onChangeText={setBalance}
+              keyboardType="decimal-pad"
+              placeholder="0,00"
+            />
+            <TextField
+              label="Dia de fecho do extrato (1–31, opcional)"
+              value={termMonths}
+              onChangeText={setTermMonths}
+              keyboardType="number-pad"
+              placeholder="Ex.: 20"
+            />
+            <TextField
+              label="Dia de vencimento (1–31, opcional)"
+              value={dueDay}
+              onChangeText={setDueDay}
+              keyboardType="number-pad"
+              placeholder="Ex.: 25"
+            />
+            <Text variant="caption" color="textMuted">
+              Até este dia pagas sem juros. Usamos esta data para te lembrar do pagamento.
+            </Text>
+            <TextField
+              label="TAN mensal % (opcional)"
+              value={interestRateAnnual}
+              onChangeText={setInterestRateAnnual}
+              keyboardType="decimal-pad"
+              placeholder="Para estimar juros se não pagares tudo"
+            />
+            <TextField
+              label="Notas (opcional)"
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Condições, benefícios, plafond..."
+              multiline
+            />
+          </>
+        ) : (
+          <>
           <Text variant="label" color="textMuted">
             Tipo de crédito
           </Text>
@@ -543,6 +699,9 @@ export function CreditFormModal({
                 value={nextDate}
                 onChange={setNextDate}
               />
+              <Text variant="caption" color="textMuted">
+                Se não preencheres, assumimos o dia 1 do próximo mês.
+              </Text>
               <DatePickerField
                 label="Data de início (opcional)"
                 value={startDate}
@@ -564,8 +723,10 @@ export function CreditFormModal({
               />
             </>
           ) : null}
+          </>
+        )}
 
-          {analysis ? (
+          {!isCard && analysis ? (
             <Card variant="outlined" style={styles.analysisCard}>
               <Text variant="label" color="textMuted">
                 Análise estimada
@@ -628,11 +789,15 @@ export function CreditFormModal({
             label={
               isSaving
                 ? 'A guardar...'
-                : earlyAmortization.trim()
-                  ? 'Aplicar amortização'
-                  : isEditing
+                : isCard
+                  ? isEditing
                     ? 'Guardar alterações'
-                    : 'Adicionar crédito'
+                    : 'Adicionar cartão'
+                  : earlyAmortization.trim()
+                    ? 'Aplicar amortização'
+                    : isEditing
+                      ? 'Guardar alterações'
+                      : 'Adicionar crédito'
             }
             onPress={handleSave}
             loading={isSaving}
@@ -642,7 +807,7 @@ export function CreditFormModal({
 
           {isEditing ? (
             <Button
-              label={isDeleting ? 'A eliminar...' : 'Eliminar crédito'}
+              label={isDeleting ? 'A eliminar...' : isCard ? 'Eliminar cartão' : 'Eliminar crédito'}
               variant="ghost"
               onPress={confirmDelete}
               loading={isDeleting}

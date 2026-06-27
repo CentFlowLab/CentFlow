@@ -35,6 +35,11 @@ export function resolveCreditName(type: CreditType, customName?: string): string
   if (type === 'other') {
     return customName?.trim() ?? '';
   }
+  // Cartões usam nome personalizado (ex.: "Cartão Visa CGD"); cai para o nome
+  // genérico apenas se o utilizador não escrever nada.
+  if (type === 'card') {
+    return customName?.trim() || AUTO_NAMES.card;
+  }
   return AUTO_NAMES[type];
 }
 

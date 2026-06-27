@@ -23,6 +23,14 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
     const recognized = await recognizeText(ocrImageUri);
     const rawText = recognized.text?.trim() ?? '';
 
+    if (__DEV__) {
+      console.log('[runClientOcr] recognized', {
+        uri: ocrImageUri,
+        length: rawText.length,
+        preview: rawText.slice(0, 120),
+      });
+    }
+
     if (!rawText || rawText.length < 12) {
       return { result: null, unavailableReason: 'empty' };
     }
@@ -47,7 +55,7 @@ export async function runClientOcr(draft: ReceiptDraft): Promise<ClientOcrOutcom
 export function getClientOcrUnavailableMessage(reason?: ClientOcrOutcome['unavailableReason']): string {
   switch (reason) {
     case 'pdf':
-      return 'PDF detectado — confirma os dados abaixo. O ficheiro fica anexado ao movimento.';
+      return 'Este é um ficheiro PDF. Podes preencher os campos manualmente — o ficheiro ficará sempre guardado no movimento.';
     case 'empty':
       return 'Não conseguimos ler este talão. Tenta outra foto com melhor luz e foco.';
     case 'module':

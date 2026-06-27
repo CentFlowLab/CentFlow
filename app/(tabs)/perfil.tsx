@@ -1,25 +1,20 @@
-import { SymbolView } from 'expo-symbols';
-import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
 import { FinancialProfileDetailSheet, FinancialProfileProgress, ProfileHubSections } from '@/components/profile';
 import {
   Button,
-  Card,
   ErrorState,
   ProfileSkeleton,
   ScreenContainer,
-  SectionHeader,
-  Text,
 } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useFinancialProfile } from '@/hooks/queries/useFinancialProfile';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
-import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
+import { useAnalytics } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
 import { colors, spacing } from '@/lib/theme';
@@ -51,18 +46,22 @@ export default function PerfilScreen() {
     }
   }
 
-  function handleOpenSettings() {
-    track(AnalyticsEvents.SETTINGS_OPENED);
-    router.push('/settings');
-  }
-
-  async function handleSignOut() {
-    setLoggingOut(true);
-    try {
-      await signOut();
-    } finally {
-      setLoggingOut(false);
-    }
+  function handleSignOut() {
+    Alert.alert('Terminar sessão', 'Tens a certeza que queres sair?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          setLoggingOut(true);
+          try {
+            await signOut();
+          } finally {
+            setLoggingOut(false);
+          }
+        },
+      },
+    ]);
   }
 
   return (
@@ -90,48 +89,20 @@ export default function PerfilScreen() {
         </View>
       ) : (
         <ScreenContainer applyBottomSafeInset={false}>
-          <FinancialProfileProgress
-            profile={financialProfile}
-            isLoading={isProfileScoreLoading}
-            variant="compact"
-            style={styles.profileProgress}
-            onPress={() => setProfileDetailVisible(true)}
-          />
-
           <ProfileHubSections
             name={profile?.name ?? 'Utilizador'}
             email={profile?.email ?? ''}
             onActivateFeature={handleActivateFeature}
             activatingFeature={activatingFeature}
+            financialSlot={
+              <FinancialProfileProgress
+                profile={financialProfile}
+                isLoading={isProfileScoreLoading}
+                variant="compact"
+                onPress={() => setProfileDetailVisible(true)}
+              />
+            }
           />
-
-          <View style={styles.section}>
-            <SectionHeader title="Definições" />
-            <Card variant="outlined" padding="sm">
-              <Pressable
-                onPress={handleOpenSettings}
-                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Definições">
-                <SymbolView
-                  name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
-                  tintColor={colors.textSecondary}
-                  size={22}
-                />
-                <View style={styles.menuLabel}>
-                  <Text variant="bodyMedium">Definições</Text>
-                  <Text variant="caption" color="textMuted">
-                    Segurança, notificações, aparência e dados
-                  </Text>
-                </View>
-                <SymbolView
-                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                  tintColor={colors.textMuted}
-                  size={16}
-                />
-              </Pressable>
-            </Card>
-          </View>
 
           <Button
             label="Terminar sessão"
@@ -160,28 +131,5 @@ const styles = StyleSheet.create({
   errorState: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-  },
-  profileProgress: {
-    marginBottom: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.xl,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    gap: spacing.md,
-  },
-  menuItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  menuItemPressed: {
-    backgroundColor: colors.surfaceHighlight,
-  },
-  menuLabel: {
-    flex: 1,
   },
 });

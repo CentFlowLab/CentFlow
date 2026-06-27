@@ -1,4 +1,4 @@
-# CentFlow — Briefing para análise (Claude / agent externo)
+ # CentFlow — Briefing para análise (Claude / agent externo)
 
 > **Gerado:** 2026-06-24 · **Git:** `8ef03dc` · **Repo:** CentFlowLab/CentFlow  
 > **Instrução:** Lê este documento como contexto completo do estado actual do projecto mobile + backend Supabase.

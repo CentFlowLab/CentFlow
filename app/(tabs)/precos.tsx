@@ -110,6 +110,7 @@ export default function PrecosScreen() {
               <Animated.View key={activeTab} entering={FadeIn.duration(180)}>
                 <CreditsSection
                   credits={visibleCredits}
+                  variant={activeTab === 'cards' ? 'card' : 'loan'}
                   onCreate={openNewCredit}
                   onEdit={(credit) => {
                     setEditingCredit(credit);

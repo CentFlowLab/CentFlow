@@ -26,6 +26,7 @@ import {
   getOcrConfidenceTone,
   getOcrSourceLabel,
 } from '@/lib/receipt/ocr-confidence';
+import { isPdfReceipt } from '@/lib/receipt/receipt-image-preprocess';
 import { colors, radius, spacing } from '@/lib/theme';
 
 import { OcrFailureCard } from './ocr/OcrFailureCard';
@@ -272,11 +273,17 @@ export function ConfirmReceiptModal({
 
   const hasOcr = processed.ocrResult !== null && !manualMode;
   const ocrFailed = !processed.ocrResult && !manualMode;
-  const status = ocrStatusLabel(
-    processed.ocrResult,
-    processed.ocrUnavailableReason,
-    manualMode,
-  );
+  const isPdf = isPdfReceipt(processed.draft.mimeType, processed.draft.fileName);
+  const pdfMessage =
+    'Este é um ficheiro PDF. Podes preencher os campos manualmente — o ficheiro ficará sempre guardado no movimento.';
+  const status =
+    ocrFailed && isPdf
+      ? {
+          title: 'Ficheiro PDF',
+          subtitle: pdfMessage,
+          tone: 'neutral' as const,
+        }
+      : ocrStatusLabel(processed.ocrResult, processed.ocrUnavailableReason, manualMode);
   const previewDraft = {
     ...processed.draft,
     localUri: getReceiptDisplayUri(processed.draft),
@@ -353,7 +360,11 @@ export function ConfirmReceiptModal({
 
         <View style={[styles.formColumn, isWide && styles.formColumnWide]}>
           {ocrFailed ? (
-            <OcrFailureCard message={processed.ocrUnavailableReason} />
+            isPdf ? (
+              <OcrFailureCard variant="info" title="Ficheiro PDF" message={pdfMessage} />
+            ) : (
+              <OcrFailureCard message={processed.ocrUnavailableReason} />
+            )
           ) : null}
 
           {manualMode ? (

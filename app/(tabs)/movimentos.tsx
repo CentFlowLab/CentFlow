@@ -2,18 +2,20 @@ import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
-import { AppHeader, QuickAddMenuSheet, SegmentedControl } from '@/components/layout';
+import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import {
   AddTransactionModal,
   EditTransactionModal,
-  MOVEMENTS_VIEW_SEGMENTS,
+  MovementFilterChips,
   MOVEMENTS_EMPTY_CONFIG,
   PendingSubscriptionModal,
   SwipeableTransactionListItem,
   TransactionsSkeleton,
+  type MovementTab,
 } from '@/components/movements';
 import { EmptyState, ErrorState, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
@@ -36,12 +38,6 @@ import {
 } from '@/lib/domain/transaction-grouping';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
-
-const FILTER_SEGMENTS = [
-  { key: 'expense' as const, label: 'Despesas' },
-  { key: 'income' as const, label: 'Receitas' },
-  { key: 'all' as const, label: 'Todos' },
-];
 
 export default function MovimentosScreen() {
   useDiagnosticScreen('movements');
@@ -204,6 +200,17 @@ export default function MovimentosScreen() {
     await Promise.all([refetch(), refetchLiabilities()]);
   }
 
+  // Filtro unificado: Subscrições é uma "vista"; os restantes mapeiam para o filtro.
+  const activeTab: MovementTab = activeView === 'subscricoes' ? 'subscricoes' : filter;
+  function handleTabChange(tab: MovementTab) {
+    if (tab === 'subscricoes') {
+      setActiveView('subscricoes');
+    } else {
+      setActiveView('movimentos');
+      setFilter(tab);
+    }
+  }
+
   return (
     <View style={styles.screen}>
       <AppHeader
@@ -220,24 +227,12 @@ export default function MovimentosScreen() {
         }}
       />
 
-      <View style={styles.viewFilters}>
-        <SegmentedControl
-          segments={MOVEMENTS_VIEW_SEGMENTS}
-          value={activeView}
-          onChange={setActiveView}
-        />
+      <View style={styles.filters}>
+        <MovementFilterChips value={activeTab} onChange={handleTabChange} />
       </View>
 
       {activeView === 'movimentos' ? (
-        <>
-          <View style={styles.filters}>
-            <SegmentedControl
-              segments={FILTER_SEGMENTS}
-              value={filter}
-              onChange={setFilter}
-            />
-          </View>
-
+        <Animated.View key={`movs-${filter}`} entering={FadeIn.duration(180)} style={styles.flex}>
           {isLoading ? (
             <View style={styles.listPadding}>
               <TransactionsSkeleton />
@@ -332,31 +327,33 @@ export default function MovimentosScreen() {
               }
             />
           )}
-        </>
+        </Animated.View>
       ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.sectionContent,
-            { paddingBottom: contentBottomPadding },
-          ]}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetchingLiabilities}
-              onRefresh={handleRefreshAll}
-              tintColor={colors.primary}
-            />
-          }>
-          <FeatureAreaGate feature="subscriptions">
-            <SubscriptionsSection
-              subscriptions={subscriptions}
-              onCreate={() => openSubscriptionForm(null)}
-              onEdit={(subscription) => openSubscriptionForm(subscription)}
-              onLearnMore={handleLearnMore}
-              onDelete={(item) => deleteSubscription.mutate(item.id)}
-            />
-          </FeatureAreaGate>
-        </ScrollView>
+        <Animated.View key="subs" entering={FadeIn.duration(180)} style={styles.flex}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.sectionContent,
+              { paddingBottom: contentBottomPadding },
+            ]}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetchingLiabilities}
+                onRefresh={handleRefreshAll}
+                tintColor={colors.primary}
+              />
+            }>
+            <FeatureAreaGate feature="subscriptions">
+              <SubscriptionsSection
+                subscriptions={subscriptions}
+                onCreate={() => openSubscriptionForm(null)}
+                onEdit={(subscription) => openSubscriptionForm(subscription)}
+                onLearnMore={handleLearnMore}
+                onDelete={(item) => deleteSubscription.mutate(item.id)}
+              />
+            </FeatureAreaGate>
+          </ScrollView>
+        </Animated.View>
       )}
 
       <AddTransactionModal
@@ -401,13 +398,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  viewFilters: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+  flex: {
+    flex: 1,
   },
   filters: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   listPadding: {
     paddingHorizontal: spacing.lg,

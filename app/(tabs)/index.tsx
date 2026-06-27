@@ -10,7 +10,6 @@ import {
   HomeAlertsSection,
   HomeAssetsSummaryCard,
   HomeAssistantCard,
-  HomeQuickActions,
   HomeAttentionSheet,
 } from '@/components/dashboard';
 import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
@@ -182,12 +181,6 @@ export default function InicioScreen() {
             plan={assistant}
             onAction={handleAssistantAction}
             onOpenActionCenter={() => openAddMovement()}
-          />
-
-          <HomeQuickActions
-            onAddMovement={openAddMovement}
-            onAddAsset={() => router.push('/(tabs)/ativos?action=new-asset')}
-            onAddGoal={() => router.push('/(tabs)/ativos?action=new-goal')}
           />
 
           <RefetchingIndicator visible={isRefetching} />

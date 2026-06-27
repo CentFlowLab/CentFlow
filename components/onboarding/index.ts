@@ -1,4 +1,6 @@
 export { AnimatedAssistantMessage } from './AnimatedAssistantMessage';
+export { BackTapGuide } from './BackTapGuide';
+export { BackTapGuideGate } from './BackTapGuideGate';
 export { FeatureAreaCard } from './FeatureAreaCard';
 export { OnboardingGateEffect } from './OnboardingGateEffect';
 export { OnboardingPlanLoading } from './OnboardingPlanLoading';

@@ -132,6 +132,14 @@ export async function invokeVisionOcr(receiptId: string): Promise<ReceiptOcrResu
     body: { receiptId },
   });
 
+  if (__DEV__) {
+    console.log('[invokeVisionOcr] raw response', {
+      receiptId,
+      error: error?.message ?? null,
+      data,
+    });
+  }
+
   if (error) {
     throw new Error(await describeFunctionError(error));
   }

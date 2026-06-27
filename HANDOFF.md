@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T14:25:31.620Z -->
-<!-- Git: e094b6d (2026-06-27T12:20:58+01:00) -->
+<!-- Última geração: 2026-06-27T15:12:36.279Z -->
+<!-- Git: 353e4d6 (2026-06-27T15:26:31+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 9 — Onboarding premium redesenhado de raiz (17 passos, wheel picker, plano com gráfico)** |
-| Última geração | 2026-06-27T14:25:31.620Z |
+| Fase atual | **Fase 10 — Correções e melhorias (Sessão 2): guia Back Tap, Home limpa, Movimentos com chips, OCR PDF/imagem + Ver fatura, categorias com pesquisa, créditos com débito automático, formulário de cartão, Perfil reorganizado** |
+| Última geração | 2026-06-27T15:12:36.279Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `e094b6d` (2026-06-27T12:20:58+01:00) |
+| Git commit | `353e4d6` (2026-06-27T15:26:31+01:00) |
 
 ---
 
@@ -246,9 +246,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
   movements/
     AddTransactionModal.tsx
+    CategoryField.tsx
     ConfirmReceiptModal.tsx
     EditTransactionModal.tsx
     ImportCsvModal.tsx
+    MovementFilterChips.tsx
     OcrDetectionSummary.tsx
     OcrResultCard.tsx
     PendingSubscriptionModal.tsx
@@ -274,6 +276,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       index.ts
   onboarding/
     AnimatedAssistantMessage.tsx
+    BackTapGuide.tsx
+    BackTapGuideGate.tsx
     FeatureAreaCard.tsx
     OnboardingGateEffect.tsx
     OnboardingPlanLoading.tsx
@@ -355,6 +359,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useUserPreferences.ts
   useCentFlowIntelligence.ts
   useContextualQuickAdd.ts
+  useCustomCategories.ts
   useDiagnosticScreen.ts
   useFeatureAreas.ts
   useFormDismiss.ts
@@ -440,6 +445,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   credit/
     credit-analysis.test.ts
     credit-analysis.ts
+    credit-dates.ts
+    credit-reminder-storage.ts
     credit-type.utils.test.ts
     credit-type.utils.ts
   csv/
@@ -448,6 +455,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     read-csv-file.ts
   data/
     analysis.mocks.ts
+    custom-categories-storage.ts
     mocks.ts
     prices.mocks.ts
     transaction-categories.ts
@@ -541,6 +549,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     quick-add-context.ts
   onboarding/
     answers.service.ts
+    back-tap-guide.ts
     constants.ts
     copy.ts
     features.ts
@@ -567,6 +576,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     ocr-failure.test.ts
     ocr-messages.ts
     ocr-sanitize.ts
+    open-receipt.ts
     parse-receipt-pt.ts
     receipt-exif.ts
     receipt-image-enhance.ts
@@ -586,6 +596,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     versionGuard.ts
   storage/
     liabilities-storage.ts
+    local-flags.ts
     pending-subscriptions.storage.ts
     secure-store-key.ts
   subscriptions/
@@ -643,7 +654,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 9 — Onboarding premium redesenhado de raiz (17 passos, wheel picker, plano com gráfico)
+## Fase atual: Fase 10 — Correções e melhorias (Sessão 2): guia Back Tap, Home limpa, Movimentos com chips, OCR PDF/imagem + Ver fatura, categorias com pesquisa, créditos com débito automático, formulário de cartão, Perfil reorganizado
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -728,6 +739,16 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - PlanResult com donut SVG animado; BuildSequence com inicialização real (persiste respostas, sem loading falso)
 - OnboardingAnswers estendido (spendAwareness, financialHistory, savingsGoal, savingsMonths, monthlyIncome, creditTypes, investmentTypes) — retrocompatível
 - Wrapper de háptica OTA-safe (no-op) pronto para expo-haptics no IPA nativo
+- Guia Back Tap — bottom sheet full-screen 1x após onboarding (passos iOS Shortcuts + Acessibilidade), copiar URL centflow://quick-expense, 'testar agora' → Quick Expense; flag persistida (BackTapGuideGate + lib/onboarding/back-tap-guide.ts)
+- Home — removidos os 3 botões de ação (Novo movimento/ativo/objetivo); ações ficam nos respetivos ecrãs
+- Movimentos — filtros redesenhados num único chip bar horizontal [Todos][Despesas][Receitas][Subscrições] com transição fade (MovementFilterChips), agrupamento por dia mantido
+- OCR — PDFs mostram mensagem neutra (não erro) e permitem preenchimento manual; OcrFailureCard com variante 'info'; logs raw da Vision API e do OCR on-device (dev)
+- OCR — toggle Despesa/Receita no ecrã de confirmação; reembolso guardado como income com categoria 'Reembolso'
+- Movimentos — botão 'Ver fatura' no detalhe abre o ficheiro (URL assinada/remota ou partilha local) via lib/receipt/open-receipt.ts
+- Categorias — seletor em bottom sheet com pesquisa em tempo real (categoria + grupo), lista expandida agrupada e categorias personalizadas persistidas (CategoryField + useCustomCategories)
+- Créditos — data de próximo pagamento assume dia 1 do mês seguinte quando vazia (com hint); alerta de débito automático na data prevista (confirmar/valor diferente/adiar 3 dias) via CreditPaymentReminderGate
+- Cartões de crédito — formulário específico (nome, banco, limite, saldo, fecho do extrato, vencimento, TAN mensal, notas) sem campos de empréstimo; card na lista com barra de utilização saldo/limite
+- Perfil reorganizado — Conta → Perfil financeiro → Preferências → A tua CentFlow, com botão Sair vermelho (confirmação); menu 'E' simplificado
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
@@ -741,6 +762,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Ativos — CRUD objetivos, garantias, inventário
 - Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass), expo-apple-authentication (Apple Sign In no login): instalar + novo IPA (não entram por OTA)
 - Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal
+- OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual
+- Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA
+- Cartão de crédito reutiliza colunas existentes (originalAmount=limite, termMonths=dia de fecho, interestRateAnnual=TAN); migration dedicada fica para depois
 
 ---
 

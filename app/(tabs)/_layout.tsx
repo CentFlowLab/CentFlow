@@ -9,6 +9,8 @@ import {
   type PressableStateCallbackType,
 } from 'react-native';
 
+import { CreditPaymentReminderGate } from '@/components/assets';
+import { BackTapGuideGate } from '@/components/onboarding';
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
@@ -25,6 +27,7 @@ function TabLayoutInner() {
   const { contentHeight } = useTabBarMetrics();
 
   return (
+    <>
     <Tabs
       tabBar={(props) => <CentFlowTabBar {...props} hidden={keyboardVisible} />}
       screenOptions={{
@@ -159,6 +162,9 @@ function TabLayoutInner() {
         }}
       />
     </Tabs>
+    <CreditPaymentReminderGate />
+    <BackTapGuideGate />
+    </>
   );
 }
 

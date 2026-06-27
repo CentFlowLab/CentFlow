@@ -1,12 +1,12 @@
-import { SymbolView } from 'expo-symbols';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { SegmentedControl } from '@/components/layout';
-import { DatePickerField, Text, TextField } from '@/components/ui';
-import { getCategoriesForType } from '@/lib/data/transaction-categories';
+import { DatePickerField, TextField } from '@/components/ui';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { TransactionType } from '@/lib/domain/transaction.types';
-import { colors, radius, spacing } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
+
+import { CategoryField } from './CategoryField';
 
 type TransactionFormProps = {
   values: TransactionFormValues;
@@ -20,8 +20,6 @@ const TYPE_SEGMENTS = [
 ];
 
 export function TransactionForm({ values, onChange, errors }: TransactionFormProps) {
-  const categories = getCategoriesForType(values.type);
-
   function update<K extends keyof TransactionFormValues>(
     key: K,
     value: TransactionFormValues[K],
@@ -50,39 +48,12 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
         error={errors?.amount}
       />
 
-      <View style={styles.field}>
-        <Text variant="caption" color="textSecondary" style={styles.fieldLabel}>
-          Categoria
-        </Text>
-        <View style={styles.categoryGrid}>
-          {categories.map((item) => {
-            const isSelected = values.category === item.id;
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => update('category', item.id)}
-                style={[styles.categoryChip, isSelected && styles.categoryChipActive]}>
-                <SymbolView
-                  name={item.icon}
-                  tintColor={isSelected ? colors.primary : colors.textMuted}
-                  size={16}
-                />
-                <Text
-                  variant="caption"
-                  color={isSelected ? 'text' : 'textMuted'}
-                  style={isSelected ? styles.categoryLabelActive : undefined}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        {errors?.category ? (
-          <Text variant="caption" color="danger" style={styles.fieldError}>
-            {errors.category}
-          </Text>
-        ) : null}
-      </View>
+      <CategoryField
+        type={values.type}
+        value={values.category}
+        onChange={(category) => update('category', category)}
+        error={errors?.category}
+      />
 
       <TextField
         label="Descrição (opcional)"
@@ -105,37 +76,5 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
 const styles = StyleSheet.create({
   form: {
     gap: spacing.lg,
-  },
-  field: {
-    gap: spacing.xs,
-  },
-  fieldLabel: {
-    fontWeight: '500',
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  categoryChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryMuted,
-  },
-  categoryLabelActive: {
-    fontWeight: '600',
-  },
-  fieldError: {
-    marginTop: spacing.xs,
   },
 });

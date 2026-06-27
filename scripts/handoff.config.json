@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 9 — Onboarding premium redesenhado de raiz (17 passos, wheel picker, plano com gráfico)",
+  "currentPhase": "Fase 10 — Correções e melhorias (Sessão 2): guia Back Tap, Home limpa, Movimentos com chips, OCR PDF/imagem + Ver fatura, categorias com pesquisa, créditos com débito automático, formulário de cartão, Perfil reorganizado",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -84,7 +84,17 @@
     "WheelPicker custom estilo iOS (Reanimated, OTA-safe) + BigAmountInput (número gigante)",
     "PlanResult com donut SVG animado; BuildSequence com inicialização real (persiste respostas, sem loading falso)",
     "OnboardingAnswers estendido (spendAwareness, financialHistory, savingsGoal, savingsMonths, monthlyIncome, creditTypes, investmentTypes) — retrocompatível",
-    "Wrapper de háptica OTA-safe (no-op) pronto para expo-haptics no IPA nativo"
+    "Wrapper de háptica OTA-safe (no-op) pronto para expo-haptics no IPA nativo",
+    "Guia Back Tap — bottom sheet full-screen 1x após onboarding (passos iOS Shortcuts + Acessibilidade), copiar URL centflow://quick-expense, 'testar agora' → Quick Expense; flag persistida (BackTapGuideGate + lib/onboarding/back-tap-guide.ts)",
+    "Home — removidos os 3 botões de ação (Novo movimento/ativo/objetivo); ações ficam nos respetivos ecrãs",
+    "Movimentos — filtros redesenhados num único chip bar horizontal [Todos][Despesas][Receitas][Subscrições] com transição fade (MovementFilterChips), agrupamento por dia mantido",
+    "OCR — PDFs mostram mensagem neutra (não erro) e permitem preenchimento manual; OcrFailureCard com variante 'info'; logs raw da Vision API e do OCR on-device (dev)",
+    "OCR — toggle Despesa/Receita no ecrã de confirmação; reembolso guardado como income com categoria 'Reembolso'",
+    "Movimentos — botão 'Ver fatura' no detalhe abre o ficheiro (URL assinada/remota ou partilha local) via lib/receipt/open-receipt.ts",
+    "Categorias — seletor em bottom sheet com pesquisa em tempo real (categoria + grupo), lista expandida agrupada e categorias personalizadas persistidas (CategoryField + useCustomCategories)",
+    "Créditos — data de próximo pagamento assume dia 1 do mês seguinte quando vazia (com hint); alerta de débito automático na data prevista (confirmar/valor diferente/adiar 3 dias) via CreditPaymentReminderGate",
+    "Cartões de crédito — formulário específico (nome, banco, limite, saldo, fecho do extrato, vencimento, TAN mensal, notas) sem campos de empréstimo; card na lista com barra de utilização saldo/limite",
+    "Perfil reorganizado — Conta → Perfil financeiro → Preferências → A tua CentFlow, com botão Sair vermelho (confirmação); menu 'E' simplificado"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
@@ -97,7 +107,10 @@
     "Edição linha a linha de itens do talão",
     "Ativos — CRUD objetivos, garantias, inventário",
     "Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass), expo-apple-authentication (Apple Sign In no login): instalar + novo IPA (não entram por OTA)",
-    "Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal"
+    "Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal",
+    "OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual",
+    "Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA",
+    "Cartão de crédito reutiliza colunas existentes (originalAmount=limite, termMonths=dia de fecho, interestRateAnnual=TAN); migration dedicada fica para depois"
   ],
   "outputFile": "HANDOFF.md"
 }

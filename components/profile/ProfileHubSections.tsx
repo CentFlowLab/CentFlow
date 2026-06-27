@@ -1,5 +1,7 @@
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import Constants from 'expo-constants';
+import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, SectionHeader, Text } from '@/components/ui';
@@ -23,7 +25,48 @@ type ProfileHubSectionsProps = {
   email: string;
   onActivateFeature: (feature: FeatureAreaId) => void;
   activatingFeature?: FeatureAreaId | null;
+  /** Conteúdo do perfil financeiro injectado entre Conta e Preferências. */
+  financialSlot?: ReactNode;
 };
+
+function PreferenceRow({
+  icon,
+  label,
+  caption,
+  onPress,
+  withBorder,
+}: {
+  icon: SymbolViewProps['name'];
+  label: string;
+  caption: string;
+  onPress: () => void;
+  withBorder?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.menuRow,
+        withBorder && styles.menuRowBorder,
+        pressed && styles.menuRowPressed,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={label}>
+      <SymbolView name={icon} tintColor={colors.textSecondary} size={22} />
+      <View style={styles.menuText}>
+        <Text variant="bodyMedium">{label}</Text>
+        <Text variant="caption" color="textMuted">
+          {caption}
+        </Text>
+      </View>
+      <SymbolView
+        name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+        tintColor={colors.textMuted}
+        size={16}
+      />
+    </Pressable>
+  );
+}
 
 function getPlanLabel(): string {
   const variant = getAppVariant();
@@ -72,6 +115,7 @@ export function ProfileHubSections({
   email,
   onActivateFeature,
   activatingFeature = null,
+  financialSlot,
 }: ProfileHubSectionsProps) {
   const { isAuthenticated } = useAuth();
   const { data: profile } = useProfile();
@@ -98,87 +142,84 @@ export function ProfileHubSections({
     ? formatDateShort(onboardingAnswers.completedAt)
     : null;
   const planLabel = getPlanLabel();
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
     <>
-      <Card variant="elevated" style={styles.identityCard}>
-        <View style={styles.avatarLarge}>
-          <Text variant="h2" color="primary">
-            {name
-              .split(' ')
-              .map((part) => part[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase() || 'CF'}
-          </Text>
-        </View>
-        <View style={styles.identityInfo}>
-          <Text variant="h3">{name}</Text>
-          <Text variant="caption" color="textSecondary">
-            {email}
-          </Text>
-          <View style={styles.metaRow}>
-            <View style={styles.statusPill}>
-              <Text variant="caption" color="primary">
-                {isAuthenticated ? 'Conta activa' : 'Sessão pendente'}
-              </Text>
-            </View>
-            {memberSince ? (
-              <Text variant="caption" color="textMuted">
-                Desde {memberSince}
-              </Text>
-            ) : null}
+      <View style={styles.section}>
+        <SectionHeader title="Conta" />
+        <Card variant="elevated" style={styles.identityCard}>
+          <View style={styles.avatarLarge}>
+            <Text variant="h2" color="primary">
+              {name
+                .split(' ')
+                .map((part) => part[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase() || 'CF'}
+            </Text>
           </View>
-        </View>
-      </Card>
+          <View style={styles.identityInfo}>
+            <Text variant="h3">{name}</Text>
+            <Text variant="caption" color="textSecondary">
+              {email}
+            </Text>
+            <View style={styles.metaRow}>
+              <View style={styles.statusPill}>
+                <Text variant="caption" color="primary">
+                  {isAuthenticated ? 'Conta activa' : 'Sessão pendente'}
+                </Text>
+              </View>
+              {memberSince ? (
+                <Text variant="caption" color="textMuted">
+                  Desde {memberSince}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        </Card>
+        <Card variant="outlined" padding="sm">
+          <PreferenceRow
+            icon={{ ios: 'person.crop.circle', android: 'person', web: 'person' }}
+            label="Editar dados pessoais"
+            caption="Nome, email e conta"
+            onPress={() => router.push('/settings/personal-data')}
+          />
+        </Card>
+      </View>
+
+      {financialSlot ? <View style={styles.section}>{financialSlot}</View> : null}
 
       <View style={styles.section}>
         <SectionHeader title="Preferências" />
         <Card variant="outlined" padding="sm">
-          <Pressable
+          <PreferenceRow
+            icon={{ ios: 'eurosign.circle', android: 'euro', web: 'euro' }}
+            label="Moeda e região"
+            caption={`${currency} · ${getCountryLabel(region)}`}
             onPress={() => router.push('/settings/currency-region')}
-            style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Moeda e região">
-            <SymbolView
-              name={{ ios: 'eurosign.circle', android: 'euro', web: 'euro' }}
-              tintColor={colors.textSecondary}
-              size={22}
-            />
-            <View style={styles.menuText}>
-              <Text variant="bodyMedium">Moeda e região</Text>
-              <Text variant="caption" color="textMuted">
-                {currency} · {getCountryLabel(region)}
-              </Text>
-            </View>
-            <SymbolView
-              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-              tintColor={colors.textMuted}
-              size={16}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => router.push('/settings/personal-data')}
-            style={({ pressed }) => [styles.menuRow, styles.menuRowBorder, pressed && styles.menuRowPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Dados pessoais">
-            <SymbolView
-              name={{ ios: 'person.crop.circle', android: 'person', web: 'person' }}
-              tintColor={colors.textSecondary}
-              size={22}
-            />
-            <View style={styles.menuText}>
-              <Text variant="bodyMedium">Dados pessoais</Text>
-              <Text variant="caption" color="textMuted">
-                Nome, email e conta
-              </Text>
-            </View>
-            <SymbolView
-              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-              tintColor={colors.textMuted}
-              size={16}
-            />
-          </Pressable>
+          />
+          <PreferenceRow
+            icon={{ ios: 'bell.fill', android: 'notifications', web: 'notifications' }}
+            label="Notificações"
+            caption="Alertas e lembretes"
+            onPress={() => router.push('/settings/notifications')}
+            withBorder
+          />
+          <PreferenceRow
+            icon={{ ios: 'lock.fill', android: 'lock', web: 'lock' }}
+            label="Segurança"
+            caption="FaceID / biometria e privacidade"
+            onPress={() => router.push('/settings/security')}
+            withBorder
+          />
+          <PreferenceRow
+            icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
+            label="Aparência"
+            caption="Tema da aplicação"
+            onPress={() => router.push('/settings/appearance')}
+            withBorder
+          />
         </Card>
       </View>
 
@@ -189,7 +230,7 @@ export function ProfileHubSections({
             <View>
               <Text variant="bodyMedium">{planLabel}</Text>
               <Text variant="caption" color="textMuted">
-                {activeFeatures} de {ALL_FEATURE_AREAS.length} áreas activas
+                {activeFeatures} de {ALL_FEATURE_AREAS.length} áreas activas · v{appVersion}
               </Text>
             </View>
             <View style={styles.planBadge}>

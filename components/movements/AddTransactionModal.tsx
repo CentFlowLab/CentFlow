@@ -17,6 +17,8 @@ import {
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { queryKeys } from '@/lib/api/keys';
 import { getCategoriesForType } from '@/lib/data/transaction-categories';
+
+import { CategoryField } from './CategoryField';
 import { formValuesToConfirmation } from '@/lib/domain/receipt-confirmation';
 import { createTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
@@ -96,7 +98,6 @@ export function AddTransactionModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const categories = getCategoriesForType(type);
   const isSaving = createMutation.isPending;
   const isProcessing = processReceipt.isPending;
   const savePhaseLabel = getCreateTransactionPhaseLabel(createMutation.phase);
@@ -588,42 +589,15 @@ export function AddTransactionModal({
               error={errors.amount}
             />
 
-            <View style={styles.field}>
-              <Text variant="caption" color="textSecondary" style={styles.fieldLabel}>
-                Categoria
-              </Text>
-              <View style={styles.categoryGrid}>
-                {categories.map((item) => {
-                  const isSelected = category === item.id;
-                  return (
-                    <Pressable
-                      key={item.id}
-                      onPress={() => {
-                        traceMovementStep('field_change', { field: 'category', value: item.id });
-                        setCategory(item.id);
-                      }}
-                      style={[styles.categoryChip, isSelected && styles.categoryChipActive]}>
-                      <SymbolView
-                        name={item.icon}
-                        tintColor={isSelected ? colors.primary : colors.textMuted}
-                        size={16}
-                      />
-                      <Text
-                        variant="caption"
-                        color={isSelected ? 'text' : 'textMuted'}
-                        style={isSelected ? styles.categoryLabelActive : undefined}>
-                        {item.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              {errors.category ? (
-                <Text variant="caption" color="danger" style={styles.fieldError}>
-                  {errors.category}
-                </Text>
-              ) : null}
-            </View>
+            <CategoryField
+              type={type}
+              value={category}
+              onChange={(next) => {
+                traceMovementStep('field_change', { field: 'category', value: next });
+                setCategory(next);
+              }}
+              error={errors.category}
+            />
 
             <TextField
               label="Descrição (opcional)"

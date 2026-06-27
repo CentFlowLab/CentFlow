@@ -16,6 +16,7 @@ import { updateTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { formFieldsDiffer } from '@/lib/forms';
+import { openReceiptForTransaction } from '@/lib/receipt/open-receipt';
 import { colors, spacing } from '@/lib/theme';
 
 import { TransactionForm } from './TransactionForm';
@@ -45,6 +46,7 @@ export function EditTransactionModal({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+  const [openingReceipt, setOpeningReceipt] = useState(false);
 
   const baselineRef = useRef<TransactionFormValues>({
     type: 'expense',
@@ -116,6 +118,25 @@ export function EditTransactionModal({
     }
   }
 
+  const hasReceipt = Boolean(
+    transaction.receiptId || transaction.receiptImage || transaction.receiptUrl,
+  );
+
+  async function handleViewReceipt() {
+    if (!transaction) return;
+    setOpeningReceipt(true);
+    try {
+      const opened = await openReceiptForTransaction(transaction);
+      if (!opened) {
+        showToast('Não foi possível abrir a fatura.', 'error');
+      }
+    } catch {
+      showToast('Não foi possível abrir a fatura.', 'error');
+    } finally {
+      setOpeningReceipt(false);
+    }
+  }
+
   const title =
     transaction.description?.trim() || transaction.categoryLabel || 'Movimento';
 
@@ -143,16 +164,24 @@ export function EditTransactionModal({
           </Pressable>
         </View>
       )}>
-      {transaction.receiptId || transaction.receiptImage ? (
+      {hasReceipt ? (
         <Card variant="outlined" style={styles.receiptNote}>
           <SymbolView
             name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
             tintColor={colors.textMuted}
             size={16}
           />
-          <Text variant="caption" color="textSecondary">
-            O talão anexado mantém-se ligado a este movimento.
+          <Text variant="caption" color="textSecondary" style={styles.receiptNoteText}>
+            O talão/fatura mantém-se ligado a este movimento.
           </Text>
+          <Button
+            label={openingReceipt ? 'A abrir...' : 'Ver fatura'}
+            variant="secondary"
+            size="sm"
+            onPress={handleViewReceipt}
+            loading={openingReceipt}
+            disabled={openingReceipt}
+          />
         </Card>
       ) : null}
 
@@ -202,6 +231,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     borderColor: colors.border,
+  },
+  receiptNoteText: {
+    flex: 1,
   },
   errorCard: {
     borderColor: colors.danger,
