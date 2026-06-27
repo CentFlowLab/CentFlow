@@ -1,6 +1,5 @@
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Text } from '@/components/ui';
 import { colors, spacing } from '@/lib/theme';
 
 /** Agrupa milhares com espaço fino (formato PT): 12345 → "12 345". */
@@ -31,7 +30,9 @@ export function BigAmountInput({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.prefix}>{prefix}</Text>
+      <Text allowFontScaling={false} style={styles.prefix}>
+        {prefix}
+      </Text>
       <View style={styles.inputWrap}>
         <TextInput
           value={display}
@@ -60,9 +61,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   prefix: {
-    fontSize: 40,
+    fontSize: 36,
+    lineHeight: 46,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: colors.text,
+    opacity: 0.6,
   },
   inputWrap: {
     minWidth: 80,

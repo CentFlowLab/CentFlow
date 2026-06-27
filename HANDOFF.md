@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T18:16:18.895Z -->
-<!-- Git: 874e6c0 (2026-06-27T19:01:53+01:00) -->
+<!-- Última geração: 2026-06-27T18:36:43.443Z -->
+<!-- Git: ce6bb24 (2026-06-27T19:16:54+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
-| Última geração | 2026-06-27T18:16:18.895Z |
+| Última geração | 2026-06-27T18:36:43.443Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `874e6c0` (2026-06-27T19:01:53+01:00) |
+| Git commit | `ce6bb24` (2026-06-27T19:16:54+01:00) |
 
 ---
 
@@ -281,6 +281,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     BackTapGuideGate.tsx
     FeatureAreaCard.tsx
     OnboardingGateEffect.tsx
+    OnboardingIllustration.tsx
     OnboardingPlanLoading.tsx
     OnboardingProgressBar.tsx
     OnboardingShell.tsx

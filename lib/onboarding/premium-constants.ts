@@ -23,10 +23,10 @@ export type PremiumOption<T extends string> = {
 
 /** Passo 3 — "O que acontece contigo?" (múltipla). */
 export const PROBLEM_OPTIONS: PremiumOption<ProfileTagId>[] = [
-  { id: 'control_spending', emoji: '🌀', label: 'Não sei para onde vai o dinheiro' },
-  { id: 'still_exploring', emoji: '🧾', label: 'Tenho demasiadas contas' },
-  { id: 'credits_costs', emoji: '🏦', label: 'Tenho créditos' },
-  { id: 'financial_goals', emoji: '🐖', label: 'Quero poupar' },
+  { id: 'control_spending', emoji: '💸', label: 'Não sei para onde vai o dinheiro' },
+  { id: 'still_exploring', emoji: '📋', label: 'Tenho demasiadas contas' },
+  { id: 'credits_costs', emoji: '💳', label: 'Tenho créditos' },
+  { id: 'financial_goals', emoji: '🐷', label: 'Quero poupar' },
   { id: 'track_wealth', emoji: '📈', label: 'Quero investir' },
   { id: 'receipts_warranties', emoji: '🗂️', label: 'Quero simplesmente organização' },
 ];

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import { OnboardingShell } from '@/components/onboarding';
+import { OnboardingIllustration, OnboardingShell } from '@/components/onboarding';
 import {
   BigAmountInput,
   BuildSequence,
@@ -106,10 +106,9 @@ function getFirstName(name: string): string {
   return name.trim().split(' ')[0] || '';
 }
 
-function firstRunMessage(answers: OnboardingAnswers, firstName: string): string {
-  const hello = firstName ? `Olá, ${firstName}.` : 'Olá.';
+function firstRunMessage(answers: OnboardingAnswers): string {
   let focus =
-    'acredito que o maior impacto para ti será controlar melhor as despesas variáveis e acompanhar o teu património líquido.';
+    'o maior impacto para ti será controlar melhor as despesas variáveis e acompanhar o teu património líquido.';
 
   if (answers.creditTypes.length > 0 || answers.primaryObjective === 'organize_credits') {
     focus =
@@ -122,7 +121,7 @@ function firstRunMessage(answers: OnboardingAnswers, firstName: string): string 
       'o maior impacto para ti será reunir bens, contas e objetivos para veres o teu património com clareza.';
   }
 
-  return `${hello} Com base nas tuas respostas, ${focus}`;
+  return `Com base nas tuas respostas, ${focus}`;
 }
 
 export default function OnboardingScreen() {
@@ -604,7 +603,7 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.centeredStep}>
             <Animated.View entering={FadeIn.duration(500)} style={styles.aiBubble}>
-              <Text style={styles.aiAvatar}>🤖</Text>
+              <OnboardingIllustration emoji="👋" size={104} />
             </Animated.View>
             <Animated.View entering={FadeInDown.duration(500).delay(200)}>
               <Text variant="display" align="center" style={styles.firstRunTitle}>
@@ -613,7 +612,7 @@ export default function OnboardingScreen() {
             </Animated.View>
             <Animated.View entering={FadeInDown.duration(500).delay(400)}>
               <Text variant="body" color="textSecondary" align="center" style={styles.firstRunBody}>
-                {firstRunMessage(answers, firstName)}
+                {firstRunMessage(answers)}
               </Text>
             </Animated.View>
             <Animated.View entering={FadeIn.duration(500).delay(700)}>
@@ -760,9 +759,7 @@ function Hero({
           style={styles.heroGlow}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}>
-          <View style={styles.heroCircle}>
-            <Text style={styles.heroEmoji}>{emoji}</Text>
-          </View>
+          <OnboardingIllustration emoji={emoji} size={132} />
         </LinearGradient>
       </Animated.View>
       <Animated.View entering={FadeInDown.duration(520).delay(150)}>
@@ -847,19 +844,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroEmoji: {
-    fontSize: 56,
-  },
   heroTitle: {
     lineHeight: 40,
   },
@@ -920,9 +904,6 @@ const styles = StyleSheet.create({
   },
   aiBubble: {
     alignSelf: 'center',
-  },
-  aiAvatar: {
-    fontSize: 64,
   },
   firstRunTitle: {
     lineHeight: 40,

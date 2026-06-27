@@ -87,7 +87,13 @@ export function ChoiceCard({
           compact && styles.choiceCompact,
           selected && styles.choiceSelected,
         ]}>
-        {emoji ? <Text style={[styles.choiceEmoji, compact && styles.choiceEmojiCompact]}>{emoji}</Text> : null}
+        {emoji ? (
+          <View style={styles.choiceEmojiBox}>
+            <Text allowFontScaling={false} style={styles.choiceEmoji}>
+              {emoji}
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.choiceTextWrap}>
           <Text variant={compact ? 'bodyMedium' : 'h3'} style={styles.choiceLabel}>
             {label}
@@ -146,14 +152,16 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.primaryMuted,
   },
-  choiceEmoji: {
-    fontSize: 28,
-    width: 40,
-    textAlign: 'center',
+  choiceEmojiBox: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  choiceEmojiCompact: {
-    fontSize: 22,
-    width: 32,
+  choiceEmoji: {
+    fontSize: 24,
+    lineHeight: 30,
+    textAlign: 'center',
   },
   choiceTextWrap: {
     flex: 1,

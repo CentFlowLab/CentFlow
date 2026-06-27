@@ -100,7 +100,13 @@ export function PlanResult({ savingsGoal, months, monthlyIncome, firstName }: Pl
           <Text variant="label" color="textMuted">
             Por mês
           </Text>
-          <Text style={styles.bigNumber}>{euro(plan.monthlySaving)}</Text>
+          <Text
+            style={styles.bigNumber}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            allowFontScaling={false}>
+            {euro(plan.monthlySaving)}
+          </Text>
         </View>
       </Animated.View>
 
@@ -171,12 +177,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    paddingHorizontal: STROKE + spacing.sm,
   },
   bigNumber: {
     fontSize: 34,
+    lineHeight: 42,
     fontWeight: '800',
     letterSpacing: -0.5,
     color: colors.text,
+    textAlign: 'center',
   },
   explain: {
     lineHeight: 24,
