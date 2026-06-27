@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import {
   SettingsHero,
@@ -30,15 +30,7 @@ export default function SecurityScreen() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [signOutAllLoading, setSignOutAllLoading] = useState(false);
 
-  async function handleToggleBiometrics(value: boolean) {
-    if (value) {
-      const support = await getBiometricSupport();
-      if (!support.available) {
-        showToast('Biometria indisponível neste dispositivo.', 'info');
-        return;
-      }
-    }
-
+  async function applyBiometricsPreference(value: boolean) {
     try {
       await updatePreferences.mutateAsync({ biometricsEnabled: value });
       await setBiometricLockEnabled(value);
@@ -51,6 +43,80 @@ export default function SecurityScreen() {
     } catch {
       showToast('Não foi possível guardar a preferência.', 'error');
     }
+  }
+
+  async function disableWithPassword(password: string) {
+    const email = user?.email;
+    if (!email) {
+      showToast('Email da conta indisponível.', 'error');
+      return;
+    }
+    if (!password) {
+      showToast('Password necessária para desativar.', 'error');
+      return;
+    }
+    try {
+      // Confirma a identidade com password — nunca com FaceID (escape do loop).
+      await authService.login({ email, password });
+      logSecurityEvent('biometric_disabled_with_password');
+      await applyBiometricsPreference(false);
+    } catch {
+      showToast('Password incorrecta. A biometria continua activa.', 'error');
+    }
+  }
+
+  function requestDisableBiometrics() {
+    // Em modo demonstração não há password real para validar.
+    if (isMockAuthEnabled()) {
+      void applyBiometricsPreference(false);
+      return;
+    }
+
+    if (Platform.OS === 'ios' && typeof Alert.prompt === 'function') {
+      Alert.prompt(
+        'Desativar biometria',
+        'Por segurança, confirma a tua password para desativar o Face ID / impressão digital.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Desativar',
+            style: 'destructive',
+            onPress: (password?: string) => void disableWithPassword(password ?? ''),
+          },
+        ],
+        'secure-text',
+      );
+      return;
+    }
+
+    // Fallback (Android/web): confirmação simples sem campo de password nativo.
+    Alert.alert(
+      'Desativar biometria',
+      'Vais desativar o bloqueio biométrico. Terás de usar email e password para entrar.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Desativar',
+          style: 'destructive',
+          onPress: () => void applyBiometricsPreference(false),
+        },
+      ],
+    );
+  }
+
+  async function handleToggleBiometrics(value: boolean) {
+    if (value) {
+      const support = await getBiometricSupport();
+      if (!support.available) {
+        showToast('Biometria indisponível neste dispositivo.', 'info');
+        return;
+      }
+      await applyBiometricsPreference(true);
+      return;
+    }
+
+    // Desativar exige confirmação por password (nunca FaceID).
+    requestDisableBiometrics();
   }
 
   function handleResetPassword() {

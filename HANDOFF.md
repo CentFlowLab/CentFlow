@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T17:53:47.492Z -->
-<!-- Git: 5b5a959 (2026-06-27T16:12:53+01:00) -->
+<!-- Última geração: 2026-06-27T18:01:36.002Z -->
+<!-- Git: 1a3f4c6 (2026-06-27T18:54:07+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
-| Última geração | 2026-06-27T17:53:47.492Z |
+| Última geração | 2026-06-27T18:01:36.002Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `5b5a959` (2026-06-27T16:12:53+01:00) |
+| Git commit | `1a3f4c6` (2026-06-27T18:54:07+01:00) |
 
 ---
 
@@ -761,6 +761,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Rota /quick-expense ignora o formulário quando há amount (regressa logo); sem parâmetros mantém o Gasto rápido (formulário)
 - Doctor — eventos quick_expense_link (link_received, parse_success, parse_failed, save_start, save_success, save_error)
 - Guia Back Tap atualizado para o fluxo com Pedir entrada (valor) + Escolher entre lista (categoria) + nota → Abrir URL com parâmetros; tabela de mapeamento PT→key; botão de teste guarda 1 € e mostra 'Está a funcionar!'
+- HOTFIX loop infinito FaceID — BiometricGate com aprovação por sessão (singleton), guarda isPrompting (ref) e cooldown que ignora as transições inactive→active provocadas pelo próprio diálogo de FaceID; sem auto-repetição após falha
+- FaceID — escape de emergência sempre visível (entrar com email e password → desativa biometria + signOut); após 3 falhas passa a ação primária; 'Terminar sessão' sempre disponível
+- Definições → Segurança — desativar biometria exige confirmação por password (Alert.prompt iOS, valida via authService.login), nunca por FaceID
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

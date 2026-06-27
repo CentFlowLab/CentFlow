@@ -100,7 +100,10 @@
     "QuickExpenseLinkHandler (montado no _layout) ouve getInitialURL + evento 'url'; cold start sem login guarda os parâmetros em memória e grava após autenticar; dedupe de URL",
     "Rota /quick-expense ignora o formulário quando há amount (regressa logo); sem parâmetros mantém o Gasto rápido (formulário)",
     "Doctor — eventos quick_expense_link (link_received, parse_success, parse_failed, save_start, save_success, save_error)",
-    "Guia Back Tap atualizado para o fluxo com Pedir entrada (valor) + Escolher entre lista (categoria) + nota → Abrir URL com parâmetros; tabela de mapeamento PT→key; botão de teste guarda 1 € e mostra 'Está a funcionar!'"
+    "Guia Back Tap atualizado para o fluxo com Pedir entrada (valor) + Escolher entre lista (categoria) + nota → Abrir URL com parâmetros; tabela de mapeamento PT→key; botão de teste guarda 1 € e mostra 'Está a funcionar!'",
+    "HOTFIX loop infinito FaceID — BiometricGate com aprovação por sessão (singleton), guarda isPrompting (ref) e cooldown que ignora as transições inactive→active provocadas pelo próprio diálogo de FaceID; sem auto-repetição após falha",
+    "FaceID — escape de emergência sempre visível (entrar com email e password → desativa biometria + signOut); após 3 falhas passa a ação primária; 'Terminar sessão' sempre disponível",
+    "Definições → Segurança — desativar biometria exige confirmação por password (Alert.prompt iOS, valida via authService.login), nunca por FaceID"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
