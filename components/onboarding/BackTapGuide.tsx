@@ -1,5 +1,4 @@
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,31 +6,56 @@ import { Button, Card, Text } from '@/components/ui';
 import { colors, radius, spacing } from '@/lib/theme';
 
 export const QUICK_EXPENSE_URL = 'centflow://quick-expense';
+export const QUICK_EXPENSE_URL_TEMPLATE =
+  'centflow://quick-expense?amount=[valor]&category=[categoria]&note=[nota]';
 
-const STEPS: string[] = [
-  'Abre a app Atalhos no iPhone',
-  'Cria um novo atalho → adiciona a ação "Abrir URL"',
-  `Insere o URL: ${QUICK_EXPENSE_URL}`,
-  'Dá o nome "Despesa CentFlow" e guarda',
-  'Abre as Definições do iPhone',
-  'Vai a Acessibilidade → Toque → Tocar Atrás',
-  'Em Toque Duplo, escolhe "Despesa CentFlow"',
+type TestStatus = 'idle' | 'testing' | 'success' | 'error';
+
+const STEPS: { text: string; hint?: string }[] = [
+  { text: 'Abre a app Atalhos no iPhone' },
+  { text: 'Cria um novo atalho' },
+  {
+    text: 'Adiciona a ação "Pedir entrada" → tipo Número → pergunta "Valor da despesa?"',
+    hint: 'Guarda o resultado como variável valor',
+  },
+  {
+    text: 'Adiciona a ação "Escolher entre lista" com: Alimentação, Transportes, Habitação, Saúde, Compras, Lazer, Outros',
+    hint: 'Guarda o resultado como variável categoria',
+  },
+  {
+    text: 'Adiciona a ação "Pedir entrada" → tipo Texto → pergunta "Nota (opcional)"',
+    hint: 'Guarda o resultado como variável nota',
+  },
+  {
+    text: `Adiciona a ação "Abrir URL" com:\n${QUICK_EXPENSE_URL_TEMPLATE}`,
+    hint: 'Substitui [valor], [categoria] e [nota] pelas variáveis criadas acima.',
+  },
+  { text: 'Dá o nome "Despesa CentFlow" e guarda' },
+  { text: 'Abre Definições → Acessibilidade → Toque → Tocar Atrás → Toque Duplo' },
+  { text: 'Escolhe "Despesa CentFlow"' },
+];
+
+const CATEGORY_MAP: { pt: string; key: string }[] = [
+  { pt: 'Alimentação', key: 'food' },
+  { pt: 'Transportes', key: 'transport' },
+  { pt: 'Habitação', key: 'home' },
+  { pt: 'Saúde', key: 'health' },
+  { pt: 'Compras', key: 'shopping' },
+  { pt: 'Lazer', key: 'leisure' },
+  { pt: 'Outros', key: 'other' },
 ];
 
 type BackTapGuideProps = {
   visible: boolean;
   onTestNow: () => void;
   onLater: () => void;
+  testStatus?: TestStatus;
 };
 
-export function BackTapGuide({ visible, onTestNow, onLater }: BackTapGuideProps) {
-  const [copied, setCopied] = useState(false);
-
+export function BackTapGuide({ visible, onTestNow, onLater, testStatus = 'idle' }: BackTapGuideProps) {
   async function handleCopy() {
     try {
-      await Share.share({ message: QUICK_EXPENSE_URL });
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await Share.share({ message: QUICK_EXPENSE_URL_TEMPLATE });
     } catch {
       // ignorado — o utilizador pode copiar o URL manualmente (texto selecionável)
     }
@@ -52,54 +76,96 @@ export function BackTapGuide({ visible, onTestNow, onLater }: BackTapGuideProps)
           </View>
 
           <Text variant="h1" style={styles.title}>
-            Adiciona despesas em 2 toques
+            Regista despesas em 2 toques
           </Text>
           <Text variant="bodyMedium" color="textSecondary" style={styles.subtitle}>
-            Configura o iPhone para abrir o registo rápido com dois toques nas costas.
+            O iPhone pergunta o valor e a categoria — a CentFlow guarda automaticamente.
           </Text>
 
           <View style={styles.steps}>
             {STEPS.map((step, index) => (
-              <View key={step} style={styles.stepRow}>
+              <View key={step.text} style={styles.stepRow}>
                 <View style={styles.stepNumber}>
                   <Text variant="caption" color="primary" style={styles.stepNumberText}>
                     {index + 1}
                   </Text>
                 </View>
-                <Text variant="bodyMedium" style={styles.stepText} selectable>
-                  {step}
-                </Text>
+                <View style={styles.stepText}>
+                  <Text variant="bodyMedium" selectable>
+                    {step.text}
+                  </Text>
+                  {step.hint ? (
+                    <Text variant="caption" color="textMuted" style={styles.stepHint}>
+                      {step.hint}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
             ))}
           </View>
 
           <Button
-            label={copied ? 'Copiado ✓' : 'Copiar URL'}
+            label="Copiar modelo do URL"
             variant="secondary"
             onPress={handleCopy}
             fullWidth
             icon={
               <SymbolView
-                name={
-                  copied
-                    ? { ios: 'checkmark', android: 'check', web: 'check' }
-                    : { ios: 'doc.on.doc', android: 'content_copy', web: 'content_copy' }
-                }
+                name={{ ios: 'doc.on.doc', android: 'content_copy', web: 'content_copy' }}
                 tintColor={colors.primary}
                 size={16}
               />
             }
           />
 
+          <Card variant="outlined" style={styles.mapCard}>
+            <Text variant="bodyMedium" style={styles.mapTitle}>
+              Categorias na lista do atalho
+            </Text>
+            <Text variant="caption" color="textSecondary">
+              No passo 6, substitui [categoria] pelo parâmetro correspondente, ou usa o nome em
+              português — a app reconhece ambos.
+            </Text>
+            <View style={styles.mapRows}>
+              {CATEGORY_MAP.map((row) => (
+                <View key={row.key} style={styles.mapRow}>
+                  <Text variant="caption" color="textSecondary">
+                    {row.pt}
+                  </Text>
+                  <Text variant="caption" color="primary" style={styles.mapKey}>
+                    {row.key}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+
           <Card variant="outlined" style={styles.testCard}>
             <Text variant="h3">Testa agora</Text>
             <Text variant="caption" color="textSecondary" style={styles.testText}>
-              Depois de configurar, dá dois toques nas costas do iPhone. Se aparecer o ecrã de
-              registo rápido, está a funcionar.
+              Depois de configurar, dá dois toques nas costas do iPhone. Ou testa aqui — guardamos
+              uma despesa de 1 € para confirmar.
             </Text>
+            {testStatus === 'success' ? (
+              <Text variant="bodyMedium" color="success">
+                Está a funcionar!
+              </Text>
+            ) : null}
+            {testStatus === 'error' ? (
+              <Text variant="bodyMedium" color="danger">
+                Algo correu mal. Verifica a configuração.
+              </Text>
+            ) : null}
           </Card>
 
-          <Button label="Já configurei — testar agora" onPress={onTestNow} fullWidth size="lg" />
+          <Button
+            label="Já configurei — testar agora"
+            onPress={onTestNow}
+            fullWidth
+            size="lg"
+            loading={testStatus === 'testing'}
+            disabled={testStatus === 'testing'}
+          />
 
           <Pressable
             onPress={onLater}
@@ -163,6 +229,28 @@ const styles = StyleSheet.create({
   },
   stepText: {
     flex: 1,
+    gap: 2,
+  },
+  stepHint: {
+    fontStyle: 'italic',
+  },
+  mapCard: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  mapTitle: {
+    fontWeight: '600',
+  },
+  mapRows: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  mapRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  mapKey: {
+    fontFamily: 'Courier',
   },
   testCard: {
     gap: spacing.xs,

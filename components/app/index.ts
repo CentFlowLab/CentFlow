@@ -5,3 +5,4 @@ export { AndroidNavigationBarEffect } from './AndroidNavigationBarEffect';
 export { AppSecurityBootstrap } from './AppSecurityBootstrap';
 export { BiometricGate } from './BiometricGate';
 export { EmailDeepLinkHandler } from './EmailDeepLinkHandler';
+export { QuickExpenseLinkHandler } from './QuickExpenseLinkHandler';

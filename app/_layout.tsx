@@ -13,7 +13,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
-import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect, AppSecurityBootstrap, BiometricGate, EmailDeepLinkHandler } from '@/components/app';
+import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect, AppSecurityBootstrap, BiometricGate, EmailDeepLinkHandler, QuickExpenseLinkHandler } from '@/components/app';
 import { DiagnosticsBootstrap, DiagnosticOverlay } from '@/components/diagnostics';
 import { View } from 'react-native';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
@@ -80,6 +80,7 @@ export default function RootLayout() {
                   <AppSecurityBootstrap>
                     <BiometricGate>
                       <EmailDeepLinkHandler />
+                      <QuickExpenseLinkHandler />
                       <RootNavigator />
                     </BiometricGate>
                   </AppSecurityBootstrap>

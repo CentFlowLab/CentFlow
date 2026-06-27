@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T15:12:36.279Z -->
-<!-- Git: 353e4d6 (2026-06-27T15:26:31+01:00) -->
+<!-- Última geração: 2026-06-27T17:53:47.492Z -->
+<!-- Git: 5b5a959 (2026-06-27T16:12:53+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 10 — Correções e melhorias (Sessão 2): guia Back Tap, Home limpa, Movimentos com chips, OCR PDF/imagem + Ver fatura, categorias com pesquisa, créditos com débito automático, formulário de cartão, Perfil reorganizado** |
-| Última geração | 2026-06-27T15:12:36.279Z |
+| Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
+| Última geração | 2026-06-27T17:53:47.492Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `353e4d6` (2026-06-27T15:26:31+01:00) |
+| Git commit | `5b5a959` (2026-06-27T16:12:53+01:00) |
 
 ---
 
@@ -183,6 +183,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AppSecurityBootstrap.tsx
     BiometricGate.tsx
     EmailDeepLinkHandler.tsx
+    QuickExpenseLinkHandler.tsx
     RemoteDataSyncEffect.tsx
     StartupErrorScreen.tsx
     StartupShell.tsx
@@ -469,6 +470,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
     log-mutation.ts
     movement-flow-trace.ts
+    quick-expense-link-trace.ts
     quick-expense-trace.ts
   domain/
     analysis-period.ts
@@ -570,6 +572,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     preferences.service.ts
     storage.ts
     types.ts
+  quick-expense/
+    __tests__/
+      handle-quick-expense-link.test.ts
+    handle-quick-expense-link.ts
   receipt/
     client-ocr.ts
     ocr-confidence.ts
@@ -654,7 +660,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 10 — Correções e melhorias (Sessão 2): guia Back Tap, Home limpa, Movimentos com chips, OCR PDF/imagem + Ver fatura, categorias com pesquisa, créditos com débito automático, formulário de cartão, Perfil reorganizado
+## Fase atual: Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -749,6 +755,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Créditos — data de próximo pagamento assume dia 1 do mês seguinte quando vazia (com hint); alerta de débito automático na data prevista (confirmar/valor diferente/adiar 3 dias) via CreditPaymentReminderGate
 - Cartões de crédito — formulário específico (nome, banco, limite, saldo, fecho do extrato, vencimento, TAN mensal, notas) sem campos de empréstimo; card na lista com barra de utilização saldo/limite
 - Perfil reorganizado — Conta → Perfil financeiro → Preferências → A tua CentFlow, com botão Sair vermelho (confirmação); menu 'E' simplificado
+- Quick Expense via URL scheme com parâmetros — centflow://quick-expense?amount=25&category=food&note=Almoço guarda a despesa automaticamente sem mostrar formulário (toast '−25,00 € guardado')
+- Parser puro lib/quick-expense/handle-quick-expense-link.ts (parseQuickExpenseUrl, parseQuickExpenseParams, normalizeCategoryKey, mapCategoryKey) + 15 testes; aceita keys EN (food) e nomes PT (Alimentação), case-insensitive/sem acentos
+- QuickExpenseLinkHandler (montado no _layout) ouve getInitialURL + evento 'url'; cold start sem login guarda os parâmetros em memória e grava após autenticar; dedupe de URL
+- Rota /quick-expense ignora o formulário quando há amount (regressa logo); sem parâmetros mantém o Gasto rápido (formulário)
+- Doctor — eventos quick_expense_link (link_received, parse_success, parse_failed, save_start, save_success, save_error)
+- Guia Back Tap atualizado para o fluxo com Pedir entrada (valor) + Escolher entre lista (categoria) + nota → Abrir URL com parâmetros; tabela de mapeamento PT→key; botão de teste guarda 1 € e mostra 'Está a funcionar!'
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
