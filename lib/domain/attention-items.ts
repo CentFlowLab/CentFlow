@@ -1,6 +1,5 @@
 import type { Goal, Subscription, Warranty } from './assets.types';
 import type { AttentionItem, AttentionPriority, Credit } from './types';
-import { getGoalProgress } from './goal.utils';
 import { SUBSCRIPTION_RENEWAL_ALERT_DAYS } from '@/lib/subscriptions/renewal.constants';
 import {
   daysUntilRenewal,
@@ -11,7 +10,6 @@ import { WARRANTY_CRITICAL_DAYS } from './warranty.utils';
 import { daysUntil } from '@/lib/utils/format';
 
 const CREDIT_DUE_DAYS = 14;
-const GOAL_STALL_DEADLINE_DAYS = 30;
 
 function priorityWeight(priority: AttentionPriority): number {
   if (priority === 'high') return 0;
@@ -98,29 +96,9 @@ export function buildAttentionItems(input: {
     });
   }
 
-  for (const goal of input.goals) {
-    const progress = getGoalProgress(goal);
-    if (progress.isComplete || goal.target <= 0) continue;
-
-    const deadlineDays = goal.deadline ? daysUntil(goal.deadline) : null;
-    const isStalled = goal.current <= 0;
-    const isAtRisk =
-      deadlineDays !== null &&
-      deadlineDays >= 0 &&
-      deadlineDays <= GOAL_STALL_DEADLINE_DAYS &&
-      progress.percent < 25;
-
-    if (!isStalled && !isAtRisk) continue;
-
-    items.push({
-      id: `goal-${goal.id}`,
-      type: 'goal',
-      title: isStalled ? 'Objetivo parado' : 'Objetivo em risco',
-      description: goal.name,
-      dueDate: goal.deadline,
-      priority: isAtRisk && deadlineDays !== null && deadlineDays <= 14 ? 'high' : 'medium',
-    });
-  }
+  // Objetivos NÃO entram em "Precisa de atenção" — têm o seu próprio destaque
+  // na Home (HomeGoalHighlightCard). `input.goals` mantém-se na assinatura por
+  // compatibilidade com os chamadores.
 
   return items.sort((a, b) => priorityWeight(a.priority) - priorityWeight(b.priority));
 }

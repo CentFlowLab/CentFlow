@@ -41,7 +41,7 @@ test('attentionItems inclui crédito com prestação próxima', () => {
   assert.equal(items[0]?.type, 'credit');
 });
 
-test('attentionItems inclui objetivo parado', () => {
+test('attentionItems exclui objetivos', () => {
   const items = buildAttentionItems({
     warranties: [],
     credits: [],
@@ -50,7 +50,7 @@ test('attentionItems inclui objetivo parado', () => {
     asOf: AS_OF,
   });
 
-  assert.ok(items.some((item) => item.type === 'goal' && item.title === 'Objetivo parado'));
+  assert.ok(!items.some((item) => item.type === 'goal'));
 });
 
 test('composeDashboardFromLocalSources expõe attentionItems e delta mensal', () => {

@@ -1,13 +1,12 @@
 import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Card, Text } from '@/components/ui';
+import { Card, Text } from '@/components/ui';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
 type MonthlySpendableCardProps = {
-  onQuickExpense: () => void;
   onOpenDetails: () => void;
 };
 
@@ -16,10 +15,7 @@ function endOfMonthLabel(reference: Date): string {
   return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }).format(lastDay);
 }
 
-export function MonthlySpendableCard({
-  onQuickExpense,
-  onOpenDetails,
-}: MonthlySpendableCardProps) {
+export function MonthlySpendableCard({ onOpenDetails }: MonthlySpendableCardProps) {
   const reference = new Date();
   const spendable = useMonthlySpendable(reference);
   const valueTone =
@@ -50,21 +46,6 @@ export function MonthlySpendableCard({
           {spendable.daysRemaining} {spendable.daysRemaining === 1 ? 'dia' : 'dias'}
         </Text>
       </Card>
-
-      <Button
-        label="Gasto rápido"
-        onPress={onQuickExpense}
-        variant="secondary"
-        fullWidth
-        style={styles.quickButton}
-        icon={
-          <SymbolView
-            name={{ ios: 'bolt.fill', android: 'bolt', web: 'bolt' }}
-            tintColor={colors.primary}
-            size={16}
-          />
-        }
-      />
     </Card>
   );
 }
@@ -88,8 +69,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.5,
     lineHeight: 46,
-  },
-  quickButton: {
-    borderRadius: radius.md,
   },
 });

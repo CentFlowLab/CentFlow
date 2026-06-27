@@ -82,7 +82,7 @@ function mapSubscriptionRow(row: SubscriptionRow): Subscription {
 }
 
 function creditToInsert(credit: Credit, userId: string): TablesInsert<'credits'> {
-  return {
+  const payload: TablesInsert<'credits'> = {
     id: isUuid(credit.id) ? credit.id : undefined,
     user_id: userId,
     name: credit.name,
@@ -100,9 +100,18 @@ function creditToInsert(credit: Credit, userId: string): TablesInsert<'credits'>
     lender: credit.lender ?? null,
     start_date: credit.startDate ?? null,
     monthly_income: credit.monthlyIncome ?? null,
-    commission_rate_early_repayment: credit.earlyRepaymentCommissionRate ?? null,
     notes: credit.notes ?? null,
   };
+
+  // `commission_rate_early_repayment` foi adicionada por migração posterior
+  // (20240622). Só a enviamos quando há valor — assim, se a migração ainda não
+  // estiver aplicada na base, criar um crédito normal não falha por causa de
+  // uma coluna inexistente (era esta a causa de "o crédito não é guardado").
+  if (credit.earlyRepaymentCommissionRate != null) {
+    payload.commission_rate_early_repayment = credit.earlyRepaymentCommissionRate;
+  }
+
+  return payload;
 }
 
 function subscriptionToInsert(

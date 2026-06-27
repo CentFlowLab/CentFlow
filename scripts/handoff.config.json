@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 7 — Gasto rápido + Disponível este mês (orçamento mensal, deep link, Back Tap)",
+  "currentPhase": "Fase 8 — Limpeza da Home, bug de créditos, abas de créditos, pluralização e gramática",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -72,11 +72,17 @@
     "Disponível este mês — MonthlySpendableCard na Home + MonthlySpendableSheet (receitas/despesas previstas, projeção, warnings)",
     "Quick Add — QuickExpenseSheet independente (valor grande, 8 categorias em grid, nota, animação Reanimated, telemetria Doctor)",
     "Deep link centflow://quick-expense (rota app/quick-expense) + acesso na Home e menu Movimentos",
-    "Definições → Atalhos rápidos — instruções Back Tap (iOS Shortcuts) + copiar/partilhar URL"
+    "Definições → Atalhos rápidos — instruções Back Tap (iOS Shortcuts) + copiar/partilhar URL",
+    "Home — removido Património (NetWorthHeroCard fica só para Análises) e botão Gasto rápido",
+    "Movimentos — botão + abre Novo movimento diretamente (sem menu Despesa rápida); Gasto rápido só por deep link",
+    "Precisa de atenção — objetivos excluídos (têm destaque próprio na Home)",
+    "Pluralização correta de subscrições (corrigido 'subscriçãões') + util lib/utils/pluralize",
+    "BUG créditos — novo crédito deixava de aparecer: insert Supabase enviava coluna inexistente (commission_rate_early_repayment); agora só é enviada quando preenchida + log de diagnóstico no fallback",
+    "Créditos — abas Créditos / Cartões de Crédito (tipo 'card' no modelo + formulário)"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
-    "Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push)",
+    "Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push) — necessária para editar comissão de amortização; a criação normal de crédito já não depende dela",
     "Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)",
     "Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)",
     "EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)",

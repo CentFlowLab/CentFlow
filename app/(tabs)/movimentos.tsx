@@ -12,7 +12,6 @@ import {
   MOVEMENTS_VIEW_SEGMENTS,
   MOVEMENTS_EMPTY_CONFIG,
   PendingSubscriptionModal,
-  QuickExpenseSheet,
   SwipeableTransactionListItem,
   TransactionsSkeleton,
 } from '@/components/movements';
@@ -58,7 +57,6 @@ export default function MovimentosScreen() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
-  const [quickExpenseVisible, setQuickExpenseVisible] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions(filter);
@@ -152,7 +150,6 @@ export default function MovimentosScreen() {
   const quickAddContext = activeView === 'subscricoes' ? 'subscricoes' : 'movimentos';
 
   const quickAdd = useContextualQuickAdd(quickAddContext, {
-    onQuickExpense: () => setQuickExpenseVisible(true),
     onMovement: () => openAddModal(false),
     onSubscription: () => openSubscriptionForm(null),
   });
@@ -162,7 +159,6 @@ export default function MovimentosScreen() {
     !subscriptionFormVisible &&
     !quickAdd.sheetVisible &&
     !modalVisible &&
-    !quickExpenseVisible &&
     !suppressDetectionRef.current;
 
   function handleEdit(transaction: Transaction) {
@@ -395,11 +391,6 @@ export default function MovimentosScreen() {
         onClose={() => quickAdd.setSheetVisible(false)}
         onSelect={quickAdd.onSelect}
         actions={quickAdd.actions}
-      />
-
-      <QuickExpenseSheet
-        visible={quickExpenseVisible}
-        onClose={() => setQuickExpenseVisible(false)}
       />
     </View>
   );

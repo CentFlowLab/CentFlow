@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-26T22:34:02.521Z -->
-<!-- Git: 58c7f11 (2026-06-26T19:36:53+01:00) -->
+<!-- Última geração: 2026-06-27T11:19:39.257Z -->
+<!-- Git: 488cf61 (2026-06-26T23:41:31+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 7 — Gasto rápido + Disponível este mês (orçamento mensal, deep link, Back Tap)** |
-| Última geração | 2026-06-26T22:34:02.521Z |
+| Fase atual | **Fase 8 — Limpeza da Home, bug de créditos, abas de créditos, pluralização e gramática** |
+| Última geração | 2026-06-27T11:19:39.257Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `58c7f11` (2026-06-26T19:36:53+01:00) |
+| Git commit | `488cf61` (2026-06-26T23:41:31+01:00) |
 
 ---
 
@@ -620,6 +620,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     calendar.test.ts
     calendar.ts
     format.ts
+    pluralize.test.ts
+    pluralize.ts
   widgets/
     widget-data.ts
   generate-handoff.ts
@@ -629,7 +631,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 7 — Gasto rápido + Disponível este mês (orçamento mensal, deep link, Back Tap)
+## Fase atual: Fase 8 — Limpeza da Home, bug de créditos, abas de créditos, pluralização e gramática
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -702,10 +704,16 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Quick Add — QuickExpenseSheet independente (valor grande, 8 categorias em grid, nota, animação Reanimated, telemetria Doctor)
 - Deep link centflow://quick-expense (rota app/quick-expense) + acesso na Home e menu Movimentos
 - Definições → Atalhos rápidos — instruções Back Tap (iOS Shortcuts) + copiar/partilhar URL
+- Home — removido Património (NetWorthHeroCard fica só para Análises) e botão Gasto rápido
+- Movimentos — botão + abre Novo movimento diretamente (sem menu Despesa rápida); Gasto rápido só por deep link
+- Precisa de atenção — objetivos excluídos (têm destaque próprio na Home)
+- Pluralização correta de subscrições (corrigido 'subscriçãões') + util lib/utils/pluralize
+- BUG créditos — novo crédito deixava de aparecer: insert Supabase enviava coluna inexistente (commission_rate_early_repayment); agora só é enviada quando preenchida + log de diagnóstico no fallback
+- Créditos — abas Créditos / Cartões de Crédito (tipo 'card' no modelo + formulário)
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
-- Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push)
+- Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push) — necessária para editar comissão de amortização; a criação normal de crédito já não depende dela
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
 - Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)
 - EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)

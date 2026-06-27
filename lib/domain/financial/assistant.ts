@@ -1,6 +1,7 @@
 import type { CentFlowScoreResult } from './types';
 import type { CentFlowScoreInput, DailyAssistantPlan, AssistantInsight } from './types';
 import { calculateCentFlowScore } from './centflow-score';
+import { pluralizeSubscricoes } from '@/lib/utils/pluralize';
 
 type AssistantInput = CentFlowScoreInput & {
   firstName: string;
@@ -82,7 +83,7 @@ export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPl
     insights.push({
       id: 'renewals',
       emoji: '⚠️',
-      title: `${input.subscriptionsRenewingSoon} subscrição${input.subscriptionsRenewingSoon > 1 ? 'ões' : ''} a renovar`,
+      title: pluralizeSubscricoes(input.subscriptionsRenewingSoon),
       description: 'Revê custos recorrentes antes da próxima cobrança.',
       priority: 'high',
       actionId: 'review_subscriptions',

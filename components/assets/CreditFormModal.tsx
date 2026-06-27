@@ -28,6 +28,8 @@ type CreditFormModalProps = {
   visible: boolean;
   onClose: () => void;
   credit?: Credit | null;
+  /** Tipo inicial ao criar um novo crédito (ex.: 'card' a partir da aba Cartões). */
+  initialCreditType?: CreditType;
 };
 
 const CREDIT_TYPES = CREDIT_TYPE_OPTIONS;
@@ -51,7 +53,12 @@ function parseOptionalRate(value: string): number | undefined {
   return Number.isNaN(parsed) ? undefined : parsed;
 }
 
-export function CreditFormModal({ visible, onClose, credit = null }: CreditFormModalProps) {
+export function CreditFormModal({
+  visible,
+  onClose,
+  credit = null,
+  initialCreditType = 'personal',
+}: CreditFormModalProps) {
   const isEditing = Boolean(credit);
   const saveCredit = useSaveCredit();
   const deleteCredit = useDeleteCredit();
@@ -148,7 +155,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
       });
     } else {
       applySnapshot({
-        creditType: 'personal',
+        creditType: initialCreditType,
         customName: '',
         lender: '',
         originalAmount: '',
@@ -187,7 +194,7 @@ export function CreditFormModal({ visible, onClose, credit = null }: CreditFormM
     );
     saveCredit.reset();
     deleteCredit.reset();
-  }, [visible, credit?.id]);
+  }, [visible, credit?.id, initialCreditType]);
 
   const isDirty = useMemo(() => {
     if (!visible) return false;

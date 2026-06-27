@@ -1,4 +1,5 @@
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
+import { logAppError } from '@/lib/diagnostics/app-log';
 import type { Subscription } from '@/lib/domain/assets.types';
 import type { Credit } from '@/lib/domain/types';
 import {
@@ -71,7 +72,10 @@ export async function saveCreditForUser(userId: string, credit: Credit): Promise
       : [...current.credits.filter((item) => item.id !== credit.id), saved];
     await saveCredits(userId, credits);
     return saved;
-  } catch {
+  } catch (error) {
+    // O Supabase falhou (ex.: coluna em falta, RLS, rede). Antes ficava
+    // totalmente silencioso e o crédito desaparecia no refetch seguinte.
+    logAppError('liabilities.saveCredit', error, { creditId: credit.id });
     const current = await loadLiabilities(userId);
     const credits = current.credits.some((item) => item.id === credit.id)
       ? current.credits.map((item) => (item.id === credit.id ? credit : item))

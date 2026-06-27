@@ -5,14 +5,21 @@ export const CREDIT_TYPE_OPTIONS: Array<{ key: CreditType; label: string }> = [
   { key: 'mortgage', label: 'Habitação' },
   { key: 'auto', label: 'Automóvel' },
   { key: 'student', label: 'Estudante' },
+  { key: 'card', label: 'Cartão de crédito' },
   { key: 'other', label: 'Outro' },
 ];
+
+/** Tipos de crédito que representam um cartão de crédito. */
+export function isCardCredit(type?: CreditType | null): boolean {
+  return type === 'card';
+}
 
 const AUTO_NAMES: Record<Exclude<CreditType, 'other'>, string> = {
   personal: 'Crédito pessoal',
   mortgage: 'Crédito habitação',
   auto: 'Crédito automóvel',
   student: 'Crédito estudante',
+  card: 'Cartão de crédito',
 };
 
 export function isPredefinedCreditType(type: CreditType): type is Exclude<CreditType, 'other'> {

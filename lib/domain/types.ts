@@ -29,7 +29,7 @@ export interface RecurringInvestment {
   currentValue: number;
 }
 
-export type CreditType = 'personal' | 'mortgage' | 'auto' | 'student' | 'other';
+export type CreditType = 'personal' | 'mortgage' | 'auto' | 'student' | 'card' | 'other';
 
 /** Crédito / passivo com saldo em dívida. */
 export interface Credit {
