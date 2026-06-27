@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T18:01:36.002Z -->
-<!-- Git: 1a3f4c6 (2026-06-27T18:54:07+01:00) -->
+<!-- Última geração: 2026-06-27T18:16:18.895Z -->
+<!-- Git: 874e6c0 (2026-06-27T19:01:53+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
-| Última geração | 2026-06-27T18:01:36.002Z |
+| Última geração | 2026-06-27T18:16:18.895Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `1a3f4c6` (2026-06-27T18:54:07+01:00) |
+| Git commit | `874e6c0` (2026-06-27T19:01:53+01:00) |
 
 ---
 
@@ -764,6 +764,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - HOTFIX loop infinito FaceID — BiometricGate com aprovação por sessão (singleton), guarda isPrompting (ref) e cooldown que ignora as transições inactive→active provocadas pelo próprio diálogo de FaceID; sem auto-repetição após falha
 - FaceID — escape de emergência sempre visível (entrar com email e password → desativa biometria + signOut); após 3 falhas passa a ação primária; 'Terminar sessão' sempre disponível
 - Definições → Segurança — desativar biometria exige confirmação por password (Alert.prompt iOS, valida via authService.login), nunca por FaceID
+- HOTFIX loop de FaceID bem-sucedido — distinção determinística entre 'inactive' (provocado pelo diálogo de FaceID) e 'background' real: só repede biometria após background genuíno (hasBackgroundedRef), eliminando o ciclo de autenticações com sucesso; removido o cooldown frágil baseado em tempo
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

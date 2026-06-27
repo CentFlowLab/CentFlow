@@ -19,12 +19,9 @@ type BiometricGateProps = {
  * Aprovação biométrica por sessão (singleton de módulo, não estado React).
  * Garante que, depois de aprovado uma vez, não voltamos a pedir FaceID em
  * re-renders/remounts nem nas transições de AppState provocadas pelo próprio
- * diálogo de FaceID. Reposto a false em background→active genuíno.
+ * diálogo de FaceID. Só é reposto a false após um background REAL da app.
  */
 let biometricApprovedThisSession = false;
-
-/** Janela após um prompt durante a qual ignoramos eventos de AppState (o diálogo de FaceID provoca inactive→active). */
-const PROMPT_COOLDOWN_MS = 1500;
 
 export function BiometricGate({ children }: BiometricGateProps) {
   const { isAuthenticated, signOut } = useAuth();
@@ -37,8 +34,9 @@ export function BiometricGate({ children }: BiometricGateProps) {
   const [escaping, setEscaping] = useState(false);
 
   const isPromptingRef = useRef(false);
-  const lastPromptAtRef = useRef(0);
-  const appState = useRef(AppState.currentState);
+  // O diálogo de FaceID provoca apenas 'inactive'; só um 'background' real deve
+  // voltar a pedir biometria. Este ref distingue os dois casos.
+  const hasBackgroundedRef = useRef(false);
 
   const biometricsEnabled = Boolean(preferences?.biometricsEnabled);
   const gateActive = isAuthenticated && biometricsEnabled && support;
@@ -76,7 +74,6 @@ export function BiometricGate({ children }: BiometricGateProps) {
       }
     } finally {
       isPromptingRef.current = false;
-      lastPromptAtRef.current = Date.now();
     }
   }, []);
 
@@ -93,18 +90,20 @@ export function BiometricGate({ children }: BiometricGateProps) {
     }
   }, [gateActive, runPrompt]);
 
-  // background→active genuíno → repedir; ignora transições provocadas pelo diálogo de FaceID.
+  // Só um background REAL volta a pedir biometria. O diálogo de FaceID provoca
+  // apenas 'inactive' (nunca 'background'), por isso nunca dispara novo pedido.
   useEffect(() => {
     if (!gateActive) return;
     const subscription = AppState.addEventListener('change', (nextState) => {
-      const previous = appState.current;
-      appState.current = nextState;
+      if (nextState === 'background') {
+        hasBackgroundedRef.current = true;
+        return;
+      }
 
-      if (isPromptingRef.current) return;
-      if (Date.now() - lastPromptAtRef.current < PROMPT_COOLDOWN_MS) return;
-
-      const wasBackground = /inactive|background/.test(previous);
-      if (wasBackground && nextState === 'active') {
+      if (nextState === 'active') {
+        if (isPromptingRef.current) return; // transição provocada pelo próprio diálogo
+        if (!hasBackgroundedRef.current) return; // não houve background real
+        hasBackgroundedRef.current = false;
         biometricApprovedThisSession = false;
         void runPrompt();
       }
