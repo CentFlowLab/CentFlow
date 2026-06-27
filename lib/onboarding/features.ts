@@ -64,6 +64,14 @@ export function computeEnabledFeatures(answers: OnboardingAnswers): FeatureAreaI
     enabled.add('credits');
   }
 
+  if (answers.creditTypes.length > 0) {
+    enabled.add('credits');
+  }
+
+  if (answers.investmentTypes.some((type) => type !== 'none')) {
+    enabled.add('wealth');
+  }
+
   if (answers.hasSavings === true || answers.ambitions.includes('more_savings')) {
     enabled.add('goals');
   }

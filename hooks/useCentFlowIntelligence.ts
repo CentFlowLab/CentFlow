@@ -3,8 +3,10 @@ import { useMemo } from 'react';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import { resolveAssistancePreferences } from '@/lib/onboarding/assistance';
 import { getWarrantiesSummary } from '@/lib/domain/warranty.utils';
 import { countRenewalsSoon } from '@/lib/subscriptions/renewal.utils';
 import { isTransactionOccurred } from '@/lib/domain/transaction-date.utils';
@@ -57,6 +59,7 @@ export function useCentFlowIntelligence() {
   const { data: assets } = useAssets();
   const { data: liabilities } = useLiabilities();
   const { data: profile } = useProfile();
+  const { data: onboardingAnswers } = useOnboardingAnswers();
 
   return useMemo(() => {
     const subscriptions = liabilities?.subscriptions ?? assets?.subscriptions ?? [];
@@ -88,6 +91,7 @@ export function useCentFlowIntelligence() {
 
     const score: CentFlowScoreResult = calculateCentFlowScore(scoreInput);
     const levelProgress = getFinancialLevelProgress(score.score);
+    const assistancePrefs = resolveAssistancePreferences(onboardingAnswers);
     const firstName = profile?.name?.split(' ')[0] ?? 'Utilizador';
     const assistant: DailyAssistantPlan = buildDailyAssistantPlan({
       ...scoreInput,
@@ -95,6 +99,9 @@ export function useCentFlowIntelligence() {
       subscriptionCount: subscriptions.length,
       goalsCount: goals.length,
       transactionCount: transactions.length,
+      maxInsights: assistancePrefs.maxInsights,
+      showSavingsTip: assistancePrefs.showSavingsTip,
+      verboseDescriptions: assistancePrefs.verboseDescriptions,
     });
 
     return {
@@ -104,7 +111,7 @@ export function useCentFlowIntelligence() {
       monthlySubscriptionCost,
       subscriptionCount: subscriptions.length,
     };
-  }, [assets, home, liabilities, profile?.name, transactions]);
+  }, [assets, home, liabilities, onboardingAnswers, profile?.name, transactions]);
 }
 
 export type { CentFlowScoreResult, DailyAssistantPlan, FinancialLevel };

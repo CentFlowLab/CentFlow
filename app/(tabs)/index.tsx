@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -18,18 +18,25 @@ import { AddTransactionModal } from '@/components/movements';
 import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import type { AssistantActionId } from '@/lib/domain/financial';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
+import {
+  getHomeAssetsSummaryHints,
+  getHomeSectionOrder,
+  type HomeSectionId,
+} from '@/lib/onboarding/personalization';
 import { colors, spacing } from '@/lib/theme';
 
 export default function InicioScreen() {
   useDiagnosticScreen('home');
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
+  const { data: onboardingAnswers } = useOnboardingAnswers();
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
@@ -147,6 +154,34 @@ export default function InicioScreen() {
     assetsSummary.warrantiesCount > 0 ||
     assetsSummary.inventoryCount > 0;
 
+  const assetsHints = getHomeAssetsSummaryHints(onboardingAnswers ?? null);
+  const sectionOrder = getHomeSectionOrder(onboardingAnswers ?? null);
+
+  const homeSections: Record<HomeSectionId, ReactNode> = {
+    spendable: (
+      <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
+    ),
+    assets: hasActivity ? (
+      <HomeAssetsSummaryCard key="assets" summary={assetsSummary} hints={assetsHints} />
+    ) : null,
+    alerts: (
+      <HomeAlertsSection
+        key="alerts"
+        attentionItems={attentionItems}
+        suggestions={suggestions}
+        onOpenAllAttention={() => setAttentionSheetVisible(true)}
+      />
+    ),
+    assistant: (
+      <HomeAssistantCard
+        key="assistant"
+        plan={assistant}
+        onAction={handleAssistantAction}
+        onOpenActionCenter={() => openAddMovement()}
+      />
+    ),
+  };
+
   return (
     <View style={styles.screen}>
       {header}
@@ -167,21 +202,7 @@ export default function InicioScreen() {
         <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
-          <MonthlySpendableCard onOpenDetails={() => setSpendableVisible(true)} />
-
-          {hasActivity ? <HomeAssetsSummaryCard summary={assetsSummary} /> : null}
-
-          <HomeAlertsSection
-            attentionItems={attentionItems}
-            suggestions={suggestions}
-            onOpenAllAttention={() => setAttentionSheetVisible(true)}
-          />
-
-          <HomeAssistantCard
-            plan={assistant}
-            onAction={handleAssistantAction}
-            onOpenActionCenter={() => openAddMovement()}
-          />
+          {sectionOrder.map((sectionId) => homeSections[sectionId])}
 
           <RefetchingIndicator visible={isRefetching} />
         </ScreenContainer>

@@ -8,7 +8,15 @@ type AssistantInput = CentFlowScoreInput & {
   subscriptionCount: number;
   goalsCount: number;
   transactionCount: number;
+  maxInsights?: number;
+  showSavingsTip?: boolean;
+  verboseDescriptions?: boolean;
 };
+
+function withVerboseDescription(description: string, verbose: boolean, extra: string): string {
+  if (!verbose) return description;
+  return `${description} ${extra}`;
+}
 
 function buildSavingsTip(input: AssistantInput, score: CentFlowScoreResult): string | undefined {
   if (input.monthlySubscriptionCost >= 40 && input.monthlyIncome > 0) {
@@ -24,6 +32,7 @@ function buildSavingsTip(input: AssistantInput, score: CentFlowScoreResult): str
 }
 
 function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] {
+  const verbose = input.verboseDescriptions ?? false;
   const items: AssistantInsight[] = [];
 
   if (input.transactionCount === 0) {
@@ -31,7 +40,11 @@ function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] 
       id: 'start-movement',
       emoji: '✏️',
       title: 'Adiciona o teu primeiro movimento',
-      description: 'Começa por registar uma despesa ou rendimento para ver o património actualizado.',
+      description: withVerboseDescription(
+        'Começa por registar uma despesa ou rendimento para ver o património actualizado.',
+        verbose,
+        'Cada movimento alimenta o orçamento mensal e as análises.',
+      ),
       priority: 'high',
       actionId: 'add_expense',
       actionLabel: 'Adicionar movimento',
@@ -42,7 +55,11 @@ function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] 
     id: 'start-receipt',
     emoji: '📸',
     title: 'Digitaliza um talão',
-    description: 'OCR cria movimento automaticamente e pode guardar a garantia.',
+    description: withVerboseDescription(
+      'OCR cria movimento automaticamente e pode guardar a garantia.',
+      verbose,
+      'Basta fotografar — a CentFlow preenche valor, data e categoria.',
+    ),
     priority: 'high',
     actionId: 'scan_receipt',
     actionLabel: 'Digitalizar talão',
@@ -53,7 +70,11 @@ function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] 
       id: 'start-goal',
       emoji: '🎯',
       title: 'Cria um objetivo de poupança',
-      description: 'Define uma meta concreta e acompanha o progresso semana a semana.',
+      description: withVerboseDescription(
+        'Define uma meta concreta e acompanha o progresso semana a semana.',
+        verbose,
+        'Usa o valor e prazo que definiste no onboarding como referência.',
+      ),
       priority: 'medium',
       actionId: 'create_goal',
       actionLabel: 'Criar objetivo',
@@ -65,14 +86,19 @@ function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] 
       id: 'start-sub',
       emoji: '📅',
       title: 'Organiza as tuas subscrições',
-      description: 'Regista serviços recorrentes para controlar o orçamento mensal.',
+      description: withVerboseDescription(
+        'Regista serviços recorrentes para controlar o orçamento mensal.',
+        verbose,
+        'Netflix, ginásio, cloud — tudo num só lugar com alertas de renovação.',
+      ),
       priority: 'medium',
       actionId: 'add_subscription',
       actionLabel: 'Adicionar subscrição',
     });
   }
 
-  return items.slice(0, 3);
+  const limit = input.maxInsights ?? 3;
+  return items.slice(0, limit);
 }
 
 export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPlan {
@@ -152,9 +178,12 @@ export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPl
   else if (hour < 19) greeting = `Boa tarde, ${input.firstName}`;
   else greeting = `Boa noite, ${input.firstName}`;
 
+  const maxInsights = input.maxInsights ?? 3;
+  const showSavingsTip = input.showSavingsTip ?? true;
+
   return {
     greeting,
-    insights: insights.slice(0, 3),
-    savingsTip: buildSavingsTip(input, score),
+    insights: insights.slice(0, maxInsights),
+    savingsTip: showSavingsTip ? buildSavingsTip(input, score) : undefined,
   };
 }

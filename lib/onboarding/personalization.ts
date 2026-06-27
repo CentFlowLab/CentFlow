@@ -344,6 +344,14 @@ export function getHomeContextualMessage(answers: OnboardingAnswers | null): str
     return 'Hoje é um bom dia para manter os gastos sob controlo.';
   }
 
+  if (answers.spendAwareness === 'no') {
+    return 'Vamos descobrir juntos quanto podes gastar este mês.';
+  }
+
+  if (answers.spendAwareness === 'yes') {
+    return 'Mantém o controlo — a CentFlow afina o teu plano com os teus dados.';
+  }
+
   // Generic ambition based
   if (ambitions.has('more_savings')) {
     return 'Cada pequeno passo conta para as tuas poupanças.';
@@ -685,20 +693,62 @@ export function getHomeAssetsSummaryHints(
 
   const tags = new Set(answers.profileTags);
   const areas = new Set(answers.lifeAreas);
+  const hasInvestments = answers.investmentTypes.some((type) => type !== 'none');
+  const hasCredits = answers.creditTypes.length > 0 || answers.hasDebt === true;
 
   const hints: HomeAssetsTileHint = {};
 
-  if (tags.has('financial_goals') || areas.has('savings_goals')) {
+  if (tags.has('financial_goals') || areas.has('savings_goals') || (answers.savingsGoal ?? 0) > 0) {
     hints.goals = 'Foco em poupança';
   }
   if (tags.has('receipts_warranties') || areas.has('keeps_receipts')) {
     hints.warranties = 'Talões → garantias';
   }
-  if (tags.has('track_wealth') || areas.has('investments') || areas.has('own_home')) {
+  if (tags.has('track_wealth') || areas.has('investments') || hasInvestments) {
     hints.inventory = 'Património físico';
+  }
+  if (hasCredits && !hints.goals) {
+    hints.goals = 'Créditos activos';
   }
 
   return hints;
+}
+
+export type HomeSectionId = 'spendable' | 'assets' | 'alerts' | 'assistant';
+
+/** Ordena secções do Início conforme prioridades declaradas no onboarding. */
+export function getHomeSectionOrder(answers: OnboardingAnswers | null): HomeSectionId[] {
+  const defaultOrder: HomeSectionId[] = ['spendable', 'assets', 'alerts', 'assistant'];
+  if (!answers?.completed) return defaultOrder;
+
+  const tags = new Set(answers.profileTags);
+  const hasCredits =
+    answers.creditTypes.length > 0 ||
+    answers.hasDebt === true ||
+    tags.has('credits_costs') ||
+    answers.primaryObjective === 'organize_credits';
+  const hasInvestments =
+    answers.investmentTypes.some((type) => type !== 'none') || tags.has('track_wealth');
+  const needsSpendingHelp = answers.spendAwareness === 'no' || tags.has('control_spending');
+  const hasSavingsFocus =
+    answers.primaryObjective === 'save_more' ||
+    tags.has('financial_goals') ||
+    (answers.savingsGoal ?? 0) > 0;
+
+  if (hasCredits) {
+    return ['spendable', 'alerts', 'assets', 'assistant'];
+  }
+  if (hasInvestments) {
+    return ['spendable', 'assets', 'alerts', 'assistant'];
+  }
+  if (needsSpendingHelp) {
+    return ['spendable', 'assistant', 'alerts', 'assets'];
+  }
+  if (hasSavingsFocus) {
+    return ['spendable', 'assets', 'assistant', 'alerts'];
+  }
+
+  return defaultOrder;
 }
 
 export type FallbackSuggestion = {

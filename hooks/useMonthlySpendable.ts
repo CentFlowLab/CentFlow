@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import {
   calculateMonthlySpendable,
@@ -50,6 +51,7 @@ function toSpendableMovement(tx: Transaction): SpendableMovement {
 export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySpendable {
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
   const { data: liabilities, isLoading: liabLoading } = useLiabilities();
+  const { data: onboardingAnswers } = useOnboardingAnswers();
 
   return useMemo(() => {
     const occurredThisMonth = transactions.filter(
@@ -87,12 +89,26 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
       }))
       .filter((installment) => installment.amount > 0);
 
+    const incomeThisMonth = occurredThisMonth
+      .filter((tx) => tx.type === 'income')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    /** Orçamento inicial a partir do rendimento declarado no onboarding. */
+    const onboardingIncome = onboardingAnswers?.monthlyIncome ?? 0;
+    const monthlyBudget =
+      onboardingAnswers?.completed &&
+      onboardingIncome > 0 &&
+      incomeThisMonth <= 0
+        ? onboardingIncome
+        : undefined;
+
     const output = calculateMonthlySpendable({
       currentBalance: startOfMonthBalance,
       currentMonthMovements: occurredThisMonth.map(toSpendableMovement),
       futureMovements: futureThisMonth.map(toSpendableMovement),
       subscriptions: subscriptionInputs,
       creditInstallments: installmentInputs,
+      monthlyBudget,
       referenceDate,
     });
 
@@ -129,5 +145,5 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
       upcomingInstallments,
       isLoading: txLoading || liabLoading,
     };
-  }, [transactions, liabilities, referenceDate, txLoading, liabLoading]);
+  }, [transactions, liabilities, onboardingAnswers, referenceDate, txLoading, liabLoading]);
 }

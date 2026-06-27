@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T18:36:43.443Z -->
-<!-- Git: ce6bb24 (2026-06-27T19:16:54+01:00) -->
+<!-- Última geração: 2026-06-27T19:01:04.589Z -->
+<!-- Git: be830a5 (2026-06-27T19:37:00+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
-| Última geração | 2026-06-27T18:36:43.443Z |
+| Última geração | 2026-06-27T19:01:04.589Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `ce6bb24` (2026-06-27T19:16:54+01:00) |
+| Git commit | `be830a5` (2026-06-27T19:37:00+01:00) |
 
 ---
 
@@ -552,6 +552,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     quick-add-context.ts
   onboarding/
     answers.service.ts
+    assistance.test.ts
+    assistance.ts
     back-tap-guide.ts
     constants.ts
     copy.ts

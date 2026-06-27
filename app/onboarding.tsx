@@ -21,6 +21,7 @@ import { Button, Text } from '@/components/ui';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useOnboarding, useOnboardingAnswersState } from '@/hooks/useOnboarding';
 import { enrichOnboardingAnswers } from '@/lib/onboarding/features';
+import { getSpendAwarenessRevealMessage } from '@/lib/onboarding/assistance';
 import {
   fetchOnboardingAnswers,
   saveOnboardingAnswersForUser,
@@ -223,6 +224,7 @@ export default function OnboardingScreen() {
       ...answers,
       lifeAreas: Array.from(lifeAreas),
       hasDebt: answers.creditTypes.length > 0,
+      hasSavings: (answers.savingsGoal ?? 0) > 0 ? true : answers.hasSavings,
       hasMonthlyIncome: (answers.monthlyIncome ?? 0) > 0 ? 'yes' : answers.hasMonthlyIncome,
       completed: true,
       skipped: false,
@@ -291,7 +293,7 @@ export default function OnboardingScreen() {
             {answers.spendAwareness ? (
               <Animated.View entering={FadeIn.duration(320)}>
                 <Text variant="h3" color="primary" align="center" style={styles.revealLine}>
-                  Vamos descobrir.
+                  {getSpendAwarenessRevealMessage(answers.spendAwareness)}
                 </Text>
               </Animated.View>
             ) : null}
@@ -426,7 +428,10 @@ export default function OnboardingScreen() {
 
       case 'income':
         return (
-          <View style={styles.centeredStep}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.incomeStep}>
             <PremiumHeader
               eyebrow="Rendimento"
               title="Quanto recebes por mês?"
@@ -448,7 +453,7 @@ export default function OnboardingScreen() {
                 name={{ ios: 'arrow.triangle.2.circlepath', android: 'sync', web: 'sync' }}
               />
             </View>
-          </View>
+          </ScrollView>
         );
 
       case 'plan':
@@ -809,6 +814,14 @@ const styles = StyleSheet.create({
   },
   revealLine: {
     marginTop: spacing.lg,
+    lineHeight: 28,
+  },
+  incomeStep: {
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+    paddingTop: spacing.md,
+    gap: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   amountWrap: {
     paddingVertical: spacing.xl,
