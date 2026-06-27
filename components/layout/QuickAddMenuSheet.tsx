@@ -8,6 +8,7 @@ import { colors, radius, spacing } from '@/lib/theme';
 
 export type QuickAddActionId =
   | 'movement'
+  | 'receipt'
   | 'subscription'
   | 'product'
   | 'goal'
@@ -30,6 +31,14 @@ const ALL_ITEMS: QuickAddItem[] = [
     label: 'Novo movimento',
     description: 'Regista uma despesa ou receita',
     icon: { ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' },
+    color: colors.primary,
+    bg: colors.primaryMuted,
+  },
+  {
+    id: 'receipt',
+    label: 'Digitalizar talão',
+    description: 'OCR preenche o movimento automaticamente',
+    icon: { ios: 'doc.viewfinder', android: 'document_scanner', web: 'document_scanner' },
     color: colors.primary,
     bg: colors.primaryMuted,
   },

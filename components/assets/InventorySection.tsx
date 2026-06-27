@@ -33,6 +33,7 @@ export function InventorySection({
     ...baseConfig,
     title: personalized.title || baseConfig.title,
     description: personalized.description || baseConfig.description,
+    actionLabel: personalized.actionLabel || baseConfig.actionLabel,
   };
 
   const totalValue = inventory.reduce((sum, item) => sum + item.value, 0);

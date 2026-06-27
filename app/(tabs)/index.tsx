@@ -4,6 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  ActionCenterSheet,
   DashboardHeaderLeading,
   DashboardSkeleton,
   DemoModeBadge,
@@ -11,6 +12,8 @@ import {
   HomeAssetsSummaryCard,
   HomeAssistantCard,
   HomeAttentionSheet,
+  HomePersonalizedInsightCard,
+  HomePostOnboardingWelcomeCard,
 } from '@/components/dashboard';
 import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
@@ -19,6 +22,7 @@ import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/u
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import { useProfile } from '@/hooks/queries/useProfile';
 import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
@@ -27,9 +31,11 @@ import type { AssistantActionId } from '@/lib/domain/financial';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import {
   getHomeAssetsSummaryHints,
+  getHomePersonalizedInsight,
   getHomeSectionOrder,
   type HomeSectionId,
 } from '@/lib/onboarding/personalization';
+import { mergeHomeSuggestions } from '@/lib/onboarding/suggestions-bridge';
 import { colors, spacing } from '@/lib/theme';
 
 export default function InicioScreen() {
@@ -37,10 +43,12 @@ export default function InicioScreen() {
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
   const { data: onboardingAnswers } = useOnboardingAnswers();
+  const { data: profile } = useProfile();
   const [addMovementVisible, setAddMovementVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
   const [spendableVisible, setSpendableVisible] = useState(false);
+  const [actionCenterVisible, setActionCenterVisible] = useState(false);
 
   const { assistant } = useCentFlowIntelligence();
   const { contentBottomPadding } = useResponsiveLayout();
@@ -62,11 +70,17 @@ export default function InicioScreen() {
     setStartWithReceiptPicker(false);
   };
 
-  const quickAdd = useContextualQuickAdd('home', {
-    onMovement: openAddMovement,
-    onAsset: () => router.push('/(tabs)/ativos?action=new-asset'),
-    onGoal: () => router.push('/(tabs)/ativos?action=new-goal'),
-  });
+  const quickAdd = useContextualQuickAdd(
+    'home',
+    {
+      onMovement: openAddMovement,
+      onReceipt: openReceiptScanner,
+      onAsset: () => router.push('/(tabs)/ativos?action=new-asset'),
+      onGoal: () => router.push('/(tabs)/ativos?action=new-goal'),
+      onCredit: () => router.push('/(tabs)/precos?action=new-credit'),
+    },
+    onboardingAnswers,
+  );
 
   function handleAssistantAction(actionId: AssistantActionId) {
     switch (actionId) {
@@ -156,6 +170,13 @@ export default function InicioScreen() {
 
   const assetsHints = getHomeAssetsSummaryHints(onboardingAnswers ?? null);
   const sectionOrder = getHomeSectionOrder(onboardingAnswers ?? null);
+  const mergedSuggestions = mergeHomeSuggestions(suggestions, onboardingAnswers);
+  const personalizedInsight = getHomePersonalizedInsight(onboardingAnswers ?? null, {
+    goalsCount: assetsSummary.goalsCount,
+    warrantiesCount: assetsSummary.warrantiesCount,
+    hasFeaturedGoal: assetsSummary.goalsCount > 0,
+  });
+  const firstName = profile?.name?.split(' ')[0] ?? '';
 
   const homeSections: Record<HomeSectionId, ReactNode> = {
     spendable: (
@@ -168,7 +189,7 @@ export default function InicioScreen() {
       <HomeAlertsSection
         key="alerts"
         attentionItems={attentionItems}
-        suggestions={suggestions}
+        suggestions={mergedSuggestions}
         onOpenAllAttention={() => setAttentionSheetVisible(true)}
       />
     ),
@@ -177,7 +198,7 @@ export default function InicioScreen() {
         key="assistant"
         plan={assistant}
         onAction={handleAssistantAction}
-        onOpenActionCenter={() => openAddMovement()}
+        onOpenActionCenter={() => setActionCenterVisible(true)}
       />
     ),
   };
@@ -201,6 +222,14 @@ export default function InicioScreen() {
         ]}>
         <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
+
+          {onboardingAnswers?.completed ? (
+            <HomePostOnboardingWelcomeCard answers={onboardingAnswers} firstName={firstName} />
+          ) : null}
+
+          {personalizedInsight ? (
+            <HomePersonalizedInsightCard insight={personalizedInsight} />
+          ) : null}
 
           {sectionOrder.map((sectionId) => homeSections[sectionId])}
 
@@ -230,6 +259,15 @@ export default function InicioScreen() {
       <MonthlySpendableSheet
         visible={spendableVisible}
         onClose={() => setSpendableVisible(false)}
+      />
+
+      <ActionCenterSheet
+        visible={actionCenterVisible}
+        onClose={() => setActionCenterVisible(false)}
+        onSelect={(actionId) => {
+          setActionCenterVisible(false);
+          handleAssistantAction(actionId);
+        }}
       />
     </View>
   );

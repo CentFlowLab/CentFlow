@@ -14,7 +14,7 @@ export function getSpendAwarenessRevealMessage(spendAwareness: SpendAwarenessId)
   if (spendAwareness === 'yes') {
     return 'Perfeito.\nVamos tornar esse controlo ainda mais preciso.';
   }
-  return 'Vamos descobrir.\nÉ exatamente para isso que a CentFlow foi criada.';
+  return 'Vamos descobrir.';
 }
 
 /**

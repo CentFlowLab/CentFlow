@@ -51,3 +51,26 @@ export function getQuickAddContextLabel(context: QuickAddScreenContext): string 
       return 'Adicionar';
   }
 }
+
+export function getQuickAddActionLabel(action: QuickAddActionId): string {
+  switch (action) {
+    case 'movement':
+      return 'Novo movimento';
+    case 'receipt':
+      return 'Digitalizar talão';
+    case 'credit':
+      return 'Novo crédito';
+    case 'subscription':
+      return 'Nova subscrição';
+    case 'goal':
+      return 'Novo objetivo';
+    case 'asset':
+      return 'Novo ativo';
+    case 'warranty':
+      return 'Nova garantia';
+    case 'product':
+      return 'Produto';
+    default:
+      return 'Adicionar';
+  }
+}

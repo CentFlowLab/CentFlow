@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T19:01:04.589Z -->
-<!-- Git: be830a5 (2026-06-27T19:37:00+01:00) -->
+<!-- Última geração: 2026-06-27T19:34:17.615Z -->
+<!-- Git: 681c11e (2026-06-27T20:01:19+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
-| Última geração | 2026-06-27T19:01:04.589Z |
+| Última geração | 2026-06-27T19:34:17.615Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `be830a5` (2026-06-27T19:37:00+01:00) |
+| Git commit | `681c11e` (2026-06-27T20:01:19+01:00) |
 
 ---
 
@@ -218,6 +218,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     HomeChangesSheet.tsx
     HomeGoalHighlightCard.tsx
     HomePersonalizedInsightCard.tsx
+    HomePostOnboardingWelcomeCard.tsx
     HomeQuickActions.tsx
     MetricCard.tsx
     NetWorthHeroCard.tsx
@@ -558,14 +559,20 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     constants.ts
     copy.ts
     features.ts
+    first-action.ts
     gate.ts
+    onboarding-personalization.test.ts
     onboarding-premium.test.ts
     personalization.ts
     plan.test.ts
     plan.ts
+    post-welcome-storage.ts
     premium-constants.ts
+    quick-actions.ts
     storage.ts
+    suggestions-bridge.ts
     types.ts
+    welcome-priority.ts
     welcome.ts
   preferences/
     PreferencesProvider.tsx

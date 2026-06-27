@@ -5,6 +5,7 @@ import type { QuickAddActionId } from '@/components/layout/QuickAddMenuSheet';
 
 export type QuickAddHandlers = {
   onMovement?: () => void;
+  onReceipt?: () => void;
   onSubscription?: () => void;
   onProduct?: () => void;
   onGoal?: () => void;
@@ -23,6 +24,13 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
           handlers.onMovement();
         } else {
           router.push('/(tabs)/movimentos?action=new-movement');
+        }
+        break;
+      case 'receipt':
+        if (handlers.onReceipt) {
+          handlers.onReceipt();
+        } else {
+          router.push('/(tabs)/movimentos?action=receipt');
         }
         break;
       case 'subscription':

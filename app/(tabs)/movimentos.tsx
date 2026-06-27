@@ -20,6 +20,7 @@ import {
 import { EmptyState, ErrorState, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import {
@@ -36,6 +37,7 @@ import {
   groupTransactionsByDay,
   summarizeCurrentMonth,
 } from '@/lib/domain/transaction-grouping';
+import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -76,6 +78,8 @@ export default function MovimentosScreen() {
 
   const subscriptions = liabilities?.subscriptions ?? [];
   const transactions = useMemo(() => data ?? [], [data]);
+  const { data: onboardingAnswers } = useOnboardingAnswers();
+  const emptyDescription = getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
   const sections = useMemo(() => groupTransactionsByDay(transactions), [transactions]);
   const monthSummary = useMemo(() => summarizeCurrentMonth(transactions), [transactions]);
@@ -318,7 +322,7 @@ export default function MovimentosScreen() {
                     />
                   }
                   title="O teu histórico começa aqui"
-                  description="Regista o teu primeiro movimento para começares a acompanhar os teus gastos."
+                  description={emptyDescription}
                   actionLabel="Adicionar movimento"
                   onAction={() => openAddModal(false)}
                   secondaryActionLabel="Digitalizar talão"

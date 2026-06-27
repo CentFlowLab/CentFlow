@@ -17,7 +17,7 @@ describe('getSpendAwarenessRevealMessage', () => {
   it('convida à descoberta quando o utilizador não sabe', () => {
     const message = getSpendAwarenessRevealMessage('no');
     assert.match(message, /Vamos descobrir/i);
-    assert.match(message, /CentFlow foi criada/i);
+    assert.doesNotMatch(message, /Perfeito/i);
   });
 });
 

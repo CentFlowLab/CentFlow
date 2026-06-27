@@ -22,6 +22,7 @@ import { useProfile } from '@/hooks/queries/useProfile';
 import { useOnboarding, useOnboardingAnswersState } from '@/hooks/useOnboarding';
 import { enrichOnboardingAnswers } from '@/lib/onboarding/features';
 import { getSpendAwarenessRevealMessage } from '@/lib/onboarding/assistance';
+import { resolveFirstAction } from '@/lib/onboarding/first-action';
 import {
   fetchOnboardingAnswers,
   saveOnboardingAnswersForUser,
@@ -226,6 +227,7 @@ export default function OnboardingScreen() {
       hasDebt: answers.creditTypes.length > 0,
       hasSavings: (answers.savingsGoal ?? 0) > 0 ? true : answers.hasSavings,
       hasMonthlyIncome: (answers.monthlyIncome ?? 0) > 0 ? 'yes' : answers.hasMonthlyIncome,
+      firstAction: resolveFirstAction(answers),
       completed: true,
       skipped: false,
       completedAt: new Date().toISOString(),
@@ -819,9 +821,9 @@ const styles = StyleSheet.create({
   incomeStep: {
     flexGrow: 1,
     justifyContent: 'flex-start',
-    paddingTop: spacing.md,
-    gap: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingTop: spacing.lg,
+    gap: spacing.lg,
+    paddingBottom: spacing['2xl'],
   },
   amountWrap: {
     paddingVertical: spacing.xl,
@@ -838,6 +840,8 @@ const styles = StyleSheet.create({
   privacyNotes: {
     gap: spacing.sm,
     alignItems: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
   privacyNote: {
     flexDirection: 'row',

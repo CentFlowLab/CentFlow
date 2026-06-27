@@ -7,6 +7,7 @@ export { DemoModeBadge } from './DemoModeBadge';
 export { HomeAssetsSummaryCard } from './HomeAssetsSummaryCard';
 export { HomeGoalHighlightCard } from './HomeGoalHighlightCard';
 export { HomePersonalizedInsightCard } from './HomePersonalizedInsightCard';
+export { HomePostOnboardingWelcomeCard } from './HomePostOnboardingWelcomeCard';
 export { HomeChangesSheet } from './HomeChangesSheet';
 export { HomeAlertsSection } from './HomeAlertsSection';
 export { HomeAttentionSheet } from './HomeAttentionSheet';

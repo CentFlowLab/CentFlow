@@ -410,6 +410,48 @@ export function shouldShowSavingsFeatures(answers: OnboardingAnswers): boolean {
 
 export type AssetsTabKey = 'objetivos' | 'garantias' | 'inventario';
 
+export function getPersonalizedCreditsEmptyCopy(
+  answers: OnboardingAnswers | null,
+  variant: 'loan' | 'card' = 'loan',
+): { title: string; description: string; actionLabel?: string } {
+  if (!answers?.completed) {
+    return { title: '', description: '' };
+  }
+
+  const hasCredits =
+    answers.creditTypes.length > 0 ||
+    answers.hasDebt ||
+    answers.profileTags.includes('credits_costs') ||
+    answers.primaryObjective === 'organize_credits';
+
+  if (!hasCredits) {
+    return { title: '', description: '' };
+  }
+
+  if (variant === 'card') {
+    return {
+      title: 'Regista o teu primeiro cartão',
+      description:
+        'Indicaste que tens cartões de crédito — começa por registar limites e saldos para acompanhar a utilização.',
+      actionLabel: 'Novo cartão',
+    };
+  }
+
+  const labels: Record<string, string> = {
+    mortgage: 'habitação',
+    auto: 'automóvel',
+    personal: 'pessoal',
+    card: 'cartão',
+  };
+  const types = answers.creditTypes.map((id) => labels[id] ?? id).join(', ');
+
+  return {
+    title: 'Mapeia os teus créditos',
+    description: `Referiste créditos (${types}) — regista prestações e datas para teres visibilidade sobre o que sai todos os meses.`,
+    actionLabel: 'Novo crédito',
+  };
+}
+
 export function getPersonalizedEmptyStateCopy(
   tab: AssetsTabKey,
   answers: OnboardingAnswers | null,

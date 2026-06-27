@@ -3,7 +3,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
 import { Button, Card, Text } from '@/components/ui';
+import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import type { Credit } from '@/lib/domain/types';
+import { getPersonalizedCreditsEmptyCopy } from '@/lib/onboarding/personalization';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
@@ -42,39 +44,46 @@ export function CreditsSection({
   variant = 'loan',
 }: CreditsSectionProps) {
   const isCardVariant = variant === 'card';
+  const { data: answers } = useOnboardingAnswers();
+  const personalized = getPersonalizedCreditsEmptyCopy(answers ?? null, variant);
 
   if (credits.length === 0) {
+    const baseConfig = isCardVariant
+      ? {
+          icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' } as const,
+          title: 'Adiciona os teus cartões',
+          description:
+            'Regista os teus cartões de crédito para acompanhar saldo, limite e datas de pagamento.',
+          actionLabel: 'Novo cartão',
+          highlights: [
+            'Saldo em dívida vs limite',
+            'Barra de utilização',
+            'Lembrete da data de vencimento',
+          ],
+        }
+      : {
+          icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' } as const,
+          title: 'Simula e regista créditos',
+          description:
+            'Adiciona um crédito para controlar dívida, próximos pagamentos e esforço financeiro.',
+          actionLabel: 'Novo crédito',
+          secondaryActionLabel: 'Como funciona',
+          highlights: [
+            'Simulador com taxa de esforço',
+            'Próximos pagamentos em destaque',
+            'Integrado no teu património',
+          ],
+        };
+
     return (
       <View style={styles.container}>
         <AssetsEmptyState
-          config={
-            isCardVariant
-              ? {
-                  icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
-                  title: 'Adiciona os teus cartões',
-                  description:
-                    'Regista os teus cartões de crédito para acompanhar saldo, limite e datas de pagamento.',
-                  actionLabel: 'Novo cartão',
-                  highlights: [
-                    'Saldo em dívida vs limite',
-                    'Barra de utilização',
-                    'Lembrete da data de vencimento',
-                  ],
-                }
-              : {
-                  icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
-                  title: 'Simula e regista créditos',
-                  description:
-                    'Adiciona um crédito para controlar dívida, próximos pagamentos e esforço financeiro.',
-                  actionLabel: 'Novo crédito',
-                  secondaryActionLabel: 'Como funciona',
-                  highlights: [
-                    'Simulador com taxa de esforço',
-                    'Próximos pagamentos em destaque',
-                    'Integrado no teu património',
-                  ],
-                }
-          }
+          config={{
+            ...baseConfig,
+            title: personalized.title || baseConfig.title,
+            description: personalized.description || baseConfig.description,
+            actionLabel: personalized.actionLabel || baseConfig.actionLabel,
+          }}
           onPrimaryAction={onCreate}
           onSecondaryAction={isCardVariant ? undefined : onLearnMore}
         />
