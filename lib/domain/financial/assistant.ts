@@ -117,18 +117,6 @@ export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPl
     });
   }
 
-  if (input.featuredGoalGap != null && input.featuredGoalGap > 0) {
-    insights.push({
-      id: 'goal-gap',
-      emoji: '🎯',
-      title: `Faltam ${Math.round(input.featuredGoalGap)}€ para o teu objetivo`,
-      description: 'Um pequeno movimento hoje aproxima-te da meta.',
-      priority: 'medium',
-      actionId: 'create_goal',
-      actionLabel: 'Ver objetivo',
-    });
-  }
-
   const warrantiesExpiring = input.warrantiesExpiringSoon ?? 0;
   if (warrantiesExpiring > 0) {
     insights.push({

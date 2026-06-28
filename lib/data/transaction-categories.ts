@@ -60,7 +60,7 @@ const ICONS = {
   hands: { ios: 'hands.sparkles.fill', android: 'volunteer_activism', web: 'volunteer_activism' },
   briefcase: { ios: 'briefcase.fill', android: 'work', web: 'work' },
   banknote: { ios: 'banknote.fill', android: 'payments', web: 'payments' },
-  dots: { ios: 'ellipsis.circle.fill', android: 'more_horiz', web: 'more_horiz' },
+  dots: { ios: 'tag.fill', android: 'label', web: 'label' },
   tag: { ios: 'tag.fill', android: 'label', web: 'label' },
 } satisfies Record<string, SymbolViewProps['name']>;
 

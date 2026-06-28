@@ -1,12 +1,12 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
+import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useProfile } from '@/hooks/queries/useProfile';
-import {
-  getHomeContextualMessage,
-  getPersonalizedHomeSubtitle,
-} from '@/lib/onboarding/personalization';
+import { useTransactions } from '@/hooks/queries/useTransactions';
+import { estimateMonthlyCashflow } from '@/lib/domain/financial';
+import { getHomeDailyMessage } from '@/lib/insights/home-daily-message';
 import { spacing } from '@/lib/theme';
 
 function formatTodayLabel(): string {
@@ -21,11 +21,23 @@ function formatTodayLabel(): string {
 export function DashboardHeaderLeading() {
   const { data: profile } = useProfile();
   const { data: answers } = useOnboardingAnswers();
+  const { data: home } = useHomeScreenData();
+  const { data: transactions = [] } = useTransactions('all');
 
   const firstName = profile?.name?.split(' ')[0] ?? 'Utilizador';
   const today = formatTodayLabel();
-  const contextual = getHomeContextualMessage(answers ?? null);
-  const subtitle = getPersonalizedHomeSubtitle(answers ?? null) ?? contextual;
+  const { income, expenses } = estimateMonthlyCashflow(transactions);
+  const budget = answers?.monthlyIncome ?? income;
+  const budgetUsedPercent = budget > 0 ? (expenses / budget) * 100 : undefined;
+  const monthlySavingsRate = income > 0 ? (income - expenses) / income : 0;
+
+  const dailyMessage = getHomeDailyMessage({
+    budgetUsedPercent,
+    daysToGoal: null,
+    monthlySavingsRate,
+    cashflowNegative: expenses > income && income > 0,
+    primaryGoalLabel: home?.featuredGoal?.name,
+  });
 
   return (
     <View style={styles.container}>
@@ -33,11 +45,9 @@ export function DashboardHeaderLeading() {
       <Text variant="caption" color="textSecondary" style={styles.capitalize}>
         {today}
       </Text>
-      {subtitle ? (
-        <Text variant="caption" color="textMuted" style={styles.personalized}>
-          {subtitle}
-        </Text>
-      ) : null}
+      <Text variant="caption" color="textMuted" style={styles.personalized}>
+        {dailyMessage}
+      </Text>
     </View>
   );
 }

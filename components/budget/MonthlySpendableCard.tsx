@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
+import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
@@ -38,9 +39,11 @@ export function MonthlySpendableCard({ onOpenDetails }: MonthlySpendableCardProp
             size={16}
           />
         </View>
-        <Text style={[styles.value, { color: valueTone }]}>
-          {formatCurrency(spendable.remainingThisMonth)}
-        </Text>
+        <AnimatedCurrency
+          value={spendable.remainingThisMonth}
+          formatter={(v) => formatCurrency(v)}
+          style={[styles.value, { color: valueTone }]}
+        />
         <Text variant="caption" color="textSecondary">
           {formatCurrency(spendable.dailyAvailable)}/dia até {endOfMonthLabel(reference)} ·{' '}
           {spendable.daysRemaining} {spendable.daysRemaining === 1 ? 'dia' : 'dias'}

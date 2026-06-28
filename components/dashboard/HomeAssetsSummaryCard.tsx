@@ -1,5 +1,6 @@
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { Card, Text } from '@/components/ui';
 import type { HomeAssetsSummary } from '@/lib/domain/home.types';
@@ -13,33 +14,61 @@ type HomeAssetsSummaryCardProps = {
 };
 
 export function HomeAssetsSummaryCard({ summary, hints = {} }: HomeAssetsSummaryCardProps) {
+  const showWarranties = summary.warrantiesCount >= 1;
+  const showInventory = summary.inventoryCount >= 3;
+  const showGoals = summary.goalsCount > 0;
+
+  if (!showWarranties && !showInventory && !showGoals) {
+    return (
+      <Card variant="outlined" style={styles.card}>
+        <Text variant="label" color="textMuted">
+          Resumo rápido
+        </Text>
+        <Text variant="body" color="textSecondary">
+          Adiciona os teus ativos para acompanhar o teu património e ver métricas úteis aqui.
+        </Text>
+        <Pressable onPress={() => router.push('/(tabs)/ativos')}>
+          <Text variant="bodyMedium" color="primary">
+            Explorar ativos →
+          </Text>
+        </Pressable>
+      </Card>
+    );
+  }
+
   return (
     <Card variant="outlined" style={styles.card}>
       <Text variant="label" color="textMuted">
         Resumo rápido
       </Text>
       <View style={styles.grid}>
-        <SummaryTile
-          icon={{ ios: 'target', android: 'flag', web: 'flag' }}
-          label="Em objetivos"
-          value={formatCurrency(summary.goalsSaved)}
-          hint={hints.goals ?? `${summary.goalsCount} activo${summary.goalsCount === 1 ? '' : 's'}`}
-          color={colors.primary}
-        />
-        <SummaryTile
-          icon={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
-          label="Garantias"
-          value={String(summary.warrantiesCount)}
-          hint={hints.warranties ?? 'registadas'}
-          color={colors.accent}
-        />
-        <SummaryTile
-          icon={{ ios: 'archivebox.fill', android: 'inventory_2', web: 'inventory_2' }}
-          label="Inventário"
-          value={String(summary.inventoryCount)}
-          hint={hints.inventory ?? 'itens'}
-          color={colors.textSecondary}
-        />
+        {showGoals ? (
+          <SummaryTile
+            icon={{ ios: 'target', android: 'flag', web: 'flag' }}
+            label="Em objetivos"
+            value={formatCurrency(summary.goalsSaved)}
+            hint={hints.goals ?? `${summary.goalsCount} activo${summary.goalsCount === 1 ? '' : 's'}`}
+            color={colors.primary}
+          />
+        ) : null}
+        {showWarranties ? (
+          <SummaryTile
+            icon={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
+            label="Garantias"
+            value={String(summary.warrantiesCount)}
+            hint={hints.warranties ?? 'registadas'}
+            color={colors.accent}
+          />
+        ) : null}
+        {showInventory ? (
+          <SummaryTile
+            icon={{ ios: 'archivebox.fill', android: 'inventory_2', web: 'inventory_2' }}
+            label="Inventário"
+            value={String(summary.inventoryCount)}
+            hint={hints.inventory ?? 'itens'}
+            color={colors.textSecondary}
+          />
+        ) : null}
       </View>
     </Card>
   );
@@ -52,7 +81,7 @@ function SummaryTile({
   hint,
   color,
 }: {
-  icon: SymbolViewProps['name'];
+  icon: Parameters<typeof SymbolView>[0]['name'];
   label: string;
   value: string;
   hint: string;

@@ -153,20 +153,11 @@ export default function InicioScreen() {
   }
 
   const {
-    netWorth,
     assetsSummary,
     dataSource,
     attentionItems,
     suggestions,
-    recentTransactions,
   } = data;
-
-  const hasActivity =
-    recentTransactions.length > 0 ||
-    netWorth.netWorth !== 0 ||
-    assetsSummary.goalsCount > 0 ||
-    assetsSummary.warrantiesCount > 0 ||
-    assetsSummary.inventoryCount > 0;
 
   const assetsHints = getHomeAssetsSummaryHints(onboardingAnswers ?? null);
   const sectionOrder = getHomeSectionOrder(onboardingAnswers ?? null);
@@ -182,9 +173,9 @@ export default function InicioScreen() {
     spendable: (
       <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
     ),
-    assets: hasActivity ? (
+    assets: (
       <HomeAssetsSummaryCard key="assets" summary={assetsSummary} hints={assetsHints} />
-    ) : null,
+    ),
     alerts: (
       <HomeAlertsSection
         key="alerts"

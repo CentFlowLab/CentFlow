@@ -4,10 +4,18 @@ import { StyleSheet, View } from 'react-native';
 import {
   AnalysisMetricCard,
   AnalysisSkeleton,
-  InsightsSection,
+  AutoInsightsCarousel,
+  CategoryBreakdownList,
+  CreditsAnalysisSection,
+  HealthScoreBreakdownSheet,
+  HealthScoreCard,
+  MonthEndForecastCard,
+  MonthlyComparisonSection,
   PricesInsightsSection,
   SpendingCategoryCard,
+  SpendingHeatmap,
   SpendingTrendBars,
+  SubscriptionsAnalysisSection,
   TopMerchantsSection,
   TrendsSummaryCard,
 } from '@/components/analysis';
@@ -19,10 +27,10 @@ import {
   SectionHeader,
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
+import { useAnalyticsInsights } from '@/hooks/useAnalyticsInsights';
 import { useMerchantGroups } from '@/hooks/queries/useMerchantGroups';
 import { usePricesData } from '@/hooks/queries/usePricesData';
 import { useTransactions } from '@/hooks/queries/useTransactions';
-import { computeMerchantGroupAnalytics } from '@/lib/merchants/group-analytics';
 import {
   ANALYSIS_PERIOD_OPTIONS,
   computeSpendingByCategory,
@@ -30,6 +38,7 @@ import {
   getPeriodOption,
   type AnalysisPeriodKey,
 } from '@/lib/domain/analysis-period';
+import { computeMerchantGroupAnalytics } from '@/lib/merchants/group-analytics';
 import { router } from 'expo-router';
 import { spacing, colors } from '@/lib/theme';
 
@@ -43,8 +52,10 @@ export default function AnalisesScreen() {
   const { data: pricesData } = usePricesData();
   const { data: transactions = [] } = useTransactions('all');
   const { data: merchantGroups = [] } = useMerchantGroups();
+  const analytics = useAnalyticsInsights();
 
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
+  const [healthSheetVisible, setHealthSheetVisible] = useState(false);
   const periodOption = getPeriodOption(period);
 
   const topMerchants = useMemo(
@@ -82,6 +93,22 @@ export default function AnalisesScreen() {
         <ScreenContainer applyBottomSafeInset={false}>
           <SectionHeader title="Análises" subtitle={`Últimos · ${periodOption.label}`} />
 
+          <AutoInsightsCarousel insights={analytics.insights} />
+
+          <HealthScoreCard
+            score={analytics.healthScore}
+            onPress={() => setHealthSheetVisible(true)}
+          />
+
+          <MonthlyComparisonSection
+            rows={analytics.monthlyComparison.rows}
+            bars={analytics.monthlyComparison.bars}
+            currentMonthLabel={analytics.monthlyComparison.currentMonthLabel}
+            previousMonthLabel={analytics.monthlyComparison.previousMonthLabel}
+          />
+
+          <MonthEndForecastCard forecast={analytics.forecast} />
+
           <View style={styles.periodSelector}>
             <SegmentedControl
               segments={PERIOD_SEGMENTS}
@@ -103,6 +130,17 @@ export default function AnalisesScreen() {
             periodLabel={periodOption.label}
           />
 
+          <CategoryBreakdownList items={analytics.categoryBreakdown} />
+
+          <SpendingHeatmap transactions={transactions} />
+
+          <SubscriptionsAnalysisSection analysis={analytics.subscriptionAnalysis} />
+
+          <CreditsAnalysisSection
+            credits={analytics.credits}
+            monthlyIncome={analytics.monthlyIncome}
+          />
+
           <TopMerchantsSection merchants={topMerchants} />
 
           <SectionHeader
@@ -117,8 +155,6 @@ export default function AnalisesScreen() {
               ))}
           </View>
 
-          <InsightsSection insights={data.insights} />
-
           {pricesData ? (
             <PricesInsightsSection
               prices={pricesData}
@@ -127,6 +163,12 @@ export default function AnalisesScreen() {
           ) : null}
 
           <RefetchingIndicator visible={isRefetching} />
+
+          <HealthScoreBreakdownSheet
+            visible={healthSheetVisible}
+            score={analytics.healthScore}
+            onClose={() => setHealthSheetVisible(false)}
+          />
         </ScreenContainer>
       )}
     </View>

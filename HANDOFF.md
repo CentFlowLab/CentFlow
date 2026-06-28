@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-28T23:03:03.396Z -->
-<!-- Git: 7f55d52 (2026-06-27T20:34:34+01:00) -->
+<!-- Última geração: 2026-06-28T23:31:52.000Z -->
+<!-- Git: 5a6fa1f (2026-06-29T00:03:37+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 12 — Agrupamento inteligente de despesas (fuzzy merchant matching + grupos de comerciantes)** |
-| Última geração | 2026-06-28T23:03:03.396Z |
+| Fase atual | **Fase 13 — Analytics avançadas: insights automáticos, health score, comparação mensal, heatmap e Home inteligente** |
+| Última geração | 2026-06-28T23:31:52.000Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `7f55d52` (2026-06-27T20:34:34+01:00) |
+| Git commit | `5a6fa1f` (2026-06-29T00:03:37+01:00) |
 
 ---
 
@@ -172,11 +172,20 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   analysis/
     AnalysisMetricCard.tsx
     AnalysisSkeleton.tsx
+    AutoInsightsCarousel.tsx
+    CategoryBreakdownList.tsx
+    CreditsAnalysisSection.tsx
+    HealthScoreBreakdownSheet.tsx
+    HealthScoreCard.tsx
     InsightsSection.tsx
+    MonthEndForecastCard.tsx
+    MonthlyComparisonSection.tsx
     PatrimonyAllocationCard.tsx
     PricesInsightsSection.tsx
     SpendingCategoryCard.tsx
+    SpendingHeatmap.tsx
     SpendingTrendBars.tsx
+    SubscriptionsAnalysisSection.tsx
     TopMerchantsSection.tsx
     TrendsSummaryCard.tsx
     index.ts
@@ -318,6 +327,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     SettingsToggleRow.tsx
     index.ts
   ui/
+    AnimatedCurrency.tsx
     BottomActionSheet.tsx
     Button.tsx
     Card.tsx
@@ -365,6 +375,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useProfile.ts
     useTransactions.ts
     useUserPreferences.ts
+  useAnalyticsInsights.ts
   useCentFlowIntelligence.ts
   useContextualQuickAdd.ts
   useCustomCategories.ts
@@ -538,6 +549,19 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     light-impact.ts
   home/
     smart-summary.ts
+  insights/
+    __tests__/
+      generate-insights.test.ts
+      health-score.test.ts
+    category-breakdown.ts
+    generate-insights.ts
+    health-score.ts
+    home-daily-message.ts
+    month-utils.ts
+    monthly-comparison.ts
+    spending-forecast.ts
+    subscription-analysis.ts
+    types.ts
   launch-readiness.test.ts
   layout/
     device-metrics.ts
@@ -686,7 +710,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 12 — Agrupamento inteligente de despesas (fuzzy merchant matching + grupos de comerciantes)
+## Fase atual: Fase 13 — Analytics avançadas: insights automáticos, health score, comparação mensal, heatmap e Home inteligente
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -793,6 +817,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - HOTFIX loop de FaceID bem-sucedido — distinção determinística entre 'inactive' (provocado pelo diálogo de FaceID) e 'background' real: só repede biometria após background genuíno (hasBackgroundedRef), eliminando o ciclo de autenticações com sucesso; removido o cooldown frágil baseado em tempo
 - Fuzzy merchant matching — tabela merchant_groups + merchant_group_id em transactions (migration SQL); algoritmo Levenshtein + tokens + prefixo (threshold 0.65); sugestão bottom sheet 1.5s após guardar despesa; dismiss 7 dias via SecureStore
 - Grupos de comerciantes — Definições → lista/renomear/aliases/eliminar; pesquisa em Movimentos (description + aliases); badge grupo na lista; Top comerciantes em Análises com comparação mês anterior
+- Analytics — motor lib/insights (generateInsights, health-score, previsão, comparação mensal, heatmap); carousel de insights + score 0-100 no topo de Análises; categorias expandidas, subscrições, créditos com simulador amortização
+- Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros
 
 ### 🔲 Pendente
 - Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id

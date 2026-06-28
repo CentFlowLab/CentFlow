@@ -18,7 +18,7 @@ export function HomeAssistantCard({ plan, onAction, onOpenActionCenter }: HomeAs
           Plano de hoje
         </Text>
         <Text variant="bodyMedium" color="textSecondary">
-          {plan.insights.length} {plan.insights.length === 1 ? 'acção' : 'acções'} para ti
+          {plan.insights.length} {plan.insights.length === 1 ? 'ação' : 'ações'} para ti
         </Text>
       </View>
 

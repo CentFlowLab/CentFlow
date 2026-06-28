@@ -24,7 +24,9 @@ export function SwipeableTransactionListItem({
   onDelete,
 }: SwipeableTransactionListItemProps) {
   const isIncome = transaction.type === 'income';
+  const isOtherCategory = transaction.category === 'other' || transaction.category === 'other_products';
   const amountColor = isIncome ? colors.success : colors.danger;
+  const iconTint = isOtherCategory && !isIncome ? colors.textMuted : amountColor;
   const prefix = isIncome ? '+' : '−';
   const category = getCategoryById(transaction.category, transaction.type);
   const icon = category?.icon ?? {
@@ -103,7 +105,7 @@ export function SwipeableTransactionListItem({
       style={({ pressed }) => [pressed && styles.rowPressed]}>
       <Card variant="elevated" style={styles.card}>
         <View style={[styles.iconWrapper, isIncome ? styles.iconIncome : styles.iconExpense]}>
-          <SymbolView name={icon} tintColor={amountColor} size={20} />
+          <SymbolView name={icon} tintColor={iconTint} size={20} />
         </View>
 
         <View style={styles.content}>
