@@ -32,17 +32,18 @@ type HealthScoreCardProps = {
 };
 
 export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
+  const totalScore = Number.isFinite(score.total) ? Math.max(0, Math.min(100, score.total)) : 0;
   const progress = useSharedValue(0);
   const [displayScore, setDisplayScore] = useState(0);
 
   useEffect(() => {
-    progress.value = withTiming(score.total / 100, {
+    progress.value = withTiming(totalScore / 100, {
       duration: 900,
       easing: Easing.out(Easing.cubic),
     });
     const start = Date.now();
     const from = displayScore;
-    const to = score.total;
+    const to = totalScore;
     const duration = 900;
     const tick = () => {
       const t = Math.min(1, (Date.now() - start) / duration);
@@ -50,14 +51,14 @@ export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
       if (t < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }, [score.total]);
+  }, [progress, totalScore]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
   }));
 
-  const ringColor = STATUS_COLOR[score.status];
-  const componentEntries = Object.values(score.components);
+  const ringColor = STATUS_COLOR[score.status] ?? colors.textMuted;
+  const componentEntries = Object.values(score.components ?? {});
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
@@ -84,10 +85,9 @@ export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
                 strokeWidth={STROKE}
                 fill="none"
                 strokeLinecap="round"
-                strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+                strokeDasharray={CIRCUMFERENCE}
                 animatedProps={animatedProps}
-                rotation="-90"
-                origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+                transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
               />
             </Svg>
             <View style={styles.scoreCenter}>

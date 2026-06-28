@@ -72,11 +72,21 @@ function scoreSubscriptions(
 }
 
 export function calculateHealthScore(input: HealthScoreInput): HealthScoreResult {
-  const savingsR = scoreSavings(input.monthlyIncome, input.monthlyExpenses);
-  const cashflowR = scoreCashflow(input.monthlyIncome, input.monthlyExpenses);
-  const debtR = scoreDebt(input.totalDebt, input.monthlyIncome, input.creditMonthlyPayments);
-  const budgetR = scoreBudget(input.monthlyBudget, input.monthlyExpenses);
-  const subsR = scoreSubscriptions(input.monthlySubscriptionCost, input.monthlyIncome);
+  const monthlyIncome = Number.isFinite(input.monthlyIncome) ? input.monthlyIncome : 0;
+  const monthlyExpenses = Number.isFinite(input.monthlyExpenses) ? input.monthlyExpenses : 0;
+  const monthlySubscriptionCost = Number.isFinite(input.monthlySubscriptionCost)
+    ? input.monthlySubscriptionCost
+    : 0;
+  const totalDebt = Number.isFinite(input.totalDebt) ? input.totalDebt : 0;
+  const creditMonthlyPayments = Number.isFinite(input.creditMonthlyPayments)
+    ? input.creditMonthlyPayments
+    : 0;
+
+  const savingsR = scoreSavings(monthlyIncome, monthlyExpenses);
+  const cashflowR = scoreCashflow(monthlyIncome, monthlyExpenses);
+  const debtR = scoreDebt(totalDebt, monthlyIncome, creditMonthlyPayments);
+  const budgetR = scoreBudget(input.monthlyBudget, monthlyExpenses);
+  const subsR = scoreSubscriptions(monthlySubscriptionCost, monthlyIncome);
 
   const components = {
     savings: { score: savingsR.score, max: 20, label: 'Poupança', detail: savingsR.detail, hasData: savingsR.hasData },

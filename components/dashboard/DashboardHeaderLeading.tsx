@@ -31,13 +31,20 @@ export function DashboardHeaderLeading() {
   const budgetUsedPercent = budget > 0 ? (expenses / budget) * 100 : undefined;
   const monthlySavingsRate = income > 0 ? (income - expenses) / income : 0;
 
-  const dailyMessage = getHomeDailyMessage({
-    budgetUsedPercent,
-    daysToGoal: null,
-    monthlySavingsRate,
-    cashflowNegative: expenses > income && income > 0,
-    primaryGoalLabel: home?.featuredGoal?.name,
-  });
+  const dailyMessage = (() => {
+    try {
+      return getHomeDailyMessage({
+        budgetUsedPercent,
+        daysToGoal: null,
+        monthlySavingsRate,
+        cashflowNegative: expenses > income && income > 0,
+        primaryGoalLabel: home?.featuredGoal?.name,
+      });
+    } catch (error) {
+      console.error('[HomeDailyMessage]', error);
+      return 'Continua a registar movimentos para insights personalizados.';
+    }
+  })();
 
   return (
     <View style={styles.container}>

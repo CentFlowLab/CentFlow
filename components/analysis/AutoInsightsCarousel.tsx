@@ -17,7 +17,8 @@ type AutoInsightsCarouselProps = {
 };
 
 export function AutoInsightsCarousel({ insights }: AutoInsightsCarouselProps) {
-  if (insights.length === 0) return null;
+  const items = insights ?? [];
+  if (items.length === 0) return null;
 
   return (
     <View style={styles.wrap}>
@@ -26,7 +27,7 @@ export function AutoInsightsCarousel({ insights }: AutoInsightsCarouselProps) {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scroll}>
-        {insights.map((insight) => (
+        {items.map((insight) => (
           <InsightCard key={insight.id} insight={insight} />
         ))}
       </ScrollView>

@@ -4,15 +4,15 @@ import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { estimateMonthlyCashflow, monthlySubscriptionTotal } from '@/lib/domain/financial';
-import { calculateHealthScore } from '@/lib/insights/health-score';
-import { generateInsights } from '@/lib/insights/generate-insights';
-import { computeCategoryBreakdown, computeSpendingHeatmap } from '@/lib/insights/category-breakdown';
-import { computeMonthlyComparison } from '@/lib/insights/monthly-comparison';
-import { computeMonthSpendingForecast } from '@/lib/insights/spending-forecast';
-import { computeSubscriptionAnalysis } from '@/lib/insights/subscription-analysis';
+import { computeAnalyticsSnapshot } from '@/lib/insights/safe-analytics';
 import type { HealthScoreInput, InsightInput } from '@/lib/insights/types';
 import { filterTransactionsInMonth, monthKey } from '@/lib/insights/month-utils';
 import { useMemo } from 'react';
+
+function finiteNumber(value: number | null | undefined): number {
+  const n = value ?? 0;
+  return Number.isFinite(n) ? n : 0;
+}
 
 export function useAnalyticsInsights(referenceDate = new Date()) {
   const { data: transactions = [] } = useTransactions('all');
@@ -25,31 +25,42 @@ export function useAnalyticsInsights(referenceDate = new Date()) {
     const subscriptions = liabilities?.subscriptions ?? assets?.subscriptions ?? [];
     const credits = liabilities?.credits ?? assets?.credits ?? [];
     const goals = assets?.goals ?? [];
-    const { income, expenses } = estimateMonthlyCashflow(transactions, referenceDate);
-    const monthlySubscriptionCost = monthlySubscriptionTotal(subscriptions);
-    const totalDebt = credits.reduce((sum, c) => sum + c.outstandingBalance, 0);
-    const creditMonthlyPayments = credits.reduce(
-      (sum, c) => sum + (c.monthlyPayment ?? c.nextPaymentAmount ?? 0),
+    const safeTransactions = transactions ?? [];
+
+    const { income, expenses } = estimateMonthlyCashflow(safeTransactions, referenceDate);
+    const monthlyIncome = finiteNumber(income);
+    const monthlyExpenses = finiteNumber(expenses);
+    const monthlySubscriptionCost = finiteNumber(monthlySubscriptionTotal(subscriptions));
+    const totalDebt = (credits ?? []).reduce(
+      (sum, c) => sum + finiteNumber(c.outstandingBalance),
+      0,
+    );
+    const creditMonthlyPayments = (credits ?? []).reduce(
+      (sum, c) => sum + finiteNumber(c.monthlyPayment ?? c.nextPaymentAmount),
       0,
     );
 
     const currentKey = monthKey(referenceDate);
-    const monthTxCount = filterTransactionsInMonth(transactions, currentKey, referenceDate).length;
+    const monthTxCount = filterTransactionsInMonth(
+      safeTransactions,
+      currentKey,
+      referenceDate,
+    ).length;
 
     const monthlyBudget = onboarding?.monthlyIncome ?? null;
 
     const insightInput: InsightInput = {
-      transactions,
+      transactions: safeTransactions,
       subscriptions,
       credits,
-      goals: goals.map((g) => ({
+      goals: (goals ?? []).map((g) => ({
         id: g.id,
-        name: g.name,
-        current: g.current,
-        target: g.target,
+        name: g.name ?? 'Objetivo',
+        current: finiteNumber(g.current),
+        target: finiteNumber(g.target),
       })),
-      monthlyIncome: income,
-      monthlyExpenses: expenses,
+      monthlyIncome,
+      monthlyExpenses,
       monthlyBudget,
       netWorthChangePercent: home?.netWorthChangePercent,
       netWorthChangeAmount: home?.netWorthChangeThisMonth,
@@ -57,8 +68,8 @@ export function useAnalyticsInsights(referenceDate = new Date()) {
     };
 
     const healthInput: HealthScoreInput = {
-      monthlyIncome: income,
-      monthlyExpenses: expenses,
+      monthlyIncome,
+      monthlyExpenses,
       monthlySubscriptionCost,
       monthlyBudget,
       totalDebt,
@@ -66,17 +77,16 @@ export function useAnalyticsInsights(referenceDate = new Date()) {
       transactionCountThisMonth: monthTxCount,
     };
 
-    return {
-      insights: generateInsights(insightInput),
-      healthScore: calculateHealthScore(healthInput),
-      monthlyComparison: computeMonthlyComparison(transactions, referenceDate),
-      forecast: computeMonthSpendingForecast(transactions, income, monthlyBudget, referenceDate),
-      categoryBreakdown: computeCategoryBreakdown(transactions, referenceDate),
-      heatmap: computeSpendingHeatmap(transactions, referenceDate),
-      subscriptionAnalysis: computeSubscriptionAnalysis(subscriptions),
+    return computeAnalyticsSnapshot({
+      transactions: safeTransactions,
+      subscriptions,
       credits,
-      monthlyIncome: income,
-      monthlyExpenses: expenses,
-    };
+      insightInput,
+      healthInput,
+      referenceDate,
+      monthlyIncome,
+      monthlyExpenses,
+      monthlyBudget,
+    });
   }, [assets, home, liabilities, onboarding, referenceDate, transactions]);
 }

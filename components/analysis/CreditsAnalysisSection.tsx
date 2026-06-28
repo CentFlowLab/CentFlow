@@ -13,7 +13,7 @@ type CreditsAnalysisSectionProps = {
 };
 
 export function CreditsAnalysisSection({ credits, monthlyIncome }: CreditsAnalysisSectionProps) {
-  const active = credits.filter((c) => c.outstandingBalance > 0);
+  const active = (credits ?? []).filter((c) => (c.outstandingBalance ?? 0) > 0);
   if (active.length === 0) return null;
 
   return (

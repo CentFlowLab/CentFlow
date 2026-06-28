@@ -36,7 +36,7 @@ export function SpendingHeatmap({ transactions, referenceDate = new Date() }: Sp
   }, [referenceDate, offset]);
 
   const heatmap = useMemo(
-    () => computeSpendingHeatmap(transactions, viewDate),
+    () => computeSpendingHeatmap(transactions ?? [], viewDate),
     [transactions, viewDate],
   );
 
@@ -48,7 +48,7 @@ export function SpendingHeatmap({ transactions, referenceDate = new Date() }: Sp
   }, [selectedDate, transactions]);
 
   const monthTitle =
-    heatmap.monthLabel.charAt(0).toUpperCase() + heatmap.monthLabel.slice(1);
+    (heatmap.monthLabel ?? '').charAt(0).toUpperCase() + (heatmap.monthLabel ?? '').slice(1);
 
   return (
     <View style={styles.wrap}>
@@ -76,7 +76,7 @@ export function SpendingHeatmap({ transactions, referenceDate = new Date() }: Sp
         </View>
 
         <View style={styles.grid}>
-          {heatmap.days.map((day) => (
+          {(heatmap.days ?? []).map((day) => (
             <Pressable
               key={day.date}
               disabled={day.isFuture}

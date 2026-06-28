@@ -158,10 +158,11 @@ export function generateInsights(input: InsightInput): Insight[] {
     });
   }
 
-  for (const credit of input.credits) {
-    if (credit.outstandingBalance <= 0) continue;
+  for (const credit of input.credits ?? []) {
+    const outstanding = credit.outstandingBalance ?? 0;
+    if (outstanding <= 0) continue;
     const analysis = analyzeCredit({
-      outstandingBalance: credit.outstandingBalance,
+      outstandingBalance: outstanding,
       originalAmount: credit.originalAmount,
       interestRateAnnual: credit.interestRateAnnual,
       indexRate: credit.indexRate,
@@ -172,7 +173,7 @@ export function generateInsights(input: InsightInput): Insight[] {
     });
     const paidPrincipal = Math.max(
       0,
-      (credit.originalAmount ?? credit.outstandingBalance) - credit.outstandingBalance,
+      (credit.originalAmount ?? outstanding) - outstanding,
     );
     const estimatedInterestPaid = Math.max(0, analysis.totalInterest * (paidPrincipal / Math.max(credit.originalAmount ?? 1, 1)));
 

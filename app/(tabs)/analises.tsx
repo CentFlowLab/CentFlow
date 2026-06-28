@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
+  AnalysisErrorBoundary,
   AnalysisMetricCard,
   AnalysisSkeleton,
   AutoInsightsCarousel,
@@ -93,21 +94,29 @@ export default function AnalisesScreen() {
         <ScreenContainer applyBottomSafeInset={false}>
           <SectionHeader title="Análises" subtitle={`Últimos · ${periodOption.label}`} />
 
-          <AutoInsightsCarousel insights={analytics.insights} />
+          <AnalysisErrorBoundary label="Insights automáticos">
+            <AutoInsightsCarousel insights={analytics.insights} />
+          </AnalysisErrorBoundary>
 
-          <HealthScoreCard
-            score={analytics.healthScore}
-            onPress={() => setHealthSheetVisible(true)}
-          />
+          <AnalysisErrorBoundary label="Saúde financeira">
+            <HealthScoreCard
+              score={analytics.healthScore}
+              onPress={() => setHealthSheetVisible(true)}
+            />
+          </AnalysisErrorBoundary>
 
-          <MonthlyComparisonSection
-            rows={analytics.monthlyComparison.rows}
-            bars={analytics.monthlyComparison.bars}
-            currentMonthLabel={analytics.monthlyComparison.currentMonthLabel}
-            previousMonthLabel={analytics.monthlyComparison.previousMonthLabel}
-          />
+          <AnalysisErrorBoundary label="Comparação mensal">
+            <MonthlyComparisonSection
+              rows={analytics.monthlyComparison.rows}
+              bars={analytics.monthlyComparison.bars}
+              currentMonthLabel={analytics.monthlyComparison.currentMonthLabel}
+              previousMonthLabel={analytics.monthlyComparison.previousMonthLabel}
+            />
+          </AnalysisErrorBoundary>
 
-          <MonthEndForecastCard forecast={analytics.forecast} />
+          <AnalysisErrorBoundary label="Previsão de fim de mês">
+            <MonthEndForecastCard forecast={analytics.forecast} />
+          </AnalysisErrorBoundary>
 
           <View style={styles.periodSelector}>
             <SegmentedControl
@@ -130,16 +139,24 @@ export default function AnalisesScreen() {
             periodLabel={periodOption.label}
           />
 
-          <CategoryBreakdownList items={analytics.categoryBreakdown} />
+          <AnalysisErrorBoundary label="Categorias">
+            <CategoryBreakdownList items={analytics.categoryBreakdown} />
+          </AnalysisErrorBoundary>
 
-          <SpendingHeatmap transactions={transactions} />
+          <AnalysisErrorBoundary label="Heatmap de gastos">
+            <SpendingHeatmap transactions={transactions} />
+          </AnalysisErrorBoundary>
 
-          <SubscriptionsAnalysisSection analysis={analytics.subscriptionAnalysis} />
+          <AnalysisErrorBoundary label="Subscrições">
+            <SubscriptionsAnalysisSection analysis={analytics.subscriptionAnalysis} />
+          </AnalysisErrorBoundary>
 
-          <CreditsAnalysisSection
-            credits={analytics.credits}
-            monthlyIncome={analytics.monthlyIncome}
-          />
+          <AnalysisErrorBoundary label="Créditos">
+            <CreditsAnalysisSection
+              credits={analytics.credits}
+              monthlyIncome={analytics.monthlyIncome}
+            />
+          </AnalysisErrorBoundary>
 
           <TopMerchantsSection merchants={topMerchants} />
 

@@ -108,7 +108,8 @@
     "Fuzzy merchant matching — tabela merchant_groups + merchant_group_id em transactions (migration SQL); algoritmo Levenshtein + tokens + prefixo (threshold 0.65); sugestão bottom sheet 1.5s após guardar despesa; dismiss 7 dias via SecureStore",
     "Grupos de comerciantes — Definições → lista/renomear/aliases/eliminar; pesquisa em Movimentos (description + aliases); badge grupo na lista; Top comerciantes em Análises com comparação mês anterior",
     "Analytics — motor lib/insights (generateInsights, health-score, previsão, comparação mensal, heatmap); carousel de insights + score 0-100 no topo de Análises; categorias expandidas, subscrições, créditos com simulador amortização",
-    "Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros"
+    "Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros",
+    "FIX crash arranque pós-analytics — AnimatedCurrency (runOnJS sem formatter na UI thread), HealthScoreCard SVG transform, safe-analytics com try/catch, Error Boundaries em Análises"
   ],
   "pending": [
     "Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id",

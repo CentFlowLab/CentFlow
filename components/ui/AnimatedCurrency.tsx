@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text as RNText } from 'react-native';
 import Animated, {
   Easing,
@@ -17,26 +17,53 @@ type AnimatedCurrencyProps = {
 
 const AnimatedText = Animated.createAnimatedComponent(RNText);
 
+function sanitizeAmount(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return value;
+}
+
 export function AnimatedCurrency({
   value,
   formatter,
   style,
   duration = 600,
 }: AnimatedCurrencyProps) {
-  const animated = useSharedValue(value);
-  const [display, setDisplay] = useState(formatter(value));
+  const safeValue = sanitizeAmount(value);
+  const animated = useSharedValue(safeValue);
+
+  const formatValue = useCallback(
+    (raw: number) => {
+      try {
+        const rounded = Math.round(sanitizeAmount(raw) * 100) / 100;
+        return formatter(rounded);
+      } catch {
+        return '—';
+      }
+    },
+    [formatter],
+  );
+
+  const [display, setDisplay] = useState(() => formatValue(safeValue));
+
+  const syncDisplay = useCallback(
+    (raw: number) => {
+      setDisplay(formatValue(raw));
+    },
+    [formatValue],
+  );
 
   useEffect(() => {
-    animated.value = withTiming(value, {
+    syncDisplay(safeValue);
+    animated.value = withTiming(safeValue, {
       duration,
       easing: Easing.out(Easing.cubic),
     });
-  }, [value, duration, animated]);
+  }, [safeValue, duration, animated, syncDisplay]);
 
   useAnimatedReaction(
     () => animated.value,
     (current) => {
-      runOnJS(setDisplay)(formatter(Math.round(current * 100) / 100));
+      runOnJS(syncDisplay)(current);
     },
   );
 
