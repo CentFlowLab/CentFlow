@@ -8,6 +8,7 @@ import {
   PricesInsightsSection,
   SpendingCategoryCard,
   SpendingTrendBars,
+  TopMerchantsSection,
   TrendsSummaryCard,
 } from '@/components/analysis';
 import { AppHeader, SegmentedControl } from '@/components/layout';
@@ -18,8 +19,10 @@ import {
   SectionHeader,
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
+import { useMerchantGroups } from '@/hooks/queries/useMerchantGroups';
 import { usePricesData } from '@/hooks/queries/usePricesData';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import { computeMerchantGroupAnalytics } from '@/lib/merchants/group-analytics';
 import {
   ANALYSIS_PERIOD_OPTIONS,
   computeSpendingByCategory,
@@ -39,9 +42,15 @@ export default function AnalisesScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
   const { data: pricesData } = usePricesData();
   const { data: transactions = [] } = useTransactions('all');
+  const { data: merchantGroups = [] } = useMerchantGroups();
 
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
   const periodOption = getPeriodOption(period);
+
+  const topMerchants = useMemo(
+    () => computeMerchantGroupAnalytics(merchantGroups, transactions),
+    [merchantGroups, transactions],
+  );
 
   const periodCategories = useMemo(
     () => computeSpendingByCategory(transactions, periodOption.days),
@@ -93,6 +102,8 @@ export default function AnalisesScreen() {
             categories={periodCategories}
             periodLabel={periodOption.label}
           />
+
+          <TopMerchantsSection merchants={topMerchants} />
 
           <SectionHeader
             title="Métricas"

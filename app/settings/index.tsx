@@ -39,6 +39,11 @@ const MENU_SECTIONS: Array<{
         route: '/settings/appearance',
       },
       {
+        icon: { ios: 'storefront.fill', android: 'store', web: 'store' },
+        label: 'Grupos de comerciantes',
+        route: '/settings/merchant-groups',
+      },
+      {
         icon: { ios: 'hand.tap.fill', android: 'touch_app', web: 'touch_app' },
         label: 'Atalhos rápidos',
         route: '/settings/shortcuts',

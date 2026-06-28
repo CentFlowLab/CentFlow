@@ -53,6 +53,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     receiptId: row.receipt_id,
     receiptUrl: null,
     receiptImage: null,
+    merchantGroupId: row.merchant_group_id ?? null,
   };
 }
 

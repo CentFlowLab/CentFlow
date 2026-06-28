@@ -18,4 +18,5 @@ export const queryKeys = {
   liabilities: (userId: string) => ['liabilities', userId] as const,
   prices: ['prices'] as const,
   emailEvents: (userId: string) => ['email-events', userId] as const,
+  merchantGroups: (userId: string) => ['merchant-groups', userId] as const,
 } as const;

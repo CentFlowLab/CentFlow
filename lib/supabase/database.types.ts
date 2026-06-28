@@ -460,6 +460,36 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_groups: {
+        Row: {
+          aliases: string[]
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aliases?: string[]
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aliases?: string[]
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -468,6 +498,7 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          merchant_group_id: string | null
           receipt_id: string | null
           transaction_date: string
           type: string
@@ -481,6 +512,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          merchant_group_id?: string | null
           receipt_id?: string | null
           transaction_date?: string
           type: string
@@ -494,6 +526,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          merchant_group_id?: string | null
           receipt_id?: string | null
           transaction_date?: string
           type?: string

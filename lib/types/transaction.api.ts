@@ -23,6 +23,8 @@ export interface RawTransaction {
   receiptUrl?: string | null;
   receipt_image?: string | null;
   receiptImage?: string | null;
+  merchant_group_id?: string | null;
+  merchantGroupId?: string | null;
 }
 
 export interface RawTransactionsResponse {

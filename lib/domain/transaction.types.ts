@@ -27,6 +27,8 @@ export interface Transaction {
   receiptImage?: string | null;
   /** Itens de linha confirmados do talão */
   receiptItems?: ReceiptConfirmedItem[];
+  /** Grupo de comerciante (agrupamento fuzzy) */
+  merchantGroupId?: string | null;
 }
 
 export interface CreateTransactionInput {

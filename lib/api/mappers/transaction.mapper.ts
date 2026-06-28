@@ -69,6 +69,7 @@ export function mapTransaction(raw: RawTransaction): Transaction {
     receiptUrl: pick(raw.receiptUrl, raw.receipt_url) ?? null,
     receiptImage:
       pick(raw.receiptImage, raw.receipt_image, raw.receiptUrl, raw.receipt_url) ?? null,
+    merchantGroupId: pick(raw.merchantGroupId, raw.merchant_group_id)?.toString() ?? null,
   };
 }
 

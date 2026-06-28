@@ -3,6 +3,9 @@ import { useState } from 'react';
 
 import { queryKeys } from '@/lib/api/keys';
 import { invalidateTransactionQueries } from '@/lib/api/invalidate-queries';
+import { enrichTransactionsWithLocalGroups } from '@/lib/merchants/local-merchant-groups';
+import { publishMerchantSuggestionCheck } from '@/lib/merchants/suggestion-publisher';
+import { useAuth } from '@/lib/auth';
 import {
   applyOptimisticTransactionDelete,
   applyOptimisticTransactionUpdate,
@@ -15,7 +18,6 @@ import {
   fetchTransactions,
   updateTransaction,
 } from '@/lib/api/services/transaction.service';
-import { useAuth } from '@/lib/auth';
 import { logDoctorMutationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
 import type {
   CreateTransactionInput,
@@ -32,11 +34,16 @@ export {
 };
 
 export function useTransactions(filter: TransactionFilter = 'all') {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const userId = user?.id ?? '';
 
   return useQuery<Transaction[]>({
     queryKey: queryKeys.transactions({ filter }),
-    queryFn: () => fetchTransactions(filter),
+    queryFn: async () => {
+      const txs = await fetchTransactions(filter);
+      if (!userId) return txs;
+      return enrichTransactionsWithLocalGroups(userId, txs);
+    },
     enabled: isAuthenticated,
     staleTime: 1000 * 60 * 2,
   });
@@ -90,9 +97,21 @@ export function useCreateTransaction() {
       });
       queueMicrotask(() => setPhase(null));
     },
-    onSuccess: () => {
+    onSuccess: (outcome, variables) => {
       traceMovementStep('mutation_success', { component: 'useCreateTransaction' });
       invalidateTransactionQueries(queryClient);
+
+      const tx = outcome.transaction;
+      const description = variables.description?.trim();
+      if (tx && variables.type === 'expense' && description) {
+        publishMerchantSuggestionCheck({
+          movementId: tx.id,
+          description,
+          amount: tx.amount,
+          date: tx.date,
+          currency: tx.currency,
+        });
+      }
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {

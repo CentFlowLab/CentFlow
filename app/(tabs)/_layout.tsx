@@ -11,6 +11,7 @@ import {
 
 import { CreditPaymentReminderGate } from '@/components/assets';
 import { BackTapGuideGate } from '@/components/onboarding';
+import { MerchantGroupSuggestionGate } from '@/components/movements/MerchantGroupSuggestionGate';
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
@@ -164,6 +165,7 @@ function TabLayoutInner() {
     </Tabs>
     <CreditPaymentReminderGate />
     <BackTapGuideGate />
+    <MerchantGroupSuggestionGate />
     </>
   );
 }

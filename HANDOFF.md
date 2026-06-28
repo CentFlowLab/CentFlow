@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T19:34:17.615Z -->
-<!-- Git: 681c11e (2026-06-27T20:01:19+01:00) -->
+<!-- Última geração: 2026-06-28T23:03:03.396Z -->
+<!-- Git: 7f55d52 (2026-06-27T20:34:34+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
-| Última geração | 2026-06-27T19:34:17.615Z |
+| Fase atual | **Fase 12 — Agrupamento inteligente de despesas (fuzzy merchant matching + grupos de comerciantes)** |
+| Última geração | 2026-06-28T23:03:03.396Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `681c11e` (2026-06-27T20:01:19+01:00) |
+| Git commit | `7f55d52` (2026-06-27T20:34:34+01:00) |
 
 ---
 
@@ -163,6 +163,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     export-data.tsx
     export-pdf.tsx
     index.tsx
+    merchant-groups.tsx
     notifications.tsx
     personal-data.tsx
     privacy.tsx
@@ -176,6 +177,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     PricesInsightsSection.tsx
     SpendingCategoryCard.tsx
     SpendingTrendBars.tsx
+    TopMerchantsSection.tsx
     TrendsSummaryCard.tsx
     index.ts
   app/
@@ -252,6 +254,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     ConfirmReceiptModal.tsx
     EditTransactionModal.tsx
     ImportCsvModal.tsx
+    MerchantGroupSuggestionGate.tsx
+    MerchantGroupSuggestionSheet.tsx
     MovementFilterChips.tsx
     OcrDetectionSummary.tsx
     OcrResultCard.tsx
@@ -353,6 +357,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useFinancialProfile.ts
     useHomeScreenData.ts
     useLiabilities.ts
+    useMerchantGroups.ts
     useNetWorth.ts
     useOnboardingAnswers.ts
     usePatrimonyAllocation.ts
@@ -497,6 +502,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     goal.utils.ts
     home.types.ts
     index.ts
+    merchant-group.types.ts
     net-worth-monthly.ts
     net-worth-projection.test.ts
     net-worth.service.test.ts
@@ -542,6 +548,16 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     tab-bar-metrics.ts
   liabilities/
     liabilities.service.ts
+  merchants/
+    __tests__/
+      fuzzy-match.test.ts
+    dismissed-suggestions.ts
+    fuzzy-match.ts
+    group-analytics.ts
+    local-merchant-groups.ts
+    merchant-groups.service.ts
+    suggestion-publisher.ts
+    transaction-search.ts
   migrations/
     index.ts
     migrationRunner.ts
@@ -670,7 +686,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado
+## Fase atual: Fase 12 — Agrupamento inteligente de despesas (fuzzy merchant matching + grupos de comerciantes)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -775,8 +791,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - FaceID — escape de emergência sempre visível (entrar com email e password → desativa biometria + signOut); após 3 falhas passa a ação primária; 'Terminar sessão' sempre disponível
 - Definições → Segurança — desativar biometria exige confirmação por password (Alert.prompt iOS, valida via authService.login), nunca por FaceID
 - HOTFIX loop de FaceID bem-sucedido — distinção determinística entre 'inactive' (provocado pelo diálogo de FaceID) e 'background' real: só repede biometria após background genuíno (hasBackgroundedRef), eliminando o ciclo de autenticações com sucesso; removido o cooldown frágil baseado em tempo
+- Fuzzy merchant matching — tabela merchant_groups + merchant_group_id em transactions (migration SQL); algoritmo Levenshtein + tokens + prefixo (threshold 0.65); sugestão bottom sheet 1.5s após guardar despesa; dismiss 7 dias via SecureStore
+- Grupos de comerciantes — Definições → lista/renomear/aliases/eliminar; pesquisa em Movimentos (description + aliases); badge grupo na lista; Top comerciantes em Análises com comparação mês anterior
 
 ### 🔲 Pendente
+- Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
 - Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push) — necessária para editar comissão de amortização; a criação normal de crédito já não depende dela
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)

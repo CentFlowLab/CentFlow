@@ -5,4 +5,5 @@ export { PatrimonyAllocationCard } from './PatrimonyAllocationCard';
 export { PricesInsightsSection } from './PricesInsightsSection';
 export { SpendingCategoryCard } from './SpendingCategoryCard';
 export { SpendingTrendBars } from './SpendingTrendBars';
+export { TopMerchantsSection } from './TopMerchantsSection';
 export { TrendsSummaryCard } from './TrendsSummaryCard';

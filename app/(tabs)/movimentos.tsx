@@ -17,9 +17,10 @@ import {
   TransactionsSkeleton,
   type MovementTab,
 } from '@/components/movements';
-import { EmptyState, ErrorState, Text } from '@/components/ui';
+import { EmptyState, ErrorState, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
+import { useMerchantGroups } from '@/hooks/queries/useMerchantGroups';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
@@ -38,16 +39,25 @@ import {
   summarizeCurrentMonth,
 } from '@/lib/domain/transaction-grouping';
 import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
+import {
+  filterTransactionsBySearch,
+  getMerchantGroupName,
+} from '@/lib/merchants/transaction-search';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
 export default function MovimentosScreen() {
   useDiagnosticScreen('movements');
 
-  const { action, view } = useLocalSearchParams<{ action?: string; view?: string }>();
+  const { action, view, group: groupFilter } = useLocalSearchParams<{
+    action?: string;
+    view?: string;
+    group?: string;
+  }>();
   const handledAction = useRef(false);
   const handledRouteAction = useRef<string | null>(null);
   const suppressDetectionRef = useRef(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState<MovementsView>('movimentos');
   const [filter, setFilter] = useState<TransactionFilter>('all');
   const [modalVisible, setModalVisible] = useState(false);
@@ -77,7 +87,15 @@ export default function MovimentosScreen() {
   } = useSubscriptionDetection();
 
   const subscriptions = liabilities?.subscriptions ?? [];
-  const transactions = useMemo(() => data ?? [], [data]);
+  const { data: merchantGroups = [] } = useMerchantGroups();
+  const rawTransactions = useMemo(() => data ?? [], [data]);
+  const transactions = useMemo(() => {
+    let list = rawTransactions;
+    if (groupFilter) {
+      list = list.filter((tx) => tx.merchantGroupId === groupFilter);
+    }
+    return filterTransactionsBySearch(list, searchQuery, merchantGroups);
+  }, [rawTransactions, searchQuery, merchantGroups, groupFilter]);
   const { data: onboardingAnswers } = useOnboardingAnswers();
   const emptyDescription = getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
@@ -233,6 +251,15 @@ export default function MovimentosScreen() {
 
       <View style={styles.filters}>
         <MovementFilterChips value={activeTab} onChange={handleTabChange} />
+        {activeView === 'movimentos' ? (
+          <TextField
+            label="Pesquisar"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Descrição ou grupo (ex: café)"
+            style={styles.searchField}
+          />
+        ) : null}
       </View>
 
       {activeView === 'movimentos' ? (
@@ -258,6 +285,7 @@ export default function MovimentosScreen() {
               renderItem={({ item }) => (
                 <SwipeableTransactionListItem
                   transaction={item}
+                  merchantGroupName={getMerchantGroupName(item.merchantGroupId, merchantGroups)}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
@@ -407,6 +435,11 @@ const styles = StyleSheet.create({
   },
   filters: {
     marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  searchField: {
+    marginTop: spacing.xs,
   },
   listPadding: {
     paddingHorizontal: spacing.lg,

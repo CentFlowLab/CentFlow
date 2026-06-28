@@ -12,12 +12,14 @@ const ACTION_ICON_COLOR = '#FFFFFF';
 
 type SwipeableTransactionListItemProps = {
   transaction: Transaction;
+  merchantGroupName?: string;
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
 };
 
 export function SwipeableTransactionListItem({
   transaction,
+  merchantGroupName,
   onEdit,
   onDelete,
 }: SwipeableTransactionListItemProps) {
@@ -110,6 +112,7 @@ export function SwipeableTransactionListItem({
           </Text>
           <Text variant="caption" color="textMuted" numberOfLines={1}>
             {transaction.categoryLabel} · {formatDateShort(transaction.date)}
+            {merchantGroupName ? ` · grupo: ${merchantGroupName}` : ''}
             {hasReceipt ? ' · Talão' : ''}
           </Text>
         </View>
