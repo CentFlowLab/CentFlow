@@ -1,20 +1,36 @@
 import { authService } from '@/lib/auth';
 import { fetchLiabilitiesForUser } from '@/lib/liabilities/liabilities.service';
+import type { Subscription } from '@/lib/domain/assets.types';
 import type { Credit } from '@/lib/domain/types';
 
+export type LiabilitiesFetchResult = {
+  credits: Credit[];
+  subscriptions: Subscription[];
+  loadFailed: boolean;
+};
+
 /**
- * Créditos do utilizador autenticado.
- * Em caso de falha devolve [] para não bloquear o dashboard, mas regista o erro
- * (capturado pelo Doctor) — caso contrário o património líquido apareceria
- * inflacionado sem qualquer sinal de que os passivos não foram carregados.
+ * Passivos do utilizador autenticado para o ecrã Início.
+ * Em caso de falha devolve listas vazias e loadFailed=true — o património
+ * líquido pode aparecer inflacionado; a Home mostra um aviso nesse caso.
  */
-export async function fetchCreditsForCurrentUser(): Promise<Credit[]> {
+export async function fetchLiabilitiesForHome(): Promise<LiabilitiesFetchResult> {
   try {
     const user = await authService.getCurrentUser();
     const liabilities = await fetchLiabilitiesForUser(user.id);
-    return liabilities.credits;
+    return {
+      credits: liabilities.credits,
+      subscriptions: liabilities.subscriptions,
+      loadFailed: false,
+    };
   } catch (error) {
-    console.warn('[liabilities] Falha ao carregar créditos do utilizador.', error);
-    return [];
+    console.warn('[liabilities] Falha ao carregar passivos do utilizador.', error);
+    return { credits: [], subscriptions: [], loadFailed: true };
   }
+}
+
+/** @deprecated Preferir fetchLiabilitiesForHome() para distinguir falhas de carga. */
+export async function fetchCreditsForCurrentUser(): Promise<Credit[]> {
+  const { credits } = await fetchLiabilitiesForHome();
+  return credits;
 }

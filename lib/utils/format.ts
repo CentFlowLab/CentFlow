@@ -22,6 +22,7 @@ export function formatCurrency(
   value: number,
   currency: string = activeCurrency,
 ): string {
+  if (!Number.isFinite(value)) return '—';
   return new Intl.NumberFormat(activeLocale, {
     style: 'currency',
     currency,
@@ -36,6 +37,7 @@ export function formatPercent(value: number, decimals = 1, showSign = true): str
 }
 
 export function formatCompactCurrency(value: number, currency = activeCurrency): string {
+  if (!Number.isFinite(value)) return '—';
   if (Math.abs(value) >= 1000) {
     return new Intl.NumberFormat(activeLocale, {
       style: 'currency',

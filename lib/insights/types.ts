@@ -65,4 +65,5 @@ export interface HealthScoreResult {
     subscriptions: HealthScoreComponentResult;
   };
   status: HealthScoreStatus;
+  hasSufficientData: boolean;
 }

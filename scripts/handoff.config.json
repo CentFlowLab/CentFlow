@@ -109,7 +109,8 @@
     "Grupos de comerciantes — Definições → lista/renomear/aliases/eliminar; pesquisa em Movimentos (description + aliases); badge grupo na lista; Top comerciantes em Análises com comparação mês anterior",
     "Analytics — motor lib/insights (generateInsights, health-score, previsão, comparação mensal, heatmap); carousel de insights + score 0-100 no topo de Análises; categorias expandidas, subscrições, créditos com simulador amortização",
     "Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros",
-    "FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido"
+    "FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido",
+    "P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction"
   ],
   "pending": [
     "Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id",

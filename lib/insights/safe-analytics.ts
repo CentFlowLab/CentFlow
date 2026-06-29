@@ -23,6 +23,7 @@ function emptyHealthScore(): HealthScoreResult {
   return {
     total: 0,
     status: 'critical',
+    hasSufficientData: false,
     components: {
       savings: { ...neutral, label: 'Poupança' },
       cashflow: { ...neutral, label: 'Fluxo de caixa' },

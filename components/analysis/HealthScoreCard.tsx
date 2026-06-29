@@ -32,6 +32,26 @@ type HealthScoreCardProps = {
 };
 
 export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
+  if (!score.hasSufficientData) {
+    return (
+      <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
+        <Card variant="elevated" style={styles.card}>
+          <Text variant="label" color="textMuted">
+            Saúde financeira
+          </Text>
+          <View style={styles.insufficientWrap}>
+            <Text variant="h3" align="center">
+              Sem dados suficientes
+            </Text>
+            <Text variant="body" color="textSecondary" align="center" style={styles.insufficientSubtitle}>
+              Regista movimentos de rendimento e despesas para calcularmos o teu score.
+            </Text>
+          </View>
+        </Card>
+      </Pressable>
+    );
+  }
+
   const totalScore = Number.isFinite(score.total) ? Math.max(0, Math.min(100, score.total)) : 0;
   const progress = useSharedValue(0);
   const [displayScore, setDisplayScore] = useState(0);
@@ -148,5 +168,14 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.94,
+  },
+  insufficientWrap: {
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  insufficientSubtitle: {
+    lineHeight: 22,
+    maxWidth: 280,
   },
 });

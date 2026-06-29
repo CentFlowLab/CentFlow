@@ -16,6 +16,37 @@ export function HealthScoreBreakdownSheet({
   score,
   onClose,
 }: HealthScoreBreakdownSheetProps) {
+  if (!score.hasSufficientData) {
+    return (
+      <DraggableBottomSheet
+        visible={visible}
+        onClose={onClose}
+        maxHeight="70%"
+        header={<Text variant="bodyMedium">Detalhe da saúde financeira</Text>}>
+        <View style={styles.content}>
+          <Text variant="h3" align="center">
+            Sem dados suficientes
+          </Text>
+          <Text variant="body" color="textSecondary" style={styles.explanation}>
+            O score de saúde financeira combina 5 componentes, cada um com 0 a 20 pontos (total
+            máximo 100):
+          </Text>
+          <View style={styles.componentList}>
+            {Object.values(score.components).map((component) => (
+              <Text key={component.label} variant="bodyMedium">
+                • {component.label} (0–{component.max})
+              </Text>
+            ))}
+          </View>
+          <Text variant="caption" color="textMuted" style={styles.explanation}>
+            Regista pelo menos 3 movimentos este mês ou adiciona rendimentos, despesas, créditos ou
+            subscrições para obteres uma avaliação fiável.
+          </Text>
+        </View>
+      </DraggableBottomSheet>
+    );
+  }
+
   return (
     <DraggableBottomSheet
       visible={visible}
@@ -77,5 +108,12 @@ const styles = StyleSheet.create({
   barFill: {
     height: '100%',
     borderRadius: 3,
+  },
+  explanation: {
+    lineHeight: 22,
+  },
+  componentList: {
+    gap: spacing.xs,
+    paddingLeft: spacing.sm,
   },
 });

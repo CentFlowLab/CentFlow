@@ -23,7 +23,13 @@ export function HomeAlertsSection({
   const hasSuggestions = topSuggestions.length > 0;
 
   if (!hasAttention && !hasSuggestions) {
-    return null;
+    return (
+      <View style={styles.wrap}>
+        <Text variant="caption" color="textMuted" align="center">
+          Nada urgente por agora
+        </Text>
+      </View>
+    );
   }
 
   return (

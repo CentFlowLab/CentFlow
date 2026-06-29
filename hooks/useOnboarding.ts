@@ -79,7 +79,7 @@ export function useOnboarding() {
   }, [queryClient, userId]);
 
   return {
-    completed: bypass ? true : isError ? true : (completed ?? null),
+    completed: bypass ? true : isError ? null : (completed ?? null),
     isLoading: !bypass && Boolean(userId) && isPending,
     isError,
     complete,

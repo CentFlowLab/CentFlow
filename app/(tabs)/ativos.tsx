@@ -240,6 +240,7 @@ export default function AtivosScreen() {
                   inventory={assets.inventory}
                   onEdit={openEditInventory}
                   onLearnMore={handleLearnMore}
+                  onPrimaryAction={openCreateInventory}
                   onDelete={(item) => deleteInventory.mutate(item.id)}
                 />
               </FeatureAreaGate>

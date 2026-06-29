@@ -22,4 +22,6 @@ export type HomeScreenData = DashboardData & {
   recentTransactions: Transaction[];
   /** Objetivo principal para destaque personalizado no Início */
   featuredGoal: HomeFeaturedGoal | null;
+  /** Créditos/passivos não carregados — património pode estar incompleto */
+  liabilitiesLoadFailed?: boolean;
 };

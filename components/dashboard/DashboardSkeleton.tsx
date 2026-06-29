@@ -17,24 +17,21 @@ export function DashboardSkeleton() {
         </View>
       </Card>
 
-      <Card variant="elevated" style={styles.assistantCard}>
-        <Skeleton width="30%" height={12} />
-        {[1, 2].map((i) => (
-          <View key={i} style={styles.insightRow}>
-            <Skeleton width={28} height={28} borderRadius={radius.md} />
-            <SkeletonGroup gap={spacing.xs} style={styles.insightText}>
-              <Skeleton width="75%" height={14} />
-              <Skeleton width="90%" height={12} />
-            </SkeletonGroup>
-          </View>
-        ))}
-      </Card>
-
-      <Card variant="elevated" style={styles.scoreCard}>
-        <Skeleton width="40%" height={12} />
-        <Skeleton width="25%" height={32} style={styles.mtSm} />
-        <Skeleton width="100%" height={6} style={styles.mtMd} />
-      </Card>
+      <View style={styles.alertsBlock}>
+        <Skeleton width="50%" height={14} />
+        <Card variant="elevated" style={styles.alertCard}>
+          <SkeletonGroup gap={spacing.xs}>
+            <Skeleton width="80%" height={14} />
+            <Skeleton width="60%" height={12} />
+          </SkeletonGroup>
+        </Card>
+        <Card variant="elevated" style={styles.alertCard}>
+          <SkeletonGroup gap={spacing.xs}>
+            <Skeleton width="75%" height={14} />
+            <Skeleton width="55%" height={12} />
+          </SkeletonGroup>
+        </Card>
+      </View>
     </View>
   );
 }
@@ -47,27 +44,17 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginBottom: spacing.sm,
   },
-  assistantCard: {
-    gap: spacing.md,
+  alertsBlock: {
+    gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  scoreCard: {
+  alertCard: {
     gap: spacing.xs,
-    marginBottom: spacing.sm,
   },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: spacing.md,
   },
-  insightRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'center',
-  },
-  insightText: {
-    flex: 1,
-  },
   mtSm: { marginTop: spacing.sm },
-  mtMd: { marginTop: spacing.md },
 });

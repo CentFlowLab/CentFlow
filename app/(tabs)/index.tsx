@@ -14,11 +14,12 @@ import {
   HomeAttentionSheet,
   HomePersonalizedInsightCard,
   HomePostOnboardingWelcomeCard,
+  NetWorthHeroCard,
 } from '@/components/dashboard';
 import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
-import { AddTransactionModal } from '@/components/movements';
-import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
+import { AddTransactionModal, QuickExpenseSheet } from '@/components/movements';
+import { ErrorState, RefetchingIndicator, ScreenContainer, Text } from '@/components/ui';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
@@ -28,6 +29,8 @@ import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import type { AssistantActionId } from '@/lib/domain/financial';
+import type { HomeScreenData } from '@/lib/domain/home.types';
+import type { OnboardingAnswers } from '@/lib/onboarding/types';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import {
   getHomeAssetsSummaryHints,
@@ -36,22 +39,42 @@ import {
   type HomeSectionId,
 } from '@/lib/onboarding/personalization';
 import { mergeHomeSuggestions } from '@/lib/onboarding/suggestions-bridge';
-import { colors, spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 
-export default function InicioScreen() {
-  useDiagnosticScreen('home');
+type HomeScreenContentProps = {
+  data: HomeScreenData;
+  onboardingAnswers: OnboardingAnswers | null | undefined;
+  firstName: string;
+  isRefetching: boolean;
+  refetch: () => void;
+};
 
-  const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
-  const { data: onboardingAnswers } = useOnboardingAnswers();
-  const { data: profile } = useProfile();
+function LiabilitiesLoadFailedBanner() {
+  return (
+    <View style={styles.liabilitiesBanner}>
+      <Text variant="caption" color="warning">
+        Não foi possível carregar créditos — o património pode estar incompleto.
+      </Text>
+    </View>
+  );
+}
+
+function HomeScreenContent({
+  data,
+  onboardingAnswers,
+  firstName,
+  isRefetching,
+  refetch,
+}: HomeScreenContentProps) {
+  const { assistant } = useCentFlowIntelligence();
+  const { contentBottomPadding } = useResponsiveLayout();
+
   const [addMovementVisible, setAddMovementVisible] = useState(false);
+  const [quickExpenseVisible, setQuickExpenseVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
   const [spendableVisible, setSpendableVisible] = useState(false);
   const [actionCenterVisible, setActionCenterVisible] = useState(false);
-
-  const { assistant } = useCentFlowIntelligence();
-  const { contentBottomPadding } = useResponsiveLayout();
 
   const openAddMovement = () => {
     traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: false });
@@ -73,6 +96,7 @@ export default function InicioScreen() {
   const quickAdd = useContextualQuickAdd(
     'home',
     {
+      onQuickExpense: () => setQuickExpenseVisible(true),
       onMovement: openAddMovement,
       onReceipt: openReceiptScanner,
       onAsset: () => router.push('/(tabs)/ativos?action=new-asset'),
@@ -107,57 +131,25 @@ export default function InicioScreen() {
     }
   }
 
-  const header = (
-    <AppHeader
-      leading={<DashboardHeaderLeading />}
-      showBrand={false}
-      action={{
-        icon: (
-          <SymbolView
-            name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
-            tintColor={colors.primary}
-            size={26}
-          />
-        ),
-        onPress: quickAdd.handlePress,
-        accessibilityLabel: quickAdd.accessibilityLabel,
-      }}
-    />
-  );
-
-  if (isLoading) {
-    return (
-      <View style={styles.screen}>
-        {header}
-        <ScreenContainer applyBottomSafeInset={false}>
-          <DashboardSkeleton />
-        </ScreenContainer>
-      </View>
-    );
-  }
-
-  if (isError || !data) {
-    return (
-      <View style={styles.screen}>
-        {header}
-        <View style={styles.centered}>
-          <ErrorState
-            context="dashboard"
-            error={error}
-            onRetry={() => refetch()}
-            retryLoading={isRefetching}
-          />
-        </View>
-      </View>
-    );
-  }
-
   const {
     assetsSummary,
     dataSource,
     attentionItems,
     suggestions,
+    netWorth,
+    netWorthChangePercent,
+    netWorthChangeThisMonth,
+    weeklySpending,
+    projection,
+    recentTransactions,
+    liabilitiesLoadFailed,
   } = data;
+
+  const hasActivity = recentTransactions.length > 0 || attentionItems.length > 0;
+  const showWelcomeCard =
+    onboardingAnswers?.completed &&
+    recentTransactions.length === 0 &&
+    attentionItems.length === 0;
 
   const assetsHints = getHomeAssetsSummaryHints(onboardingAnswers ?? null);
   const sectionOrder = getHomeSectionOrder(onboardingAnswers ?? null);
@@ -167,7 +159,6 @@ export default function InicioScreen() {
     warrantiesCount: assetsSummary.warrantiesCount,
     hasFeaturedGoal: assetsSummary.goalsCount > 0,
   });
-  const firstName = profile?.name?.split(' ')[0] ?? '';
 
   const homeSections: Record<HomeSectionId, ReactNode> = {
     spendable: (
@@ -194,6 +185,24 @@ export default function InicioScreen() {
     ),
   };
 
+  const header = (
+    <AppHeader
+      leading={<DashboardHeaderLeading />}
+      showBrand={false}
+      action={{
+        icon: (
+          <SymbolView
+            name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
+            tintColor={colors.primary}
+            size={26}
+          />
+        ),
+        onPress: quickAdd.handlePress,
+        accessibilityLabel: quickAdd.accessibilityLabel,
+      }}
+    />
+  );
+
   return (
     <View style={styles.screen}>
       {header}
@@ -214,8 +223,21 @@ export default function InicioScreen() {
         <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
-          {onboardingAnswers?.completed ? (
-            <HomePostOnboardingWelcomeCard answers={onboardingAnswers} firstName={firstName} />
+          {liabilitiesLoadFailed ? <LiabilitiesLoadFailedBanner /> : null}
+
+          <NetWorthHeroCard
+            netWorth={netWorth}
+            changePercent={netWorthChangePercent}
+            monthlyChange={netWorthChangeThisMonth}
+            weeklySpending={weeklySpending}
+            futureMovementsDelta={projection.futureMovementsDelta}
+            hasActivity={hasActivity}
+            onAddMovement={openAddMovement}
+            onScanReceipt={openReceiptScanner}
+          />
+
+          {showWelcomeCard ? (
+            <HomePostOnboardingWelcomeCard answers={onboardingAnswers!} firstName={firstName} />
           ) : null}
 
           {personalizedInsight ? (
@@ -232,6 +254,11 @@ export default function InicioScreen() {
         visible={addMovementVisible}
         onClose={closeAddMovement}
         startWithReceiptPicker={startWithReceiptPicker}
+      />
+
+      <QuickExpenseSheet
+        visible={quickExpenseVisible}
+        onClose={() => setQuickExpenseVisible(false)}
       />
 
       <QuickAddMenuSheet
@@ -264,6 +291,71 @@ export default function InicioScreen() {
   );
 }
 
+export default function InicioScreen() {
+  useDiagnosticScreen('home');
+
+  const { data, isLoading, isError, error, refetch, isRefetching } = useHomeScreenData();
+  const { data: onboardingAnswers } = useOnboardingAnswers();
+  const { data: profile } = useProfile();
+
+  const firstName = profile?.name?.split(' ')[0] ?? '';
+
+  const header = (
+    <AppHeader
+      leading={<DashboardHeaderLeading />}
+      showBrand={false}
+      action={{
+        icon: (
+          <SymbolView
+            name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
+            tintColor={colors.primary}
+            size={26}
+          />
+        ),
+        onPress: () => {},
+        accessibilityLabel: 'Adicionar',
+      }}
+    />
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.screen}>
+        {header}
+        <ScreenContainer applyBottomSafeInset={false}>
+          <DashboardSkeleton />
+        </ScreenContainer>
+      </View>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <View style={styles.screen}>
+        {header}
+        <View style={styles.centered}>
+          <ErrorState
+            context="dashboard"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <HomeScreenContent
+      data={data}
+      onboardingAnswers={onboardingAnswers}
+      firstName={firstName}
+      isRefetching={isRefetching}
+      refetch={refetch}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -277,5 +369,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
+  },
+  liabilitiesBanner: {
+    alignSelf: 'stretch',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(251, 191, 36, 0.14)',
+    borderWidth: 1,
+    borderColor: colors.warning,
+    marginBottom: spacing.md,
   },
 });

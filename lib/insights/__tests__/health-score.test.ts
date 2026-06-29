@@ -28,7 +28,9 @@ describe('calculateHealthScore', () => {
       transactionCountThisMonth: 1,
     });
     assert.equal(result.components.savings.hasData, false);
-    assert.ok(result.total > 0);
+    assert.equal(result.hasSufficientData, false);
+    assert.equal(result.total, 0);
+    assert.equal(result.status, 'warning');
   });
 
   it('dívida elevada reduz score', () => {

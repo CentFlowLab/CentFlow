@@ -102,19 +102,34 @@ export function calculateHealthScore(input: HealthScoreInput): HealthScoreResult
     },
   };
 
-  const total = clamp(
-    components.savings.score +
-      components.cashflow.score +
-      components.debt.score +
-      components.budget.score +
-      components.subscriptions.score,
-    0,
-    100,
+  const transactionCountThisMonth = Number.isFinite(input.transactionCountThisMonth)
+    ? input.transactionCountThisMonth
+    : 0;
+
+  const hasSufficientData = !(
+    transactionCountThisMonth < 3 &&
+    monthlyIncome <= 0 &&
+    monthlyExpenses <= 0 &&
+    totalDebt <= 0 &&
+    monthlySubscriptionCost <= 0
   );
+
+  const total = hasSufficientData
+    ? clamp(
+        components.savings.score +
+          components.cashflow.score +
+          components.debt.score +
+          components.budget.score +
+          components.subscriptions.score,
+        0,
+        100,
+      )
+    : 0;
 
   return {
     total,
     components,
-    status: statusFromTotal(total),
+    status: hasSufficientData ? statusFromTotal(total) : 'warning',
+    hasSufficientData,
   };
 }

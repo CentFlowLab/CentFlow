@@ -3,6 +3,7 @@ import { buildAttentionItems } from './attention-items';
 import type { Suggestion } from './types';
 import { calculateMonthlyNetWorthMetrics } from './net-worth-monthly';
 import type { AssetsData } from './assets.types';
+import type { Subscription } from './assets.types';
 import type { DashboardData } from './types';
 import type { Transaction } from './transaction.types';
 import type { Credit } from './types';
@@ -37,6 +38,7 @@ export function composeDashboardFromLocalSources(input: {
   transactions: Transaction[];
   assets: AssetsData;
   credits?: Credit[];
+  subscriptions?: Subscription[];
   /** Data de referência — útil em testes; omissão = hoje. */
   asOf?: Date;
 }): DashboardData {
@@ -86,7 +88,7 @@ export function composeDashboardFromLocalSources(input: {
   const attentionItems = buildAttentionItems({
     warranties: input.assets.warranties,
     credits,
-    subscriptions: input.assets.subscriptions,
+    subscriptions: input.subscriptions ?? input.assets.subscriptions,
     goals: input.assets.goals,
     asOf,
   });

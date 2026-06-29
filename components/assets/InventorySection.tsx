@@ -16,6 +16,7 @@ type InventorySectionProps = {
   inventory: InventoryItem[];
   onEdit?: (item: InventoryItem) => void;
   onLearnMore?: () => void;
+  onPrimaryAction?: () => void;
   onDelete?: (item: InventoryItem) => void;
 };
 
@@ -23,6 +24,7 @@ export function InventorySection({
   inventory,
   onEdit,
   onLearnMore,
+  onPrimaryAction,
   onDelete,
 }: InventorySectionProps) {
   const { data: answers } = useOnboardingAnswers();
@@ -43,6 +45,7 @@ export function InventorySection({
       <View style={styles.container}>
         <AssetsEmptyState
           config={emptyConfig}
+          onPrimaryAction={onPrimaryAction}
           onSecondaryAction={onLearnMore}
         />
       </View>
