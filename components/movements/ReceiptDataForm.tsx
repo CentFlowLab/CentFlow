@@ -80,7 +80,7 @@ export function ReceiptDataForm({
     <View style={styles.container}>
       <View style={styles.fields}>
         <TextField
-          label="Loja"
+          label="Comerciante / Produto"
           value={values.merchantName}
           onChangeText={(v) => update('merchantName', v)}
           placeholder="Ex: Continente, Galp, Worten"
@@ -132,10 +132,10 @@ export function ReceiptDataForm({
         />
 
         <TextField
-          label="Descrição (opcional)"
+          label="Nota (opcional)"
           value={values.description}
           onChangeText={(v) => update('description', v)}
-          placeholder="Notas sobre a compra"
+          placeholder="Ex: Compras da semana"
           maxLength={200}
           ocrHighlighted={isOcr('description')}
           ocrEdited={isEdited('description')}

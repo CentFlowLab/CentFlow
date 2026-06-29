@@ -156,6 +156,11 @@ export async function createTransaction(
     amount: input.confirmation?.amount ?? input.amount,
     category: input.confirmation?.category ?? input.category,
     description: input.confirmation?.description ?? input.description,
+    merchant:
+      input.confirmation?.merchant?.trim() ||
+      input.confirmation?.merchantName?.trim() ||
+      input.merchant?.trim() ||
+      undefined,
     date: input.confirmation?.date ?? input.date,
   };
 

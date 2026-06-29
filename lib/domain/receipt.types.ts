@@ -73,6 +73,8 @@ export interface ReceiptConfirmedItem {
 export interface ReceiptConfirmationInput {
   type: TransactionType;
   merchantName: string;
+  /** Nome do comerciante persistido na transação */
+  merchant?: string;
   amount: number;
   category: string;
   description?: string;

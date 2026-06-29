@@ -19,6 +19,7 @@ import { queryKeys } from '@/lib/api/keys';
 import { getCategoriesForType } from '@/lib/data/transaction-categories';
 
 import { CategoryField } from './CategoryField';
+import { MerchantAutocompleteField } from './MerchantAutocompleteField';
 import { formValuesToConfirmation } from '@/lib/domain/receipt-confirmation';
 import { createTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
@@ -93,6 +94,7 @@ export function AddTransactionModal({
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
+  const [merchant, setMerchant] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayInputDate());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -118,6 +120,7 @@ export function AddTransactionModal({
     setType(initialType);
     setAmount('');
     setCategory(defaultCategory);
+    setMerchant('');
     setDescription('');
     setDate(todayInputDate());
     setErrors({});
@@ -229,7 +232,8 @@ export function AddTransactionModal({
     setType(values.type);
     setAmount(values.amount);
     setCategory(values.category);
-    setDescription(values.description || values.merchantName);
+    setMerchant(values.merchantName);
+    setDescription(values.description);
     setDate(values.date);
   }
 
@@ -270,6 +274,7 @@ export function AddTransactionModal({
       amount: parsedAmount,
       category,
       description: description.trim() || undefined,
+      merchant: merchant.trim() || undefined,
       date,
     });
 
@@ -442,7 +447,7 @@ export function AddTransactionModal({
   const isDirty = useMemo(() => {
     if (!visible) return false;
     if (showConfirm || receiptImage.draft || processedReceipt || manualFillMode) return true;
-    return formHasAnyText(amount, category, description);
+    return formHasAnyText(amount, category, merchant, description);
   }, [
     visible,
     showConfirm,
@@ -451,6 +456,7 @@ export function AddTransactionModal({
     manualFillMode,
     amount,
     category,
+    merchant,
     description,
   ]);
 
@@ -599,15 +605,24 @@ export function AddTransactionModal({
               error={errors.category}
             />
 
+            <MerchantAutocompleteField
+              value={merchant}
+              onChangeText={(text) => {
+                traceMovementStep('field_change', { field: 'merchant', len: text.length });
+                setMerchant(text);
+              }}
+              error={errors.merchant}
+            />
+
             <TextField
-              label="Descrição (opcional)"
+              label="Nota (opcional)"
               diagnosticField="description"
               value={description}
               onChangeText={(text) => {
                 traceMovementStep('field_change', { field: 'description', len: text.length });
                 setDescription(text);
               }}
-              placeholder="Ex: Jantar com amigos"
+              placeholder="Ex: Compras da semana"
               maxLength={200}
             />
 

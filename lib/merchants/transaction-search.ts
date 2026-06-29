@@ -2,7 +2,7 @@ import { normalize } from '@/lib/merchants/fuzzy-match';
 import type { MerchantGroup } from '@/lib/domain/merchant-group.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
-/** Pesquisa em description e aliases de grupos do utilizador. */
+/** Pesquisa em description, merchant e aliases de grupos do utilizador. */
 export function filterTransactionsBySearch(
   transactions: Transaction[],
   query: string,
@@ -25,6 +25,8 @@ export function filterTransactionsBySearch(
   return transactions.filter((tx) => {
     const desc = tx.description?.trim();
     if (desc && normalize(desc).includes(q)) return true;
+    const merchant = tx.merchant?.trim();
+    if (merchant && normalize(merchant).includes(q)) return true;
     if (tx.merchantGroupId && aliasMatchGroupIds.has(tx.merchantGroupId)) return true;
     if (tx.merchantGroupId) {
       const group = groupById.get(tx.merchantGroupId);

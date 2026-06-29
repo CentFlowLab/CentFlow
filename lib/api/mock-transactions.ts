@@ -106,6 +106,7 @@ export async function createMockTransaction(
     category: input.category,
     categoryLabel: getCategoryLabel(input.category, input.type),
     description: input.description,
+    merchant: input.merchant,
     date: input.date,
     currency: 'EUR',
     receiptId: receipt?.receiptId ?? null,
@@ -148,6 +149,7 @@ export async function updateMockTransaction(
     category: input.category,
     categoryLabel: getCategoryLabel(input.category, input.type),
     description: input.description,
+    merchant: input.merchant,
     date: input.date,
   };
 

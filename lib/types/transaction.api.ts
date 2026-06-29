@@ -11,6 +11,7 @@ export interface RawTransaction {
   categoryLabel?: string;
   description?: string;
   notes?: string;
+  merchant?: string;
   date?: string;
   transaction_date?: string;
   transactionDate?: string;
@@ -37,6 +38,7 @@ export interface RawCreateTransactionPayload {
   amount: number;
   category: string;
   description?: string;
+  merchant?: string;
   date: string;
   receipt_id?: string;
   receiptId?: string;

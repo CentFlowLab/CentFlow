@@ -68,7 +68,7 @@ export function ocrToFormValues(ocr: ReceiptOcrResult | null): ReceiptFormValues
     merchantName: ocr.merchantName ?? '',
     amount: ocr.totalAmount !== undefined ? String(ocr.totalAmount) : '',
     category: ocr.suggestedCategory ?? '',
-    description: ocr.merchantName ?? '',
+    description: '',
     date: formatInputDate(ocr.date ?? toIsoDateString()),
     items: ocrItemsToFormItems(ocr),
   };
@@ -130,6 +130,7 @@ export function formValuesToConfirmation(
   return {
     type: values.type,
     merchantName: values.merchantName.trim(),
+    merchant: values.merchantName.trim() || undefined,
     amount,
     category: values.category,
     description: values.description.trim() || undefined,

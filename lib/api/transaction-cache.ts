@@ -32,6 +32,7 @@ export function applyOptimisticTransactionUpdate(
           category: input.category,
           categoryLabel: getCategoryLabel(input.category, input.type),
           description: input.description,
+          merchant: input.merchant,
           date: input.date,
         }
       : transaction,

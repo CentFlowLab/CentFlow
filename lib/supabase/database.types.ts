@@ -498,6 +498,7 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          merchant: string | null
           merchant_group_id: string | null
           receipt_id: string | null
           transaction_date: string
@@ -512,6 +513,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          merchant?: string | null
           merchant_group_id?: string | null
           receipt_id?: string | null
           transaction_date?: string
@@ -526,6 +528,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          merchant?: string | null
           merchant_group_id?: string | null
           receipt_id?: string | null
           transaction_date?: string

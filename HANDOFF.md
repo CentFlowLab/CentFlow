@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T01:03:10.784Z -->
-<!-- Git: b83b0f0 (2026-06-29T02:02:35+01:00) -->
+<!-- Última geração: 2026-06-29T01:04:34.616Z -->
+<!-- Git: 0379ccb (2026-06-29T02:03:11+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 13 — Analytics avançadas: insights automáticos, health score, comparação mensal, heatmap e Home inteligente** |
-| Última geração | 2026-06-29T01:03:10.784Z |
+| Fase atual | **Fase 14 — Refinamento pré-lançamento: P0 confiança, merchant, análises simplificadas, gasto rápido visível** |
+| Última geração | 2026-06-29T01:04:34.616Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `b83b0f0` (2026-06-29T02:02:35+01:00) |
+| Git commit | `0379ccb` (2026-06-29T02:03:11+01:00) |
 
 ---
 
@@ -716,7 +716,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 13 — Analytics avançadas: insights automáticos, health score, comparação mensal, heatmap e Home inteligente
+## Fase atual: Fase 14 — Refinamento pré-lançamento: P0 confiança, merchant, análises simplificadas, gasto rápido visível
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -828,8 +828,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido
 - P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction
 - P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy
+- Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última
 
 ### 🔲 Pendente
+- Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions
 - Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
 - Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push) — necessária para editar comissão de amortização; a criação normal de crédito já não depende dela

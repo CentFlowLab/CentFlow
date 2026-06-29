@@ -5,6 +5,7 @@ export type TransactionFormValues = {
   type: TransactionType;
   amount: string;
   category: string;
+  merchant: string;
   description: string;
   date: string;
 };
@@ -19,6 +20,7 @@ export function transactionToFormValues(transaction: Transaction): TransactionFo
     type: transaction.type,
     amount: String(transaction.amount),
     category: transaction.category,
+    merchant: transaction.merchant ?? '',
     description: transaction.description ?? '',
     date: formatInputDate(transaction.date),
   };
@@ -29,6 +31,7 @@ export function formValuesToUpdateInput(values: TransactionFormValues) {
     type: values.type,
     amount: parseTransactionAmount(values.amount),
     category: values.category,
+    merchant: values.merchant.trim() || undefined,
     description: values.description.trim() || undefined,
     date: values.date,
   };

@@ -48,6 +48,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     category: row.category,
     categoryLabel: getCategoryLabel(row.category, type),
     description: row.description ?? undefined,
+    merchant: row.merchant ?? undefined,
     date: row.transaction_date,
     currency: row.currency ?? 'EUR',
     receiptId: row.receipt_id,
@@ -137,6 +138,7 @@ export function toTransactionInsert(
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
+    merchant: input.merchant?.trim() || null,
     transaction_date: input.date,
     currency: 'EUR',
     receipt_id: input.receiptId ?? null,
@@ -144,11 +146,14 @@ export function toTransactionInsert(
 }
 
 export function toConfirmationTransactionPatch(input: ReceiptConfirmationInput) {
+  const merchant =
+    input.merchant?.trim() || input.merchantName?.trim() || null;
   return {
     type: input.type,
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
+    merchant,
     transaction_date: input.date,
   };
 }
@@ -159,6 +164,7 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
+    merchant: input.merchant?.trim() || null,
     transaction_date: input.date,
   };
 }

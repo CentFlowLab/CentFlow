@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -13,8 +13,14 @@ import { Button, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateTransaction } from '@/hooks/queries/useTransactions';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
+import { useAuth } from '@/lib/auth';
 import { EXPENSE_CATEGORIES } from '@/lib/data/transaction-categories';
 import { traceQuickExpense } from '@/lib/doctor/quick-expense-trace';
+import {
+  loadLastQuickExpense,
+  saveLastQuickExpense,
+  type LastQuickExpense,
+} from '@/lib/storage/quick-expense-storage';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, todayInputDate } from '@/lib/utils/format';
 
@@ -27,6 +33,7 @@ type QuickExpenseSheetProps = {
 
 /** No máximo 8 categorias visíveis, conforme especificação. */
 const QUICK_CATEGORIES = EXPENSE_CATEGORIES.slice(0, 8);
+const AMOUNT_PRESETS = [1, 2, 5, 10, 20];
 
 function parseAmount(raw: string): number {
   const normalized = raw.replace(',', '.').replace(/[^0-9.]/g, '');
@@ -34,16 +41,23 @@ function parseAmount(raw: string): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+function formatPresetAmount(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace('.', ',');
+}
+
 export function QuickExpenseSheet({ visible, onClose, onSaved }: QuickExpenseSheetProps) {
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [merchant, setMerchant] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [lastExpense, setLastExpense] = useState<LastQuickExpense | null>(null);
 
   const amountRef = useRef<TextInput>(null);
   const createMutation = useCreateTransaction();
   const { showToast } = useToast();
   const spendable = useMonthlySpendable();
+  const { user } = useAuth();
 
   const pulse = useSharedValue(1);
   const pulseStyle = useAnimatedStyle(() => ({
@@ -55,23 +69,48 @@ export function QuickExpenseSheet({ visible, onClose, onSaved }: QuickExpenseShe
     if (!visible) {
       setAmount('');
       setCategoryId(null);
+      setMerchant('');
       setNote('');
       setError(null);
+      setLastExpense(null);
       return;
     }
+
     traceQuickExpense('open');
     const timer = setTimeout(() => amountRef.current?.focus(), 320);
+
+    if (user?.id) {
+      void loadLastQuickExpense(user.id).then(setLastExpense);
+    }
+
     return () => clearTimeout(timer);
-  }, [visible]);
+  }, [visible, user?.id]);
 
   const parsed = parseAmount(amount);
   const isValid = parsed > 0 && categoryId !== null;
-  const isDirty = amount.length > 0 || categoryId !== null || note.length > 0;
+  const isDirty =
+    amount.length > 0 || categoryId !== null || merchant.length > 0 || note.length > 0;
 
   function handleSelectCategory(id: string) {
     setCategoryId(id);
     setError(null);
     traceQuickExpense('category_selected', { category: id });
+  }
+
+  function handlePresetAmount(value: number) {
+    setAmount(formatPresetAmount(value));
+    setError(null);
+    traceQuickExpense('amount_preset', { value });
+  }
+
+  function handleRepeatLast() {
+    if (!lastExpense) return;
+    setAmount(formatPresetAmount(lastExpense.amount));
+    setCategoryId(lastExpense.categoryId);
+    setMerchant(lastExpense.merchant ?? '');
+    setNote(lastExpense.note ?? '');
+    setError(null);
+    traceQuickExpense('repeat_last', { value: lastExpense.amount, category: lastExpense.categoryId });
   }
 
   function animateSpendable() {
@@ -99,10 +138,21 @@ export function QuickExpenseSheet({ visible, onClose, onSaved }: QuickExpenseShe
         type: 'expense',
         amount: parsed,
         category: categoryId,
+        merchant: merchant.trim() || undefined,
         description: note.trim() || undefined,
         date: todayInputDate(),
       });
       traceQuickExpense('save_success', { value: parsed, category: categoryId });
+
+      if (user?.id) {
+        void saveLastQuickExpense(user.id, {
+          amount: parsed,
+          categoryId,
+          merchant: merchant.trim() || undefined,
+          note: note.trim() || undefined,
+        });
+      }
+
       animateSpendable();
       showToast('Despesa registada.', 'success');
       setTimeout(() => {
@@ -175,6 +225,35 @@ export function QuickExpenseSheet({ visible, onClose, onSaved }: QuickExpenseShe
             accessibilityLabel="Valor da despesa"
           />
         </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.presetRow}>
+          {AMOUNT_PRESETS.map((preset) => (
+            <Pressable
+              key={preset}
+              onPress={() => handlePresetAmount(preset)}
+              style={styles.presetChip}
+              accessibilityRole="button"
+              accessibilityLabel={`${preset} euros`}>
+              <Text variant="caption" color="textSecondary">
+                {preset}€
+              </Text>
+            </Pressable>
+          ))}
+          {lastExpense ? (
+            <Pressable
+              onPress={handleRepeatLast}
+              style={[styles.presetChip, styles.repeatChip]}
+              accessibilityRole="button"
+              accessibilityLabel="Repetir última despesa">
+              <Text variant="caption" color="primary">
+                Repetir
+              </Text>
+            </Pressable>
+          ) : null}
+        </ScrollView>
       </View>
 
       <View style={styles.categoryBlock}>
@@ -207,6 +286,21 @@ export function QuickExpenseSheet({ visible, onClose, onSaved }: QuickExpenseShe
             );
           })}
         </View>
+      </View>
+
+      <View style={styles.noteBlock}>
+        <Text variant="label" color="textMuted">
+          Comerciante (opcional)
+        </Text>
+        <TextInput
+          value={merchant}
+          onChangeText={setMerchant}
+          placeholder="Ex.: Continente"
+          placeholderTextColor={colors.textMuted}
+          style={styles.noteInput}
+          maxLength={120}
+          autoCapitalize="words"
+        />
       </View>
 
       <View style={styles.noteBlock}>
@@ -294,6 +388,22 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.text,
     padding: 0,
+  },
+  presetRow: {
+    gap: spacing.sm,
+    paddingTop: spacing.xs,
+  },
+  presetChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  repeatChip: {
+    backgroundColor: colors.primaryMuted,
+    borderColor: colors.primary,
   },
   categoryBlock: {
     gap: spacing.md,

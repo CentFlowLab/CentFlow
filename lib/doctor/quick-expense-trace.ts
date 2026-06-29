@@ -5,6 +5,8 @@ export const QUICK_EXPENSE_SOURCE = 'quick_expense';
 export type QuickExpenseAction =
   | 'open'
   | 'amount_entered'
+  | 'amount_preset'
+  | 'repeat_last'
   | 'category_selected'
   | 'save_start'
   | 'save_success'

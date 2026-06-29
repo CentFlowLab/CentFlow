@@ -61,6 +61,7 @@ export function mapTransaction(raw: RawTransaction): Transaction {
     category,
     categoryLabel,
     description: pick(raw.description, raw.notes),
+    merchant: raw.merchant?.trim() || undefined,
     date:
       pick(raw.date, raw.transaction_date, raw.transactionDate, raw.created_at, raw.createdAt) ??
       new Date().toISOString(),
@@ -89,6 +90,7 @@ export function toCreateTransactionPayload(
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || undefined,
+    merchant: input.merchant?.trim() || undefined,
     date: input.date,
     receipt_id: input.receiptId,
     receiptId: input.receiptId,
@@ -103,6 +105,7 @@ export function toUpdateTransactionPayload(
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || undefined,
+    merchant: input.merchant?.trim() || undefined,
     date: input.date,
   };
 }

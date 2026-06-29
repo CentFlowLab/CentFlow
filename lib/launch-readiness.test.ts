@@ -22,7 +22,8 @@ test('resolveOcrUserMessage sanitizes technical errors', () => {
 });
 
 test('quick add is contextual per screen', () => {
-  assert.deepEqual(getContextualQuickAddActions('movimentos'), ['movement']);
+  assert.deepEqual(getContextualQuickAddActions('movimentos'), ['quick_expense', 'movement']);
+  assert.deepEqual(getContextualQuickAddActions('home'), ['quick_expense', 'movement', 'asset', 'goal']);
   assert.deepEqual(getContextualQuickAddActions('creditos'), ['credit']);
   assert.deepEqual(getContextualQuickAddActions('ativos_garantias'), ['warranty']);
   assert.equal(getQuickAddContextLabel('movimentos'), 'Novo movimento');

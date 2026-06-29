@@ -40,6 +40,7 @@ export function EditTransactionModal({
       type: 'expense',
       amount: '',
       category: '',
+      merchant: '',
       description: '',
       date: '',
     },
@@ -52,6 +53,7 @@ export function EditTransactionModal({
     type: 'expense',
     amount: '',
     category: '',
+    merchant: '',
     description: '',
     date: '',
   });
@@ -72,12 +74,14 @@ export function EditTransactionModal({
       {
         amount: values.amount,
         category: values.category,
+        merchant: values.merchant,
         description: values.description,
         date: values.date,
       },
       {
         amount: baselineRef.current.amount,
         category: baselineRef.current.category,
+        merchant: baselineRef.current.merchant,
         description: baselineRef.current.description,
         date: baselineRef.current.date,
       },

@@ -17,6 +17,7 @@ export interface Transaction {
   category: string;
   categoryLabel: string;
   description?: string;
+  merchant?: string;
   date: string;
   currency: string;
   /** ID do talão no backend (após upload) */
@@ -36,6 +37,7 @@ export interface CreateTransactionInput {
   amount: number;
   category: string;
   description?: string;
+  merchant?: string;
   date: string;
   /** Upload + OCR inline (fluxo legado sem confirmação) */
   receipt?: ReceiptDraft;
@@ -72,5 +74,6 @@ export type UpdateTransactionInput = {
   amount: number;
   category: string;
   description?: string;
+  merchant?: string;
   date: string;
 };

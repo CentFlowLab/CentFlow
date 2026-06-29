@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 13 — Analytics avançadas: insights automáticos, health score, comparação mensal, heatmap e Home inteligente",
+  "currentPhase": "Fase 14 — Refinamento pré-lançamento: P0 confiança, merchant, análises simplificadas, gasto rápido visível",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -111,9 +111,11 @@
     "Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros",
     "FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido",
     "P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction",
-    "P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy"
+    "P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy",
+    "Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última"
   ],
   "pending": [
+    "Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions",
     "Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id",
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
     "Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push) — necessária para editar comissão de amortização; a criação normal de crédito já não depende dela",

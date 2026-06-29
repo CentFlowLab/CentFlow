@@ -7,6 +7,7 @@ import type { TransactionType } from '@/lib/domain/transaction.types';
 import { spacing } from '@/lib/theme';
 
 import { CategoryField } from './CategoryField';
+import { MerchantAutocompleteField } from './MerchantAutocompleteField';
 
 type TransactionFormProps = {
   values: TransactionFormValues;
@@ -55,11 +56,17 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
         error={errors?.category}
       />
 
+      <MerchantAutocompleteField
+        value={values.merchant}
+        onChangeText={(merchant) => update('merchant', merchant)}
+        error={errors?.merchant}
+      />
+
       <TextField
-        label="Descrição (opcional)"
+        label="Nota (opcional)"
         value={values.description}
         onChangeText={(description) => update('description', description)}
-        placeholder="Ex: Jantar com amigos"
+        placeholder="Ex: Compras da semana"
         maxLength={200}
       />
 

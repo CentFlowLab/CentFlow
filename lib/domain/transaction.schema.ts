@@ -8,6 +8,7 @@ export const createTransactionSchema = z.object({
     .number({ error: 'Indica um valor válido' })
     .positive('O valor tem de ser superior a zero'),
   category: z.string().min(1, 'Escolhe uma categoria'),
+  merchant: z.string().max(120, 'Máximo 120 caracteres').optional(),
   description: z.string().max(200, 'Máximo 200 caracteres').optional(),
   date: requiredInputDateSchema,
 });
