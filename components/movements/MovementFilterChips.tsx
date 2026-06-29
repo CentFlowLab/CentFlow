@@ -9,7 +9,7 @@ const CHIPS: Array<{ key: MovementTab; label: string }> = [
   { key: 'all', label: 'Todos' },
   { key: 'expense', label: 'Despesas' },
   { key: 'income', label: 'Receitas' },
-  { key: 'subscricoes', label: 'Recorrentes' },
+  { key: 'subscricoes', label: 'Fixos' },
 ];
 
 type MovementFilterChipsProps = {

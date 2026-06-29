@@ -7,6 +7,7 @@ import {
   updateAccount,
 } from '@/lib/api/services/accounts.service';
 import { enrichAccountsWithBalances } from '@/lib/accounts/balance';
+import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import type { CreateAccountInput, UpdateAccountInput } from '@/lib/domain/account.types';
 
 import { queryKeys } from '@/lib/api/keys';
@@ -19,11 +20,20 @@ export function useAccounts() {
   return useQuery({
     queryKey: accountQueryKeys.all,
     queryFn: fetchAccountsData,
+    enabled: ACCOUNTS_FEATURE_ENABLED,
   });
 }
 
 export function useAccountsWithBalances(transactions: Array<{ accountId?: string | null; type: string; amount: number; date: string }>) {
   const { data: accounts = [], ...rest } = useAccounts();
+
+  if (!ACCOUNTS_FEATURE_ENABLED) {
+    return {
+      accounts: [] as ReturnType<typeof enrichAccountsWithBalances>,
+      totalBalance: 0,
+      ...rest,
+    };
+  }
 
   const enriched = enrichAccountsWithBalances(accounts, transactions as never);
 

@@ -4,7 +4,7 @@ import type { MovementsView } from '@/lib/domain/assets.types';
 
 export const MOVEMENTS_VIEW_SEGMENTS = [
   { key: 'movimentos' as const, label: 'Movimentos' },
-  { key: 'subscricoes' as const, label: 'Recorrentes' },
+  { key: 'subscricoes' as const, label: 'Fixos' },
 ];
 
 export type MovementsEmptyConfig = {
@@ -22,10 +22,10 @@ export const MOVEMENTS_EMPTY_CONFIG: Record<
 > = {
   subscricoes: {
     icon: { ios: 'repeat.circle.fill', android: 'autorenew', web: 'autorenew' },
-    title: 'Pagamentos recorrentes',
+    title: 'Despesas fixas e subscrições',
     description:
       'Adiciona subscrições, rendas ou outros custos fixos e acompanha tudo num só lugar.',
-    actionLabel: 'Adicionar recorrente',
+    actionLabel: 'Adicionar fixo',
     secondaryActionLabel: 'Dicas',
     highlights: [
       'Deteção automática a partir de movimentos',

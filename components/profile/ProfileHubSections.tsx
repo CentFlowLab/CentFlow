@@ -9,14 +9,11 @@ import { useAssets } from '@/hooks/queries/useAssets';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useTransactions } from '@/hooks/queries/useTransactions';
-import { useProfile } from '@/hooks/queries/useProfile';
-import { useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useAuth } from '@/lib/auth';
 import { getAppVariant } from '@/lib/config/app-variant';
 import { FEATURE_AREA_CONFIG, ALL_FEATURE_AREAS } from '@/lib/onboarding/constants';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
-import { getCountryLabel, getCurrencyLabel } from '@/lib/preferences/config';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatDateShort } from '@/lib/utils/format';
 
@@ -118,8 +115,6 @@ export function ProfileHubSections({
   financialSlot,
 }: ProfileHubSectionsProps) {
   const { isAuthenticated } = useAuth();
-  const { data: profile } = useProfile();
-  const { data: preferences } = useUserPreferences();
   const { data: onboardingAnswers } = useOnboardingAnswers();
   const { data: transactions = [] } = useTransactions('all');
   const { data: liabilities } = useLiabilities();
@@ -136,8 +131,6 @@ export function ProfileHubSections({
     (id) => isFeatureActive(id) || enabledFeatures.includes(id),
   ).length;
 
-  const region = preferences?.region ?? 'PT';
-  const currency = getCurrencyLabel(profile?.currency ?? 'EUR');
   const memberSince = onboardingAnswers?.completedAt
     ? formatDateShort(onboardingAnswers.completedAt)
     : null;
@@ -189,39 +182,6 @@ export function ProfileHubSections({
       </View>
 
       {financialSlot ? <View style={styles.section}>{financialSlot}</View> : null}
-
-      <View style={styles.section}>
-        <SectionHeader title="Preferências" />
-        <Card variant="outlined" padding="sm">
-          <PreferenceRow
-            icon={{ ios: 'eurosign.circle', android: 'euro', web: 'euro' }}
-            label="Moeda e região"
-            caption={`${currency} · ${getCountryLabel(region)}`}
-            onPress={() => router.push('/settings/currency-region')}
-          />
-          <PreferenceRow
-            icon={{ ios: 'bell.fill', android: 'notifications', web: 'notifications' }}
-            label="Notificações"
-            caption="Alertas e lembretes"
-            onPress={() => router.push('/settings/notifications')}
-            withBorder
-          />
-          <PreferenceRow
-            icon={{ ios: 'lock.fill', android: 'lock', web: 'lock' }}
-            label="Segurança"
-            caption="FaceID / biometria e privacidade"
-            onPress={() => router.push('/settings/security')}
-            withBorder
-          />
-          <PreferenceRow
-            icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
-            label="Aparência"
-            caption="Tema da aplicação"
-            onPress={() => router.push('/settings/appearance')}
-            withBorder
-          />
-        </Card>
-      </View>
 
       <View style={styles.section}>
         <SectionHeader title="A tua CentFlow" />
@@ -294,7 +254,7 @@ export function ProfileHubSections({
               onPress={() => router.push('/(tabs)/ativos?tab=objetivos')}
             />
             <StatCell
-              label="Subscrições"
+              label="Fixos"
               value={activeSubscriptions}
               onPress={() => router.push('/(tabs)/movimentos?view=subscricoes')}
             />
@@ -306,7 +266,7 @@ export function ProfileHubSections({
             <StatCell
               label="Créditos"
               value={activeCredits}
-              onPress={() => router.push('/(tabs)/movimentos?view=creditos')}
+              onPress={() => router.push('/(tabs)/precos')}
             />
           </View>
         </Card>

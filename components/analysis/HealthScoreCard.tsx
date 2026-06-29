@@ -32,7 +32,34 @@ type HealthScoreCardProps = {
 };
 
 export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
-  if (!score.hasSufficientData) {
+  const hasData = score.hasSufficientData;
+  const totalScore = hasData && Number.isFinite(score.total) ? Math.max(0, Math.min(100, score.total)) : 0;
+  const progress = useSharedValue(0);
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    if (!hasData) return;
+    progress.value = withTiming(totalScore / 100, {
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+    });
+    const start = Date.now();
+    const from = displayScore;
+    const to = totalScore;
+    const duration = 900;
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - start) / duration);
+      setDisplayScore(Math.round(from + (to - from) * t));
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [progress, totalScore, hasData, displayScore]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
+  }));
+
+  if (!hasData) {
     return (
       <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
         <Card variant="elevated" style={styles.card}>
@@ -51,31 +78,6 @@ export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
       </Pressable>
     );
   }
-
-  const totalScore = Number.isFinite(score.total) ? Math.max(0, Math.min(100, score.total)) : 0;
-  const progress = useSharedValue(0);
-  const [displayScore, setDisplayScore] = useState(0);
-
-  useEffect(() => {
-    progress.value = withTiming(totalScore / 100, {
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
-    });
-    const start = Date.now();
-    const from = displayScore;
-    const to = totalScore;
-    const duration = 900;
-    const tick = () => {
-      const t = Math.min(1, (Date.now() - start) / duration);
-      setDisplayScore(Math.round(from + (to - from) * t));
-      if (t < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [progress, totalScore]);
-
-  const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
-  }));
 
   const ringColor = STATUS_COLOR[score.status] ?? colors.textMuted;
   const componentEntries = Object.values(score.components ?? {});

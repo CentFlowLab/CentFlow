@@ -102,18 +102,7 @@ function TabLayoutInner() {
       <Tabs.Screen
         name="contas"
         options={{
-          title: 'Contas',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={{
-                ios: 'building.columns.fill',
-                android: 'account_balance',
-                web: 'account_balance',
-              }}
-              color={color}
-              size={focused ? 26 : 24}
-            />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen

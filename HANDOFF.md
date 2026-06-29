@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T21:16:43.137Z -->
-<!-- Git: 0eba8bf (2026-06-29T13:05:47+01:00) -->
+<!-- Última geração: 2026-06-29T23:59:08.727Z -->
+<!-- Git: 4d3fe70 (2026-06-29T22:17:00+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 16 — Contas, garantias→inventário, anexos, tabs Análises, Recorrentes** |
-| Última geração | 2026-06-29T21:16:43.137Z |
+| Fase atual | **Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)** |
+| Última geração | 2026-06-29T23:59:08.727Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `0eba8bf` (2026-06-29T13:05:47+01:00) |
+| Git commit | `4d3fe70` (2026-06-29T22:17:00+01:00) |
 
 ---
 
@@ -152,6 +152,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   _layout.tsx
   auth/
     callback.tsx
+  financial-plan.tsx
   index.tsx
   onboarding.tsx
   quick-expense.tsx
@@ -482,6 +483,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     app-variant.ts
     data-mode.ts
     demo-mode.ts
+    product-features.ts
     runtime-env.ts
   credit/
     credit-analysis.test.ts
@@ -741,7 +743,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 16 — Contas, garantias→inventário, anexos, tabs Análises, Recorrentes
+## Fase atual: Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript

@@ -119,7 +119,7 @@ function HomeScreenContent({
         openAddMovement();
         break;
       case 'open_movimentos':
-        router.push('/(tabs)/movimentos');
+        router.push('/(tabs)/movimentos?view=movimentos');
         break;
       case 'open_recorrentes':
         router.push('/(tabs)/movimentos?view=subscricoes');
@@ -132,6 +132,9 @@ function HomeScreenContent({
         break;
       case 'open_analises':
         router.push('/(tabs)/analises');
+        break;
+      case 'open_analises_gastos':
+        router.push('/(tabs)/analises?tab=gastos&period=week');
         break;
       default:
         break;
@@ -211,7 +214,7 @@ function HomeScreenContent({
         key="assistant"
         plan={assistant}
         onAction={handleAssistantAction}
-        onOpenFullPlan={() => router.push('/(tabs)/analises')}
+        onOpenFullPlan={() => router.push('/financial-plan')}
       />
     ),
   };

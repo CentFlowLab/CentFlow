@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 
 import { Card, Text } from '@/components/ui';
 import type { HomeAssetsSummary } from '@/lib/domain/home.types';
+import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import type { HomeAssetsTileHint } from '@/lib/onboarding/personalization';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
@@ -60,7 +61,7 @@ export function HomeAssetsSummaryCard({ summary, hints = {} }: HomeAssetsSummary
       <Text variant="label" color="textMuted">
         Resumo rápido
       </Text>
-      {summary.accountsTotal !== undefined && summary.accountsTotal > 0 ? (
+      {ACCOUNTS_FEATURE_ENABLED && summary.accountsTotal !== undefined && summary.accountsTotal > 0 ? (
         <View style={styles.accountsRow}>
           <Text variant="bodyMedium" color="textSecondary">
             Contas

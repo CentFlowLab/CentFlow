@@ -19,7 +19,7 @@ export function SubscriptionsAnalysisSection({ analysis }: SubscriptionsAnalysis
   if (!analysis || isMinimalAnalysis(analysis)) {
     return (
       <View style={styles.wrap}>
-        <SectionHeader title="Recorrentes" />
+        <SectionHeader title="Fixos" />
         <Pressable
           onPress={() => router.push('/(tabs)/movimentos?view=subscricoes')}
           style={({ pressed }) => [styles.compactLink, pressed && styles.compactLinkPressed]}
@@ -35,7 +35,7 @@ export function SubscriptionsAnalysisSection({ analysis }: SubscriptionsAnalysis
           <View style={styles.compactText}>
             <Text variant="bodyMedium">Gerir subscrições</Text>
             <Text variant="caption" color="textMuted">
-              Adiciona ou revê custos recorrentes em Movimentos
+              Adiciona ou revê despesas fixas em Movimentos
             </Text>
           </View>
           <SymbolView

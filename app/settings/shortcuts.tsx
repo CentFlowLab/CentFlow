@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { Share, StyleSheet, View } from 'react-native';
+import { Platform, Share, StyleSheet, View } from 'react-native';
 
 import { SettingsHero, SettingsScreenLayout } from '@/components/settings';
 import { Button, Card, Text } from '@/components/ui';
@@ -8,7 +8,7 @@ import { colors, radius, spacing } from '@/lib/theme';
 
 const QUICK_EXPENSE_URL = 'centflow://quick-expense';
 
-const STEPS = [
+const IOS_STEPS = [
   'Abre a app Atalhos no iPhone.',
   'Cria um novo atalho.',
   'Adiciona a ação "Abrir URL".',
@@ -20,8 +20,19 @@ const STEPS = [
   'Em Toque Duplo, escolhe o atalho "Adicionar despesa CentFlow".',
 ];
 
+const ANDROID_STEPS = [
+  'Mantém premido o ícone da CentFlow no ecrã inicial.',
+  'Escolhe "Widgets" ou "Atalhos" (conforme o launcher).',
+  'Adiciona o widget/atalho "Gasto rápido" se disponível.',
+  'Alternativa: usa o URL da app abaixo num atalho da app Atalhos (Samsung/Google).',
+  `URL: ${QUICK_EXPENSE_URL}`,
+  'No Android 13+, podes criar um atalho na app Atalhos do sistema.',
+];
+
 export default function ShortcutsScreen() {
   const { showToast } = useToast();
+  const isIos = Platform.OS === 'ios';
+  const steps = isIos ? IOS_STEPS : ANDROID_STEPS;
 
   async function handleCopyUrl() {
     try {
@@ -34,11 +45,23 @@ export default function ShortcutsScreen() {
   return (
     <SettingsScreenLayout
       title="Atalhos rápidos"
-      subtitle="Adicionar despesas com dois toques atrás do iPhone">
+      subtitle={
+        isIos
+          ? 'Adicionar despesas com dois toques atrás do iPhone'
+          : 'Abrir o gasto rápido a partir do ecrã inicial ou atalhos do sistema'
+      }>
       <SettingsHero
-        icon={{ ios: 'hand.tap.fill', android: 'touch_app', web: 'touch_app' }}
-        title="Toque Atrás do iPhone"
-        description="O iOS não permite à app detetar o gesto diretamente. A solução é criar um atalho que abre a CentFlow no Gasto rápido."
+        icon={
+          isIos
+            ? { ios: 'hand.tap.fill', android: 'touch_app', web: 'touch_app' }
+            : { ios: 'widgets', android: 'widgets', web: 'widgets' }
+        }
+        title={isIos ? 'Toque Atrás do iPhone' : 'Atalhos no Android'}
+        description={
+          isIos
+            ? 'O iOS não permite à app detetar o gesto diretamente. A solução é criar um atalho que abre a CentFlow no Gasto rápido.'
+            : 'No Android, usa widgets ou a app Atalhos do sistema com o URL da CentFlow. Os passos variam consoante o fabricante.'
+        }
       />
 
       <Card variant="outlined" style={styles.urlCard}>
@@ -52,14 +75,14 @@ export default function ShortcutsScreen() {
           Mantém premido para copiar, ou usa o botão abaixo.
         </Text>
         <Button
-          label="Copiar URL"
+          label="Partilhar URL"
           onPress={() => void handleCopyUrl()}
           variant="secondary"
           fullWidth
           style={styles.copyButton}
           icon={
             <SymbolView
-              name={{ ios: 'doc.on.doc.fill', android: 'content_copy', web: 'content_copy' }}
+              name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
               tintColor={colors.primary}
               size={16}
             />
@@ -69,13 +92,13 @@ export default function ShortcutsScreen() {
 
       <View style={styles.stepsBlock}>
         <Text variant="label" color="textMuted">
-          Passo a passo
+          Passo a passo ({isIos ? 'iOS' : 'Android'})
         </Text>
         <Card variant="outlined" style={styles.stepsCard}>
-          {STEPS.map((step, index) => (
+          {steps.map((step, index) => (
             <View
               key={step}
-              style={[styles.stepRow, index < STEPS.length - 1 && styles.stepRowBorder]}>
+              style={[styles.stepRow, index < steps.length - 1 && styles.stepRowBorder]}>
               <View style={styles.stepNumber}>
                 <Text variant="caption" color="primary">
                   {index + 1}
@@ -90,7 +113,9 @@ export default function ShortcutsScreen() {
       </View>
 
       <Text variant="caption" color="textMuted" style={styles.footnote}>
-        Depois de configurado, dois toques nas costas do iPhone abrem o Gasto rápido da CentFlow.
+        {isIos
+          ? 'Depois de configurado, dois toques nas costas do iPhone abrem o Gasto rápido da CentFlow.'
+          : 'No Android, o widget ou atalho abre directamente o ecrã de Gasto rápido.'}
       </Text>
     </SettingsScreenLayout>
   );
@@ -102,7 +127,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   url: {
-    fontFamily: 'Courier',
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
   },
   copyButton: {
     marginTop: spacing.sm,

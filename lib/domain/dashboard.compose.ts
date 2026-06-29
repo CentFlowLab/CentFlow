@@ -138,8 +138,9 @@ function buildHomeSuggestions(input: {
       id: 'sug-review-spending',
       title: 'Revê os gastos desta semana',
       description: 'Identifica onde podes optimizar antes do fim do mês.',
-      actionLabel: 'Ver análises',
+      actionLabel: 'Ver gastos',
       type: 'savings',
+      action: 'open_analises_gastos',
     });
   }
 

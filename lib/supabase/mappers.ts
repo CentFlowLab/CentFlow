@@ -14,6 +14,7 @@ import type {
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import type { LoginCredentials, RegisterCredentials, User } from '@/lib/auth/types';
+import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 
 import type { OcrResultRow, ReceiptRow, TransactionRow } from './database.types';
 
@@ -136,7 +137,7 @@ export function toTransactionInsert(
   userId: string,
   input: CreateTransactionInput & { receiptId?: string },
 ) {
-  return {
+  const row: Record<string, unknown> = {
     user_id: userId,
     type: input.type,
     amount: input.amount,
@@ -146,8 +147,13 @@ export function toTransactionInsert(
     transaction_date: input.date,
     currency: 'EUR',
     receipt_id: input.receiptId ?? null,
-    account_id: input.accountId ?? null,
   };
+
+  if (ACCOUNTS_FEATURE_ENABLED && input.accountId) {
+    row.account_id = input.accountId;
+  }
+
+  return row;
 }
 
 export function toConfirmationTransactionPatch(input: ReceiptConfirmationInput) {
@@ -164,15 +170,20 @@ export function toConfirmationTransactionPatch(input: ReceiptConfirmationInput) 
 }
 
 export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
-  return {
+  const patch: Record<string, unknown> = {
     type: input.type,
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
     merchant: input.merchant?.trim() || null,
     transaction_date: input.date,
-    account_id: input.accountId ?? null,
   };
+
+  if (ACCOUNTS_FEATURE_ENABLED && input.accountId !== undefined) {
+    patch.account_id = input.accountId ?? null;
+  }
+
+  return patch;
 }
 
 export function buildReceiptStoragePath(

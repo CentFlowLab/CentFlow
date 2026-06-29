@@ -5,7 +5,9 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Text } from '@/components/ui';
 import { useProfile } from '@/hooks/queries/useProfile';
+import { useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { useAuth } from '@/lib/auth';
+import { getCountryLabel, getCurrencyLabel } from '@/lib/preferences/config';
 import { colors, radius, spacing } from '@/lib/theme';
 
 import { DraggableBottomSheet } from './DraggableBottomSheet';
@@ -18,6 +20,7 @@ type ProfileMenuSheetProps = {
 type MenuItem = {
   id: string;
   label: string;
+  caption?: string;
   icon: SymbolViewProps['name'];
   onPress: () => void;
   tone?: 'default' | 'danger';
@@ -25,12 +28,20 @@ type MenuItem = {
 
 export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
   const { data: profile } = useProfile();
+  const { data: preferences } = useUserPreferences();
   const { signOut } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const initials = profile?.avatarInitials ?? 'CF';
   const name = profile?.name ?? 'Utilizador';
   const email = profile?.email ?? '';
+  const region = preferences?.region ?? 'PT';
+  const currencyCaption = `${getCurrencyLabel(profile?.currency ?? 'EUR')} · ${getCountryLabel(region)}`;
+
+  function navigate(path: string) {
+    onClose();
+    router.push(path as never);
+  }
 
   async function handleSignOut() {
     onClose();
@@ -53,26 +64,64 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
 
   const items: MenuItem[] = [
     {
-      id: 'profile',
-      label: 'Perfil e conta',
-      icon: { ios: 'person.circle', android: 'account_circle', web: 'account_circle' },
-      onPress: () => {
-        onClose();
-        router.push('/(tabs)/perfil');
-      },
+      id: 'personal',
+      label: 'Dados pessoais',
+      caption: 'Nome e email',
+      icon: { ios: 'person.crop.circle', android: 'person', web: 'person' },
+      onPress: () => navigate('/settings/personal-data'),
     },
     {
-      id: 'settings',
-      label: 'Preferências da app',
-      icon: { ios: 'gearshape.fill', android: 'settings', web: 'settings' },
-      onPress: () => {
-        onClose();
-        router.push('/settings');
-      },
+      id: 'currency',
+      label: 'Moeda e região',
+      caption: currencyCaption,
+      icon: { ios: 'eurosign.circle', android: 'euro', web: 'euro' },
+      onPress: () => navigate('/settings/currency-region'),
+    },
+    {
+      id: 'appearance',
+      label: 'Aparência',
+      caption: 'Tema da aplicação',
+      icon: { ios: 'paintbrush.fill', android: 'palette', web: 'palette' },
+      onPress: () => navigate('/settings/appearance'),
+    },
+    {
+      id: 'notifications',
+      label: 'Notificações',
+      caption: 'Alertas e lembretes',
+      icon: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
+      onPress: () => navigate('/settings/notifications'),
+    },
+    {
+      id: 'security',
+      label: 'Segurança',
+      caption: 'Biometria e sessão',
+      icon: { ios: 'lock.fill', android: 'lock', web: 'lock' },
+      onPress: () => navigate('/settings/security'),
+    },
+    {
+      id: 'privacy',
+      label: 'Privacidade',
+      caption: 'Dados e consentimentos',
+      icon: { ios: 'hand.raised.fill', android: 'privacy_tip', web: 'privacy_tip' },
+      onPress: () => navigate('/settings/privacy'),
+    },
+    {
+      id: 'shortcuts',
+      label: 'Atalhos rápidos',
+      caption: 'Gasto rápido no telemóvel',
+      icon: { ios: 'hand.tap.fill', android: 'touch_app', web: 'touch_app' },
+      onPress: () => navigate('/settings/shortcuts'),
+    },
+    {
+      id: 'plan',
+      label: 'Plano financeiro',
+      caption: 'Visão do mês e acções',
+      icon: { ios: 'calendar', android: 'calendar_today', web: 'calendar_today' },
+      onPress: () => navigate('/financial-plan'),
     },
     {
       id: 'logout',
-      label: 'Sair',
+      label: 'Terminar sessão',
       icon: { ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' },
       onPress: handleSignOut,
       tone: 'danger',
@@ -83,7 +132,7 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
-      maxHeight="55%"
+      maxHeight="85%"
       scrollContentStyle={styles.content}
       header={() => (
         <View style={styles.profileHeader}>
@@ -120,12 +169,19 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
               tintColor={item.tone === 'danger' ? colors.danger : colors.textSecondary}
               size={22}
             />
-            <Text
-              variant="bodyMedium"
-              color={item.tone === 'danger' ? 'danger' : undefined}
-              style={styles.menuLabel}>
-              {item.label}
-            </Text>
+            <View style={styles.menuLabelBlock}>
+              <Text
+                variant="bodyMedium"
+                color={item.tone === 'danger' ? 'danger' : undefined}
+                style={styles.menuLabel}>
+                {item.label}
+              </Text>
+              {item.caption ? (
+                <Text variant="caption" color="textMuted">
+                  {item.caption}
+                </Text>
+              ) : null}
+            </View>
             {item.id !== 'logout' ? (
               <SymbolView
                 name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
@@ -180,6 +236,10 @@ const styles = StyleSheet.create({
   },
   menuItemPressed: {
     backgroundColor: colors.surfaceHighlight,
+  },
+  menuLabelBlock: {
+    flex: 1,
+    gap: 2,
   },
   menuLabel: {
     flex: 1,

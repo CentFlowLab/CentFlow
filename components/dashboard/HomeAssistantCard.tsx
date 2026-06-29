@@ -8,9 +8,15 @@ type HomeAssistantCardProps = {
   plan: DailyAssistantPlan;
   onAction: (actionId: AssistantActionId) => void;
   onOpenFullPlan: () => void;
+  showFullPlanLink?: boolean;
 };
 
-export function HomeAssistantCard({ plan, onAction, onOpenFullPlan }: HomeAssistantCardProps) {
+export function HomeAssistantCard({
+  plan,
+  onAction,
+  onOpenFullPlan,
+  showFullPlanLink = true,
+}: HomeAssistantCardProps) {
   return (
     <Card variant="elevated" style={styles.card}>
       <View style={styles.header}>
@@ -48,11 +54,13 @@ export function HomeAssistantCard({ plan, onAction, onOpenFullPlan }: HomeAssist
         </View>
       ) : null}
 
-      <Pressable onPress={onOpenFullPlan} style={styles.cta}>
-        <Text variant="bodyMedium" color="primary">
-          Ver plano completo →
-        </Text>
-      </Pressable>
+      {showFullPlanLink ? (
+        <Pressable onPress={onOpenFullPlan} style={styles.cta}>
+          <Text variant="bodyMedium" color="primary">
+            Ver plano completo →
+          </Text>
+        </Pressable>
+      ) : null}
     </Card>
   );
 }

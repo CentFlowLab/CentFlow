@@ -11,9 +11,9 @@ const ACTION_BY_ID: Record<string, SuggestionAction> = {
 
 const ACTION_BY_TYPE: Record<Suggestion['type'], SuggestionAction> = {
   goal: 'open_ativos_goals',
-  savings: 'open_movimentos',
+  savings: 'open_analises_gastos',
   investment: 'open_ativos_inventory',
-  general: 'scan_receipt',
+  general: 'open_analises',
 };
 
 export function resolveSuggestionAction(suggestion: Suggestion): SuggestionAction {

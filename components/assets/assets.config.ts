@@ -46,11 +46,11 @@ export const ASSETS_EMPTY_CONFIG: Record<AssetsTab, AssetsEmptyConfig> = {
   },
   inventario: {
     icon: { ios: 'shippingbox.fill', android: 'inventory_2', web: 'inventory_2' },
-    title: 'Inventaria os teus bens',
+    title: 'Inventário automático',
     description:
-      'Mantém registo do valor dos teus ativos físicos — eletrónica, joias, equipamento.',
-    actionLabel: 'Adicionar item',
-    secondaryActionLabel: 'Porquê registar',
+      'Os itens entram aqui quando uma garantia expira ou quando registas um bem a partir de um talão.',
+    actionLabel: 'Digitalizar talão',
+    secondaryActionLabel: 'Ver garantias',
     highlights: [
       'Valor total no património',
       'Organização por categoria',

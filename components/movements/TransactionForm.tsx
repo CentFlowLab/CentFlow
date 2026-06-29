@@ -8,7 +8,6 @@ import { spacing } from '@/lib/theme';
 
 import { CategoryField } from './CategoryField';
 import { MerchantAutocompleteField } from './MerchantAutocompleteField';
-import { AccountPickerField } from '@/components/accounts';
 
 type TransactionFormProps = {
   values: TransactionFormValues;
@@ -76,11 +75,6 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
         value={values.date}
         onChange={(date) => update('date', date)}
         error={errors?.date}
-      />
-
-      <AccountPickerField
-        value={values.accountId}
-        onChange={(accountId) => update('accountId', accountId)}
       />
     </View>
   );

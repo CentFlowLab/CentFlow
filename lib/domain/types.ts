@@ -117,6 +117,7 @@ export type SuggestionAction =
   | 'scan_receipt'
   | 'add_movement'
   | 'open_analises'
+  | 'open_analises_gastos'
   | 'open_movimentos'
   | 'open_ativos_goals'
   | 'open_ativos_inventory'

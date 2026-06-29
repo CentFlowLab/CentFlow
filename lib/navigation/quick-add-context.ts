@@ -38,7 +38,7 @@ export function getQuickAddContextLabel(context: QuickAddScreenContext): string 
     case 'movimentos':
       return 'Novo movimento';
     case 'subscricoes':
-      return 'Nova subscrição';
+      return 'Novo fixo';
     case 'creditos':
       return 'Novo crédito';
     case 'ativos_objetivos':

@@ -2,7 +2,7 @@ import type { SpendingCategorySlice } from '@/lib/domain/analysis.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { isTransactionOccurred, parseTransactionDate } from '@/lib/domain/transaction-date.utils';
 
-export type AnalysisPeriodKey = 'week' | 'month' | 'quarter' | 'year';
+export type AnalysisPeriodKey = 'week' | 'month' | 'quarter' | 'halfyear' | 'year';
 
 export type AnalysisPeriodOption = {
   key: AnalysisPeriodKey;
@@ -18,6 +18,7 @@ export const ANALYSIS_PERIOD_OPTIONS: AnalysisPeriodOption[] = [
   { key: 'week', label: 'Semana', days: 7, buckets: 7, bucketDays: 1 },
   { key: 'month', label: 'Mês', days: 30, buckets: 4, bucketDays: 7 },
   { key: 'quarter', label: '3 Meses', days: 90, buckets: 3, bucketDays: 30 },
+  { key: 'halfyear', label: '6 Meses', days: 180, buckets: 6, bucketDays: 30 },
   { key: 'year', label: 'Ano', days: 365, buckets: 12, bucketDays: 30 },
 ];
 
@@ -106,7 +107,7 @@ function bucketLabel(option: AnalysisPeriodOption, end: Date): string {
   if (option.key === 'year') {
     return new Intl.DateTimeFormat('pt-PT', { month: 'narrow' }).format(end).toUpperCase();
   }
-  if (option.key === 'quarter') {
+  if (option.key === 'quarter' || option.key === 'halfyear') {
     return new Intl.DateTimeFormat('pt-PT', { month: 'short' }).format(end);
   }
   // Mês → semanas

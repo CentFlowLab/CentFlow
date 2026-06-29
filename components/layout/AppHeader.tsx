@@ -23,6 +23,8 @@ type AppHeaderProps = {
   onBack?: () => void;
   showBrand?: boolean;
   showAvatar?: boolean;
+  /** Posição do menu de conta — esquerda nas tabs principais. */
+  avatarPosition?: 'left' | 'right';
   /** Conteúdo custom à esquerda (ex: saudação no Início) */
   leading?: React.ReactNode;
   action?: HeaderAction;
@@ -37,6 +39,7 @@ export function AppHeader({
   onBack,
   showBrand = variant === 'main',
   showAvatar = true,
+  avatarPosition = 'left',
   leading,
   action,
   secondaryAction,
@@ -66,6 +69,8 @@ export function AppHeader({
             </Text>
           </Pressable>
         ) : null}
+
+        {showAvatar && avatarPosition === 'left' ? <UserAvatarButton size={40} /> : null}
 
         {leading ? (
           <View style={styles.leading}>{leading}</View>
@@ -111,7 +116,7 @@ export function AppHeader({
           </Pressable>
         ) : null}
 
-        {showAvatar ? <UserAvatarButton size={40} /> : null}
+        {showAvatar && avatarPosition === 'right' ? <UserAvatarButton size={40} /> : null}
       </View>
     </View>
   );

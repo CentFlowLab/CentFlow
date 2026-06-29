@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { StyleSheet, View, Pressable } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import {
   AnalysisErrorBoundary,
@@ -29,6 +30,7 @@ import {
   Text,
 } from '@/components/ui';
 import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
+import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { usePatrimonyAllocation } from '@/hooks/queries/usePatrimonyAllocation';
@@ -50,6 +52,7 @@ const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
 }));
 
 export default function AnalisesScreen() {
+  const params = useLocalSearchParams<{ tab?: string; period?: string }>();
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
   const { data: patrimonyData } = usePatrimonyAllocation();
   const { data: transactions = [] } = useTransactions('all');
@@ -61,6 +64,16 @@ export default function AnalisesScreen() {
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
   const [healthSheetVisible, setHealthSheetVisible] = useState(false);
   const periodOption = getPeriodOption(period);
+
+  useEffect(() => {
+    if (params.tab === 'gastos' || params.tab === 'divida' || params.tab === 'patrimonio' || params.tab === 'resumo') {
+      setTab(params.tab);
+    }
+    const validPeriods: AnalysisPeriodKey[] = ['week', 'month', 'quarter', 'halfyear', 'year'];
+    if (params.period && validPeriods.includes(params.period as AnalysisPeriodKey)) {
+      setPeriod(params.period as AnalysisPeriodKey);
+    }
+  }, [params.tab, params.period]);
 
   const periodCategories = useMemo(
     () => computeSpendingByCategory(transactions, periodOption.days),
@@ -154,7 +167,7 @@ export default function AnalisesScreen() {
                 <SpendingHeatmap transactions={transactions} />
               </AnalysisErrorBoundary>
 
-              <AnalysisErrorBoundary label="Recorrentes">
+              <AnalysisErrorBoundary label="Fixos">
                 <SubscriptionsAnalysisSection analysis={analytics.subscriptionAnalysis} />
               </AnalysisErrorBoundary>
             </Animated.View>
@@ -186,17 +199,12 @@ export default function AnalisesScreen() {
                 <PatrimonyAllocationCard allocation={allocation} totalAssets={allocationTotal} />
               </AnalysisErrorBoundary>
 
-              {accountsTotal > 0 ? (
+              {ACCOUNTS_FEATURE_ENABLED && accountsTotal > 0 ? (
                 <View style={styles.accountsSummary}>
                   <Text variant="bodyMedium" color="textSecondary">
                     Total em contas
                   </Text>
                   <Text variant="h3">{formatCurrency(accountsTotal)}</Text>
-                  <Pressable onPress={() => router.push('/contas' as never)}>
-                    <Text variant="caption" color="primary" style={styles.accountsLink}>
-                      Ver contas →
-                    </Text>
-                  </Pressable>
                 </View>
               ) : null}
 

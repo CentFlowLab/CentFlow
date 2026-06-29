@@ -5,6 +5,7 @@ import {
   updateMockAccount,
 } from '@/lib/api/mock-accounts';
 import { isMockAuthEnabled } from '@/lib/auth';
+import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import type {
   BankAccount,
   CreateAccountInput,
@@ -14,8 +15,15 @@ import { isSupabaseEnabled } from '@/lib/supabase';
 import * as supabaseAccounts from '@/lib/supabase/accounts';
 
 export async function fetchAccountsData(): Promise<BankAccount[]> {
+  if (!ACCOUNTS_FEATURE_ENABLED) return [];
   if (isMockAuthEnabled()) return fetchMockAccounts();
-  if (isSupabaseEnabled()) return supabaseAccounts.fetchAccounts();
+  if (isSupabaseEnabled()) {
+    try {
+      return await supabaseAccounts.fetchAccounts();
+    } catch {
+      return [];
+    }
+  }
   return [];
 }
 

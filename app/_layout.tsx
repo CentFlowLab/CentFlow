@@ -141,6 +141,7 @@ function RootNavigator() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="financial-plan" />
           <Stack.Screen
             name="quick-expense"
             options={{ presentation: 'transparentModal', animation: 'fade' }}

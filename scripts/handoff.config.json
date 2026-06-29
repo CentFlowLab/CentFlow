@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 16 — Contas, garantias→inventário, anexos, tabs Análises, Recorrentes",
+  "currentPhase": "Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",

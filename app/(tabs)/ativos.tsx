@@ -24,6 +24,7 @@ import {
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
 import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
+import { isManualInventoryAllowed } from '@/lib/config/product-features';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { QuickAddScreenContext } from '@/lib/navigation/quick-add-context';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
@@ -93,8 +94,15 @@ export default function AtivosScreen() {
     }
   }, [tab]);
 
+  const manualInventoryAllowed = isManualInventoryAllowed();
+
   useEffect(() => {
     if (handledAction.current || !action) return;
+    if (action === 'new-asset' && !manualInventoryAllowed) {
+      handledAction.current = true;
+      setActiveTab('garantias');
+      return;
+    }
     handledAction.current = true;
 
     if (action === 'new-goal') {
@@ -116,7 +124,7 @@ export default function AtivosScreen() {
       setEditingInventory(null);
       setInventoryFormVisible(true);
     }
-  }, [action]);
+  }, [action, manualInventoryAllowed]);
 
   function openCreateGoal() {
     setEditingGoal(null);
@@ -149,6 +157,10 @@ export default function AtivosScreen() {
   }
 
   function openCreateInventory() {
+    if (!manualInventoryAllowed) {
+      setActiveTab('garantias');
+      return;
+    }
     setEditingInventory(null);
     setInventoryFormVisible(true);
   }
@@ -173,23 +185,30 @@ export default function AtivosScreen() {
   const quickAdd = useContextualQuickAdd(assetsQuickAddContext, {
     onGoal: openCreateGoal,
     onWarranty: openCreateWarranty,
-    onAsset: openCreateInventory,
+    onAsset: manualInventoryAllowed ? openCreateInventory : undefined,
   });
+
+  const showHeaderAction =
+    activeTab !== 'inventario' || manualInventoryAllowed;
 
   return (
     <View style={styles.screen}>
       <AppHeader
-        action={{
-          icon: (
-            <SymbolView
-              name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
-              tintColor={colors.primary}
-              size={26}
-            />
-          ),
-          onPress: quickAdd.handlePress,
-          accessibilityLabel: quickAdd.accessibilityLabel,
-        }}
+        action={
+          showHeaderAction
+            ? {
+                icon: (
+                  <SymbolView
+                    name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
+                    tintColor={colors.primary}
+                    size={26}
+                  />
+                ),
+                onPress: quickAdd.handlePress,
+                accessibilityLabel: quickAdd.accessibilityLabel,
+              }
+            : undefined
+        }
       />
 
       {isLoading ? (
@@ -258,9 +277,13 @@ export default function AtivosScreen() {
               <FeatureAreaGate feature="wealth">
                 <InventorySection
                   inventory={assets.inventory}
-                  onEdit={openEditInventory}
+                  onEdit={manualInventoryAllowed ? openEditInventory : undefined}
                   onLearnMore={handleLearnMore}
-                  onPrimaryAction={openCreateInventory}
+                  onPrimaryAction={
+                    manualInventoryAllowed
+                      ? openCreateInventory
+                      : () => router.push('/(tabs)/movimentos?action=receipt')
+                  }
                   onDelete={(item) => deleteInventory.mutate(item.id)}
                 />
               </FeatureAreaGate>
