@@ -52,6 +52,10 @@ export function GoalsSection({ goals, onEdit, onLearnMore, onPrimaryAction, onDe
           </View>
         </View>
         <GoalProgressBar percent={aggregate.percent} showLabel height={8} />
+        <Text variant="caption" color="textMuted">
+          O valor poupado nos objetivos é acompanhado à parte e não é contado duas vezes no
+          património líquido.
+        </Text>
       </Card>
 
       <View style={styles.list}>

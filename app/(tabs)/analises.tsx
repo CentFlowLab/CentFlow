@@ -6,16 +6,15 @@ import {
   AnalysisMetricCard,
   AnalysisSkeleton,
   AutoInsightsCarousel,
-  CategoryBreakdownList,
   CreditsAnalysisSection,
   HealthScoreBreakdownSheet,
   HealthScoreCard,
   MonthEndForecastCard,
   MonthlyComparisonSection,
+  PatrimonyAllocationCard,
   PricesInsightsSection,
   SpendingCategoryCard,
   SpendingHeatmap,
-  SpendingTrendBars,
   SubscriptionsAnalysisSection,
   TopMerchantsSection,
   TrendsSummaryCard,
@@ -26,8 +25,10 @@ import {
   RefetchingIndicator,
   ScreenContainer,
   SectionHeader,
+  Text,
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
+import { usePatrimonyAllocation } from '@/hooks/queries/usePatrimonyAllocation';
 import { useAnalyticsInsights } from '@/hooks/useAnalyticsInsights';
 import { useMerchantGroups } from '@/hooks/queries/useMerchantGroups';
 import { usePricesData } from '@/hooks/queries/usePricesData';
@@ -35,21 +36,29 @@ import { useTransactions } from '@/hooks/queries/useTransactions';
 import {
   ANALYSIS_PERIOD_OPTIONS,
   computeSpendingByCategory,
-  computeSpendingBuckets,
   getPeriodOption,
   type AnalysisPeriodKey,
 } from '@/lib/domain/analysis-period';
 import { computeMerchantGroupAnalytics } from '@/lib/merchants/group-analytics';
 import { router } from 'expo-router';
 import { spacing, colors } from '@/lib/theme';
+import type { PricesData } from '@/lib/data/prices.mocks';
 
 const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
   key: option.key,
   label: option.label,
 }));
 
+function hasMeaningfulPriceData(prices: PricesData): boolean {
+  return (
+    prices.trackedProducts > 0 &&
+    (prices.changes.length > 0 || prices.insights.length > 0)
+  );
+}
+
 export default function AnalisesScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
+  const { data: patrimonyData } = usePatrimonyAllocation();
   const { data: pricesData } = usePricesData();
   const { data: transactions = [] } = useTransactions('all');
   const { data: merchantGroups = [] } = useMerchantGroups();
@@ -68,10 +77,9 @@ export default function AnalisesScreen() {
     () => computeSpendingByCategory(transactions, periodOption.days),
     [transactions, periodOption.days],
   );
-  const spendingBuckets = useMemo(
-    () => computeSpendingBuckets(transactions, periodOption),
-    [transactions, periodOption],
-  );
+
+  const allocation = patrimonyData?.allocation ?? data?.allocation ?? [];
+  const totalAssets = patrimonyData?.totalAssets ?? data?.netWorth.totalAssets ?? 0;
 
   return (
     <View style={styles.screen}>
@@ -92,7 +100,7 @@ export default function AnalisesScreen() {
         </View>
       ) : (
         <ScreenContainer applyBottomSafeInset={false}>
-          <SectionHeader title="Análises" subtitle={`Últimos · ${periodOption.label}`} />
+          <SectionHeader title="Análises" subtitle="Mês calendário" />
 
           <AnalysisErrorBoundary label="Insights automáticos">
             <AutoInsightsCarousel insights={analytics.insights} />
@@ -118,30 +126,31 @@ export default function AnalisesScreen() {
             <MonthEndForecastCard forecast={analytics.forecast} />
           </AnalysisErrorBoundary>
 
+          <AnalysisErrorBoundary label="Alocação de património">
+            <PatrimonyAllocationCard allocation={allocation} totalAssets={totalAssets} />
+          </AnalysisErrorBoundary>
+
           <View style={styles.periodSelector}>
             <SegmentedControl
               segments={PERIOD_SEGMENTS}
               value={period}
               onChange={setPeriod}
             />
+            <Text variant="caption" color="textMuted" style={styles.periodNote}>
+              Afecta categorias e evolução abaixo
+            </Text>
           </View>
 
           <TrendsSummaryCard
             trends={data.trends}
-            periodLabel={data.periodLabel}
+            periodLabel={periodOption.label}
             showNetWorthChange={false}
           />
-
-          <SpendingTrendBars buckets={spendingBuckets} periodLabel={periodOption.label} />
 
           <SpendingCategoryCard
             categories={periodCategories}
             periodLabel={periodOption.label}
           />
-
-          <AnalysisErrorBoundary label="Categorias">
-            <CategoryBreakdownList items={analytics.categoryBreakdown} />
-          </AnalysisErrorBoundary>
 
           <AnalysisErrorBoundary label="Heatmap de gastos">
             <SpendingHeatmap transactions={transactions} />
@@ -162,7 +171,7 @@ export default function AnalisesScreen() {
 
           <SectionHeader
             title="Métricas"
-            subtitle="Indicadores chave do período"
+            subtitle="Mês calendário"
           />
           <View style={styles.metricsGrid}>
             {data.metrics
@@ -172,7 +181,7 @@ export default function AnalisesScreen() {
               ))}
           </View>
 
-          {pricesData ? (
+          {pricesData && hasMeaningfulPriceData(pricesData) ? (
             <PricesInsightsSection
               prices={pricesData}
               onAddMovement={() => router.push('/(tabs)/movimentos?action=new-movement')}
@@ -220,5 +229,9 @@ const styles = StyleSheet.create({
   },
   periodSelector: {
     marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  periodNote: {
+    paddingHorizontal: spacing.xs,
   },
 });

@@ -138,7 +138,7 @@ export default function RegisterScreen() {
       />
 
       <TextField
-        label="Password"
+        label="Palavra-passe"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -159,7 +159,7 @@ export default function RegisterScreen() {
       )}
 
       <TextField
-        label="Confirmar password"
+        label="Confirmar palavra-passe"
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry

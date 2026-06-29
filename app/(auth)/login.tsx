@@ -105,7 +105,7 @@ export default function LoginScreen() {
       />
 
       <TextField
-        label="Password"
+        label="Palavra-passe"
         value={password}
         onChangeText={setPassword}
         secureTextEntry

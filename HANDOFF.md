@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T01:02:05.941Z -->
-<!-- Git: 2922feb (2026-06-29T01:05:52+01:00) -->
+<!-- Última geração: 2026-06-29T01:03:10.784Z -->
+<!-- Git: b83b0f0 (2026-06-29T02:02:35+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 13 — Analytics avançadas: insights automáticos, health score, comparação mensal, heatmap e Home inteligente** |
-| Última geração | 2026-06-29T01:02:05.941Z |
+| Última geração | 2026-06-29T01:03:10.784Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `2922feb` (2026-06-29T01:05:52+01:00) |
+| Git commit | `b83b0f0` (2026-06-29T02:02:35+01:00) |
 
 ---
 
@@ -827,6 +827,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros
 - FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido
 - P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction
+- P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy
 
 ### 🔲 Pendente
 - Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id

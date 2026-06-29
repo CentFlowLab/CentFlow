@@ -110,7 +110,8 @@
     "Analytics — motor lib/insights (generateInsights, health-score, previsão, comparação mensal, heatmap); carousel de insights + score 0-100 no topo de Análises; categorias expandidas, subscrições, créditos com simulador amortização",
     "Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros",
     "FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido",
-    "P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction"
+    "P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction",
+    "P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy"
   ],
   "pending": [
     "Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id",

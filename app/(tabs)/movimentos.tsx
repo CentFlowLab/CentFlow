@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
@@ -13,6 +13,7 @@ import {
   MovementFilterChips,
   MOVEMENTS_EMPTY_CONFIG,
   PendingSubscriptionModal,
+  QuickExpenseSheet,
   SwipeableTransactionListItem,
   TransactionsSkeleton,
   type MovementTab,
@@ -61,6 +62,7 @@ export default function MovimentosScreen() {
   const [activeView, setActiveView] = useState<MovementsView>('movimentos');
   const [filter, setFilter] = useState<TransactionFilter>('all');
   const [modalVisible, setModalVisible] = useState(false);
+  const [quickExpenseVisible, setQuickExpenseVisible] = useState(false);
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
@@ -98,7 +100,15 @@ export default function MovimentosScreen() {
   }, [rawTransactions, searchQuery, merchantGroups, groupFilter]);
   const { data: onboardingAnswers } = useOnboardingAnswers();
   const emptyDescription = getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter);
-  const isEmpty = !isLoading && !isError && transactions.length === 0;
+  const isFiltered = Boolean(searchQuery.trim() || groupFilter);
+  const isSearchEmpty =
+    !isLoading && !isError && rawTransactions.length > 0 && transactions.length === 0;
+  const isEmpty = !isLoading && !isError && rawTransactions.length === 0;
+  const showEmptyList = isEmpty || isSearchEmpty;
+  const activeGroupName = groupFilter
+    ? getMerchantGroupName(groupFilter, merchantGroups)
+    : null;
+  const monthSummaryLabel = isFiltered ? 'Filtrado' : 'Este mês';
   const sections = useMemo(() => groupTransactionsByDay(transactions), [transactions]);
   const monthSummary = useMemo(() => summarizeCurrentMonth(transactions), [transactions]);
 
@@ -168,6 +178,7 @@ export default function MovimentosScreen() {
   const quickAddContext = activeView === 'subscricoes' ? 'subscricoes' : 'movimentos';
 
   const quickAdd = useContextualQuickAdd(quickAddContext, {
+    onQuickExpense: () => setQuickExpenseVisible(true),
     onMovement: () => openAddModal(false),
     onSubscription: () => openSubscriptionForm(null),
   });
@@ -260,6 +271,24 @@ export default function MovimentosScreen() {
             style={styles.searchField}
           />
         ) : null}
+        {activeView === 'movimentos' && activeGroupName ? (
+          <View style={styles.groupFilterBanner}>
+            <Text variant="caption" color="textSecondary" style={styles.groupFilterLabel}>
+              Grupo: {activeGroupName}
+            </Text>
+            <Pressable
+              onPress={() => router.setParams({ group: '' })}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Limpar filtro de grupo">
+              <SymbolView
+                name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+                tintColor={colors.textMuted}
+                size={20}
+              />
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       {activeView === 'movimentos' ? (
@@ -304,10 +333,10 @@ export default function MovimentosScreen() {
                 </View>
               )}
               ListHeaderComponent={
-                isEmpty ? null : (
+                showEmptyList ? null : (
                   <View style={styles.monthSummary}>
                     <Text variant="caption" color="textMuted">
-                      Este mês
+                      {monthSummaryLabel}
                     </Text>
                     <View style={styles.monthSummaryRow}>
                       <Text
@@ -325,7 +354,7 @@ export default function MovimentosScreen() {
               }
               contentContainerStyle={[
                 styles.listContent,
-                isEmpty && styles.listContentEmpty,
+                showEmptyList && styles.listContentEmpty,
                 { paddingBottom: contentBottomPadding },
               ]}
               showsVerticalScrollIndicator={false}
@@ -337,25 +366,51 @@ export default function MovimentosScreen() {
                 />
               }
               ListEmptyComponent={
-                <EmptyState
-                  icon={
-                    <SymbolView
-                      name={{
-                        ios: 'list.bullet.rectangle',
-                        android: 'receipt_long',
-                        web: 'receipt_long',
-                      }}
-                      tintColor={colors.primary}
-                      size={32}
-                    />
-                  }
-                  title="O teu histórico começa aqui"
-                  description={emptyDescription}
-                  actionLabel="Adicionar movimento"
-                  onAction={() => openAddModal(false)}
-                  secondaryActionLabel="Digitalizar talão"
-                  onSecondaryAction={() => openAddModal(true)}
-                />
+                isSearchEmpty ? (
+                  <EmptyState
+                    icon={
+                      <SymbolView
+                        name={{
+                          ios: 'magnifyingglass',
+                          android: 'search',
+                          web: 'search',
+                        }}
+                        tintColor={colors.primary}
+                        size={32}
+                      />
+                    }
+                    title="Nenhum resultado"
+                    description="Não encontrámos movimentos com estes filtros. Tenta outra pesquisa ou limpa o filtro."
+                    actionLabel={groupFilter ? 'Limpar grupo' : 'Limpar pesquisa'}
+                    onAction={() => {
+                      if (groupFilter) {
+                        router.setParams({ group: '' });
+                      } else {
+                        setSearchQuery('');
+                      }
+                    }}
+                  />
+                ) : (
+                  <EmptyState
+                    icon={
+                      <SymbolView
+                        name={{
+                          ios: 'list.bullet.rectangle',
+                          android: 'receipt_long',
+                          web: 'receipt_long',
+                        }}
+                        tintColor={colors.primary}
+                        size={32}
+                      />
+                    }
+                    title="O teu histórico começa aqui"
+                    description={emptyDescription}
+                    actionLabel="Adicionar movimento"
+                    onAction={() => openAddModal(false)}
+                    secondaryActionLabel="Digitalizar talão"
+                    onSecondaryAction={() => openAddModal(true)}
+                  />
+                )
               }
             />
           )}
@@ -415,6 +470,11 @@ export default function MovimentosScreen() {
         isSaving={saveSubscription.isPending}
       />
 
+      <QuickExpenseSheet
+        visible={quickExpenseVisible}
+        onClose={() => setQuickExpenseVisible(false)}
+      />
+
       <QuickAddMenuSheet
         visible={quickAdd.sheetVisible}
         onClose={() => quickAdd.setSheetVisible(false)}
@@ -440,6 +500,22 @@ const styles = StyleSheet.create({
   },
   searchField: {
     marginTop: spacing.xs,
+  },
+  groupFilterBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 999,
+    backgroundColor: colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  groupFilterLabel: {
+    flex: 1,
   },
   listPadding: {
     paddingHorizontal: spacing.lg,

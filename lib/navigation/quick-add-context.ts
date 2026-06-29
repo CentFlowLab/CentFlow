@@ -15,9 +15,9 @@ export function getContextualQuickAddActions(
 ): QuickAddActionId[] {
   switch (context) {
     case 'home':
-      return ['movement', 'asset', 'goal'];
+      return ['quick_expense', 'movement', 'asset', 'goal'];
     case 'movimentos':
-      return ['movement'];
+      return ['quick_expense', 'movement'];
     case 'subscricoes':
       return ['subscription'];
     case 'creditos':
@@ -54,6 +54,8 @@ export function getQuickAddContextLabel(context: QuickAddScreenContext): string 
 
 export function getQuickAddActionLabel(action: QuickAddActionId): string {
   switch (action) {
+    case 'quick_expense':
+      return 'Despesa rápida';
     case 'movement':
       return 'Novo movimento';
     case 'receipt':

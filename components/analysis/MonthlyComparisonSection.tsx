@@ -1,9 +1,12 @@
+import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Card, SectionHeader, Text } from '@/components/ui';
 import type { MonthlyComparisonRow, MonthlyBar } from '@/lib/insights/monthly-comparison';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
+
+import { AnalysisSectionEmpty } from './AnalysisSectionEmpty';
 
 type MonthlyComparisonSectionProps = {
   rows: MonthlyComparisonRow[];
@@ -19,17 +22,42 @@ function formatChange(change: number | null): string {
   return `${arrow}${Math.abs(change)}%`;
 }
 
+function hasComparisonData(rows: MonthlyComparisonRow[], bars: MonthlyBar[]): boolean {
+  const rowTotal = rows.reduce((sum, row) => sum + row.previous + row.current, 0);
+  const barTotal = bars.reduce((sum, bar) => sum + bar.amount, 0);
+  return rowTotal > 0 || barTotal > 0;
+}
+
 export function MonthlyComparisonSection({
   rows,
   bars,
   currentMonthLabel,
   previousMonthLabel,
 }: MonthlyComparisonSectionProps) {
+  if (!hasComparisonData(rows, bars)) {
+    return (
+      <View style={styles.wrap}>
+        <SectionHeader title="Comparação mensal" subtitle="Mês calendário" />
+        <AnalysisSectionEmpty
+          icon={
+            <SymbolView
+              name={{ ios: 'calendar', android: 'calendar_month', web: 'calendar_month' }}
+              tintColor={colors.textMuted}
+              size={28}
+            />
+          }
+          title="Sem dados para comparar"
+          description="Regista movimentos para ver este mês face ao anterior e a evolução dos últimos 6 meses."
+        />
+      </View>
+    );
+  }
+
   const maxBar = Math.max(...bars.map((b) => b.amount), 1);
 
   return (
     <View style={styles.wrap}>
-      <SectionHeader title="Comparação mensal" subtitle="Este mês vs mês anterior" />
+      <SectionHeader title="Comparação mensal" subtitle="Mês calendário" />
       <Card variant="outlined" style={styles.card}>
         <View style={styles.headerRow}>
           <Text variant="caption" color="textMuted" style={styles.colLabel} />

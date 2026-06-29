@@ -65,7 +65,7 @@ export const ASSETS_SECTION_META: Record<
 > = {
   objetivos: {
     title: 'Objetivos de poupança',
-    subtitle: 'Metas financeiras com progresso visível',
+    subtitle: 'Metas financeiras com progresso visível — poupanças dos objetivos não entram no património líquido',
     addLabel: 'Novo objetivo',
   },
   garantias: {

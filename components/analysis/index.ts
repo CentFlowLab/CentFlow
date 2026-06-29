@@ -1,4 +1,5 @@
 export { AnalysisErrorBoundary } from './AnalysisErrorBoundary';
+export { AnalysisSectionEmpty } from './AnalysisSectionEmpty';
 export { AnalysisMetricCard } from './AnalysisMetricCard';
 export { AnalysisSkeleton } from './AnalysisSkeleton';
 export { InsightsSection } from './InsightsSection';

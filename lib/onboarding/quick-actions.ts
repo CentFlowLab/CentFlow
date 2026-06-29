@@ -25,7 +25,7 @@ const OBJECTIVE_ACTIONS: Partial<Record<PrimaryObjectiveId, QuickAddActionId[]>>
 };
 
 function homeAllowedActions(answers: OnboardingAnswers): QuickAddActionId[] {
-  const allowed = new Set<QuickAddActionId>(['movement', 'asset', 'goal']);
+  const allowed = new Set<QuickAddActionId>(['quick_expense', 'movement', 'asset', 'goal']);
   const tags = new Set(answers.profileTags);
 
   if (

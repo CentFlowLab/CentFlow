@@ -8,7 +8,7 @@ import {
 import { Card, LoadingSpinner, SectionHeader, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
-import { spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 
 type PushToggleKey = 'pushNotifications' | 'warrantyAlerts' | 'budgetAlerts' | 'weeklyDigest';
 
@@ -19,6 +19,8 @@ type EmailToggleKey =
   | 'emailSubscriptionRenewals'
   | 'emailCreditPayments'
   | 'emailTipsInsights';
+
+const PUSH_DISABLED_HINT = 'Em breve — notificações locais';
 
 export default function NotificationsScreen() {
   const { data: preferences, isLoading } = useUserPreferences();
@@ -59,27 +61,35 @@ export default function NotificationsScreen() {
 
       <View style={styles.section}>
         <SectionHeader title="Push" />
+        <Card variant="elevated" style={styles.infoCard}>
+          <Text variant="bodyMedium">Sobre notificações push</Text>
+          <Text variant="caption" color="textSecondary" style={styles.infoText}>
+            SideStore e LiveContainer não suportam push nativo. TestFlight e App Store sim —
+            quando implementado. Os alertas in-app no dashboard funcionam sempre, independentemente
+            da instalação.
+          </Text>
+        </Card>
         <Card variant="elevated" style={styles.card}>
           <SettingsToggleRow
             label="Notificações push"
-            description="Alertas no telemóvel sobre prazos e resumos"
+            description={PUSH_DISABLED_HINT}
             value={preferences.pushNotifications}
             onValueChange={(value) => handlePushToggle('pushNotifications', value)}
-            disabled={updatePreferences.isPending}
+            disabled
           />
           <SettingsToggleRow
             label="Garantias a expirar"
-            description="Aviso 30 dias antes do fim"
+            description={PUSH_DISABLED_HINT}
             value={preferences.warrantyAlerts}
             onValueChange={(value) => handlePushToggle('warrantyAlerts', value)}
-            disabled={updatePreferences.isPending}
+            disabled
           />
           <SettingsToggleRow
             label="Orçamento mensal"
-            description="Quando ultrapassares limites definidos"
+            description={PUSH_DISABLED_HINT}
             value={preferences.budgetAlerts}
             onValueChange={(value) => handlePushToggle('budgetAlerts', value)}
-            disabled={updatePreferences.isPending}
+            disabled
           />
         </Card>
       </View>
@@ -145,6 +155,14 @@ const styles = StyleSheet.create({
   },
   card: {
     gap: spacing.xs,
+  },
+  infoCard: {
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  infoText: {
+    lineHeight: 18,
   },
   hint: {
     marginTop: spacing.sm,

@@ -1,20 +1,56 @@
-import { StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { Card, SectionHeader, Text } from '@/components/ui';
 import type { SubscriptionAnalysis } from '@/lib/insights/subscription-analysis';
-import { colors, spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
 type SubscriptionsAnalysisSectionProps = {
   analysis: SubscriptionAnalysis | null;
 };
 
+function isMinimalAnalysis(analysis: SubscriptionAnalysis): boolean {
+  return analysis.monthlyTotal <= 0 || analysis.items.length === 0;
+}
+
 export function SubscriptionsAnalysisSection({ analysis }: SubscriptionsAnalysisSectionProps) {
-  if (!analysis) return null;
+  if (!analysis || isMinimalAnalysis(analysis)) {
+    return (
+      <View style={styles.wrap}>
+        <SectionHeader title="Subscrições" subtitle="Mês calendário" />
+        <Pressable
+          onPress={() => router.push('/(tabs)/movimentos?view=subscricoes')}
+          style={({ pressed }) => [styles.compactLink, pressed && styles.compactLinkPressed]}
+          accessibilityRole="link"
+          accessibilityLabel="Ver subscrições em Movimentos">
+          <View style={styles.compactIcon}>
+            <SymbolView
+              name={{ ios: 'repeat.circle', android: 'autorenew', web: 'autorenew' }}
+              tintColor={colors.primary}
+              size={20}
+            />
+          </View>
+          <View style={styles.compactText}>
+            <Text variant="bodyMedium">Gerir subscrições</Text>
+            <Text variant="caption" color="textMuted">
+              Adiciona ou revê custos recorrentes em Movimentos
+            </Text>
+          </View>
+          <SymbolView
+            name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+            tintColor={colors.textMuted}
+            size={16}
+          />
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.wrap}>
-      <SectionHeader title="Subscrições" subtitle="Custos recorrentes" />
+      <SectionHeader title="Subscrições" subtitle="Mês calendário" />
       <Card variant="outlined" style={styles.card}>
         <View style={styles.totals}>
           <View>
@@ -71,6 +107,32 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
     gap: spacing.sm,
+  },
+  compactLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  compactLinkPressed: {
+    opacity: 0.88,
+    borderColor: colors.primary,
+  },
+  compactIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compactText: {
+    flex: 1,
+    gap: 2,
   },
   totals: {
     flexDirection: 'row',

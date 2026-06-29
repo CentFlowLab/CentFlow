@@ -1,9 +1,12 @@
+import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import type { AnalysisTrends } from '@/lib/domain/analysis.types';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
+
+import { AnalysisSectionEmpty } from './AnalysisSectionEmpty';
 
 type TrendsSummaryCardProps = {
   trends: AnalysisTrends;
@@ -16,6 +19,32 @@ export function TrendsSummaryCard({
   periodLabel,
   showNetWorthChange = true,
 }: TrendsSummaryCardProps) {
+  const hasActivity = trends.totalIncome + trends.totalExpenses > 0;
+
+  if (!hasActivity) {
+    return (
+      <View style={styles.wrap}>
+        <Text variant="h3" style={styles.title}>
+          Tendências
+        </Text>
+        <Text variant="caption" color="textMuted" style={styles.subtitle}>
+          {periodLabel}
+        </Text>
+        <AnalysisSectionEmpty
+          icon={
+            <SymbolView
+              name={{ ios: 'chart.bar', android: 'bar_chart', web: 'bar_chart' }}
+              tintColor={colors.textMuted}
+              size={28}
+            />
+          }
+          title="Sem movimentos no período"
+          description="Regista receitas ou despesas para ver tendências e fluxo de caixa."
+        />
+      </View>
+    );
+  }
+
   const maxValue = Math.max(trends.totalIncome, trends.totalExpenses, 1);
   const incomeWidth = `${Math.round((trends.totalIncome / maxValue) * 100)}%`;
   const expenseWidth = `${Math.round((trends.totalExpenses / maxValue) * 100)}%`;
@@ -113,6 +142,10 @@ function BarRow({
 }
 
 const styles = StyleSheet.create({
+  wrap: {
+    marginBottom: spacing['2xl'],
+    gap: spacing.xs,
+  },
   card: {
     marginBottom: spacing['2xl'],
     gap: spacing.md,
