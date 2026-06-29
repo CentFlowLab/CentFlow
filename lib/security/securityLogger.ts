@@ -53,11 +53,11 @@ export function getSafeSecurityMessage(
     case 'reset_failed':
       return 'Não foi possível redefinir a palavra-passe. Tenta novamente.';
     case 'update_failed':
-      return 'Não foi possível verificar actualizações. Tenta mais tarde.';
+      return 'Não foi possível verificar atualizações. Tenta mais tarde.';
     case 'integrity_risk':
-      return 'Por segurança, esta acção não está disponível neste dispositivo.';
+      return 'Por segurança, esta ação não está disponível neste dispositivo.';
     case 'force_update':
-      return 'Esta versão já não é suportada. Actualiza para continuares a usar a CentFlow com segurança.';
+      return 'Esta versão já não é suportada. Atualiza para continuares a usar a CentFlow com segurança.';
     case 'maintenance':
       return 'A CentFlow está temporariamente indisponível. Tenta novamente em breve.';
     default:

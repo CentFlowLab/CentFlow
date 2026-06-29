@@ -13,7 +13,7 @@ type ForceUpdateScreenProps = {
 
 export function ForceUpdateScreen({
   title = 'Atualização obrigatória',
-  message = 'Esta versão já não é suportada. Actualiza para continuares a usar a CentFlow com segurança.',
+  message = 'Esta versão já não é suportada. Atualiza para continuares a usar a CentFlow com segurança.',
   storeUrl = null,
   maintenanceMode = false,
 }: ForceUpdateScreenProps) {
@@ -43,7 +43,7 @@ export function ForceUpdateScreen({
           {message}
         </Text>
         {!maintenanceMode ? (
-          <Button label="Actualizar agora" onPress={handleUpdatePress} fullWidth size="lg" />
+          <Button label="Atualizar agora" onPress={handleUpdatePress} fullWidth size="lg" />
         ) : null}
       </View>
     </SafeAreaView>

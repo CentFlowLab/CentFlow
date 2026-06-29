@@ -1,5 +1,6 @@
 import type { Subscription } from '@/lib/domain/assets.types';
 import { monthlySubscriptionTotal } from '@/lib/domain/financial/centflow-score';
+import { resolveSubscriptionCategory } from '@/lib/subscriptions/auto-categorize';
 
 export type SubscriptionAnalysis = {
   monthlyTotal: number;
@@ -22,11 +23,8 @@ function toMonthlyAmount(sub: Subscription): number {
   return sub.amount;
 }
 
-function inferCategory(name: string): string {
-  const n = name.toLowerCase();
-  if (/netflix|spotify|disney|hbo|prime|streaming|youtube/.test(n)) return 'Streaming';
-  if (/adobe|microsoft|notion|software|cloud|github|apple/.test(n)) return 'Software';
-  return 'Outros';
+function categoryForSubscription(sub: Subscription): string {
+  return resolveSubscriptionCategory(sub.name, sub.category) ?? 'Outros';
 }
 
 export function computeSubscriptionAnalysis(
@@ -39,7 +37,7 @@ export function computeSubscriptionAnalysis(
 
   const items = subscriptions.map((sub) => {
     const monthlyAmount = toMonthlyAmount(sub);
-    const cat = inferCategory(sub.name);
+    const cat = categoryForSubscription(sub);
     byCat.set(cat, (byCat.get(cat) ?? 0) + monthlyAmount);
     return {
       id: sub.id,

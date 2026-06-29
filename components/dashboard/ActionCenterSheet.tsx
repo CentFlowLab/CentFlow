@@ -60,7 +60,7 @@ export function ActionCenterSheet({ visible, onClose, onSelect }: ActionCenterSh
       maxHeight="78%"
       header={() => (
         <View style={styles.header}>
-          <Text variant="h2">Centro de acções</Text>
+          <Text variant="h2">Centro de ações</Text>
           <Text variant="caption" color="textMuted">
             O que posso fazer hoje?
           </Text>

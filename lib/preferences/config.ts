@@ -32,7 +32,7 @@ export const THEME_OPTIONS: Array<{
   {
     id: 'dark-premium',
     name: 'Dark Premium',
-    description: 'Teal e gold — tema actual da CentFlow',
+    description: 'Teal e gold — tema atual da CentFlow',
     available: true,
     preview: ['#0A1214', '#122023', '#2DD4BF'],
   },

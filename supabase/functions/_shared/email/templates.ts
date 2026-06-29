@@ -32,7 +32,7 @@ export function buildEmailTemplate(
         subject: 'Ainda não terminaste a configuração da tua CentFlow',
         preheader: 'Faltam poucos passos para personalizar a app.',
         greeting,
-        body: 'A tua CentFlow está quase pronta. Termina a configuração para veres a app adaptada aos teus objectivos.',
+        body: 'A tua CentFlow está quase pronta. Termina a configuração para veres a app adaptada aos teus objetivos.',
         ctaLabel: 'Continuar configuração',
         ctaUrl: buildDeepLink('onboarding'),
       });
@@ -102,10 +102,10 @@ export function buildEmailTemplate(
     case 'weekly_digest':
       return wrap({
         subject: 'O teu resumo financeiro semanal',
-        preheader: 'Movimentos, objectivos e próximos prazos.',
+        preheader: 'Movimentos, objetivos e próximos prazos.',
         greeting,
         body: extras.summary ??
-          'Aqui está o teu resumo semanal. Abre a CentFlow para ver movimentos, evolução e próximas acções.',
+          'Aqui está o teu resumo semanal. Abre a CentFlow para ver movimentos, evolução e próximas ações.',
         ctaLabel: 'Ver resumo completo',
         ctaUrl: buildDeepLink('(tabs)/'),
       });

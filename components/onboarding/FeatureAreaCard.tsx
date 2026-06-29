@@ -28,7 +28,7 @@ export function FeatureAreaCard({ feature, index = 0, onActivate }: FeatureAreaC
                 variant="caption"
                 color={isActive ? 'primary' : 'textMuted'}
                 style={styles.badgeText}>
-                {isActive ? 'Activo' : 'Disponível'}
+                {isActive ? 'Ativo' : 'Disponível'}
               </Text>
             </View>
           </View>
@@ -37,7 +37,7 @@ export function FeatureAreaCard({ feature, index = 0, onActivate }: FeatureAreaC
           </Text>
           {!isActive && onActivate ? (
             <Button
-              label="Activar"
+              label="Ativar"
               variant="ghost"
               size="sm"
               onPress={onActivate}

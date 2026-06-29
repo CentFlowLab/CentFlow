@@ -20,7 +20,7 @@ const LEVELS: FinancialLevel[] = [
     label: 'Gestor',
     minScore: 40,
     maxScore: 59,
-    perks: ['Insights avançados', 'Centro de acções'],
+    perks: ['Insights avançados', 'Centro de ações'],
   },
   {
     id: 'gold',
@@ -34,7 +34,7 @@ const LEVELS: FinancialLevel[] = [
     label: 'Mestre',
     minScore: 80,
     maxScore: 100,
-    perks: ['Assistente proactivo', 'Badges exclusivos'],
+    perks: ['Assistente proativo', 'Badges exclusivos'],
   },
 ];
 

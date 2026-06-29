@@ -54,7 +54,7 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
   const items: MenuItem[] = [
     {
       id: 'profile',
-      label: 'Ver perfil',
+      label: 'Perfil e conta',
       icon: { ios: 'person.circle', android: 'account_circle', web: 'account_circle' },
       onPress: () => {
         onClose();
@@ -63,7 +63,7 @@ export function ProfileMenuSheet({ visible, onClose }: ProfileMenuSheetProps) {
     },
     {
       id: 'settings',
-      label: 'Definições',
+      label: 'Preferências da app',
       icon: { ios: 'gearshape.fill', android: 'settings', web: 'settings' },
       onPress: () => {
         onClose();

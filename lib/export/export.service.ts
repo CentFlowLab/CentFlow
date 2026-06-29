@@ -276,7 +276,7 @@ function buildPdfHtml(input: FinancialPdfInput): string {
     sections.composicao ? section('Composição', buildBreakdownRows(dashboard)) : '',
     sections.perfil ? section('Perfil financeiro', perfilBody) : '',
     sections.movimentos ? section('Movimentos recentes', buildTransactionRows(transactions)) : '',
-    sections.objetivos ? section('Objectivos', buildGoalsSection(assets)) : '',
+    sections.objetivos ? section('Objetivos', buildGoalsSection(assets)) : '',
     sections.ativos ? section('Ativos', buildAssetsSummary(assets)) : '',
     sections.subscricoes ? section('Subscrições', buildSubscriptionsSection(assets)) : '',
   ].join('');
@@ -570,7 +570,7 @@ function buildPdfHtml(input: FinancialPdfInput): string {
 
         <p class="footer">
           Relatório gerado pela CentFlow · Design dark premium<br />
-          Os valores reflectem os dados disponíveis no momento da exportação.
+          Os valores refletem os dados disponíveis no momento da exportação.
         </p>
         </div>
       </body>

@@ -167,7 +167,7 @@ export function ProfileHubSections({
             <View style={styles.metaRow}>
               <View style={styles.statusPill}>
                 <Text variant="caption" color="primary">
-                  {isAuthenticated ? 'Conta activa' : 'Sessão pendente'}
+                  {isAuthenticated ? 'Conta ativa' : 'Sessão pendente'}
                 </Text>
               </View>
               {memberSince ? (
@@ -230,7 +230,7 @@ export function ProfileHubSections({
             <View>
               <Text variant="bodyMedium">{planLabel}</Text>
               <Text variant="caption" color="textMuted">
-                {activeFeatures} de {ALL_FEATURE_AREAS.length} áreas activas · v{appVersion}
+                {activeFeatures} de {ALL_FEATURE_AREAS.length} áreas ativas · v{appVersion}
               </Text>
             </View>
             <View style={styles.planBadge}>
@@ -267,9 +267,9 @@ export function ProfileHubSections({
                     disabled={activatingFeature !== null}
                     style={({ pressed }) => [styles.activateLink, pressed && styles.menuRowPressed]}
                     accessibilityRole="button"
-                    accessibilityLabel={`Activar ${config.label}`}>
+                    accessibilityLabel={`Ativar ${config.label}`}>
                     <Text variant="caption" color="primary">
-                      {activatingFeature === featureId ? '…' : 'Activar'}
+                      {activatingFeature === featureId ? '…' : 'Ativar'}
                     </Text>
                   </Pressable>
                 )}

@@ -45,6 +45,7 @@ import {
   getMerchantGroupName,
 } from '@/lib/merchants/transaction-search';
 import { colors, spacing } from '@/lib/theme';
+import { resolveSubscriptionCategory } from '@/lib/subscriptions/auto-categorize';
 import { formatCurrency } from '@/lib/utils/format';
 
 export default function MovimentosScreen() {
@@ -220,6 +221,7 @@ export default function MovimentosScreen() {
         name: activeDetection.name,
         amount: activeDetection.amount,
         billingInterval: activeDetection.billingInterval,
+        category: resolveSubscriptionCategory(activeDetection.name),
         notes: `Detetada automaticamente (${activeDetection.transactionIds.length} movimentos)`,
       });
       showToast('Subscrição adicionada.', 'success');

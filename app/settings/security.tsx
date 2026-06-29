@@ -36,8 +36,8 @@ export default function SecurityScreen() {
       await setBiometricLockEnabled(value);
       showToast(
         value
-          ? 'Protecção activada. Será pedida ao abrir a app.'
-          : 'Protecção desactivada.',
+          ? 'Protecção ativada. Será pedida ao abrir a app.'
+          : 'Protecção desativada.',
         'success',
       );
     } catch {
@@ -61,7 +61,7 @@ export default function SecurityScreen() {
       logSecurityEvent('biometric_disabled_with_password');
       await applyBiometricsPreference(false);
     } catch {
-      showToast('Password incorrecta. A biometria continua activa.', 'error');
+      showToast('Password incorrecta. A biometria continua ativa.', 'error');
     }
   }
 
@@ -242,13 +242,13 @@ export default function SecurityScreen() {
           ) : (
             <>
               <Text variant="caption" color="textMuted">
-                Este dispositivo está activo. Outros dispositivos com sessão aberta podem
+                Este dispositivo está ativo. Outros dispositivos com sessão aberta podem
                 continuar ligados até terminares todas as sessões.
               </Text>
               <View style={styles.sessionRow}>
                 <Text variant="body">{sessions?.currentDeviceLabel ?? 'Este dispositivo'}</Text>
                 <Text variant="caption" color="success">
-                  Actual
+                  Atual
                 </Text>
               </View>
               <Button

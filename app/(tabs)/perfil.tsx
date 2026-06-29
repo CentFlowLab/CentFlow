@@ -38,9 +38,9 @@ export default function PerfilScreen() {
     setActivatingFeature(feature);
     try {
       await activateFeature(feature);
-      showToast('Área activada com sucesso.', 'success');
+      showToast('Área ativada com sucesso.', 'success');
     } catch {
-      showToast('Não foi possível activar esta área.', 'error');
+      showToast('Não foi possível ativar esta área.', 'error');
     } finally {
       setActivatingFeature(null);
     }

@@ -63,7 +63,7 @@ export function SubscriptionsSection({
           </View>
           <View style={styles.countBadge}>
             <Text variant="caption" color="textSecondary">
-              {subscriptions.length} activa{subscriptions.length === 1 ? '' : 's'}
+              {subscriptions.length} ativa{subscriptions.length === 1 ? '' : 's'}
             </Text>
           </View>
         </View>

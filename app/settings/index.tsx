@@ -101,7 +101,7 @@ export default function SettingsIndexScreen() {
   function handleRedoOnboarding() {
     Alert.alert(
       'Repetir onboarding?',
-      'Voltas a responder às perguntas de personalização. Os teus dados financeiros não são afectados.',
+      'Voltas a responder às perguntas de personalização. Os teus dados financeiros não são afetados.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {

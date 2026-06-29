@@ -28,7 +28,7 @@ export default function AppearanceScreen() {
 
     try {
       await updatePreferences.mutateAsync({ themeId });
-      showToast(`Tema "${theme.name}" activo.`, 'success');
+      showToast(`Tema "${theme.name}" ativo.`, 'success');
     } catch {
       showToast('Não foi possível guardar o tema.', 'error');
     }
@@ -46,8 +46,8 @@ export default function AppearanceScreen() {
     <SettingsScreenLayout title="Aparência" subtitle="Tema visual da aplicação">
       <SettingsHero
         icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
-        title="Tema actual"
-        description="Dark Premium é o visual activo da CentFlow."
+        title="Tema atual"
+        description="Dark Premium é o visual ativo da CentFlow."
       />
 
       <Pressable
@@ -58,7 +58,7 @@ export default function AppearanceScreen() {
             <Text variant="bodyMedium">{activeTheme.name}</Text>
             <View style={styles.activeBadge}>
               <Text variant="caption" color="primary">
-                Activo
+                Ativo
               </Text>
             </View>
           </View>

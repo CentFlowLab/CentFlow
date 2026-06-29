@@ -44,10 +44,16 @@ export function MonthlySpendableCard({ onOpenDetails }: MonthlySpendableCardProp
           formatter={(v) => formatCurrency(v)}
           style={[styles.value, { color: valueTone }]}
         />
-        <Text variant="caption" color="textSecondary">
-          {formatCurrency(spendable.dailyAvailable)}/dia até {endOfMonthLabel(reference)} ·{' '}
-          {spendable.daysRemaining} {spendable.daysRemaining === 1 ? 'dia' : 'dias'}
-        </Text>
+        {spendable.remainingThisMonth < 0 ? (
+          <Text variant="caption" style={styles.overBudget}>
+            Já ultrapassaste o orçamento deste mês.
+          </Text>
+        ) : (
+          <Text variant="caption" color="textSecondary">
+            {formatCurrency(spendable.dailyAvailable)}/dia até {endOfMonthLabel(reference)} ·{' '}
+            {spendable.daysRemaining} {spendable.daysRemaining === 1 ? 'dia' : 'dias'}
+          </Text>
+        )}
       </Card>
     </Card>
   );
@@ -72,5 +78,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.5,
     lineHeight: 46,
+  },
+  overBudget: {
+    color: colors.danger,
+    fontWeight: '600',
   },
 });

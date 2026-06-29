@@ -93,7 +93,7 @@ export function generateInsights(input: InsightInput): Insight[] {
         type: 'warning',
         icon: '⚠️',
         title: 'Ritmo de gasto elevado',
-        body: `No ritmo actual vais gastar ${formatCurrency(forecast.projectedTotal)} até ao fim do mês.`,
+        body: `No ritmo atual vais gastar ${formatCurrency(forecast.projectedTotal)} até ao fim do mês.`,
         priority: 100,
         action: { label: 'Ver movimentos', route: '/(tabs)/movimentos' },
       });
@@ -209,7 +209,7 @@ export function generateInsights(input: InsightInput): Insight[] {
           type: 'positive',
           icon: '🎯',
           title: 'Projeção do objetivo',
-          body: `Se mantiveres o ritmo actual, atinges "${primaryGoal.name}" em ${dateLabel}.`,
+          body: `Se mantiveres o ritmo atual, atinges "${primaryGoal.name}" em ${dateLabel}.`,
           priority: 75,
           action: { label: 'Ver objetivos', route: '/(tabs)/ativos?tab=objetivos' },
         });

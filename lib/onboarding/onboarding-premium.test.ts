@@ -48,7 +48,7 @@ test('getStepLabel numera só os passos-pergunta', () => {
 test('getProgressLabel varia com o progresso', () => {
   assert.equal(getProgressLabel(10), 'A criar o teu espaço financeiro');
   assert.equal(getProgressLabel(50), 'A personalizar a tua experiência');
-  assert.equal(getProgressLabel(70), 'A activar as funcionalidades certas');
+  assert.equal(getProgressLabel(70), 'A ativar as funcionalidades certas');
   assert.equal(getProgressLabel(95), 'A finalizar o teu plano');
 });
 
@@ -107,7 +107,7 @@ test('personalização preservada: objetivo activa funcionalidades certas', () =
     });
     assert.ok(
       features.includes(feature as (typeof features)[number]),
-      `${objective} devia activar ${feature}`,
+      `${objective} devia ativar ${feature}`,
     );
   }
 });

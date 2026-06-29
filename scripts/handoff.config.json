@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 14 — Refinamento pré-lançamento: P0 confiança, merchant, análises simplificadas, gasto rápido visível",
+  "currentPhase": "Fase 15 — Correções visuais Sessão 3: Home, Análises, heatmap, score, ortografia",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",

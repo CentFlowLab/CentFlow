@@ -362,7 +362,7 @@ export function CreditFormModal({
         nextPaymentDate,
         notes: notes.trim() || undefined,
       });
-      showToast(isEditing ? 'Cartão actualizado.' : 'Cartão adicionado.', 'success');
+      showToast(isEditing ? 'Cartão atualizado.' : 'Cartão adicionado.', 'success');
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'o cartão'));
@@ -438,7 +438,7 @@ export function CreditFormModal({
         appliesAmortization
           ? `Amortização aplicada — novo saldo ${formatCurrency(effectiveBalance)}.`
           : isEditing
-            ? 'Crédito actualizado.'
+            ? 'Crédito atualizado.'
             : 'Crédito adicionado.',
         'success',
       );

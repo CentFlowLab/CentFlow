@@ -13,11 +13,11 @@ import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
 const LEVEL_COLOR: Record<HeatmapDay['level'], string> = {
   future: colors.surfaceHighlight,
-  none: colors.successMuted,
-  low: '#2d5a3d',
-  medium: colors.accentMuted,
-  high: '#b45309',
-  veryHigh: colors.dangerMuted,
+  none: colors.surface,
+  low: '#ca8a04',
+  medium: '#eab308',
+  high: '#f97316',
+  veryHigh: '#dc2626',
 };
 
 type SpendingHeatmapProps = {
@@ -85,10 +85,12 @@ export function SpendingHeatmap({ transactions, referenceDate = new Date() }: Sp
                 styles.cell,
                 {
                   backgroundColor: LEVEL_COLOR[day.level],
-                  opacity: selectedDate === day.date ? 1 : day.isFuture ? 0.35 : 0.95,
+                  opacity: selectedDate === day.date ? 1 : day.isFuture ? 0.35 : 1,
+                  borderWidth: day.isToday ? 2 : 0,
+                  borderColor: day.isToday ? colors.primary : 'transparent',
                 },
               ]}>
-              <Text variant="caption" color="text">
+              <Text variant="caption" color={day.level === 'none' ? 'textMuted' : 'text'}>
                 {day.day}
               </Text>
             </Pressable>
@@ -96,9 +98,10 @@ export function SpendingHeatmap({ transactions, referenceDate = new Date() }: Sp
         </View>
 
         <View style={styles.legend}>
-          <LegendDot color={LEVEL_COLOR.none} label="<10€" />
-          <LegendDot color={LEVEL_COLOR.medium} label="10-50€" />
-          <LegendDot color={LEVEL_COLOR.high} label="50-150€" />
+          <LegendDot color={LEVEL_COLOR.none} label="0€" />
+          <LegendDot color={LEVEL_COLOR.low} label="<10€" />
+          <LegendDot color={LEVEL_COLOR.medium} label="10–50€" />
+          <LegendDot color={LEVEL_COLOR.high} label="50–150€" />
           <LegendDot color={LEVEL_COLOR.veryHigh} label=">150€" />
         </View>
 
@@ -109,7 +112,7 @@ export function SpendingHeatmap({ transactions, referenceDate = new Date() }: Sp
             </Text>
             {selectedTxs.map((tx) => (
               <Text key={tx.id} variant="caption" color="textSecondary">
-                {tx.description ?? tx.categoryLabel} — {formatCurrency(tx.amount)}
+                {tx.merchant ?? tx.description ?? tx.categoryLabel} — {formatCurrency(tx.amount)}
               </Text>
             ))}
           </View>

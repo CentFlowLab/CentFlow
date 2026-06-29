@@ -77,7 +77,7 @@ export function buildMockAnalysisData(): AnalysisData {
       type: 'achievement',
       title: 'Investimentos a crescer',
       description:
-        'A quota de investimentos subiu 4,2% este trimestre. Mantém as regras de DCA activas.',
+        'A quota de investimentos subiu 4,2% este trimestre. Mantém as regras de DCA ativas.',
     },
     {
       id: 'ins-3',

@@ -19,7 +19,7 @@ export function getRenewalStatus(
   alertDays: number = SUBSCRIPTION_RENEWAL_ALERT_DAYS,
 ): RenewalStatus {
   if (!renewsAt) {
-    return { label: 'Activa', tone: 'default', diffDays: null };
+    return { label: 'Ativa', tone: 'default', diffDays: null };
   }
 
   const diffDays = daysUntilRenewal(renewsAt, asOf);
@@ -41,7 +41,7 @@ export function getRenewalStatus(
     return { label: `Renova em ${diffDays}d`, tone: 'warning', diffDays };
   }
 
-  return { label: 'Activa', tone: 'default', diffDays };
+  return { label: 'Ativa', tone: 'default', diffDays };
 }
 
 export function countRenewalsSoon(

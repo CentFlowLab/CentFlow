@@ -47,7 +47,7 @@ export function MonthEndForecastCard({ forecast }: MonthEndForecastCardProps) {
         Gastaste {formatCurrency(forecast.spentSoFar)} em {forecast.daysPassed} dias.
       </Text>
       <Text variant="bodyMedium">
-        No ritmo actual: ~{formatCurrency(forecast.projectedTotal)} até dia {forecast.daysTotal}.
+        No ritmo atual: ~{formatCurrency(forecast.projectedTotal)} até dia {forecast.daysTotal}.
       </Text>
       {forecast.estimatedRemainingBudget != null ? (
         <Text

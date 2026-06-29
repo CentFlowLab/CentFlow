@@ -124,7 +124,7 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
     insights.push({
       id: 'goal-progress',
       type: 'achievement',
-      title: 'Objectivo quase concluído',
+      title: 'Objetivo quase concluído',
       description: `${featuredGoal.goal.name} está a ${formatPercent(featuredGoal.percent, 0, false)} — faltam ${formatCurrency(Math.max(0, featuredGoal.goal.target - featuredGoal.goal.current))}.`,
       actionLabel: 'Ver objetivos',
     });

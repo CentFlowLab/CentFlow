@@ -25,7 +25,7 @@ export function HomeAttentionSheet({ visible, onClose, items }: HomeAttentionShe
             <Text variant="h2">Precisa atenção</Text>
             <Text variant="caption" color="textMuted">
               {items.length > 0
-                ? `${items.length} alerta${items.length > 1 ? 's' : ''} activo${items.length > 1 ? 's' : ''}`
+                ? `${items.length} alerta${items.length > 1 ? 's' : ''} ativo${items.length > 1 ? 's' : ''}`
                 : 'Tudo sob controlo'}
             </Text>
           </View>

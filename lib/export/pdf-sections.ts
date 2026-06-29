@@ -40,7 +40,7 @@ export const PDF_SECTION_OPTIONS: PdfSectionOption[] = [
   },
   {
     id: 'objetivos',
-    label: 'Objectivos',
+    label: 'Objetivos',
     description: 'Metas de poupança e progresso.',
   },
   {

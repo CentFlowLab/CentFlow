@@ -3,6 +3,7 @@ import { getCategoryById } from '@/lib/data/transaction-categories';
 
 import {
   filterTransactionsInMonth,
+  getDayOfMonth,
   monthKey,
   previousMonthKey,
 } from './month-utils';
@@ -69,6 +70,7 @@ export type HeatmapDay = {
   amount: number;
   level: 'future' | 'none' | 'low' | 'medium' | 'high' | 'veryHigh';
   isFuture: boolean;
+  isToday: boolean;
 };
 
 export function computeSpendingHeatmap(
@@ -82,19 +84,23 @@ export function computeSpendingHeatmap(
   );
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = referenceDate.getDate();
+  const todayMonth = referenceDate.getMonth();
+  const todayYear = referenceDate.getFullYear();
+  const isViewingCurrentMonth = year === todayYear && month === todayMonth;
 
   const byDay = new Map<number, number>();
   const key = monthKey(referenceDate);
   const monthTxs = filterTransactionsInMonth(transactions, key, referenceDate);
   for (const tx of monthTxs) {
     if (tx.type !== 'expense') continue;
-    const day = Number(tx.date.slice(8, 10));
+    const day = getDayOfMonth(tx.date);
     byDay.set(day, (byDay.get(day) ?? 0) + tx.amount);
   }
 
   const days: HeatmapDay[] = [];
   for (let d = 1; d <= daysInMonth; d += 1) {
-    const isFuture = d > today;
+    const isFuture = isViewingCurrentMonth && d > today;
+    const isToday = isViewingCurrentMonth && d === today;
     const amount = byDay.get(d) ?? 0;
     days.push({
       date: `${key}-${String(d).padStart(2, '0')}`,
@@ -102,6 +108,7 @@ export function computeSpendingHeatmap(
       amount,
       level: isFuture ? 'future' : heatLevel(amount),
       isFuture,
+      isToday,
     });
   }
 

@@ -122,11 +122,18 @@ export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
           {componentEntries.map((c) => (
             <View key={c.label} style={styles.gridItem}>
               <Text variant="caption" color="textMuted">
-                {c.hasData ? (c.score >= c.max * 0.5 ? '✅' : '⚠️') : '—'} {c.label}
+                {c.score === null
+                  ? '— Sem dados'
+                  : `${c.hasData ? (c.score >= c.max * 0.5 ? '✅' : '⚠️') : '—'} ${c.label}`}
               </Text>
             </View>
           ))}
         </View>
+        {score.scoredComponentCount < 5 ? (
+          <Text variant="caption" color="textMuted" align="center">
+            {score.scoredComponentCount} de 5 componentes com dados
+          </Text>
+        ) : null}
       </Card>
     </Pressable>
   );

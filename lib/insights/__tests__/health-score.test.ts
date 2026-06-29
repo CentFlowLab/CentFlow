@@ -27,10 +27,24 @@ describe('calculateHealthScore', () => {
       creditMonthlyPayments: 0,
       transactionCountThisMonth: 1,
     });
-    assert.equal(result.components.savings.hasData, false);
+    assert.equal(result.components.savings.score, null);
     assert.equal(result.hasSufficientData, false);
     assert.equal(result.total, 0);
     assert.equal(result.status, 'warning');
+  });
+
+  it('despesas sem receitas não confundem com fluxo negativo neutro', () => {
+    const result = calculateHealthScore({
+      monthlyIncome: 0,
+      monthlyExpenses: 500,
+      monthlySubscriptionCost: 0,
+      totalDebt: 0,
+      creditMonthlyPayments: 0,
+      transactionCountThisMonth: 5,
+    });
+    assert.equal(result.components.cashflow.score, 0);
+    assert.equal(result.components.cashflow.detail, 'Sem receitas registadas.');
+    assert.equal(result.components.savings.score, null);
   });
 
   it('dívida elevada reduz score', () => {
@@ -70,7 +84,7 @@ describe('calculateHealthScore', () => {
     assert.equal(result.components.debt.score, 20);
   });
 
-  it('orçamento não definido é neutro', () => {
+  it('orçamento não definido não conta no total', () => {
     const result = calculateHealthScore({
       monthlyIncome: 2000,
       monthlyExpenses: 1800,
@@ -80,7 +94,7 @@ describe('calculateHealthScore', () => {
       creditMonthlyPayments: 200,
       transactionCountThisMonth: 8,
     });
+    assert.equal(result.components.budget.score, null);
     assert.equal(result.components.budget.hasData, false);
-    assert.equal(result.components.budget.score, 10);
   });
 });

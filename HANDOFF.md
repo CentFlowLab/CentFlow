@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T01:04:34.616Z -->
-<!-- Git: 0379ccb (2026-06-29T02:03:11+01:00) -->
+<!-- Última geração: 2026-06-29T12:04:45.128Z -->
+<!-- Git: 8ab9dc1 (2026-06-29T02:05:35+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 14 — Refinamento pré-lançamento: P0 confiança, merchant, análises simplificadas, gasto rápido visível** |
-| Última geração | 2026-06-29T01:04:34.616Z |
+| Fase atual | **Fase 15 — Correções visuais Sessão 3: Home, Análises, heatmap, score, ortografia** |
+| Última geração | 2026-06-29T12:04:45.128Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `0379ccb` (2026-06-29T02:03:11+01:00) |
+| Git commit | `8ab9dc1` (2026-06-29T02:05:35+01:00) |
 
 ---
 
@@ -662,6 +662,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     quick-expense-storage.ts
     secure-store-key.ts
   subscriptions/
+    auto-categorize.ts
     detect-subscriptions.test.ts
     detect-subscriptions.ts
     renewal.constants.ts
@@ -716,7 +717,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 14 — Refinamento pré-lançamento: P0 confiança, merchant, análises simplificadas, gasto rápido visível
+## Fase atual: Fase 15 — Correções visuais Sessão 3: Home, Análises, heatmap, score, ortografia
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript

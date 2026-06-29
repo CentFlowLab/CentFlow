@@ -41,7 +41,7 @@ function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] 
       emoji: '✏️',
       title: 'Adiciona o teu primeiro movimento',
       description: withVerboseDescription(
-        'Começa por registar uma despesa ou rendimento para ver o património actualizado.',
+        'Começa por registar uma despesa ou rendimento para ver o património atualizado.',
         verbose,
         'Cada movimento alimenta o orçamento mensal e as análises.',
       ),

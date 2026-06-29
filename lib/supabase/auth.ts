@@ -221,7 +221,7 @@ export async function register(credentials: RegisterCredentials): Promise<AuthSe
 
   if (data.user && !data.session) {
     throw new Error(
-      'Conta criada. Verifica o teu email para confirmar — ou desactiva «Confirm email» no Supabase para entrar logo após o registo.',
+      'Conta criada. Verifica o teu email para confirmar — ou desativa «Confirm email» no Supabase para entrar logo após o registo.',
     );
   }
 

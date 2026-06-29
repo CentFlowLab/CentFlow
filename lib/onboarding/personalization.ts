@@ -750,7 +750,7 @@ export function getHomeAssetsSummaryHints(
     hints.inventory = 'Património físico';
   }
   if (hasCredits && !hints.goals) {
-    hints.goals = 'Créditos activos';
+    hints.goals = 'Créditos ativos';
   }
 
   return hints;
@@ -871,7 +871,7 @@ export function getPersonalizedFallbackSuggestions(
     suggestions.push({
       id: 'onboarding-default',
       title: 'Primeiro passo',
-      description: 'Adiciona um movimento ou digitaliza um talão para activar as análises.',
+      description: 'Adiciona um movimento ou digitaliza um talão para ativar as análises.',
       type: 'general',
       actionLabel: 'Começar',
     });

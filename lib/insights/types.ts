@@ -48,7 +48,7 @@ export interface HealthScoreInput {
 export type HealthScoreStatus = 'critical' | 'warning' | 'good' | 'excellent';
 
 export interface HealthScoreComponentResult {
-  score: number;
+  score: number | null;
   max: number;
   label: string;
   detail: string;
@@ -66,4 +66,6 @@ export interface HealthScoreResult {
   };
   status: HealthScoreStatus;
   hasSufficientData: boolean;
+  /** Componentes com score numérico (exclui "sem dados"). */
+  scoredComponentCount: number;
 }

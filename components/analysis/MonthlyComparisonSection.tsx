@@ -15,7 +15,12 @@ type MonthlyComparisonSectionProps = {
   previousMonthLabel: string;
 };
 
-function formatChange(change: number | null): string {
+function formatChange(
+  previous: number,
+  current: number,
+  change: number | null,
+): string {
+  if (previous === 0 && current > 0) return 'Novo';
   if (change == null) return '—';
   if (change === 0) return '→0%';
   const arrow = change > 0 ? '↑' : '↓';
@@ -37,7 +42,7 @@ export function MonthlyComparisonSection({
   if (!hasComparisonData(rows, bars)) {
     return (
       <View style={styles.wrap}>
-        <SectionHeader title="Comparação mensal" subtitle="Mês calendário" />
+        <SectionHeader title="Comparação mensal" />
         <AnalysisSectionEmpty
           icon={
             <SymbolView
@@ -57,7 +62,7 @@ export function MonthlyComparisonSection({
 
   return (
     <View style={styles.wrap}>
-      <SectionHeader title="Comparação mensal" subtitle="Mês calendário" />
+      <SectionHeader title="Comparação mensal" />
       <Card variant="outlined" style={styles.card}>
         <View style={styles.headerRow}>
           <Text variant="caption" color="textMuted" style={styles.colLabel} />
@@ -84,6 +89,9 @@ export function MonthlyComparisonSection({
             </Text>
             <Text
               variant="caption"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
               style={[
                 styles.colChange,
                 {
@@ -99,7 +107,7 @@ export function MonthlyComparisonSection({
                           : colors.danger,
                 },
               ]}>
-              {formatChange(row.changePercent)}
+              {formatChange(row.previous, row.current, row.changePercent)}
             </Text>
           </View>
         ))}
@@ -162,9 +170,10 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   colChange: {
-    width: 52,
+    width: 56,
     textAlign: 'right',
     fontWeight: '600',
+    fontSize: 11,
   },
   barsBlock: {
     marginTop: spacing.md,

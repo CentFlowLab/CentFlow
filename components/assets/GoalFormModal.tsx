@@ -138,7 +138,7 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
   function confirmDelete() {
     if (!goal) return;
 
-    const message = `Eliminar "${goal.name}"? Esta acção não pode ser desfeita.`;
+    const message = `Eliminar "${goal.name}"? Esta ação não pode ser desfeita.`;
 
     if (Platform.OS === 'web') {
       if (typeof globalThis.confirm === 'function' && globalThis.confirm(message)) {
@@ -177,7 +177,7 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
             <Text variant="h2">{isEditing ? 'Editar objetivo' : 'Novo objetivo'}</Text>
             <Text variant="caption" color="textMuted">
               {isEditing
-                ? 'Actualiza o progresso, meta ou data prevista'
+                ? 'Atualiza o progresso, meta ou data prevista'
                 : 'Define uma meta de poupança com progresso visível'}
             </Text>
           </View>
@@ -211,7 +211,7 @@ export function GoalFormModal({ visible, onClose, goal = null }: GoalFormModalPr
         </View>
         <View style={styles.halfField}>
           <TextField
-            label="Valor actual (€)"
+            label="Valor atual (€)"
             value={current}
             onChangeText={setCurrent}
             keyboardType="decimal-pad"

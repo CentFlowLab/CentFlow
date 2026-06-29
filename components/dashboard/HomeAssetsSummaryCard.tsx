@@ -14,19 +14,38 @@ type HomeAssetsSummaryCardProps = {
 };
 
 export function HomeAssetsSummaryCard({ summary, hints = {} }: HomeAssetsSummaryCardProps) {
-  const showWarranties = summary.warrantiesCount >= 1;
-  const showInventory = summary.inventoryCount >= 3;
-  const showGoals = summary.goalsCount > 0;
+  const hasAnyData =
+    summary.goalsCount > 0 || summary.warrantiesCount > 0 || summary.inventoryCount > 0;
 
-  if (!showWarranties && !showInventory && !showGoals) {
+  if (!hasAnyData) {
     return (
       <Card variant="outlined" style={styles.card}>
         <Text variant="label" color="textMuted">
           Resumo rápido
         </Text>
-        <Text variant="body" color="textSecondary">
-          Adiciona os teus ativos para acompanhar o teu património e ver métricas úteis aqui.
-        </Text>
+        <View style={styles.grid}>
+          <SummaryTile
+            icon={{ ios: 'target', android: 'flag', web: 'flag' }}
+            label="Em objetivos"
+            value={formatCurrency(0)}
+            hint={hints.goals ?? '0 ativos'}
+            color={colors.primary}
+          />
+          <SummaryTile
+            icon={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
+            label="Garantias"
+            value="0"
+            hint={hints.warranties ?? 'registadas'}
+            color={colors.accent}
+          />
+          <SummaryTile
+            icon={{ ios: 'archivebox.fill', android: 'inventory_2', web: 'inventory_2' }}
+            label="Inventário"
+            value="0"
+            hint={hints.inventory ?? 'itens'}
+            color={colors.textSecondary}
+          />
+        </View>
         <Pressable onPress={() => router.push('/(tabs)/ativos')}>
           <Text variant="bodyMedium" color="primary">
             Explorar ativos →
@@ -42,33 +61,27 @@ export function HomeAssetsSummaryCard({ summary, hints = {} }: HomeAssetsSummary
         Resumo rápido
       </Text>
       <View style={styles.grid}>
-        {showGoals ? (
-          <SummaryTile
-            icon={{ ios: 'target', android: 'flag', web: 'flag' }}
-            label="Em objetivos"
-            value={formatCurrency(summary.goalsSaved)}
-            hint={hints.goals ?? `${summary.goalsCount} activo${summary.goalsCount === 1 ? '' : 's'}`}
-            color={colors.primary}
-          />
-        ) : null}
-        {showWarranties ? (
-          <SummaryTile
-            icon={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
-            label="Garantias"
-            value={String(summary.warrantiesCount)}
-            hint={hints.warranties ?? 'registadas'}
-            color={colors.accent}
-          />
-        ) : null}
-        {showInventory ? (
-          <SummaryTile
-            icon={{ ios: 'archivebox.fill', android: 'inventory_2', web: 'inventory_2' }}
-            label="Inventário"
-            value={String(summary.inventoryCount)}
-            hint={hints.inventory ?? 'itens'}
-            color={colors.textSecondary}
-          />
-        ) : null}
+        <SummaryTile
+          icon={{ ios: 'target', android: 'flag', web: 'flag' }}
+          label="Em objetivos"
+          value={formatCurrency(summary.goalsSaved)}
+          hint={hints.goals ?? `${summary.goalsCount} ativo${summary.goalsCount === 1 ? '' : 's'}`}
+          color={colors.primary}
+        />
+        <SummaryTile
+          icon={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
+          label="Garantias"
+          value={String(summary.warrantiesCount)}
+          hint={hints.warranties ?? 'registadas'}
+          color={colors.accent}
+        />
+        <SummaryTile
+          icon={{ ios: 'archivebox.fill', android: 'inventory_2', web: 'inventory_2' }}
+          label="Inventário"
+          value={String(summary.inventoryCount)}
+          hint={hints.inventory ?? 'itens'}
+          color={colors.textSecondary}
+        />
       </View>
     </Card>
   );
@@ -92,11 +105,13 @@ function SummaryTile({
       <View style={[styles.icon, { backgroundColor: `${color}18` }]}>
         <SymbolView name={icon} tintColor={color} size={16} />
       </View>
-      <Text variant="caption" color="textMuted">
+      <Text variant="caption" color="textMuted" numberOfLines={1}>
         {label}
       </Text>
-      <Text variant="bodyMedium">{value}</Text>
-      <Text variant="caption" color="textMuted">
+      <Text variant="bodyMedium" numberOfLines={1}>
+        {value}
+      </Text>
+      <Text variant="caption" color="textMuted" numberOfLines={1}>
         {hint}
       </Text>
     </View>
@@ -121,6 +136,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    minWidth: 0,
   },
   icon: {
     width: 28,

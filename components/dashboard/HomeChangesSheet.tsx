@@ -93,7 +93,7 @@ export function HomeChangesSheet({
       </View>
 
       <Text variant="body" color="textSecondary" style={styles.note}>
-        Estes indicadores reflectem a tua actividade recente. Abre Análises para tendências mais
+        Estes indicadores refletem a tua atividade recente. Abre Análises para tendências mais
         detalhadas.
       </Text>
     </DraggableBottomSheet>

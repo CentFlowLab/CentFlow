@@ -82,7 +82,7 @@ export async function uploadReceipt(draft: ReceiptDraft): Promise<ReceiptUpload>
     .single();
 
   if (updateError || !updatedReceipt) {
-    throw new Error(updateError?.message ?? 'Falha ao actualizar talão');
+    throw new Error(updateError?.message ?? 'Falha ao atualizar talão');
   }
 
   const signedUrl = await getSignedReceiptUrl(storagePath);

@@ -5,7 +5,7 @@ import { optionalInputDateSchema, requiredInputDateSchema } from './date-input.s
 export const createGoalSchema = z.object({
   name: z.string().min(1, 'Indica o nome do objetivo').max(80),
   target: z.number().positive('O valor alvo tem de ser superior a zero'),
-  current: z.number().min(0, 'O valor actual não pode ser negativo').default(0),
+  current: z.number().min(0, 'O valor atual não pode ser negativo').default(0),
   deadline: optionalInputDateSchema,
 });
 

@@ -62,20 +62,22 @@ export function HealthScoreBreakdownSheet({
             <View style={styles.rowHeader}>
               <Text variant="bodyMedium">{component.label}</Text>
               <Text variant="bodyMedium" color="primary">
-                {component.score}/{component.max}
+                {component.score === null ? '— Sem dados' : `${component.score}/${component.max}`}
               </Text>
             </View>
-            <View style={styles.barTrack}>
-              <View
-                style={[
-                  styles.barFill,
-                  {
-                    width: `${(component.score / component.max) * 100}%`,
-                    backgroundColor: component.hasData ? colors.primary : colors.textMuted,
-                  },
-                ]}
-              />
-            </View>
+            {component.score !== null ? (
+              <View style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.barFill,
+                    {
+                      width: `${(component.score / component.max) * 100}%`,
+                      backgroundColor: component.hasData ? colors.primary : colors.textMuted,
+                    },
+                  ]}
+                />
+              </View>
+            ) : null}
             <Text variant="caption" color="textMuted">
               {component.detail}
             </Text>

@@ -111,7 +111,7 @@ export default function ExportPdfScreen() {
           Conteúdo do relatório
         </Text>
         <Text variant="caption" color="textMuted" style={styles.sectionsLead}>
-          Activa ou desactiva as secções que queres exportar. Património é sempre incluído.
+          Ativa ou desativa as secções que queres exportar. Património é sempre incluído.
         </Text>
 
         {PDF_SECTION_OPTIONS.map((option, index) => (

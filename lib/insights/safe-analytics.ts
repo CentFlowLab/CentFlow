@@ -15,7 +15,7 @@ import type { CategoryBreakdownItem } from './category-breakdown';
 
 function emptyHealthScore(): HealthScoreResult {
   const neutral = {
-    score: 0,
+    score: null as number | null,
     max: 20,
     detail: 'Dados indisponíveis.',
     hasData: false,
@@ -24,6 +24,7 @@ function emptyHealthScore(): HealthScoreResult {
     total: 0,
     status: 'critical',
     hasSufficientData: false,
+    scoredComponentCount: 0,
     components: {
       savings: { ...neutral, label: 'Poupança' },
       cashflow: { ...neutral, label: 'Fluxo de caixa' },

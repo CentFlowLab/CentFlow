@@ -37,7 +37,7 @@ export const PROFILE_LEVELS: Array<{
     label: 'Nível 3',
     title: 'Assistente CentFlow',
     minScore: 60,
-    features: ['IA personalizada', 'Sugestões proactivas', 'Perguntas em linguagem natural'],
+    features: ['IA personalizada', 'Sugestões proativas', 'Perguntas em linguagem natural'],
   },
 ];
 

@@ -84,7 +84,7 @@ function getNetworkMessage(): string {
     if (isRealDataOnlyVariant()) {
       return 'Não foi possível ligar ao servidor. Verifica a internet e tenta novamente.';
     }
-    return 'O servidor ainda não está disponível. Para testar offline, activa EXPO_PUBLIC_MOCK_AUTH=true.';
+    return 'O servidor ainda não está disponível. Para testar offline, ativa EXPO_PUBLIC_MOCK_AUTH=true.';
   }
   return 'Sem ligação ao servidor. Verifica a internet ou tenta mais tarde.';
 }

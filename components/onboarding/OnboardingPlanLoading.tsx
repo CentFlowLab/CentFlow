@@ -67,7 +67,7 @@ export function OnboardingPlanLoading({
           A criar o teu plano
         </Text>
         <Text variant="body" color="textSecondary" align="center">
-          Estamos a analisar a tua situação para activar o que faz sentido.
+          Estamos a analisar a tua situação para ativar o que faz sentido.
         </Text>
       </View>
 

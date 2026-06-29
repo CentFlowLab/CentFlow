@@ -145,7 +145,7 @@ export function RegisterCreditPaymentModal({
       <View style={styles.form}>
         <Card variant="outlined" style={styles.balanceCard}>
           <Text variant="caption" color="textMuted">
-            Saldo actual
+            Saldo atual
           </Text>
           <Text variant="h3" color="danger">
             {formatCurrency(credit.outstandingBalance)}

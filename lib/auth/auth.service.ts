@@ -139,13 +139,13 @@ export async function loginWithGoogle(): Promise<GoogleSignInResult> {
   }
 
   throw new Error(
-    'Login com Google requer Supabase. Define EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY e desactiva EXPO_PUBLIC_MOCK_AUTH.',
+    'Login com Google requer Supabase. Define EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY e desativa EXPO_PUBLIC_MOCK_AUTH.',
   );
 }
 
 export async function completeGoogleOAuthCallback(url: string): Promise<AuthSession> {
   if (!isSupabaseEnabled()) {
-    throw new Error('Callback OAuth só disponível com Supabase activo.');
+    throw new Error('Callback OAuth só disponível com Supabase ativo.');
   }
 
   const session = await supabaseAuth.completeGoogleOAuthFromUrl(url);

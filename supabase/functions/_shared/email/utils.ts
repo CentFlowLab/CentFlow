@@ -79,7 +79,7 @@ export function getFirstStepSuggestion(primaryObjective: string | null): string 
     case 'organize_credits':
       return 'Regista o teu primeiro crédito';
     case 'track_wealth':
-      return 'Regista o teu primeiro activo';
+      return 'Regista o teu primeiro ativo';
     default:
       return 'Regista o teu primeiro movimento';
   }

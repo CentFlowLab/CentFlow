@@ -79,7 +79,7 @@ function mapSupabaseAuthMessage(message: string): string {
   }
 
   if (lower.includes('signup is disabled')) {
-    return 'O registo de novas contas está temporariamente desactivado.';
+    return 'O registo de novas contas está temporariamente desativado.';
   }
 
   if (lower.includes('password should be at least')) {
@@ -95,7 +95,7 @@ function mapSupabaseAuthMessage(message: string): string {
     lower.includes('unsupported provider')
   ) {
     return (
-      'Login com Google não está activo no servidor. Contacta o suporte ou tenta entrar com email e password.'
+      'Login com Google não está ativo no servidor. Contacta o suporte ou tenta entrar com email e password.'
     );
   }
 
@@ -135,7 +135,7 @@ function getNetworkMessage(): string {
   }
 
   if (isLegacyPlaceholderApiUrl()) {
-    return 'O servidor ainda não está disponível. Para testar offline, activa EXPO_PUBLIC_MOCK_AUTH=true em desenvolvimento.';
+    return 'O servidor ainda não está disponível. Para testar offline, ativa EXPO_PUBLIC_MOCK_AUTH=true em desenvolvimento.';
   }
 
   return `Sem ligação ao servidor (${API_BASE_URL}). Verifica a internet e tenta novamente.`;

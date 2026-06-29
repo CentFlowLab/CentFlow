@@ -178,7 +178,7 @@ export function analyzeCredit(input: CreditAnalysisInput): CreditAnalysis {
 
   if (remainingMonths !== null && remainingMonths > 0 && effectiveMonthlyRate > 0) {
     insights.push(
-      `Estimativa de ${remainingMonths} prestações para liquidar o saldo actual.`,
+      `Estimativa de ${remainingMonths} prestações para liquidar o saldo atual.`,
     );
   }
 

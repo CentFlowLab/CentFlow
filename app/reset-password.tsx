@@ -93,7 +93,7 @@ export default function ResetPasswordScreen() {
 
     try {
       await authService.updatePasswordAfterRecovery(result.data.password);
-      showToast('Palavra-passe actualizada.', 'success');
+      showToast('Palavra-passe atualizada.', 'success');
       router.replace('/(auth)/password-reset-success' as never);
     } catch (error) {
       logSecurityError('password_recovery_update_failed', error);

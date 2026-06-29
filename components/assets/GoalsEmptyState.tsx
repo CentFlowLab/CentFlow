@@ -96,7 +96,7 @@ export function GoalsEmptyState({ onLearnMore, onPrimaryAction }: GoalsEmptyStat
 
 const HIGHLIGHTS = [
   'Barra de progresso por objetivo',
-  'Valor actual vs. valor alvo',
+  'Valor atual vs. valor alvo',
   'Data prevista para manter o foco',
   'Integrado com o teu Perfil Financeiro',
 ];

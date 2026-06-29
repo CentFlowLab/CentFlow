@@ -58,7 +58,7 @@ export function FeatureAreaGate({ feature, children, preview = false }: FeatureA
         </Text>
 
         <Button
-          label={activating ? 'A activar...' : 'Activar'}
+          label={activating ? 'A ativar...' : 'Ativar'}
           onPress={() => void handleActivate()}
           loading={activating}
           fullWidth

@@ -25,7 +25,7 @@ export const QUESTION_STEPS: OnboardingStepId[] = [
 export const STEP_REASONS: Partial<Record<OnboardingStepId, StepReason>> = {
   primary_objective: {
     why: 'Para focar a CentFlow no que mais te importa agora.',
-    unlocks: 'Activa as áreas e sugestões certas para ti.',
+    unlocks: 'Ativa as áreas e sugestões certas para ti.',
   },
   profile: {
     why: 'Cada pessoa parte de um ponto diferente — sem julgamentos.',
@@ -67,7 +67,7 @@ export function getStepLabel(step: OnboardingStepId): string | undefined {
 
 export function getProgressLabel(progress: number): string {
   if (progress >= 90) return 'A finalizar o teu plano';
-  if (progress >= 68) return 'A activar as funcionalidades certas';
+  if (progress >= 68) return 'A ativar as funcionalidades certas';
   if (progress >= 40) return 'A personalizar a tua experiência';
   return 'A criar o teu espaço financeiro';
 }
@@ -75,6 +75,6 @@ export function getProgressLabel(progress: number): string {
 /** Etapas do loading "a IA cria o plano" (sensação de valor, não instantâneo). */
 export const PLAN_LOADING_STAGES: string[] = [
   'A analisar as tuas respostas',
-  'A activar as funcionalidades certas',
+  'A ativar as funcionalidades certas',
   'A preparar o teu plano',
 ];

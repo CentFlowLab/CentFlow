@@ -115,7 +115,7 @@ export function EditTransactionModal({
         transactionId: transaction!.id,
         input: result.data,
       });
-      showToast('Movimento actualizado.', 'success');
+      showToast('Movimento atualizado.', 'success');
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'a atualização do movimento'));

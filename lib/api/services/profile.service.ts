@@ -69,7 +69,7 @@ export async function updateProfile(
       throw new Error(
         emailError.message.includes('already')
           ? 'Este email já está em uso.'
-          : 'Não foi possível actualizar o email. Verifica se a conta permite alterações.',
+          : 'Não foi possível atualizar o email. Verifica se a conta permite alterações.',
       );
     }
     resolvedEmail = email;
@@ -129,7 +129,7 @@ export async function getActiveSessions(): Promise<ActiveSessionInfo> {
   const { data } = await supabase.auth.getSession();
 
   if (!data.session) {
-    return { count: 0, currentDeviceLabel: 'Nenhuma sessão activa' };
+    return { count: 0, currentDeviceLabel: 'Nenhuma sessão ativa' };
   }
 
   return {

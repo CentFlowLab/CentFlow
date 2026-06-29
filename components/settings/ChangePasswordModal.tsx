@@ -65,8 +65,8 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
       await changePassword.mutateAsync({ newPassword });
       showToast(
         isMockAuthEnabled()
-          ? 'Palavra-passe actualizada (modo demonstração).'
-          : 'Palavra-passe actualizada com sucesso.',
+          ? 'Palavra-passe atualizada (modo demonstração).'
+          : 'Palavra-passe atualizada com sucesso.',
         'success',
       );
       handleClose();

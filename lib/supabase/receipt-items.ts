@@ -111,7 +111,7 @@ export async function finalizeReceiptConfirmation(
     .eq('id', receiptId);
 
   if (receiptError) {
-    throw new Error(`Falha ao actualizar estado do talão: ${receiptError.message}`);
+    throw new Error(`Falha ao atualizar estado do talão: ${receiptError.message}`);
   }
 
   const metadataPatch = toReceiptConfirmMetadataPatch(confirmation);

@@ -40,5 +40,5 @@ export function describeEmailProviderStatus(status: EmailProviderStatus | null |
   if (status.sandboxMode) {
     return `Modo teste Resend (@${status.emailFromDomain}) — só envia para o email da tua conta Resend.`;
   }
-  return `Resend activo (@${status.emailFromDomain})${status.cronConfigured ? '' : ' · cron jobs ainda sem secret'}.`;
+  return `Resend ativo (@${status.emailFromDomain})${status.cronConfigured ? '' : ' · cron jobs ainda sem secret'}.`;
 }

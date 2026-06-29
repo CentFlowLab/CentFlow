@@ -19,7 +19,7 @@ export function SubscriptionsAnalysisSection({ analysis }: SubscriptionsAnalysis
   if (!analysis || isMinimalAnalysis(analysis)) {
     return (
       <View style={styles.wrap}>
-        <SectionHeader title="Subscrições" subtitle="Mês calendário" />
+        <SectionHeader title="Subscrições" />
         <Pressable
           onPress={() => router.push('/(tabs)/movimentos?view=subscricoes')}
           style={({ pressed }) => [styles.compactLink, pressed && styles.compactLinkPressed]}
@@ -50,7 +50,7 @@ export function SubscriptionsAnalysisSection({ analysis }: SubscriptionsAnalysis
 
   return (
     <View style={styles.wrap}>
-      <SectionHeader title="Subscrições" subtitle="Mês calendário" />
+      <SectionHeader title="Subscrições" />
       <Card variant="outlined" style={styles.card}>
         <View style={styles.totals}>
           <View>

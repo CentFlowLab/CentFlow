@@ -10,6 +10,7 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 import { formFieldsDiffer, formHasAnyText } from '@/lib/forms';
 import type { Subscription, SubscriptionBillingInterval } from '@/lib/domain/assets.types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
+import { resolveSubscriptionCategory } from '@/lib/subscriptions/auto-categorize';
 import { colors, spacing } from '@/lib/theme';
 import { formatInputDate, inputDateToIso } from '@/lib/utils/format';
 
@@ -126,8 +127,9 @@ export function SubscriptionFormModal({
         amount: parsedAmount,
         billingInterval,
         renewsAt: parsedRenewsAt,
+        category: resolveSubscriptionCategory(name.trim(), subscription?.category),
       });
-      showToast(isEditing ? 'Subscrição actualizada.' : 'Subscrição adicionada.', 'success');
+      showToast(isEditing ? 'Subscrição atualizada.' : 'Subscrição adicionada.', 'success');
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'a subscrição'));

@@ -14,7 +14,6 @@ import {
   HomeAttentionSheet,
   HomePersonalizedInsightCard,
   HomePostOnboardingWelcomeCard,
-  NetWorthHeroCard,
 } from '@/components/dashboard';
 import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
@@ -136,16 +135,10 @@ function HomeScreenContent({
     dataSource,
     attentionItems,
     suggestions,
-    netWorth,
-    netWorthChangePercent,
-    netWorthChangeThisMonth,
-    weeklySpending,
-    projection,
     recentTransactions,
     liabilitiesLoadFailed,
   } = data;
 
-  const hasActivity = recentTransactions.length > 0 || attentionItems.length > 0;
   const showWelcomeCard =
     onboardingAnswers?.completed &&
     recentTransactions.length === 0 &&
@@ -224,17 +217,6 @@ function HomeScreenContent({
           {shouldShowDemoBadge(dataSource) ? <DemoModeBadge /> : null}
 
           {liabilitiesLoadFailed ? <LiabilitiesLoadFailedBanner /> : null}
-
-          <NetWorthHeroCard
-            netWorth={netWorth}
-            changePercent={netWorthChangePercent}
-            monthlyChange={netWorthChangeThisMonth}
-            weeklySpending={weeklySpending}
-            futureMovementsDelta={projection.futureMovementsDelta}
-            hasActivity={hasActivity}
-            onAddMovement={openAddMovement}
-            onScanReceipt={openReceiptScanner}
-          />
 
           {showWelcomeCard ? (
             <HomePostOnboardingWelcomeCard answers={onboardingAnswers!} firstName={firstName} />

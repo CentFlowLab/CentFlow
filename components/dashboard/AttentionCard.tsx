@@ -51,43 +51,45 @@ export function AttentionCard({ item }: AttentionCardProps) {
   const config = TYPE_CONFIG[item.type];
   const days = item.dueDate ? daysUntil(item.dueDate) : null;
   const route = getAttentionRoute(item.type);
+  const accentColor = PRIORITY_BORDER[item.priority];
 
   const content = (
-    <>
-      <View style={[styles.iconBox, { backgroundColor: `${config.color}18` }]}>
-        <SymbolView name={config.icon} tintColor={config.color} size={20} />
-      </View>
+    <View style={styles.row}>
+      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+      <View style={styles.inner}>
+        <View style={[styles.iconBox, { backgroundColor: `${config.color}18` }]}>
+          <SymbolView name={config.icon} tintColor={config.color} size={20} />
+        </View>
 
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
-          <Text variant="bodyMedium" style={styles.title}>
-            {item.title}
+        <View style={styles.content}>
+          <View style={styles.titleRow}>
+            <Text variant="bodyMedium" style={styles.title}>
+              {item.title}
+            </Text>
+            {days !== null && (
+              <View style={[styles.badge, item.priority === 'high' && styles.badgeHigh]}>
+                <Text variant="caption" color={item.priority === 'high' ? 'danger' : 'textMuted'}>
+                  {formatRelativeDays(days)}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text variant="caption" color="textSecondary">
+            {item.description}
           </Text>
-          {days !== null && (
-            <View style={[styles.badge, item.priority === 'high' && styles.badgeHigh]}>
-              <Text variant="caption" color={item.priority === 'high' ? 'danger' : 'textMuted'}>
-                {formatRelativeDays(days)}
-              </Text>
-            </View>
+          {item.amount !== undefined && (
+            <Text variant="caption" color="textMuted" style={styles.amount}>
+              {formatCurrency(item.amount)}
+            </Text>
           )}
         </View>
-        <Text variant="caption" color="textSecondary">
-          {item.description}
-        </Text>
-        {item.amount !== undefined && (
-          <Text variant="caption" color="textMuted" style={styles.amount}>
-            {formatCurrency(item.amount)}
-          </Text>
-        )}
       </View>
-    </>
+    </View>
   );
 
   if (!route) {
     return (
-      <Card
-        variant="outlined"
-        style={[styles.card, { borderLeftColor: PRIORITY_BORDER[item.priority] }]}>
+      <Card variant="outlined" padding={0} style={styles.cardShell}>
         {content}
       </Card>
     );
@@ -98,9 +100,7 @@ export function AttentionCard({ item }: AttentionCardProps) {
       onPress={() => router.push(route as never)}
       accessibilityRole="button"
       accessibilityLabel={`Abrir ${item.title}`}>
-      <Card
-        variant="outlined"
-        style={[styles.card, { borderLeftColor: PRIORITY_BORDER[item.priority] }]}>
+      <Card variant="outlined" padding={0} style={styles.cardShell}>
         {content}
       </Card>
     </Pressable>
@@ -108,12 +108,27 @@ export function AttentionCard({ item }: AttentionCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
+  cardShell: {
+    marginBottom: spacing.md,
+    overflow: 'visible',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  accentBar: {
+    width: 4,
+    borderTopLeftRadius: radius.lg,
+    borderBottomLeftRadius: radius.lg,
+  },
+  inner: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    borderLeftWidth: 3,
-    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
   iconBox: {
     width: 40,

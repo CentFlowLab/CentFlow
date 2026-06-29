@@ -78,7 +78,7 @@ async function buildWeeklyDigestSummary(
       ? `Esta semana registaste ${movements} movimento${movements === 1 ? '' : 's'}. `
       : '';
 
-  return `${movementLine}Abre a CentFlow para rever objectivos, prazos e evolução do património — sem expor valores sensíveis por email.`;
+  return `${movementLine}Abre a CentFlow para rever objetivos, prazos e evolução do património — sem expor valores sensíveis por email.`;
 }
 
 Deno.serve(async (req) => {

@@ -16,7 +16,6 @@ import {
   SpendingCategoryCard,
   SpendingHeatmap,
   SubscriptionsAnalysisSection,
-  TopMerchantsSection,
   TrendsSummaryCard,
 } from '@/components/analysis';
 import { AppHeader, SegmentedControl } from '@/components/layout';
@@ -30,7 +29,6 @@ import {
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { usePatrimonyAllocation } from '@/hooks/queries/usePatrimonyAllocation';
 import { useAnalyticsInsights } from '@/hooks/useAnalyticsInsights';
-import { useMerchantGroups } from '@/hooks/queries/useMerchantGroups';
 import { usePricesData } from '@/hooks/queries/usePricesData';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import {
@@ -39,7 +37,6 @@ import {
   getPeriodOption,
   type AnalysisPeriodKey,
 } from '@/lib/domain/analysis-period';
-import { computeMerchantGroupAnalytics } from '@/lib/merchants/group-analytics';
 import { router } from 'expo-router';
 import { spacing, colors } from '@/lib/theme';
 import type { PricesData } from '@/lib/data/prices.mocks';
@@ -61,17 +58,11 @@ export default function AnalisesScreen() {
   const { data: patrimonyData } = usePatrimonyAllocation();
   const { data: pricesData } = usePricesData();
   const { data: transactions = [] } = useTransactions('all');
-  const { data: merchantGroups = [] } = useMerchantGroups();
   const analytics = useAnalyticsInsights();
 
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
   const [healthSheetVisible, setHealthSheetVisible] = useState(false);
   const periodOption = getPeriodOption(period);
-
-  const topMerchants = useMemo(
-    () => computeMerchantGroupAnalytics(merchantGroups, transactions),
-    [merchantGroups, transactions],
-  );
 
   const periodCategories = useMemo(
     () => computeSpendingByCategory(transactions, periodOption.days),
@@ -79,7 +70,10 @@ export default function AnalisesScreen() {
   );
 
   const allocation = patrimonyData?.allocation ?? data?.allocation ?? [];
-  const totalAssets = patrimonyData?.totalAssets ?? data?.netWorth.totalAssets ?? 0;
+  const allocationTotal = useMemo(
+    () => allocation.reduce((sum, item) => sum + Math.max(0, item.value), 0),
+    [allocation],
+  );
 
   return (
     <View style={styles.screen}>
@@ -100,7 +94,7 @@ export default function AnalisesScreen() {
         </View>
       ) : (
         <ScreenContainer applyBottomSafeInset={false}>
-          <SectionHeader title="Análises" subtitle="Mês calendário" />
+          <SectionHeader title="Análises" />
 
           <AnalysisErrorBoundary label="Insights automáticos">
             <AutoInsightsCarousel insights={analytics.insights} />
@@ -113,6 +107,10 @@ export default function AnalisesScreen() {
             />
           </AnalysisErrorBoundary>
 
+          <AnalysisErrorBoundary label="Previsão de fim de mês">
+            <MonthEndForecastCard forecast={analytics.forecast} />
+          </AnalysisErrorBoundary>
+
           <AnalysisErrorBoundary label="Comparação mensal">
             <MonthlyComparisonSection
               rows={analytics.monthlyComparison.rows}
@@ -122,14 +120,6 @@ export default function AnalisesScreen() {
             />
           </AnalysisErrorBoundary>
 
-          <AnalysisErrorBoundary label="Previsão de fim de mês">
-            <MonthEndForecastCard forecast={analytics.forecast} />
-          </AnalysisErrorBoundary>
-
-          <AnalysisErrorBoundary label="Alocação de património">
-            <PatrimonyAllocationCard allocation={allocation} totalAssets={totalAssets} />
-          </AnalysisErrorBoundary>
-
           <View style={styles.periodSelector}>
             <SegmentedControl
               segments={PERIOD_SEGMENTS}
@@ -137,7 +127,7 @@ export default function AnalisesScreen() {
               onChange={setPeriod}
             />
             <Text variant="caption" color="textMuted" style={styles.periodNote}>
-              Afecta categorias e evolução abaixo
+              Afeta tendências, categorias e heatmap abaixo
             </Text>
           </View>
 
@@ -156,6 +146,10 @@ export default function AnalisesScreen() {
             <SpendingHeatmap transactions={transactions} />
           </AnalysisErrorBoundary>
 
+          <AnalysisErrorBoundary label="Alocação de património">
+            <PatrimonyAllocationCard allocation={allocation} totalAssets={allocationTotal} />
+          </AnalysisErrorBoundary>
+
           <AnalysisErrorBoundary label="Subscrições">
             <SubscriptionsAnalysisSection analysis={analytics.subscriptionAnalysis} />
           </AnalysisErrorBoundary>
@@ -167,12 +161,7 @@ export default function AnalisesScreen() {
             />
           </AnalysisErrorBoundary>
 
-          <TopMerchantsSection merchants={topMerchants} />
-
-          <SectionHeader
-            title="Métricas"
-            subtitle="Mês calendário"
-          />
+          <SectionHeader title="Métricas" />
           <View style={styles.metricsGrid}>
             {data.metrics
               .filter((metric) => !isPatrimonyMetric(metric.id))

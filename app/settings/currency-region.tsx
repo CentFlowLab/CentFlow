@@ -49,7 +49,7 @@ export default function CurrencyRegionScreen() {
         updateCurrency.mutateAsync(currency),
         updatePreferences.mutateAsync({ region }),
       ]);
-      showToast('Moeda e região actualizadas.', 'success');
+      showToast('Moeda e região atualizadas.', 'success');
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : 'Não foi possível guardar as preferências.',

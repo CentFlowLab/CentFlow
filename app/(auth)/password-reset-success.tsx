@@ -8,7 +8,7 @@ import { spacing } from '@/lib/theme';
 export default function PasswordResetSuccessScreen() {
   return (
     <AuthScreenLayout
-      title="Password actualizada"
+      title="Password atualizada"
       subtitle="A tua conta está protegida com a nova palavra-passe">
       <Card variant="elevated" padding="md" style={styles.card}>
         <Text variant="bodyMedium">Tudo pronto.</Text>

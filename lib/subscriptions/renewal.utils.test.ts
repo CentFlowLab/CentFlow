@@ -26,10 +26,10 @@ test('renovação dentro da janela global', () => {
   assert.match(status.label, /Renova em/);
 });
 
-test('renovação fora da janela fica activa', () => {
+test('renovação fora da janela fica ativa', () => {
   const status = getRenewalStatus('2026-08-01', AS_OF);
   assert.equal(status.tone, 'default');
-  assert.equal(status.label, 'Activa');
+  assert.equal(status.label, 'Ativa');
 });
 
 test('countRenewalsSoon ignora datas passadas', () => {
