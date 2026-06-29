@@ -112,6 +112,7 @@ export async function createMockTransaction(
     receiptId: receipt?.receiptId ?? null,
     receiptUrl: receipt?.receiptUrl ?? null,
     receiptImage: receipt?.receiptImage ?? input.receipt?.localUri ?? null,
+    accountId: input.accountId ?? null,
   };
 
   store = [transaction, ...store];
@@ -151,6 +152,7 @@ export async function updateMockTransaction(
     description: input.description,
     merchant: input.merchant,
     date: input.date,
+    accountId: input.accountId ?? existing.accountId ?? null,
   };
 
   store = [...store.slice(0, index), updated, ...store.slice(index + 1)];

@@ -4,7 +4,6 @@ import { type ReactNode, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
-  ActionCenterSheet,
   DashboardHeaderLeading,
   DashboardSkeleton,
   DemoModeBadge,
@@ -25,10 +24,13 @@ import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useCentFlowIntelligence } from '@/hooks/useCentFlowIntelligence';
+import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
+import { useTransactions } from '@/hooks/queries/useTransactions';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import type { AssistantActionId } from '@/lib/domain/financial';
 import type { HomeScreenData } from '@/lib/domain/home.types';
+import type { Suggestion } from '@/lib/domain/types';
 import type { OnboardingAnswers } from '@/lib/onboarding/types';
 import { shouldShowDemoBadge } from '@/lib/config/demo-mode';
 import {
@@ -38,6 +40,7 @@ import {
   type HomeSectionId,
 } from '@/lib/onboarding/personalization';
 import { mergeHomeSuggestions } from '@/lib/onboarding/suggestions-bridge';
+import { resolveSuggestionAction } from '@/lib/navigation/suggestion-actions';
 import { colors, radius, spacing } from '@/lib/theme';
 
 type HomeScreenContentProps = {
@@ -66,6 +69,8 @@ function HomeScreenContent({
   refetch,
 }: HomeScreenContentProps) {
   const { assistant } = useCentFlowIntelligence();
+  const { data: allTransactions = [] } = useTransactions('all');
+  const { totalBalance: accountsTotal } = useAccountsWithBalances(allTransactions);
   const { contentBottomPadding } = useResponsiveLayout();
 
   const [addMovementVisible, setAddMovementVisible] = useState(false);
@@ -73,7 +78,6 @@ function HomeScreenContent({
   const [startWithReceiptPicker, setStartWithReceiptPicker] = useState(false);
   const [attentionSheetVisible, setAttentionSheetVisible] = useState(false);
   const [spendableVisible, setSpendableVisible] = useState(false);
-  const [actionCenterVisible, setActionCenterVisible] = useState(false);
 
   const openAddMovement = () => {
     traceMovementStep('form_open', { component: 'HomeScreen', withReceipt: false });
@@ -104,6 +108,35 @@ function HomeScreenContent({
     },
     onboardingAnswers,
   );
+
+  function handleSuggestionPress(suggestion: Suggestion) {
+    const action = resolveSuggestionAction(suggestion);
+    switch (action) {
+      case 'scan_receipt':
+        openReceiptScanner();
+        break;
+      case 'add_movement':
+        openAddMovement();
+        break;
+      case 'open_movimentos':
+        router.push('/(tabs)/movimentos');
+        break;
+      case 'open_recorrentes':
+        router.push('/(tabs)/movimentos?view=subscricoes');
+        break;
+      case 'open_ativos_goals':
+        router.push('/(tabs)/ativos?tab=objetivos');
+        break;
+      case 'open_ativos_inventory':
+        router.push('/(tabs)/ativos?tab=inventario');
+        break;
+      case 'open_analises':
+        router.push('/(tabs)/analises');
+        break;
+      default:
+        break;
+    }
+  }
 
   function handleAssistantAction(actionId: AssistantActionId) {
     switch (actionId) {
@@ -158,7 +191,11 @@ function HomeScreenContent({
       <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
     ),
     assets: (
-      <HomeAssetsSummaryCard key="assets" summary={assetsSummary} hints={assetsHints} />
+      <HomeAssetsSummaryCard
+        key="assets"
+        summary={{ ...assetsSummary, accountsTotal }}
+        hints={assetsHints}
+      />
     ),
     alerts: (
       <HomeAlertsSection
@@ -166,6 +203,7 @@ function HomeScreenContent({
         attentionItems={attentionItems}
         suggestions={mergedSuggestions}
         onOpenAllAttention={() => setAttentionSheetVisible(true)}
+        onSuggestionPress={handleSuggestionPress}
       />
     ),
     assistant: (
@@ -173,7 +211,7 @@ function HomeScreenContent({
         key="assistant"
         plan={assistant}
         onAction={handleAssistantAction}
-        onOpenActionCenter={() => setActionCenterVisible(true)}
+        onOpenFullPlan={() => router.push('/(tabs)/analises')}
       />
     ),
   };
@@ -259,15 +297,6 @@ function HomeScreenContent({
       <MonthlySpendableSheet
         visible={spendableVisible}
         onClose={() => setSpendableVisible(false)}
-      />
-
-      <ActionCenterSheet
-        visible={actionCenterVisible}
-        onClose={() => setActionCenterVisible(false)}
-        onSelect={(actionId) => {
-          setActionCenterVisible(false);
-          handleAssistantAction(actionId);
-        }}
       />
     </View>
   );

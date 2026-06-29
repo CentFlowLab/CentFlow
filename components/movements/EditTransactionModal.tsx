@@ -19,6 +19,7 @@ import { formFieldsDiffer } from '@/lib/forms';
 import { openReceiptForTransaction } from '@/lib/receipt/open-receipt';
 import { colors, spacing } from '@/lib/theme';
 
+import { AttachReceiptButton } from '@/components/attachments/AttachReceiptButton';
 import { TransactionForm } from './TransactionForm';
 import { ReceiptItemsSummary } from './ReceiptItemsSummary';
 
@@ -48,6 +49,7 @@ export function EditTransactionModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [openingReceipt, setOpeningReceipt] = useState(false);
+  const [attachedReceiptUrl, setAttachedReceiptUrl] = useState<string | undefined>();
 
   const baselineRef = useRef<TransactionFormValues>({
     type: 'expense',
@@ -123,7 +125,10 @@ export function EditTransactionModal({
   }
 
   const hasReceipt = Boolean(
-    transaction.receiptId || transaction.receiptImage || transaction.receiptUrl,
+    attachedReceiptUrl ||
+      transaction.receiptId ||
+      transaction.receiptImage ||
+      transaction.receiptUrl,
   );
 
   async function handleViewReceipt() {
@@ -187,7 +192,16 @@ export function EditTransactionModal({
             disabled={openingReceipt}
           />
         </Card>
-      ) : null}
+      ) : (
+        <AttachReceiptButton
+          entityType="transaction"
+          entityId={transaction.id}
+          onAttached={(url) => {
+            setAttachedReceiptUrl(url);
+            showToast('Fatura anexada.', 'success');
+          }}
+        />
+      )}
 
       {transaction.receiptItems && transaction.receiptItems.length > 0 ? (
         <ReceiptItemsSummary items={transaction.receiptItems} compact />

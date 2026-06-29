@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -16,6 +16,7 @@ import {
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { ScreenContainer, ErrorState, AssetsSkeleton, RefetchingIndicator } from '@/components/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useAssets,
   useDeleteGoal,
@@ -27,6 +28,8 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { QuickAddScreenContext } from '@/lib/navigation/quick-add-context';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
 import type { InventoryItem } from '@/lib/domain/types';
+import { queryKeys } from '@/lib/api/keys';
+import { filterActiveWarranties, moveExpiredWarrantiesToInventory } from '@/lib/warranties/expired-to-inventory';
 import { colors, spacing } from '@/lib/theme';
 
 export default function AtivosScreen() {
@@ -41,6 +44,7 @@ export default function AtivosScreen() {
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
+  const queryClient = useQueryClient();
   const { contentBottomPadding } = useResponsiveLayout();
   const deleteGoal = useDeleteGoal();
   const deleteWarranty = useDeleteWarranty();
@@ -54,13 +58,28 @@ export default function AtivosScreen() {
     subscriptions: [],
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      void moveExpiredWarrantiesToInventory().then(({ moved }) => {
+        if (moved.length > 0) {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.assets });
+        }
+      });
+    }, [queryClient]),
+  );
+
+  const activeWarranties = useMemo(
+    () => filterActiveWarranties(assets.warranties),
+    [assets.warranties],
+  );
+
   const counts = useMemo(
     () => ({
       goals: assets.goals.length,
-      warranties: assets.warranties.length,
+      warranties: activeWarranties.length,
       inventory: assets.inventory.length,
     }),
-    [assets],
+    [assets, activeWarranties.length],
   );
 
   function handleLearnMore() {
@@ -224,11 +243,12 @@ export default function AtivosScreen() {
             {activeTab === 'garantias' ? (
               <FeatureAreaGate feature="receipts">
                 <WarrantiesSection
-                  warranties={assets.warranties}
+                  warranties={activeWarranties}
                   onEdit={openEditWarranty}
                   onLearnMore={handleLearnMore}
                   onPrimaryAction={openCreateWarranty}
                   onScanReceipt={() => router.push('/(tabs)/movimentos?action=receipt')}
+                  onOpenInventory={() => setActiveTab('inventario')}
                   onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
                 />
               </FeatureAreaGate>

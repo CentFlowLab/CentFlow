@@ -36,6 +36,8 @@ type WarrantyRow = {
   receipt_transaction_id: string | null;
   receipt_id: string | null;
   receipt_label: string | null;
+  moved_to_inventory?: boolean;
+  receipt_url?: string | null;
 };
 
 type InventoryRow = {
@@ -43,6 +45,10 @@ type InventoryRow = {
   name: string;
   value: number;
   category: string | null;
+  description?: string | null;
+  source_warranty_id?: string | null;
+  warranty_expired_at?: string | null;
+  receipt_url?: string | null;
 };
 
 function mapGoalRow(row: GoalRow): Goal {
@@ -68,6 +74,8 @@ function mapWarrantyRow(row: WarrantyRow): Warranty {
     receiptTransactionId: row.receipt_transaction_id ?? undefined,
     receiptId: row.receipt_id ?? undefined,
     receiptLabel: row.receipt_label ?? undefined,
+    receiptUrl: row.receipt_url ?? undefined,
+    movedToInventory: row.moved_to_inventory ?? false,
   };
 }
 
@@ -77,6 +85,10 @@ function mapInventoryRow(row: InventoryRow): InventoryItem {
     name: row.name,
     value: Number(row.value),
     category: row.category ?? undefined,
+    description: row.description ?? undefined,
+    sourceWarrantyId: row.source_warranty_id ?? undefined,
+    warrantyExpiredAt: row.warranty_expired_at ?? undefined,
+    receiptUrl: row.receipt_url ?? undefined,
   };
 }
 

@@ -52,9 +52,10 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     date: row.transaction_date,
     currency: row.currency ?? 'EUR',
     receiptId: row.receipt_id,
-    receiptUrl: null,
+    receiptUrl: (row as TransactionRow & { receipt_url?: string | null }).receipt_url ?? null,
     receiptImage: null,
     merchantGroupId: row.merchant_group_id ?? null,
+    accountId: (row as TransactionRow & { account_id?: string | null }).account_id ?? null,
   };
 }
 
@@ -81,7 +82,10 @@ export async function enrichTransactionsWithReceiptUrls(
 
   return rows.map((row) => {
     const tx = mapTransactionRow(row);
-    if (row.receipt_id) {
+    const directUrl = (row as TransactionRow & { receipt_url?: string | null }).receipt_url;
+    if (directUrl) {
+      tx.receiptUrl = directUrl;
+    } else if (row.receipt_id) {
       const url = urlByReceiptId.get(row.receipt_id) ?? null;
       tx.receiptUrl = url;
       tx.receiptImage = url;
@@ -142,6 +146,7 @@ export function toTransactionInsert(
     transaction_date: input.date,
     currency: 'EUR',
     receipt_id: input.receiptId ?? null,
+    account_id: input.accountId ?? null,
   };
 }
 
@@ -166,6 +171,7 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
     description: input.description?.trim() || null,
     merchant: input.merchant?.trim() || null,
     transaction_date: input.date,
+    account_id: input.accountId ?? null,
   };
 }
 

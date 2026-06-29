@@ -14,6 +14,7 @@ export type HomeAssetsSummary = {
   goalsCount: number;
   warrantiesCount: number;
   inventoryCount: number;
+  accountsTotal?: number;
 };
 
 export type HomeScreenData = DashboardData & {

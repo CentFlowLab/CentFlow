@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
+import { AttachReceiptButton } from '@/components/attachments/AttachReceiptButton';
 import { ASSETS_SECTION_META } from '@/components/assets/assets.config';
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, Text, TextField } from '@/components/ui';
@@ -45,6 +46,7 @@ export function InventoryFormModal({
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [category, setCategory] = useState('');
+  const [receiptUrl, setReceiptUrl] = useState<string | undefined>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -65,12 +67,14 @@ export function InventoryFormModal({
       setName(next.name);
       setValue(next.value);
       setCategory(next.category);
+      setReceiptUrl(item.receiptUrl);
       baselineRef.current = next;
     } else {
       const empty = { name: '', value: '', category: '' };
       setName(empty.name);
       setValue(empty.value);
       setCategory(empty.category);
+      setReceiptUrl(undefined);
       baselineRef.current = empty;
     }
 
@@ -218,6 +222,15 @@ export function InventoryFormModal({
             {apiError}
           </Text>
         </Card>
+      ) : null}
+
+      {isEditing && item ? (
+        <AttachReceiptButton
+          entityType="inventory"
+          entityId={item.id}
+          existingReceiptUrl={receiptUrl ?? item.receiptUrl}
+          onAttached={(url) => setReceiptUrl(url)}
+        />
       ) : null}
 
       <Button

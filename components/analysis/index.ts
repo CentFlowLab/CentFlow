@@ -18,3 +18,4 @@ export { SpendingHeatmap } from './SpendingHeatmap';
 export { SubscriptionsAnalysisSection } from './SubscriptionsAnalysisSection';
 export { TopMerchantsSection } from './TopMerchantsSection';
 export { TrendsSummaryCard } from './TrendsSummaryCard';
+export { AnalysisTabChips, type AnalysisTabKey } from './AnalysisTabChips';

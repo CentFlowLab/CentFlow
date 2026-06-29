@@ -12,6 +12,10 @@ export interface InventoryItem {
   name: string;
   value: number;
   category?: string;
+  description?: string;
+  sourceWarrantyId?: string;
+  warrantyExpiredAt?: string;
+  receiptUrl?: string;
 }
 
 /**
@@ -109,12 +113,22 @@ export interface AttentionItem {
   amount?: number;
 }
 
+export type SuggestionAction =
+  | 'scan_receipt'
+  | 'add_movement'
+  | 'open_analises'
+  | 'open_movimentos'
+  | 'open_ativos_goals'
+  | 'open_ativos_inventory'
+  | 'open_recorrentes';
+
 export interface Suggestion {
   id: string;
   title: string;
   description: string;
   actionLabel?: string;
   type: 'goal' | 'savings' | 'investment' | 'general';
+  action?: SuggestionAction;
 }
 
 /** Input bruto para cálculo de património — reutilizável em Análises e Ativos. */

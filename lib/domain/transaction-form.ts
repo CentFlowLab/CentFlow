@@ -8,6 +8,7 @@ export type TransactionFormValues = {
   merchant: string;
   description: string;
   date: string;
+  accountId?: string;
 };
 
 export function parseTransactionAmount(value: string): number {
@@ -23,6 +24,7 @@ export function transactionToFormValues(transaction: Transaction): TransactionFo
     merchant: transaction.merchant ?? '',
     description: transaction.description ?? '',
     date: formatInputDate(transaction.date),
+    accountId: transaction.accountId ?? undefined,
   };
 }
 
@@ -34,5 +36,6 @@ export function formValuesToUpdateInput(values: TransactionFormValues) {
     merchant: values.merchant.trim() || undefined,
     description: values.description.trim() || undefined,
     date: values.date,
+    accountId: values.accountId,
   };
 }

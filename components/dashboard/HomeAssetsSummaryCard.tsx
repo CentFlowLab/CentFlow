@@ -60,6 +60,16 @@ export function HomeAssetsSummaryCard({ summary, hints = {} }: HomeAssetsSummary
       <Text variant="label" color="textMuted">
         Resumo rápido
       </Text>
+      {summary.accountsTotal !== undefined && summary.accountsTotal > 0 ? (
+        <View style={styles.accountsRow}>
+          <Text variant="bodyMedium" color="textSecondary">
+            Contas
+          </Text>
+          <Text variant="bodyMedium" color="primary">
+            {formatCurrency(summary.accountsTotal)}
+          </Text>
+        </View>
+      ) : null}
       <View style={styles.grid}>
         <SummaryTile
           icon={{ ios: 'target', android: 'flag', web: 'flag' }}
@@ -127,6 +137,12 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  accountsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.xs,
   },
   tile: {
     flex: 1,

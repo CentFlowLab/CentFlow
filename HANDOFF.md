@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T12:04:45.128Z -->
-<!-- Git: 8ab9dc1 (2026-06-29T02:05:35+01:00) -->
+<!-- Última geração: 2026-06-29T21:16:43.137Z -->
+<!-- Git: 0eba8bf (2026-06-29T13:05:47+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 15 — Correções visuais Sessão 3: Home, Análises, heatmap, score, ortografia** |
-| Última geração | 2026-06-29T12:04:45.128Z |
+| Fase atual | **Fase 16 — Contas, garantias→inventário, anexos, tabs Análises, Recorrentes** |
+| Última geração | 2026-06-29T21:16:43.137Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `8ab9dc1` (2026-06-29T02:05:35+01:00) |
+| Git commit | `0eba8bf` (2026-06-29T13:05:47+01:00) |
 
 ---
 
@@ -92,7 +92,7 @@ Património Líq.  = Total Ativos − Total Passivos
 | Ativos | `app/(tabs)/ativos.tsx` | 🔲 Sub-nav + empty states |
 | Perfil | `app/(tabs)/perfil.tsx` | 🔲 Menu estático |
 
-Ecrãs detetados: `analises`, `ativos`, `index`, `movimentos`, `perfil`, `precos`
+Ecrãs detetados: `analises`, `ativos`, `contas`, `index`, `movimentos`, `perfil`, `precos`
 
 ---
 
@@ -142,6 +142,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     _layout.tsx
     analises.tsx
     ativos.tsx
+    contas.tsx
     index.tsx
     movimentos.tsx
     perfil.tsx
@@ -169,11 +170,18 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     privacy.tsx
     security.tsx
     shortcuts.tsx
+  accounts/
+    AccountDetailSheet.tsx
+    AccountFormModal.tsx
+    AccountListItem.tsx
+    AccountPickerField.tsx
+    index.ts
   analysis/
     AnalysisErrorBoundary.tsx
     AnalysisMetricCard.tsx
     AnalysisSectionEmpty.tsx
     AnalysisSkeleton.tsx
+    AnalysisTabChips.tsx
     AutoInsightsCarousel.tsx
     CategoryBreakdownList.tsx
     CreditsAnalysisSection.tsx
@@ -201,6 +209,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     StartupErrorScreen.tsx
     StartupShell.tsx
     index.ts
+  attachments/
+    AttachReceiptButton.tsx
   auth/
     AuthLoadingScreen.tsx
     AuthScreenLayout.tsx
@@ -358,9 +368,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useColorScheme.web.ts
   version/
     ForceUpdateScreen.tsx
+  warranties/
+    WarrantyInventorySyncEffect.tsx
   mutations/
     useProfileMutations.ts
   queries/
+    useAccounts.ts
     useActiveSessions.ts
     useAnalysisData.ts
     useAssets.ts
@@ -399,6 +412,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useSubscriptionDetection.ts
   useTabBarBottomInset.ts
   useTabBarMetrics.ts
+  accounts/
+    balance.test.ts
+    balance.ts
   analytics/
     analytics.service.ts
     events.ts
@@ -417,12 +433,14 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       dashboard.mapper.ts
       receipt.mapper.ts
       transaction.mapper.ts
+    mock-accounts.ts
     mock-assets.ts
     mock-home.ts
     mock-receipt-items.ts
     mock-transactions.ts
     queryClient.ts
     services/
+      accounts.service.ts
       analysis.service.ts
       assets.service.ts
       csv-import.service.ts
@@ -495,6 +513,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     quick-expense-link-trace.ts
     quick-expense-trace.ts
   domain/
+    account.types.ts
     analysis-period.ts
     analysis.compose.ts
     analysis.insights.ts
@@ -596,6 +615,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   navigation/
     dashboard-routes.ts
     quick-add-context.ts
+    suggestion-actions.ts
   onboarding/
     answers.service.ts
     assistance.test.ts
@@ -632,6 +652,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       handle-quick-expense-link.test.ts
     handle-quick-expense-link.ts
   receipt/
+    attach-entity-receipt.ts
     client-ocr.ts
     ocr-confidence.ts
     ocr-failure.test.ts
@@ -670,6 +691,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     renewal.utils.ts
     subscription-utils.ts
   supabase/
+    accounts.ts
     app-config.ts
     assets.ts
     auth.ts
@@ -708,6 +730,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     format.ts
     pluralize.test.ts
     pluralize.ts
+  warranties/
+    expired-to-inventory.ts
   widgets/
     widget-data.ts
   generate-handoff.ts
@@ -717,7 +741,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 15 — Correções visuais Sessão 3: Home, Análises, heatmap, score, ortografia
+## Fase atual: Fase 16 — Contas, garantias→inventário, anexos, tabs Análises, Recorrentes
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript

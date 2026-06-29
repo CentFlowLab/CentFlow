@@ -799,6 +799,7 @@ export type FallbackSuggestion = {
   description: string;
   type: 'goal' | 'savings' | 'investment' | 'general';
   actionLabel?: string;
+  action?: import('@/lib/domain/types').SuggestionAction;
 };
 
 export function getPersonalizedFallbackSuggestions(
@@ -812,6 +813,7 @@ export function getPersonalizedFallbackSuggestions(
         description: 'O OCR preenche o movimento e guarda o histórico para garantias.',
         type: 'general',
         actionLabel: 'Experimentar',
+        action: 'scan_receipt',
       },
     ];
   }
@@ -829,6 +831,7 @@ export function getPersonalizedFallbackSuggestions(
         'É a forma mais rápida de criar movimentos e preparar garantias sem papelada.',
       type: 'general',
       actionLabel: 'Digitalizar talão',
+      action: 'scan_receipt',
     });
   }
 
@@ -843,6 +846,7 @@ export function getPersonalizedFallbackSuggestions(
       description: 'Fundo de emergência, viagem ou entrada de casa — escolhe uma meta e acompanha.',
       type: 'goal',
       actionLabel: 'Criar objetivo',
+      action: 'open_ativos_goals',
     });
   }
 
@@ -854,6 +858,7 @@ export function getPersonalizedFallbackSuggestions(
         'Regista prestações e custos fixos para saberes quanto comprometido tens por mês.',
       type: 'savings',
       actionLabel: 'Ver movimentos',
+      action: 'open_movimentos',
     });
   }
 
@@ -864,6 +869,7 @@ export function getPersonalizedFallbackSuggestions(
       description: 'Adiciona bens com valor estimado para enriquecer a visão do património.',
       type: 'investment',
       actionLabel: 'Adicionar bem',
+      action: 'open_ativos_inventory',
     });
   }
 
@@ -874,6 +880,7 @@ export function getPersonalizedFallbackSuggestions(
       description: 'Adiciona um movimento ou digitaliza um talão para ativar as análises.',
       type: 'general',
       actionLabel: 'Começar',
+      action: 'scan_receipt',
     });
   }
 

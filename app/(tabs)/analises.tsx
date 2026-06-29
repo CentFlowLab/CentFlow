@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import {
   AnalysisErrorBoundary,
   AnalysisMetricCard,
   AnalysisSkeleton,
+  AnalysisTabChips,
   AutoInsightsCarousel,
   CreditsAnalysisSection,
   HealthScoreBreakdownSheet,
@@ -12,11 +14,11 @@ import {
   MonthEndForecastCard,
   MonthlyComparisonSection,
   PatrimonyAllocationCard,
-  PricesInsightsSection,
   SpendingCategoryCard,
   SpendingHeatmap,
   SubscriptionsAnalysisSection,
   TrendsSummaryCard,
+  type AnalysisTabKey,
 } from '@/components/analysis';
 import { AppHeader, SegmentedControl } from '@/components/layout';
 import {
@@ -26,10 +28,11 @@ import {
   SectionHeader,
   Text,
 } from '@/components/ui';
+import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
+import { useAssets } from '@/hooks/queries/useAssets';
 import { usePatrimonyAllocation } from '@/hooks/queries/usePatrimonyAllocation';
 import { useAnalyticsInsights } from '@/hooks/useAnalyticsInsights';
-import { usePricesData } from '@/hooks/queries/usePricesData';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import {
   ANALYSIS_PERIOD_OPTIONS,
@@ -39,27 +42,22 @@ import {
 } from '@/lib/domain/analysis-period';
 import { router } from 'expo-router';
 import { spacing, colors } from '@/lib/theme';
-import type { PricesData } from '@/lib/data/prices.mocks';
+import { formatCurrency } from '@/lib/utils/format';
 
 const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
   key: option.key,
   label: option.label,
 }));
 
-function hasMeaningfulPriceData(prices: PricesData): boolean {
-  return (
-    prices.trackedProducts > 0 &&
-    (prices.changes.length > 0 || prices.insights.length > 0)
-  );
-}
-
 export default function AnalisesScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
   const { data: patrimonyData } = usePatrimonyAllocation();
-  const { data: pricesData } = usePricesData();
   const { data: transactions = [] } = useTransactions('all');
+  const { data: assets } = useAssets();
+  const { totalBalance: accountsTotal } = useAccountsWithBalances(transactions);
   const analytics = useAnalyticsInsights();
 
+  const [tab, setTab] = useState<AnalysisTabKey>('resumo');
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
   const [healthSheetVisible, setHealthSheetVisible] = useState(false);
   const periodOption = getPeriodOption(period);
@@ -73,6 +71,11 @@ export default function AnalisesScreen() {
   const allocationTotal = useMemo(
     () => allocation.reduce((sum, item) => sum + Math.max(0, item.value), 0),
     [allocation],
+  );
+
+  const goalsSaved = useMemo(
+    () => (assets?.goals ?? []).reduce((sum, g) => sum + g.current, 0),
+    [assets?.goals],
   );
 
   return (
@@ -96,85 +99,130 @@ export default function AnalisesScreen() {
         <ScreenContainer applyBottomSafeInset={false}>
           <SectionHeader title="Análises" />
 
-          <AnalysisErrorBoundary label="Insights automáticos">
-            <AutoInsightsCarousel insights={analytics.insights} />
-          </AnalysisErrorBoundary>
+          <AnalysisTabChips value={tab} onChange={setTab} />
 
-          <AnalysisErrorBoundary label="Saúde financeira">
-            <HealthScoreCard
-              score={analytics.healthScore}
-              onPress={() => setHealthSheetVisible(true)}
-            />
-          </AnalysisErrorBoundary>
+          {tab === 'resumo' ? (
+            <Animated.View entering={FadeIn.duration(200)} key="resumo">
+              <AnalysisErrorBoundary label="Insights automáticos">
+                <AutoInsightsCarousel insights={analytics.insights} />
+              </AnalysisErrorBoundary>
 
-          <AnalysisErrorBoundary label="Previsão de fim de mês">
-            <MonthEndForecastCard forecast={analytics.forecast} />
-          </AnalysisErrorBoundary>
+              <AnalysisErrorBoundary label="Saúde financeira">
+                <HealthScoreCard
+                  score={analytics.healthScore}
+                  onPress={() => setHealthSheetVisible(true)}
+                />
+              </AnalysisErrorBoundary>
 
-          <AnalysisErrorBoundary label="Comparação mensal">
-            <MonthlyComparisonSection
-              rows={analytics.monthlyComparison.rows}
-              bars={analytics.monthlyComparison.bars}
-              currentMonthLabel={analytics.monthlyComparison.currentMonthLabel}
-              previousMonthLabel={analytics.monthlyComparison.previousMonthLabel}
-            />
-          </AnalysisErrorBoundary>
+              <AnalysisErrorBoundary label="Previsão de fim de mês">
+                <MonthEndForecastCard forecast={analytics.forecast} />
+              </AnalysisErrorBoundary>
 
-          <View style={styles.periodSelector}>
-            <SegmentedControl
-              segments={PERIOD_SEGMENTS}
-              value={period}
-              onChange={setPeriod}
-            />
-            <Text variant="caption" color="textMuted" style={styles.periodNote}>
-              Afeta tendências, categorias e heatmap abaixo
-            </Text>
-          </View>
+              <AnalysisErrorBoundary label="Comparação mensal">
+                <MonthlyComparisonSection
+                  rows={analytics.monthlyComparison.rows}
+                  bars={analytics.monthlyComparison.bars}
+                  currentMonthLabel={analytics.monthlyComparison.currentMonthLabel}
+                  previousMonthLabel={analytics.monthlyComparison.previousMonthLabel}
+                />
+              </AnalysisErrorBoundary>
+            </Animated.View>
+          ) : null}
 
-          <TrendsSummaryCard
-            trends={data.trends}
-            periodLabel={periodOption.label}
-            showNetWorthChange={false}
-          />
+          {tab === 'gastos' ? (
+            <Animated.View entering={FadeIn.duration(200)} key="gastos">
+              <View style={styles.periodSelector}>
+                <SegmentedControl
+                  segments={PERIOD_SEGMENTS}
+                  value={period}
+                  onChange={setPeriod}
+                />
+              </View>
 
-          <SpendingCategoryCard
-            categories={periodCategories}
-            periodLabel={periodOption.label}
-          />
+              <TrendsSummaryCard
+                trends={data.trends}
+                periodLabel={periodOption.label}
+                showNetWorthChange={false}
+              />
 
-          <AnalysisErrorBoundary label="Heatmap de gastos">
-            <SpendingHeatmap transactions={transactions} />
-          </AnalysisErrorBoundary>
+              <SpendingCategoryCard
+                categories={periodCategories}
+                periodLabel={periodOption.label}
+              />
 
-          <AnalysisErrorBoundary label="Alocação de património">
-            <PatrimonyAllocationCard allocation={allocation} totalAssets={allocationTotal} />
-          </AnalysisErrorBoundary>
+              <AnalysisErrorBoundary label="Heatmap de gastos">
+                <SpendingHeatmap transactions={transactions} />
+              </AnalysisErrorBoundary>
 
-          <AnalysisErrorBoundary label="Subscrições">
-            <SubscriptionsAnalysisSection analysis={analytics.subscriptionAnalysis} />
-          </AnalysisErrorBoundary>
+              <AnalysisErrorBoundary label="Recorrentes">
+                <SubscriptionsAnalysisSection analysis={analytics.subscriptionAnalysis} />
+              </AnalysisErrorBoundary>
+            </Animated.View>
+          ) : null}
 
-          <AnalysisErrorBoundary label="Créditos">
-            <CreditsAnalysisSection
-              credits={analytics.credits}
-              monthlyIncome={analytics.monthlyIncome}
-            />
-          </AnalysisErrorBoundary>
+          {tab === 'divida' ? (
+            <Animated.View entering={FadeIn.duration(200)} key="divida">
+              <AnalysisErrorBoundary label="Créditos">
+                <CreditsAnalysisSection
+                  credits={analytics.credits}
+                  monthlyIncome={analytics.monthlyIncome}
+                />
+              </AnalysisErrorBoundary>
 
-          <SectionHeader title="Métricas" />
-          <View style={styles.metricsGrid}>
-            {data.metrics
-              .filter((metric) => !isPatrimonyMetric(metric.id))
-              .map((metric) => (
-                <AnalysisMetricCard key={metric.id} metric={metric} />
-              ))}
-          </View>
+              <SectionHeader title="Métricas de dívida" />
+              <View style={styles.metricsGrid}>
+                {data.metrics
+                  .filter((metric) => isDebtMetric(metric.id))
+                  .map((metric) => (
+                    <AnalysisMetricCard key={metric.id} metric={metric} />
+                  ))}
+              </View>
+            </Animated.View>
+          ) : null}
 
-          {pricesData && hasMeaningfulPriceData(pricesData) ? (
-            <PricesInsightsSection
-              prices={pricesData}
-              onAddMovement={() => router.push('/(tabs)/movimentos?action=new-movement')}
-            />
+          {tab === 'patrimonio' ? (
+            <Animated.View entering={FadeIn.duration(200)} key="patrimonio">
+              <AnalysisErrorBoundary label="Alocação de património">
+                <PatrimonyAllocationCard allocation={allocation} totalAssets={allocationTotal} />
+              </AnalysisErrorBoundary>
+
+              {accountsTotal > 0 ? (
+                <View style={styles.accountsSummary}>
+                  <Text variant="bodyMedium" color="textSecondary">
+                    Total em contas
+                  </Text>
+                  <Text variant="h3">{formatCurrency(accountsTotal)}</Text>
+                  <Pressable onPress={() => router.push('/contas' as never)}>
+                    <Text variant="caption" color="primary" style={styles.accountsLink}>
+                      Ver contas →
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {goalsSaved > 0 ? (
+                <View style={styles.accountsSummary}>
+                  <Text variant="bodyMedium" color="textSecondary">
+                    Em objetivos
+                  </Text>
+                  <Text variant="h3">{formatCurrency(goalsSaved)}</Text>
+                  <Pressable onPress={() => router.push('/(tabs)/ativos?tab=objetivos')}>
+                    <Text variant="caption" color="primary" style={styles.accountsLink}>
+                      Ver objetivos →
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <SectionHeader title="Métricas de património" />
+              <View style={styles.metricsGrid}>
+                {data.metrics
+                  .filter((metric) => isPatrimonyMetric(metric.id))
+                  .map((metric) => (
+                    <AnalysisMetricCard key={metric.id} metric={metric} />
+                  ))}
+              </View>
+            </Animated.View>
           ) : null}
 
           <RefetchingIndicator visible={isRefetching} />
@@ -199,6 +247,10 @@ function isPatrimonyMetric(id: string): boolean {
   );
 }
 
+function isDebtMetric(id: string): boolean {
+  return id === 'debt-ratio' || id === 'liquidity' || id === 'cashflow';
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -218,9 +270,18 @@ const styles = StyleSheet.create({
   },
   periodSelector: {
     marginBottom: spacing.lg,
-    gap: spacing.xs,
   },
-  periodNote: {
-    paddingHorizontal: spacing.xs,
+  accountsSummary: {
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  accountsLink: {
+    marginTop: spacing.xs,
+    fontWeight: '600',
   },
 });

@@ -12,20 +12,22 @@ type WarrantiesEmptyStateProps = {
   onLearnMore?: () => void;
   onPrimaryAction?: () => void;
   onScanReceipt?: () => void;
+  onOpenInventory?: () => void;
 };
 
 export function WarrantiesEmptyState({
   onLearnMore,
   onPrimaryAction,
   onScanReceipt,
+  onOpenInventory,
 }: WarrantiesEmptyStateProps) {
   const { data: answers } = useOnboardingAnswers();
   const personalized = getPersonalizedEmptyStateCopy('garantias', answers ?? null);
 
-  const title = personalized.title || 'Protege as tuas compras';
+  const title = personalized.title || 'Não tens garantias ativas';
   const description =
     personalized.description ||
-    'Regista garantias com data de expiração, associa ao talão original e recebe alertas antes que expirem.';
+    'Os produtos com garantia expirada passam automaticamente para o Inventário. Regista novas garantias com data de expiração e associa o talão original.';
   const actionLabel = personalized.actionLabel || 'Adicionar garantia';
 
   return (
@@ -90,6 +92,9 @@ export function WarrantiesEmptyState({
             fullWidth
             size="lg"
           />
+        ) : null}
+        {onOpenInventory ? (
+          <Button label="Ver inventário" variant="ghost" onPress={onOpenInventory} fullWidth />
         ) : null}
         {onLearnMore ? (
           <Button label="Porque registar garantias?" variant="ghost" onPress={onLearnMore} fullWidth />

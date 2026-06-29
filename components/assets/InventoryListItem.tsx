@@ -30,7 +30,12 @@ export function InventoryListItem({ item, onPress }: InventoryListItemProps) {
         <Text variant="bodyMedium" numberOfLines={1}>
           {item.name}
         </Text>
-        {item.category ? (
+        {item.sourceWarrantyId ? (
+          <Text variant="caption" color="warning">
+            Garantia expirada
+            {item.warrantyExpiredAt ? ` · ${item.warrantyExpiredAt}` : ''}
+          </Text>
+        ) : item.category ? (
           <Text variant="caption" color="textMuted">
             {item.category}
           </Text>

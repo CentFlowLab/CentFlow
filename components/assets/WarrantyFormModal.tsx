@@ -20,6 +20,7 @@ import { getWarrantyExpiryInfo } from '@/lib/domain/warranty.utils';
 import { colors, spacing } from '@/lib/theme';
 import { formatInputDate, inputDateToIso, isValidInputDate } from '@/lib/utils/format';
 
+import { AttachReceiptButton } from '@/components/attachments/AttachReceiptButton';
 import { WarrantyReceiptPicker } from './WarrantyReceiptPicker';
 
 type WarrantyFormModalProps = {
@@ -44,6 +45,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
   const [selectedReceipt, setSelectedReceipt] = useState<Transaction | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string | undefined>();
 
   const isSaving = createWarranty.isPending || updateWarranty.isPending;
   const isDeleting = deleteWarranty.isPending;
@@ -72,6 +74,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
       setPurchaseDate(next.purchaseDate);
       setStore(next.store);
       setSelectedReceipt(null);
+      setReceiptUrl(warranty.receiptUrl);
       baselineRef.current = next;
     } else {
       const defaultExpiry = formatInputDate(new Date(Date.now() + 365 * 86400000));
@@ -87,6 +90,7 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
       setPurchaseDate(next.purchaseDate);
       setStore(next.store);
       setSelectedReceipt(null);
+      setReceiptUrl(undefined);
       baselineRef.current = next;
     }
 
@@ -322,6 +326,15 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
         onSelect={handleSelectReceipt}
         isLoading={isLoadingTransactions}
       />
+
+      {isEditing && warranty ? (
+        <AttachReceiptButton
+          entityType="warranty"
+          entityId={warranty.id}
+          existingReceiptUrl={receiptUrl}
+          onAttached={(url) => setReceiptUrl(url)}
+        />
+      ) : null}
 
       {apiError ? (
         <Card variant="outlined" style={styles.errorCard}>

@@ -113,6 +113,9 @@ export async function createMockInventoryItem(
     name: input.name.trim(),
     value: input.value,
     category: input.category?.trim() || undefined,
+    description: input.description?.trim() || undefined,
+    sourceWarrantyId: input.sourceWarrantyId,
+    warrantyExpiredAt: input.warrantyExpiredAt || undefined,
   };
   inventoryStore = [item, ...inventoryStore];
   return item;
@@ -165,6 +168,12 @@ export async function deleteMockGoal(id: string): Promise<void> {
 export async function deleteMockWarranty(id: string): Promise<void> {
   await new Promise((r) => setTimeout(r, 150));
   warrantiesStore = warrantiesStore.filter((w) => w.id !== id);
+}
+
+export async function markMockWarrantyMovedToInventory(id: string): Promise<void> {
+  warrantiesStore = warrantiesStore.map((w) =>
+    w.id === id ? { ...w, movedToInventory: true } : w,
+  );
 }
 
 export async function deleteMockInventoryItem(id: string): Promise<void> {

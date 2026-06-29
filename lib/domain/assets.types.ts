@@ -39,6 +39,8 @@ export type Warranty = {
   receiptId?: string;
   /** Rótulo para UI (descrição do movimento/talão) */
   receiptLabel?: string;
+  receiptUrl?: string;
+  movedToInventory?: boolean;
 };
 
 export type AssetsData = {

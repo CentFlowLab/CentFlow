@@ -98,7 +98,7 @@ export async function createTransaction(
 
   const { data, error } = await supabase
     .from('transactions')
-    .insert(payload)
+    .insert(payload as never)
     .select()
     .single();
 
@@ -151,7 +151,7 @@ export async function updateTransactionFromConfirmation(
 
   const { error } = await supabase
     .from('transactions')
-    .update(patch)
+    .update(patch as never)
     .eq('id', transactionId);
 
   if (error) throw new Error(error.message);
@@ -166,7 +166,7 @@ export async function updateTransaction(
 
   const { data, error } = await supabase
     .from('transactions')
-    .update(patch)
+    .update(patch as never)
     .eq('id', transactionId)
     .select()
     .single();
@@ -218,7 +218,7 @@ export async function createTransactionsBulk(
 
   const { data, error } = await supabase
     .from('transactions')
-    .insert(payloads)
+    .insert(payloads as never)
     .select();
 
   if (error) throw new Error(error.message);

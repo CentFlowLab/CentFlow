@@ -30,6 +30,7 @@ export interface Transaction {
   receiptItems?: ReceiptConfirmedItem[];
   /** Grupo de comerciante (agrupamento fuzzy) */
   merchantGroupId?: string | null;
+  accountId?: string | null;
 }
 
 export interface CreateTransactionInput {
@@ -47,6 +48,7 @@ export interface CreateTransactionInput {
   confirmation?: ReceiptConfirmationInput;
   /** Saltar OCR no upload inline (preenchimento manual) */
   skipOcr?: boolean;
+  accountId?: string;
 }
 
 /** Fases do fluxo Opção A: upload → OCR → criar movimento */
@@ -76,4 +78,5 @@ export type UpdateTransactionInput = {
   description?: string;
   merchant?: string;
   date: string;
+  accountId?: string;
 };

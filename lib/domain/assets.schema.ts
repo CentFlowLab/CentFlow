@@ -23,6 +23,9 @@ export const createInventoryItemSchema = z.object({
   name: z.string().min(1, 'Indica o nome do item').max(120),
   value: z.number().min(0, 'O valor não pode ser negativo'),
   category: z.string().max(40).optional(),
+  description: z.string().max(200).optional(),
+  sourceWarrantyId: z.string().optional(),
+  warrantyExpiredAt: optionalInputDateSchema,
 });
 
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;

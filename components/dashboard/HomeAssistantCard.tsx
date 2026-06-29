@@ -7,10 +7,10 @@ import { colors, radius, spacing } from '@/lib/theme';
 type HomeAssistantCardProps = {
   plan: DailyAssistantPlan;
   onAction: (actionId: AssistantActionId) => void;
-  onOpenActionCenter: () => void;
+  onOpenFullPlan: () => void;
 };
 
-export function HomeAssistantCard({ plan, onAction, onOpenActionCenter }: HomeAssistantCardProps) {
+export function HomeAssistantCard({ plan, onAction, onOpenFullPlan }: HomeAssistantCardProps) {
   return (
     <Card variant="elevated" style={styles.card}>
       <View style={styles.header}>
@@ -48,7 +48,7 @@ export function HomeAssistantCard({ plan, onAction, onOpenActionCenter }: HomeAs
         </View>
       ) : null}
 
-      <Pressable onPress={onOpenActionCenter} style={styles.cta}>
+      <Pressable onPress={onOpenFullPlan} style={styles.cta}>
         <Text variant="bodyMedium" color="primary">
           Ver plano completo →
         </Text>

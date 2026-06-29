@@ -10,12 +10,14 @@ type HomeAlertsSectionProps = {
   attentionItems: AttentionItem[];
   suggestions: Suggestion[];
   onOpenAllAttention?: () => void;
+  onSuggestionPress?: (suggestion: Suggestion) => void;
 };
 
 export function HomeAlertsSection({
   attentionItems,
   suggestions,
   onOpenAllAttention,
+  onSuggestionPress,
 }: HomeAlertsSectionProps) {
   const topAttention = attentionItems.slice(0, 3);
   const topSuggestions = suggestions.slice(0, 2);
@@ -56,7 +58,11 @@ export function HomeAlertsSection({
         <View style={styles.block}>
           <SectionHeader title="Sugestões" />
           {topSuggestions.map((suggestion) => (
-            <SuggestionCard key={suggestion.id} suggestion={suggestion} />
+            <SuggestionCard
+              key={suggestion.id}
+              suggestion={suggestion}
+              onPress={(item) => onSuggestionPress?.(item)}
+            />
           ))}
         </View>
       ) : null}

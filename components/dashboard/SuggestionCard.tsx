@@ -1,9 +1,7 @@
-import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 
 import { Card, Text } from '@/components/ui';
-import { openSuggestionRoute } from '@/lib/navigation/dashboard-routes';
 import type { Suggestion } from '@/lib/domain';
 import { colors, spacing } from '@/lib/theme';
 
@@ -16,12 +14,13 @@ const TYPE_ICON = {
 
 type SuggestionCardProps = {
   suggestion: Suggestion;
+  onPress: (suggestion: Suggestion) => void;
 };
 
-export function SuggestionCard({ suggestion }: SuggestionCardProps) {
+export function SuggestionCard({ suggestion, onPress }: SuggestionCardProps) {
   return (
     <Pressable
-      onPress={() => openSuggestionRoute(suggestion.type)}
+      onPress={() => onPress(suggestion)}
       accessibilityRole="button"
       accessibilityLabel={suggestion.title}>
       <Card variant="elevated" style={styles.card}>

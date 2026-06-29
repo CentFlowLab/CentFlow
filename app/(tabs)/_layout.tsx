@@ -11,6 +11,7 @@ import {
 
 import { CreditPaymentReminderGate } from '@/components/assets';
 import { BackTapGuideGate } from '@/components/onboarding';
+import { WarrantyInventorySyncEffect } from '@/components/warranties/WarrantyInventorySyncEffect';
 import { MerchantGroupSuggestionGate } from '@/components/movements/MerchantGroupSuggestionGate';
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
@@ -99,6 +100,23 @@ function TabLayoutInner() {
         }}
       />
       <Tabs.Screen
+        name="contas"
+        options={{
+          title: 'Contas',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={{
+                ios: 'building.columns.fill',
+                android: 'account_balance',
+                web: 'account_balance',
+              }}
+              color={color}
+              size={focused ? 26 : 24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="analises"
         options={{
           title: 'Análises',
@@ -164,6 +182,7 @@ function TabLayoutInner() {
       />
     </Tabs>
     <CreditPaymentReminderGate />
+    <WarrantyInventorySyncEffect />
     <BackTapGuideGate />
     <MerchantGroupSuggestionGate />
     </>

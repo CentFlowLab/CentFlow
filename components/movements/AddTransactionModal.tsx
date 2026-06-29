@@ -20,6 +20,7 @@ import { getCategoriesForType } from '@/lib/data/transaction-categories';
 
 import { CategoryField } from './CategoryField';
 import { MerchantAutocompleteField } from './MerchantAutocompleteField';
+import { AccountPickerField } from '@/components/accounts';
 import { formValuesToConfirmation } from '@/lib/domain/receipt-confirmation';
 import { createTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
@@ -97,6 +98,7 @@ export function AddTransactionModal({
   const [merchant, setMerchant] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayInputDate());
+  const [accountId, setAccountId] = useState<string | undefined>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -306,6 +308,7 @@ export function AddTransactionModal({
     try {
       const input = {
         ...result.data,
+        accountId,
         ...(processedReceipt
           ? {
               receiptMeta: {
@@ -635,6 +638,8 @@ export function AddTransactionModal({
               }}
               error={errors.date}
             />
+
+            <AccountPickerField value={accountId} onChange={setAccountId} />
           </>
         ) : (
           <Card variant="outlined" style={styles.hintCard}>
