@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-28T23:42:49.059Z -->
-<!-- Git: b087ca0 (2026-06-29T00:32:07+01:00) -->
+<!-- Última geração: 2026-06-29T00:02:35.645Z -->
+<!-- Git: fd53983 (2026-06-29T00:43:37+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 13 — Analytics avançadas: insights automáticos, health score, comparação mensal, heatmap e Home inteligente** |
-| Última geração | 2026-06-28T23:42:49.059Z |
+| Última geração | 2026-06-29T00:02:35.645Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `b087ca0` (2026-06-29T00:32:07+01:00) |
+| Git commit | `fd53983` (2026-06-29T00:43:37+01:00) |
 
 ---
 
@@ -821,7 +821,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Grupos de comerciantes — Definições → lista/renomear/aliases/eliminar; pesquisa em Movimentos (description + aliases); badge grupo na lista; Top comerciantes em Análises com comparação mês anterior
 - Analytics — motor lib/insights (generateInsights, health-score, previsão, comparação mensal, heatmap); carousel de insights + score 0-100 no topo de Análises; categorias expandidas, subscrições, créditos com simulador amortização
 - Home inteligente — mensagem contextual dinâmica, AnimatedCurrency no Disponível, resumo rápido condicional, Plano de hoje sem objetivos, ícone neutro Outros
-- FIX crash arranque pós-analytics — AnimatedCurrency (runOnJS sem formatter na UI thread), HealthScoreCard SVG transform, safe-analytics com try/catch, Error Boundaries em Análises
+- FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido
 
 ### 🔲 Pendente
 - Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id

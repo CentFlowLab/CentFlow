@@ -54,18 +54,19 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
   const { data: onboardingAnswers } = useOnboardingAnswers();
 
   return useMemo(() => {
-    const occurredThisMonth = transactions.filter(
+    const safeTransactions = transactions ?? [];
+    const occurredThisMonth = safeTransactions.filter(
       (tx) =>
         isTransactionOccurred(tx.date, referenceDate) &&
         isSameMonth(parseTransactionDate(tx.date), referenceDate),
     );
-    const futureThisMonth = transactions.filter(
+    const futureThisMonth = safeTransactions.filter(
       (tx) =>
         isTransactionFuture(tx.date, referenceDate) &&
         isSameMonth(parseTransactionDate(tx.date), referenceDate),
     );
 
-    const allOccurredNet = sumTransactionCashBalance(transactions, 'occurred', referenceDate);
+    const allOccurredNet = sumTransactionCashBalance(safeTransactions, 'occurred', referenceDate);
     const occurredThisMonthNet = occurredThisMonth.reduce(
       (sum, tx) => sum + transactionCashDelta(tx),
       0,

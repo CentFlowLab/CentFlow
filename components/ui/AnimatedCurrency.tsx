@@ -1,12 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text as RNText } from 'react-native';
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedReaction,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { useEffect, useRef, useState } from 'react';
+import { Text as RNText } from 'react-native';
 
 type AnimatedCurrencyProps = {
   value: number;
@@ -15,13 +8,21 @@ type AnimatedCurrencyProps = {
   duration?: number;
 };
 
-const AnimatedText = Animated.createAnimatedComponent(RNText);
-
 function sanitizeAmount(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return value;
 }
 
+function formatAmount(raw: number, formatter: (value: number) => string): string {
+  try {
+    const rounded = Math.round(sanitizeAmount(raw) * 100) / 100;
+    return formatter(rounded);
+  } catch {
+    return '—';
+  }
+}
+
+/** Animação de valor monetário só em JS (requestAnimationFrame) — evita crash Reanimated no arranque. */
 export function AnimatedCurrency({
   value,
   formatter,
@@ -29,43 +30,45 @@ export function AnimatedCurrency({
   duration = 600,
 }: AnimatedCurrencyProps) {
   const safeValue = sanitizeAmount(value);
-  const animated = useSharedValue(safeValue);
-
-  const formatValue = useCallback(
-    (raw: number) => {
-      try {
-        const rounded = Math.round(sanitizeAmount(raw) * 100) / 100;
-        return formatter(rounded);
-      } catch {
-        return '—';
-      }
-    },
-    [formatter],
-  );
-
-  const [display, setDisplay] = useState(() => formatValue(safeValue));
-
-  const syncDisplay = useCallback(
-    (raw: number) => {
-      setDisplay(formatValue(raw));
-    },
-    [formatValue],
-  );
+  const [display, setDisplay] = useState(() => formatAmount(safeValue, formatter));
+  const rafRef = useRef<number | null>(null);
+  const currentValueRef = useRef(safeValue);
 
   useEffect(() => {
-    syncDisplay(safeValue);
-    animated.value = withTiming(safeValue, {
-      duration,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [safeValue, duration, animated, syncDisplay]);
+    const from = currentValueRef.current;
+    const to = safeValue;
+    currentValueRef.current = to;
 
-  useAnimatedReaction(
-    () => animated.value,
-    (current) => {
-      runOnJS(syncDisplay)(current);
-    },
-  );
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
 
-  return <AnimatedText style={style}>{display}</AnimatedText>;
+    if (from === to) {
+      setDisplay(formatAmount(to, formatter));
+      return;
+    }
+
+    const start = Date.now();
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - start) / duration);
+      const eased = 1 - (1 - t) ** 3;
+      const current = from + (to - from) * eased;
+      setDisplay(formatAmount(current, formatter));
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [safeValue, duration, formatter]);
+
+  return <RNText style={style}>{display}</RNText>;
 }
