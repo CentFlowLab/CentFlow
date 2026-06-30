@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T23:59:08.727Z -->
-<!-- Git: 4d3fe70 (2026-06-29T22:17:00+01:00) -->
+<!-- Última geração: 2026-06-30T11:49:30.310Z -->
+<!-- Git: 5f84848 (2026-06-30T01:06:17+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)** |
-| Última geração | 2026-06-29T23:59:08.727Z |
-| Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `4d3fe70` (2026-06-29T22:17:00+01:00) |
+| Fase atual | **Fase 18 — Prontidão de lançamento (App Store / Play Store)** |
+| Última geração | 2026-06-30T11:49:30.310Z |
+| Path do projeto | `/workspace` |
+| Git commit | `5f84848` (2026-06-30T01:06:17+01:00) |
 
 ---
 
@@ -154,6 +154,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     callback.tsx
   financial-plan.tsx
   index.tsx
+  legal/
+    privacy-policy.tsx
+    terms.tsx
   onboarding.tsx
   quick-expense.tsx
   reset-password.tsx
@@ -213,6 +216,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   attachments/
     AttachReceiptButton.tsx
   auth/
+    AppleSignInButton.tsx
     AuthLoadingScreen.tsx
     AuthScreenLayout.tsx
     AuthSocialDivider.tsx
@@ -270,6 +274,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     TabBarAnalisesIcon.tsx
     UserAvatarButton.tsx
     index.ts
+  legal/
+    FinancialDisclaimer.tsx
+    TermsConsentRow.tsx
   movements/
     AddTransactionModal.tsx
     CategoryField.tsx
@@ -462,6 +469,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   app/
     intro-session.ts
   auth/
+    apple-auth.ts
     auth.context.tsx
     auth.service.ts
     constants.ts
@@ -483,6 +491,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     app-variant.ts
     data-mode.ts
     demo-mode.ts
+    legal.ts
     product-features.ts
     runtime-env.ts
   credit/
@@ -596,6 +605,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     safe-area.ts
     tab-bar-metrics.test.ts
     tab-bar-metrics.ts
+  legal/
+    open-legal-document.ts
   liabilities/
     liabilities.service.ts
   merchants/
@@ -625,6 +636,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     back-tap-guide.ts
     constants.ts
     copy.ts
+    create-goal-from-answers.ts
     features.ts
     first-action.ts
     gate.ts
@@ -743,7 +755,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)
+## Fase atual: Fase 18 — Prontidão de lançamento (App Store / Play Store)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -856,6 +868,15 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction
 - P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy
 - Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última
+- Launch review — Política de privacidade e Termos in-app + URLs (centflow.app/privacy, /terms)
+- Launch review — Eliminação de conta (RPC delete_own_account + fluxo Definições → Privacidade)
+- Launch review — Sign in with Apple (expo-apple-authentication + botão login/registo)
+- Launch review — Consentimento de termos obrigatório no registo
+- Launch review — Aviso financeiro (FinancialDisclaimer em Análises e Disponível este mês)
+- Launch review — Removida permissão RECORD_AUDIO do Android
+- Launch review — Onboarding cria Goal real a partir de savingsGoal
+- Launch review — SectionList Movimentos optimizada (windowSize, removeClippedSubviews)
+- Launch review — launch-checklist.md gerado
 
 ### 🔲 Pendente
 - Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions
@@ -869,10 +890,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)
 - Edição linha a linha de itens do talão
 - Ativos — CRUD objetivos, garantias, inventário
-- Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass), expo-apple-authentication (Apple Sign In no login): instalar + novo IPA (não entram por OTA)
-- Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal
+- Aplicar migration 20240626000000_delete_own_account.sql no Supabase (db push) — eliminação de conta
+- Activar Apple Provider no Supabase Dashboard + novo IPA nativo (Sign in with Apple)
 - OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual
-- Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA
+- Publicar URLs legais https://centflow.app/privacy e /terms no site
+- Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass): instalar + novo IPA (não entram por OTA)
 - Cartão de crédito reutiliza colunas existentes (originalAmount=limite, termMonths=dia de fecho, interestRateAnnual=TAN); migration dedicada fica para depois
 
 ---

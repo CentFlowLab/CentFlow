@@ -339,6 +339,52 @@ export async function logoutAllSessions(): Promise<void> {
   await supabase.auth.signOut({ scope: 'global' });
 }
 
+export async function signInWithAppleIdToken(
+  identityToken: string,
+  fullName?: string,
+): Promise<AuthSession> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'apple',
+    token: identityToken,
+  });
+
+  if (error) throw new Error(error.message);
+  if (!data.session?.access_token || !data.session.user) {
+    throw new Error('Sessão Apple inválida');
+  }
+
+  const user = await fetchProfileUser(
+    data.session.user.id,
+    data.session.user.email ?? '',
+    data.session.user.user_metadata,
+  );
+
+  if (fullName && (user.name === 'Utilizador' || !user.name.trim())) {
+    user.name = fullName;
+    user.avatarInitials = getInitials(fullName);
+  }
+
+  return toAuthSession(data.session.access_token, user);
+}
+
+export async function deleteOwnAccount(): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  const { error } = await supabase.rpc('delete_own_account');
+  if (error) {
+    if (error.message.includes('not_authenticated')) {
+      throw new Error('Sessão expirada. Inicia sessão e tenta outra vez.');
+    }
+    throw new Error(
+      'Não foi possível eliminar a conta. Contacta support@centflow.app se o problema persistir.',
+    );
+  }
+
+  await supabase.auth.signOut({ scope: 'local' });
+}
+
 export async function getAccessToken(): Promise<string | null> {
   const supabase = getSupabaseClient();
   const { data } = await supabase.auth.getSession();

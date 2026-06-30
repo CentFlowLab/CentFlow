@@ -313,6 +313,10 @@ export default function MovimentosScreen() {
               sections={sections}
               keyExtractor={(item) => item.id}
               stickySectionHeadersEnabled={false}
+              initialNumToRender={12}
+              maxToRenderPerBatch={8}
+              windowSize={8}
+              removeClippedSubviews
               renderItem={({ item }) => (
                 <SwipeableTransactionListItem
                   transaction={item}

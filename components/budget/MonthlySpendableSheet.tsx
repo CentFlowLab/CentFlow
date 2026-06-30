@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
+import { FinancialDisclaimer } from '@/components/legal/FinancialDisclaimer';
 import { Card, Text } from '@/components/ui';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -151,6 +152,8 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
           ))}
         </Card>
       ) : null}
+
+      <FinancialDisclaimer compact />
     </DraggableBottomSheet>
   );
 }

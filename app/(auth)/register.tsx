@@ -2,7 +2,8 @@ import { Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
+import { AuthScreenLayout, AppleSignInButton, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
+import { TermsConsentRow } from '@/components/legal/TermsConsentRow';
 import { PasswordStrengthMeter } from '@/components/security/PasswordStrengthMeter';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { isMockAuthEnabled, registerSchema, useAuth, getAuthErrorMessage } from '@/lib/auth';
@@ -10,15 +11,17 @@ import { PASSWORD_POLICY_HINT, validatePassword } from '@/lib/security/passwordP
 import { colors, spacing } from '@/lib/theme';
 
 export default function RegisterScreen() {
-  const { signUp, signInWithGoogle, isGoogleSignInAvailable } = useAuth();
+  const { signUp, signInWithGoogle, signInWithApple, isGoogleSignInAvailable, isAppleSignInAvailable } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   const passwordValidation = useMemo(
     () => validatePassword(password, { email, name }),
@@ -26,6 +29,7 @@ export default function RegisterScreen() {
   );
 
   const canSubmit =
+    termsAccepted &&
     passwordValidation.valid &&
     password === confirmPassword &&
     name.trim().length >= 2 &&
@@ -33,6 +37,15 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     setApiError(null);
+
+    if (!termsAccepted) {
+      setErrors((current) => ({
+        ...current,
+        terms: 'Aceita os Termos e a Política de Privacidade para continuar.',
+      }));
+      return;
+    }
+
     const result = registerSchema.safeParse({
       name,
       email,
@@ -80,6 +93,22 @@ export default function RegisterScreen() {
       setApiError(getAuthErrorMessage(error));
     } finally {
       setGoogleLoading(false);
+    }
+  }
+
+  async function handleAppleSignIn() {
+    setApiError(null);
+    setAppleLoading(true);
+
+    try {
+      const completed = await signInWithApple();
+      if (completed) {
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      setApiError(getAuthErrorMessage(error));
+    } finally {
+      setAppleLoading(false);
     }
   }
 
@@ -168,15 +197,38 @@ export default function RegisterScreen() {
         error={errors.confirmPassword}
       />
 
+      <TermsConsentRow
+        accepted={termsAccepted}
+        onToggle={(value) => {
+          setTermsAccepted(value);
+          if (value) {
+            setErrors((current) => {
+              const next = { ...current };
+              delete next.terms;
+              return next;
+            });
+          }
+        }}
+        error={errors.terms}
+      />
+
       <Button
         label="Criar conta"
         onPress={handleRegister}
         loading={loading}
-        disabled={!canSubmit || googleLoading}
+        disabled={!canSubmit || googleLoading || appleLoading}
         fullWidth
         size="lg"
         style={styles.submit}
       />
+
+      {isAppleSignInAvailable ? (
+        <AppleSignInButton
+          onPress={handleAppleSignIn}
+          loading={appleLoading}
+          disabled={loading || googleLoading}
+        />
+      ) : null}
 
       {isGoogleSignInAvailable ? (
         <>
@@ -184,7 +236,7 @@ export default function RegisterScreen() {
           <GoogleSignInButton
             onPress={handleGoogleSignIn}
             loading={googleLoading}
-            disabled={loading}
+            disabled={loading || appleLoading}
           />
         </>
       ) : null}

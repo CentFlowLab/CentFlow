@@ -50,6 +50,21 @@ export function createMockSession(
   };
 }
 
+export function createMockAppleSession(fullName?: string): AuthSession {
+  const name = fullName?.trim() || 'Utilizador Apple';
+
+  return {
+    token: 'mock-apple-token',
+    user: {
+      id: 'mock-apple-user-1',
+      name,
+      email: 'apple.user@privaterelay.appleid.com',
+      avatarInitials: getInitials(name),
+      currency: 'EUR',
+    },
+  };
+}
+
 export function createMockGoogleSession(): AuthSession {
   const name = 'Utilizador Google';
 

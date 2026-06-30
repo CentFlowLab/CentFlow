@@ -3,6 +3,7 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState } from
 import { queryClient } from '@/lib/api';
 import { setAccessToken } from '@/lib/api/token';
 import { identify, resetAnalytics } from '@/lib/analytics';
+import { isAppleSignInAvailable } from '@/lib/auth/apple-auth';
 import { isGoogleSignInAvailable, isSupabaseEnabled } from '@/lib/supabase';
 import {
   getSessionExpiredMessage,
@@ -25,9 +26,12 @@ type AuthContextValue = {
   startupError: string | null;
   sessionExpiredMessage: string | null;
   isGoogleSignInAvailable: boolean;
+  isAppleSignInAvailable: boolean;
   signIn: (credentials: LoginCredentials) => Promise<void>;
   signUp: (credentials: RegisterCredentials) => Promise<void>;
   signInWithGoogle: () => Promise<boolean>;
+  signInWithApple: () => Promise<boolean>;
+  deleteAccount: () => Promise<void>;
   completeGoogleSignInFromCallback: (url: string) => Promise<void>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<void>;
@@ -148,6 +152,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [applySession]);
 
+  const signInWithApple = useCallback(async (): Promise<boolean> => {
+    try {
+      const session = await authService.loginWithApple();
+      applySession(session);
+      return true;
+    } catch (error) {
+      throw new Error(getAuthErrorMessage(error));
+    }
+  }, [applySession]);
+
+  const deleteAccount = useCallback(async () => {
+    signingOutRef.current = true;
+    try {
+      await authService.deleteAccount();
+      setUser(null);
+      setSessionExpiredMessage(null);
+      resetAnalytics();
+      queryClient.clear();
+    } finally {
+      signingOutRef.current = false;
+    }
+  }, []);
+
   const completeGoogleSignInFromCallback = useCallback(async (url: string) => {
     try {
       const session = await authService.completeGoogleOAuthCallback(url);
@@ -208,9 +235,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       startupError,
       sessionExpiredMessage,
       isGoogleSignInAvailable: isGoogleSignInAvailable(),
+      isAppleSignInAvailable: isAppleSignInAvailable(),
       signIn,
       signUp,
       signInWithGoogle,
+      signInWithApple,
+      deleteAccount,
       completeGoogleSignInFromCallback,
       signOut,
       signOutAllDevices,
@@ -225,6 +255,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signIn,
       signUp,
       signInWithGoogle,
+      signInWithApple,
+      deleteAccount,
       completeGoogleSignInFromCallback,
       signOut,
       signOutAllDevices,

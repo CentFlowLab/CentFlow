@@ -653,6 +653,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_own_account: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       user_has_any_financial_data: {
         Args: { p_user_id: string }
         Returns: boolean

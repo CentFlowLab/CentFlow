@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)",
+  "currentPhase": "Fase 18 — Prontidão de lançamento (App Store / Play Store)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -112,7 +112,16 @@
     "FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido",
     "P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction",
     "P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy",
-    "Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última"
+    "Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última",
+    "Launch review — Política de privacidade e Termos in-app + URLs (centflow.app/privacy, /terms)",
+    "Launch review — Eliminação de conta (RPC delete_own_account + fluxo Definições → Privacidade)",
+    "Launch review — Sign in with Apple (expo-apple-authentication + botão login/registo)",
+    "Launch review — Consentimento de termos obrigatório no registo",
+    "Launch review — Aviso financeiro (FinancialDisclaimer em Análises e Disponível este mês)",
+    "Launch review — Removida permissão RECORD_AUDIO do Android",
+    "Launch review — Onboarding cria Goal real a partir de savingsGoal",
+    "Launch review — SectionList Movimentos optimizada (windowSize, removeClippedSubviews)",
+    "Launch review — launch-checklist.md gerado"
   ],
   "pending": [
     "Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions",
@@ -126,10 +135,11 @@
     "Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)",
     "Edição linha a linha de itens do talão",
     "Ativos — CRUD objetivos, garantias, inventário",
-    "Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass), expo-apple-authentication (Apple Sign In no login): instalar + novo IPA (não entram por OTA)",
-    "Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal",
+    "Aplicar migration 20240626000000_delete_own_account.sql no Supabase (db push) — eliminação de conta",
+    "Activar Apple Provider no Supabase Dashboard + novo IPA nativo (Sign in with Apple)",
     "OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual",
-    "Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA",
+    "Publicar URLs legais https://centflow.app/privacy e /terms no site",
+    "Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass): instalar + novo IPA (não entram por OTA)",
     "Cartão de crédito reutiliza colunas existentes (originalAmount=limite, termMonths=dia de fecho, interestRateAnnual=TAN); migration dedicada fica para depois"
   ],
   "outputFile": "HANDOFF.md"

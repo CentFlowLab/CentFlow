@@ -64,9 +64,8 @@ export default function NotificationsScreen() {
         <Card variant="elevated" style={styles.infoCard}>
           <Text variant="bodyMedium">Sobre notificações push</Text>
           <Text variant="caption" color="textSecondary" style={styles.infoText}>
-            SideStore e LiveContainer não suportam push nativo. TestFlight e App Store sim —
-            quando implementado. Os alertas in-app no dashboard funcionam sempre, independentemente
-            da instalação.
+            As notificações push estarão disponíveis numa próxima actualização. Os alertas
+            in-app no dashboard e por email (se activados) funcionam sempre.
           </Text>
         </Card>
         <Card variant="elevated" style={styles.card}>

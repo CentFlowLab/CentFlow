@@ -5,7 +5,16 @@ import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { isSupabaseEnabled, supabaseAuth } from '@/lib/supabase';
 
 import { AUTH_ENDPOINTS } from './constants';
-import { createMockSession, createMockGoogleSession, isMockAuthEnabled } from './mock-auth';
+import {
+  isAppleSignInSupportedOnDevice,
+  signInWithAppleNative,
+} from './apple-auth';
+import {
+  createMockSession,
+  createMockAppleSession,
+  createMockGoogleSession,
+  isMockAuthEnabled,
+} from './mock-auth';
 import { deleteToken, loadToken, saveToken } from './storage';
 import type {
   AuthSession,
@@ -152,9 +161,53 @@ export async function completeGoogleOAuthCallback(url: string): Promise<AuthSess
   return persistSession(session);
 }
 
+export async function loginWithApple(): Promise<AuthSession> {
+  if (isMockAuthEnabled()) {
+    return persistSession(createMockAppleSession());
+  }
+
+  assertSupabaseAuthBackend();
+
+  const supported = await isAppleSignInSupportedOnDevice();
+  if (!supported) {
+    throw new Error('Sign in with Apple não está disponível neste dispositivo.');
+  }
+
+  if (isSupabaseEnabled()) {
+    const { identityToken, fullName } = await signInWithAppleNative();
+    return persistSession(await supabaseAuth.signInWithAppleIdToken(identityToken, fullName));
+  }
+
+  throw new Error('Login com Apple requer Supabase configurado.');
+}
+
+export async function deleteAccount(): Promise<void> {
+  if (isMockAuthEnabled()) {
+    await clearSession();
+    return;
+  }
+
+  if (isSupabaseEnabled()) {
+    await supabaseAuth.deleteOwnAccount();
+    await clearSession();
+    return;
+  }
+
+  throw new Error('Eliminação de conta indisponível neste ambiente.');
+}
+
 export async function getCurrentUser(): Promise<User> {
   if (isMockAuthEnabled()) {
     const token = getAccessToken();
+    if (token === 'mock-apple-token') {
+      return loadMockProfileOverlay('mock-apple-user-1', {
+        id: 'mock-apple-user-1',
+        name: 'Utilizador Apple',
+        email: 'apple.user@privaterelay.appleid.com',
+        avatarInitials: 'UA',
+        currency: 'EUR',
+      });
+    }
     if (token === 'mock-google-token') {
       return loadMockProfileOverlay('mock-google-user-1', {
         id: 'mock-google-user-1',

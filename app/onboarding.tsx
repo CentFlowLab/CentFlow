@@ -23,6 +23,7 @@ import { useOnboarding, useOnboardingAnswersState } from '@/hooks/useOnboarding'
 import { enrichOnboardingAnswers } from '@/lib/onboarding/features';
 import { getSpendAwarenessRevealMessage } from '@/lib/onboarding/assistance';
 import { resolveFirstAction } from '@/lib/onboarding/first-action';
+import { createGoalFromOnboardingAnswers } from '@/lib/onboarding/create-goal-from-answers';
 import {
   fetchOnboardingAnswers,
   saveOnboardingAnswersForUser,
@@ -235,6 +236,11 @@ export default function OnboardingScreen() {
 
     if (userId) {
       await saveOnboardingAnswersForUser(userId, final);
+      try {
+        await createGoalFromOnboardingAnswers(final);
+      } catch {
+        // Objetivo opcional — não bloqueia onboarding
+      }
       await complete(final);
     }
     router.replace('/(tabs)/' as Href);

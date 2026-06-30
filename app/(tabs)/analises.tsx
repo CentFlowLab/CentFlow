@@ -22,6 +22,7 @@ import {
   type AnalysisTabKey,
 } from '@/components/analysis';
 import { AppHeader, SegmentedControl } from '@/components/layout';
+import { FinancialDisclaimer } from '@/components/legal/FinancialDisclaimer';
 import {
   ErrorState,
   RefetchingIndicator,
@@ -233,6 +234,8 @@ export default function AnalisesScreen() {
           ) : null}
 
           <RefetchingIndicator visible={isRefetching} />
+
+          <FinancialDisclaimer compact />
 
           <HealthScoreBreakdownSheet
             visible={healthSheetVisible}
