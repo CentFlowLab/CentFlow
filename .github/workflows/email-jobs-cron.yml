@@ -1,10 +1,16 @@
 name: Email jobs (lifecycle cron)
 
+# Reduzido de cada hora (24×/dia) para 2×/dia — lifecycle emails não precisam de granularidade horária.
+# Manual: workflow_dispatch (testes ou catch-up).
+
 on:
   schedule:
-    # Cada hora — onboarding, inactividade, prazos, resumo dominical
-    - cron: '0 * * * *'
+    - cron: '0 8,20 * * *'
   workflow_dispatch:
+
+concurrency:
+  group: email-jobs-cron
+  cancel-in-progress: false
 
 jobs:
   run-email-jobs:

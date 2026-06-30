@@ -1,8 +1,13 @@
 # Alias para o pipeline unificado — ver release.yml
+# Só manual: publica OTA + build IPA unsigned (macOS ~90 min).
 name: Build iOS unsigned IPA (legacy alias)
 
 on:
   workflow_dispatch:
+
+concurrency:
+  group: build-ios-unsigned-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release:
