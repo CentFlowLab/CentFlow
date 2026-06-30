@@ -2,9 +2,12 @@
 # CentFlow — Release pipeline (OTA + IPA unsigned)
 # =============================================================================
 #
-# Dispara automaticamente em push para main:
+# Dispara automaticamente em push para main (apenas paths OTA-relevantes):
 #   1. Valida package-lock + publica EAS Update (preview + production)
 #   2. Build IPA unsigned — só em workflow_dispatch (poupa minutos macOS)
+#
+# Push que só altera HANDOFF.md, docs, migrations SQL, etc. não dispara OTA.
+# workflow_dispatch ignora path filters — corre sempre manualmente.
 #
 # Se o job falhar em ~3s sem logs: verificar Billing & plans do GitHub
 # (pagamentos em falta ou spending limit em repos privados).
@@ -22,6 +25,22 @@ on:
   push:
     branches:
       - main
+    paths:
+      # OTA — só quando alterações afectam JS/assets/config da app
+      - 'app/**'
+      - 'components/**'
+      - 'hooks/**'
+      - 'lib/**'
+      - 'types/**'
+      - 'assets/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.json'
+      - 'app.config.js'
+      - 'eas.json'
+      - 'babel.config.js'
+      - 'tsconfig.json'
+      - '.github/workflows/release.yml'
   workflow_dispatch:
     inputs:
       publish_ota:
@@ -31,7 +50,7 @@ on:
       build_ipa:
         description: 'Build IPA unsigned iOS (LiveContainer)'
         type: boolean
-        default: true
+        default: false
   workflow_call:
     inputs:
       publish_ota:
@@ -120,6 +139,25 @@ jobs:
             --environment production \
             --non-interactive \
             --message "${{ steps.meta.outputs.message }}"
+
+      - name: Write release summary
+        if: always()
+        run: |
+          {
+            echo "## CentFlow Release — \`${{ github.sha }}\`"
+            echo ""
+            echo "| Job | Resultado |"
+            echo "|-----|-----------|"
+            echo "| OTA (incl. lockfile) | ${{ job.status }} |"
+            echo "| IPA beta | skipped (só workflow_dispatch) |"
+            echo ""
+            if [ "${{ job.status }}" = "failure" ]; then
+              echo "> **OTA falhou** — verifica logs. Causas comuns:"
+              echo "> - \`EXPO_TOKEN\` em falta (Settings → Secrets → Actions)"
+              echo "> - \`package-lock.json\` dessincronizado (corre \`npm run verify:lockfile\`)"
+              echo "> - Billing GitHub em falta / spending limit (Settings → Billing & plans)"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
 
   build-ipa:
     name: Build unsigned .ipa (beta)
@@ -342,32 +380,17 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-  summary:
-    name: Release summary
-    needs: [ota, build-ipa]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Write job summary
+      - name: Write release summary
+        if: always()
         run: |
           {
-            echo "## CentFlow Release — \`${{ github.sha }}\`"
+            echo "## CentFlow IPA build — \`${{ github.sha }}\`"
             echo ""
             echo "| Job | Resultado |"
             echo "|-----|-----------|"
-            echo "| OTA (incl. lockfile) | ${{ needs.ota.result }} |"
-            echo "| IPA beta | ${{ needs.build-ipa.result }} |"
+            echo "| IPA beta | ${{ job.status }} |"
             echo ""
-            if [ "${{ needs.ota.result }}" = "failure" ]; then
-              echo "> **OTA falhou** — verifica logs. Causas comuns:"
-              echo "> - \`EXPO_TOKEN\` em falta (Settings → Secrets → Actions)"
-              echo "> - \`package-lock.json\` dessincronizado (corre \`npm run verify:lockfile\`)"
-              echo "> - Billing GitHub em falta / spending limit (Settings → Billing & plans)"
-            fi
-            if [ "${{ needs.build-ipa.result }}" = "skipped" ]; then
-              echo "> **IPA** — só em workflow_dispatch (push dispara apenas OTA)."
-            fi
-            if [ "${{ needs.build-ipa.result }}" = "success" ]; then
+            if [ "${{ job.status }}" = "success" ]; then
               echo "> **IPA pronto** — descarrega o artefacto \`CentFlow-beta-ipa-${{ github.sha }}\` neste run."
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
