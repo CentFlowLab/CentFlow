@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -20,7 +21,10 @@ function formatMonthDelta(delta: number): { label: string; color: string } {
   return { label: '→ sem movimento', color: colors.textMuted };
 }
 
-export function AccountListItem({ account, onPress }: AccountListItemProps) {
+export const AccountListItem = memo(function AccountListItem({
+  account,
+  onPress,
+}: AccountListItemProps) {
   const delta = formatMonthDelta(account.monthDelta);
 
   return (
@@ -60,7 +64,7 @@ export function AccountListItem({ account, onPress }: AccountListItemProps) {
       </Card>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

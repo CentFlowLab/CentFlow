@@ -1,10 +1,11 @@
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { AccountFormModal, AccountListItem } from '@/components/accounts';
 import { AppHeader } from '@/components/layout';
 import { EmptyState, ErrorState, RefetchingIndicator, ScreenContainer, Text } from '@/components/ui';
+import { DeferredMount } from '@/components/ui/DeferredMount';
 import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
@@ -39,6 +40,15 @@ export default function ContasScreen() {
   }, [transactions, selectedAccount]);
 
   const isLoading = accountsLoading || txLoading;
+
+  const renderAccount = useCallback(
+    ({ item }: { item: AccountWithBalance }) => (
+      <AccountListItem account={item} onPress={() => setSelectedAccount(item)} />
+    ),
+    [],
+  );
+
+  const keyExtractor = useCallback((item: AccountWithBalance) => item.id, []);
 
   const header = (
     <AppHeader
@@ -84,15 +94,29 @@ export default function ContasScreen() {
     <View style={styles.screen}>
       {header}
 
-      <ScrollView
+      <FlatList
+        data={accounts}
+        keyExtractor={keyExtractor}
+        renderItem={renderAccount}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
-        contentContainerStyle={{ paddingBottom: contentBottomPadding }}>
-        <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
-          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-            CONTAS
-          </Text>
-
-          {accounts.length === 0 ? (
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: contentBottomPadding },
+          accounts.length === 0 && styles.emptyList,
+        ]}
+        ListHeaderComponent={
+          <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
+            <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+              CONTAS
+            </Text>
+          </ScreenContainer>
+        }
+        ListEmptyComponent={
+          <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
             <EmptyState
               icon={
                 <SymbolView
@@ -106,37 +130,37 @@ export default function ContasScreen() {
               actionLabel="Criar conta"
               onAction={() => setFormVisible(true)}
             />
-          ) : (
-            <>
-              {accounts.map((account) => (
-                <AccountListItem
-                  key={account.id}
-                  account={account}
-                  onPress={() => setSelectedAccount(account)}
-                />
-              ))}
-
+          </ScreenContainer>
+        }
+        ListFooterComponent={
+          accounts.length > 0 ? (
+            <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
               <View style={styles.totalRow}>
                 <Text variant="bodyMedium" color="textMuted">
                   Total
                 </Text>
                 <Text variant="h2">{formatCurrency(totalBalance)}</Text>
               </View>
-            </>
-          )}
-
-          <RefetchingIndicator visible={isRefetching} />
-        </ScreenContainer>
-      </ScrollView>
-
-      <AccountFormModal visible={formVisible} onClose={() => setFormVisible(false)} />
-
-      <AccountDetailSheet
-        visible={selectedAccount !== null}
-        account={selectedAccount}
-        transactions={accountTransactions}
-        onClose={() => setSelectedAccount(null)}
+              <RefetchingIndicator visible={isRefetching} />
+            </ScreenContainer>
+          ) : (
+            <RefetchingIndicator visible={isRefetching} />
+          )
+        }
       />
+
+      <DeferredMount when={formVisible}>
+        <AccountFormModal visible onClose={() => setFormVisible(false)} />
+      </DeferredMount>
+
+      <DeferredMount when={selectedAccount !== null}>
+        <AccountDetailSheet
+          visible
+          account={selectedAccount}
+          transactions={accountTransactions}
+          onClose={() => setSelectedAccount(null)}
+        />
+      </DeferredMount>
     </View>
   );
 }
@@ -155,6 +179,12 @@ const styles = StyleSheet.create({
   sectionLabel: {
     marginBottom: spacing.md,
     letterSpacing: 1,
+  },
+  listContent: {
+    paddingHorizontal: spacing.lg,
+  },
+  emptyList: {
+    flexGrow: 1,
   },
   totalRow: {
     flexDirection: 'row',

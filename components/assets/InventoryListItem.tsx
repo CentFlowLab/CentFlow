@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -11,7 +12,10 @@ type InventoryListItemProps = {
   onPress?: (item: InventoryItem) => void;
 };
 
-export function InventoryListItem({ item, onPress }: InventoryListItemProps) {
+export const InventoryListItem = memo(function InventoryListItem({
+  item,
+  onPress,
+}: InventoryListItemProps) {
   return (
     <Pressable
       onPress={() => onPress?.(item)}
@@ -46,7 +50,7 @@ export function InventoryListItem({ item, onPress }: InventoryListItemProps) {
     </Card>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   pressed: {

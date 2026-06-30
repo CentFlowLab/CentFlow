@@ -1,24 +1,25 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import {
-  AddTransactionModal,
   EditTransactionModal,
   MovementFilterChips,
   MOVEMENTS_EMPTY_CONFIG,
   PendingSubscriptionModal,
-  QuickExpenseSheet,
-  SwipeableTransactionListItem,
+  TransactionSectionList,
   TransactionsSkeleton,
   type MovementTab,
 } from '@/components/movements';
+import { LazyAddTransactionModal } from '@/components/movements/LazyAddTransactionModal';
+import { LazyQuickExpenseSheet } from '@/components/movements/LazyQuickExpenseSheet';
 import { EmptyState, ErrorState, Text, TextField } from '@/components/ui';
+import { DeferredMount } from '@/components/ui/DeferredMount';
 import { useToast } from '@/components/ui/Toast';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { useMerchantGroups } from '@/hooks/queries/useMerchantGroups';
@@ -46,7 +47,6 @@ import {
 } from '@/lib/merchants/transaction-search';
 import { colors, spacing } from '@/lib/theme';
 import { resolveSubscriptionCategory } from '@/lib/subscriptions/auto-categorize';
-import { formatCurrency } from '@/lib/utils/format';
 
 export default function MovimentosScreen() {
   useDiagnosticScreen('movements');
@@ -191,20 +191,23 @@ export default function MovimentosScreen() {
     !modalVisible &&
     !suppressDetectionRef.current;
 
-  function handleEdit(transaction: Transaction) {
-    setEditingTransaction(transaction);
-  }
+  const handleDelete = useCallback(
+    (transaction: Transaction) => {
+      deleteMutation.mutate(transaction.id, {
+        onSuccess: () => {
+          showToast('Movimento eliminado.', 'success');
+        },
+        onError: () => {
+          showToast('Não foi possível eliminar o movimento.', 'error');
+        },
+      });
+    },
+    [deleteMutation, showToast],
+  );
 
-  function handleDelete(transaction: Transaction) {
-    deleteMutation.mutate(transaction.id, {
-      onSuccess: () => {
-        showToast('Movimento eliminado.', 'success');
-      },
-      onError: () => {
-        showToast('Não foi possível eliminar o movimento.', 'error');
-      },
-    });
-  }
+  const handleEditStable = useCallback((transaction: Transaction) => {
+    setEditingTransaction(transaction);
+  }, []);
 
   function handleLearnMore() {
     if (activeView === 'subscricoes') {
@@ -309,57 +312,19 @@ export default function MovimentosScreen() {
               />
             </View>
           ) : (
-            <SectionList
+            <TransactionSectionList
               sections={sections}
-              keyExtractor={(item) => item.id}
-              stickySectionHeadersEnabled={false}
-              renderItem={({ item }) => (
-                <SwipeableTransactionListItem
-                  transaction={item}
-                  merchantGroupName={getMerchantGroupName(item.merchantGroupId, merchantGroups)}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              )}
-              renderSectionHeader={({ section }) => (
-                <View style={styles.sectionHeader}>
-                  <Text variant="label" color="textSecondary">
-                    {section.title}
-                  </Text>
-                  <Text
-                    variant="caption"
-                    color={section.dayTotal >= 0 ? 'success' : 'textMuted'}>
-                    {section.dayTotal > 0 ? '+' : ''}
-                    {formatCurrency(section.dayTotal)}
-                  </Text>
-                </View>
-              )}
-              ListHeaderComponent={
-                showEmptyList ? null : (
-                  <View style={styles.monthSummary}>
-                    <Text variant="caption" color="textMuted">
-                      {monthSummaryLabel}
-                    </Text>
-                    <View style={styles.monthSummaryRow}>
-                      <Text
-                        variant="bodyMedium"
-                        color={monthSummary.net >= 0 ? 'success' : 'text'}>
-                        {monthSummary.net > 0 ? '+' : ''}
-                        {formatCurrency(monthSummary.net)}
-                      </Text>
-                      <Text variant="caption" color="textMuted">
-                        {monthSummary.count} movimento{monthSummary.count === 1 ? '' : 's'}
-                      </Text>
-                    </View>
-                  </View>
-                )
-              }
+              merchantGroups={merchantGroups}
+              monthSummaryLabel={monthSummaryLabel}
+              monthSummary={monthSummary}
+              showEmptyList={showEmptyList}
+              onEdit={handleEditStable}
+              onDelete={handleDelete}
               contentContainerStyle={[
                 styles.listContent,
                 showEmptyList && styles.listContentEmpty,
                 { paddingBottom: contentBottomPadding },
               ]}
-              showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
@@ -445,37 +410,47 @@ export default function MovimentosScreen() {
         </Animated.View>
       )}
 
-      <AddTransactionModal
-        visible={modalVisible}
-        onClose={closeAddModal}
-        startWithReceiptPicker={startWithReceiptPicker}
-        presetFilter={filter}
-      />
+      <DeferredMount when={modalVisible}>
+        <LazyAddTransactionModal
+          visible={modalVisible}
+          onClose={closeAddModal}
+          startWithReceiptPicker={startWithReceiptPicker}
+          presetFilter={filter}
+        />
+      </DeferredMount>
 
-      <EditTransactionModal
-        visible={editingTransaction !== null}
-        transaction={editingTransaction}
-        onClose={() => setEditingTransaction(null)}
-      />
+      <DeferredMount when={editingTransaction !== null}>
+        <EditTransactionModal
+          visible
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+        />
+      </DeferredMount>
 
-      <SubscriptionFormModal
-        visible={subscriptionFormVisible}
-        subscription={editingSubscription}
-        onClose={closeSubscriptionForm}
-      />
+      <DeferredMount when={subscriptionFormVisible}>
+        <SubscriptionFormModal
+          visible={subscriptionFormVisible}
+          subscription={editingSubscription}
+          onClose={closeSubscriptionForm}
+        />
+      </DeferredMount>
 
-      <PendingSubscriptionModal
-        visible={showDetectionModal}
-        detection={activeDetection}
-        onConfirm={handleConfirmDetection}
-        onDismiss={dismissCurrent}
-        isSaving={saveSubscription.isPending}
-      />
+      <DeferredMount when={showDetectionModal}>
+        <PendingSubscriptionModal
+          visible={showDetectionModal}
+          detection={activeDetection}
+          onConfirm={handleConfirmDetection}
+          onDismiss={dismissCurrent}
+          isSaving={saveSubscription.isPending}
+        />
+      </DeferredMount>
 
-      <QuickExpenseSheet
-        visible={quickExpenseVisible}
-        onClose={() => setQuickExpenseVisible(false)}
-      />
+      <DeferredMount when={quickExpenseVisible}>
+        <LazyQuickExpenseSheet
+          visible={quickExpenseVisible}
+          onClose={() => setQuickExpenseVisible(false)}
+        />
+      </DeferredMount>
 
       <QuickAddMenuSheet
         visible={quickAdd.sheetVisible}
@@ -540,13 +515,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: spacing.sm,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
   },
   sectionContent: {
     paddingHorizontal: spacing.lg,

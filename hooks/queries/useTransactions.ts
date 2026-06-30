@@ -33,9 +33,13 @@ export {
   invalidateTransactionQueries,
 };
 
-export function useTransactions(filter: TransactionFilter = 'all') {
+export function useTransactions(
+  filter: TransactionFilter = 'all',
+  options?: { enabled?: boolean },
+) {
   const { isAuthenticated, user } = useAuth();
   const userId = user?.id ?? '';
+  const queryEnabled = options?.enabled ?? true;
 
   return useQuery<Transaction[]>({
     queryKey: queryKeys.transactions({ filter }),
@@ -44,7 +48,7 @@ export function useTransactions(filter: TransactionFilter = 'all') {
       if (!userId) return txs;
       return enrichTransactionsWithLocalGroups(userId, txs);
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && queryEnabled,
     staleTime: 1000 * 60 * 2,
   });
 }

@@ -4,7 +4,7 @@ import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { estimateMonthlyCashflow, monthlySubscriptionTotal } from '@/lib/domain/financial';
-import { computeAnalyticsSnapshot } from '@/lib/insights/safe-analytics';
+import { computeAnalyticsSnapshot, type AnalyticsSnapshot } from '@/lib/insights/safe-analytics';
 import type { HealthScoreInput, InsightInput } from '@/lib/insights/types';
 import { filterTransactionsInMonth, monthKey } from '@/lib/insights/month-utils';
 import { useMemo } from 'react';
@@ -14,14 +14,48 @@ function finiteNumber(value: number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function useAnalyticsInsights(referenceDate = new Date()) {
-  const { data: transactions = [] } = useTransactions('all');
+const EMPTY_ANALYTICS: AnalyticsSnapshot = computeAnalyticsSnapshot({
+  transactions: [],
+  subscriptions: [],
+  credits: [],
+  insightInput: {
+    transactions: [],
+    subscriptions: [],
+    credits: [],
+    goals: [],
+    monthlyIncome: 0,
+    monthlyExpenses: 0,
+    monthlyBudget: null,
+    referenceDate: new Date(),
+  },
+  healthInput: {
+    monthlyIncome: 0,
+    monthlyExpenses: 0,
+    monthlySubscriptionCost: 0,
+    monthlyBudget: null,
+    totalDebt: 0,
+    creditMonthlyPayments: 0,
+    transactionCountThisMonth: 0,
+  },
+  referenceDate: new Date(),
+  monthlyIncome: 0,
+  monthlyExpenses: 0,
+  monthlyBudget: null,
+});
+
+export function useAnalyticsInsights(
+  referenceDate = new Date(),
+  options?: { enabled?: boolean },
+) {
+  const enabled = options?.enabled ?? true;
+  const { data: transactions = [] } = useTransactions('all', { enabled });
   const { data: liabilities } = useLiabilities();
   const { data: assets } = useAssets();
   const { data: home } = useHomeScreenData();
   const { data: onboarding } = useOnboardingAnswers();
 
   return useMemo(() => {
+    if (!enabled) return EMPTY_ANALYTICS;
     const subscriptions = liabilities?.subscriptions ?? assets?.subscriptions ?? [];
     const credits = liabilities?.credits ?? assets?.credits ?? [];
     const goals = assets?.goals ?? [];
@@ -88,5 +122,5 @@ export function useAnalyticsInsights(referenceDate = new Date()) {
       monthlyExpenses,
       monthlyBudget,
     });
-  }, [assets, home, liabilities, onboarding, referenceDate, transactions]);
+  }, [assets, enabled, home, liabilities, onboarding, referenceDate, transactions]);
 }

@@ -54,15 +54,20 @@ export default function AnalisesScreen() {
   const params = useLocalSearchParams<{ tab?: string; period?: string }>();
   const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
   const { data: patrimonyData } = usePatrimonyAllocation();
-  const { data: transactions = [] } = useTransactions('all');
   const { data: assets } = useAssets();
-  const { totalBalance: accountsTotal } = useAccountsWithBalances(transactions);
-  const analytics = useAnalyticsInsights();
 
   const [tab, setTab] = useState<AnalysisTabKey>('resumo');
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
   const [healthSheetVisible, setHealthSheetVisible] = useState(false);
   const periodOption = getPeriodOption(period);
+  const needsTransactions = tab === 'gastos' || tab === 'patrimonio';
+  const needsAnalytics = tab !== 'patrimonio';
+
+  const { data: transactions = [] } = useTransactions('all', { enabled: needsTransactions });
+  const analytics = useAnalyticsInsights(new Date(), { enabled: needsAnalytics });
+  const { totalBalance: accountsTotal } = useAccountsWithBalances(
+    needsTransactions ? transactions : [],
+  );
 
   useEffect(() => {
     if (params.tab === 'gastos' || params.tab === 'divida' || params.tab === 'patrimonio' || params.tab === 'resumo') {
@@ -75,8 +80,11 @@ export default function AnalisesScreen() {
   }, [params.tab, params.period]);
 
   const periodCategories = useMemo(
-    () => computeSpendingByCategory(transactions, periodOption.days),
-    [transactions, periodOption.days],
+    () =>
+      tab === 'gastos'
+        ? computeSpendingByCategory(transactions, periodOption.days)
+        : [],
+    [tab, transactions, periodOption.days],
   );
 
   const allocation = patrimonyData?.allocation ?? data?.allocation ?? [];
