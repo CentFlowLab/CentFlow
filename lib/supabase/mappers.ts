@@ -15,6 +15,7 @@ import type {
 } from '@/lib/domain/transaction.types';
 import type { LoginCredentials, RegisterCredentials, User } from '@/lib/auth/types';
 import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
+import { pickTransactionInsertPayload, pickTransactionUpdatePayload } from './transaction-payload';
 
 import type { OcrResultRow, ReceiptRow, TransactionRow } from './database.types';
 
@@ -153,20 +154,20 @@ export function toTransactionInsert(
     row.account_id = input.accountId;
   }
 
-  return row;
+  return pickTransactionInsertPayload(row);
 }
 
 export function toConfirmationTransactionPatch(input: ReceiptConfirmationInput) {
   const merchant =
     input.merchant?.trim() || input.merchantName?.trim() || null;
-  return {
+  return pickTransactionUpdatePayload({
     type: input.type,
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
     merchant,
     transaction_date: input.date,
-  };
+  });
 }
 
 export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
@@ -183,7 +184,7 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
     patch.account_id = input.accountId ?? null;
   }
 
-  return patch;
+  return pickTransactionUpdatePayload(patch);
 }
 
 export function buildReceiptStoragePath(

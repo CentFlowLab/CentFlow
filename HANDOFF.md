@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-30T11:50:52.857Z -->
-<!-- Git: 293a4a5 (2026-06-30T11:49:57+00:00) -->
+<!-- Última geração: 2026-06-30T12:26:00.053Z -->
+<!-- Git: 29ad421 (2026-06-30T11:51:09+00:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 18 — Prontidão de lançamento (App Store / Play Store)** |
-| Última geração | 2026-06-30T11:50:52.857Z |
+| Última geração | 2026-06-30T12:26:00.053Z |
 | Path do projeto | `/workspace` |
-| Git commit | `293a4a5` (2026-06-30T11:49:57+00:00) |
+| Git commit | `29ad421` (2026-06-30T11:51:09+00:00) |
 
 ---
 
@@ -724,6 +724,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     receipt-item-mappers.ts
     receipt-items.ts
     receipts.ts
+    transaction-payload.test.ts
+    transaction-payload.ts
     transactions.ts
   theme/
     colors.ts
@@ -873,6 +875,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction
 - P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy
 - Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última
+- Bugfix merchant — gate MERCHANT_COLUMN_ENABLED + payload defensivo Supabase até db push da migration 20240624000000
 - Launch review — Política de privacidade e Termos in-app + URLs (centflow.app/privacy, /terms)
 - Launch review — Eliminação de conta (RPC delete_own_account + fluxo Definições → Privacidade)
 - Launch review — Sign in with Apple (expo-apple-authentication + botão login/registo)
@@ -884,7 +887,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Launch review — launch-checklist.md gerado
 
 ### 🔲 Pendente
-- Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions
+- Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions; depois activar MERCHANT_COLUMN_ENABLED em product-features.ts
 - Aplicar migration 20240623000000_merchant_groups.sql no Supabase (db push) — merchant_groups + merchant_group_id
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
 - Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push) — necessária para editar comissão de amortização; a criação normal de crédito já não depende dela

@@ -15,6 +15,7 @@ import {
   toTransactionInsert,
   toTransactionUpdatePatch,
 } from './mappers';
+import { withLocalMerchant } from './transaction-payload';
 
 async function getSignedReceiptUrl(storagePath: string): Promise<string | null> {
   const supabase = getSupabaseClient();
@@ -111,7 +112,7 @@ export async function createTransaction(
     throw new Error(error.message);
   }
 
-  const transaction = mapTransactionRow(data);
+  const transaction = withLocalMerchant(mapTransactionRow(data), input.merchant);
 
   if (input.receiptId) {
     traceMovementStep('mutation_service_supabase_receipt_url', {
@@ -173,7 +174,7 @@ export async function updateTransaction(
 
   if (error) throw new Error(error.message);
 
-  const transaction = mapTransactionRow(data);
+  const transaction = withLocalMerchant(mapTransactionRow(data), input.merchant);
 
   if (data.receipt_id) {
     const { data: receipt } = await supabase
@@ -223,5 +224,7 @@ export async function createTransactionsBulk(
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map(mapTransactionRow);
+  return (data ?? []).map((row, index) =>
+    withLocalMerchant(mapTransactionRow(row), inputs[index]?.merchant),
+  );
 }
