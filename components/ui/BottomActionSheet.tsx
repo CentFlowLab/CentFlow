@@ -39,7 +39,7 @@ export function BottomActionSheet({
   return (
     <Modal
       transparent
-      animationType="fade"
+      animationType="slide"
       visible
       onRequestClose={onClose}
       statusBarTranslucent>
@@ -51,8 +51,9 @@ export function BottomActionSheet({
             sheetStyle,
           ]}
           onPress={(event) => event.stopPropagation()}>
+          <View style={styles.handle} accessibilityElementsHidden />
           {title ? (
-            <Text variant="h3" style={styles.title}>
+            <Text variant="h2" style={styles.title}>
               {title}
             </Text>
           ) : null}
@@ -75,13 +76,21 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
     maxHeight: '92%',
   },
+  handle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: radius.full,
+    backgroundColor: colors.borderStrong,
+    marginBottom: spacing.md,
+  },
   title: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   body: {
     flexShrink: 1,

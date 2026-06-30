@@ -87,7 +87,7 @@ export function ChangePasswordModal({ visible, onClose }: ChangePasswordModalPro
       header={(requestClose) => (
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text variant="h3">Alterar palavra-passe</Text>
+            <Text variant="h2">Alterar palavra-passe</Text>
             <Text variant="caption" color="textMuted">
               {PASSWORD_POLICY_HINT}
             </Text>

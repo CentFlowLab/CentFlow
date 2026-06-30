@@ -44,7 +44,7 @@ import {
   filterTransactionsBySearch,
   getMerchantGroupName,
 } from '@/lib/merchants/transaction-search';
-import { colors, spacing } from '@/lib/theme';
+import { animation, colors, radius, spacing } from '@/lib/theme';
 import { resolveSubscriptionCategory } from '@/lib/subscriptions/auto-categorize';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -252,9 +252,9 @@ export default function MovimentosScreen() {
         action={{
           icon: (
             <SymbolView
-              name={{ ios: 'plus', android: 'add', web: 'add' }}
+              name={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }}
               tintColor={colors.primary}
-              size={22}
+              size={26}
             />
           ),
           onPress: quickAdd.handlePress,
@@ -294,7 +294,7 @@ export default function MovimentosScreen() {
       </View>
 
       {activeView === 'movimentos' ? (
-        <Animated.View key={`movs-${filter}`} entering={FadeIn.duration(180)} style={styles.flex}>
+        <Animated.View key={`movs-${filter}`} entering={FadeIn.duration(animation.contentFade)} style={styles.flex}>
           {isLoading ? (
             <View style={styles.listPadding}>
               <TransactionsSkeleton />
@@ -418,7 +418,7 @@ export default function MovimentosScreen() {
           )}
         </Animated.View>
       ) : (
-        <Animated.View key="subs" entering={FadeIn.duration(180)} style={styles.flex}>
+        <Animated.View key="subs" entering={FadeIn.duration(animation.contentFade)} style={styles.flex}>
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 999,
+    borderRadius: radius.full,
     backgroundColor: colors.primaryMuted,
     borderWidth: 1,
     borderColor: colors.primary,

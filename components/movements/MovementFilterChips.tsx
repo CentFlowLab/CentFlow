@@ -1,7 +1,4 @@
-import { ScrollView, StyleSheet, Pressable } from 'react-native';
-
-import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { FilterChips } from '@/components/ui/FilterChips';
 
 export type MovementTab = 'all' | 'expense' | 'income' | 'subscricoes';
 
@@ -18,52 +15,5 @@ type MovementFilterChipsProps = {
 };
 
 export function MovementFilterChips({ value, onChange }: MovementFilterChipsProps) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}>
-      {CHIPS.map((chip) => {
-        const active = chip.key === value;
-        return (
-          <Pressable
-            key={chip.key}
-            onPress={() => onChange(chip.key)}
-            style={[styles.chip, active && styles.chipActive]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-            accessibilityLabel={chip.label}>
-            <Text
-              variant="bodyMedium"
-              style={active ? styles.chipTextActive : styles.chipText}>
-              {chip.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
-  );
+  return <FilterChips chips={CHIPS} value={value} onChange={onChange} padded={false} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  chip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-  },
-  chipText: {
-    color: colors.textSecondary,
-  },
-  chipTextActive: {
-    color: colors.background,
-    fontWeight: '600',
-  },
-});

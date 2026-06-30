@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, pressScale, radius, spacing, typography } from '@/lib/theme';
 
 import { UserAvatarButton } from './UserAvatarButton';
 
@@ -159,9 +159,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   brand: {
+    ...typography.tabLabel,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    fontSize: 11,
   },
   actions: {
     flexDirection: 'row',
@@ -190,6 +190,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.85,
-    transform: [{ scale: 0.96 }],
+    transform: [{ scale: pressScale.default }],
   },
 });

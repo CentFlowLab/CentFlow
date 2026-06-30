@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, pressScale, radius, spacing } from '@/lib/theme';
 
 type Segment<T extends string> = {
   key: T;
@@ -32,7 +32,11 @@ export function SegmentedControl<T extends string>({
             <Pressable
               key={segment.key}
               onPress={() => onChange(segment.key)}
-              style={[styles.segment, isActive && styles.segmentActive]}>
+              style={({ pressed }) => [
+                styles.segment,
+                isActive && styles.segmentActive,
+                pressed && styles.segmentPressed,
+              ]}>
               <Text
                 variant="caption"
                 color={isActive ? 'primary' : 'textMuted'}
@@ -69,6 +73,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryMuted,
     borderWidth: 1,
     borderColor: colors.primary,
+  },
+  segmentPressed: {
+    opacity: 0.88,
+    transform: [{ scale: pressScale.chip }],
   },
   activeLabel: {
     fontWeight: '600',

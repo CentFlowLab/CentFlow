@@ -7,7 +7,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, radius } from '@/lib/theme';
+import { colors, animation as animationTokens, radius } from '@/lib/theme';
 
 type SkeletonProps = {
   width?: number | `${number}%`;
@@ -31,12 +31,12 @@ export function Skeleton({
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: 0.85,
-          duration: 900,
+          duration: animationTokens.skeletonPulse,
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 0.45,
-          duration: 900,
+          duration: animationTokens.skeletonPulse,
           useNativeDriver: true,
         }),
       ]),
