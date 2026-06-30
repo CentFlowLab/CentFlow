@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T23:59:08.727Z -->
-<!-- Git: 4d3fe70 (2026-06-29T22:17:00+01:00) -->
+<!-- Última geração: 2026-06-30T11:47:34.901Z -->
+<!-- Git: 5f84848 (2026-06-30T01:06:17+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)** |
-| Última geração | 2026-06-29T23:59:08.727Z |
-| Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `4d3fe70` (2026-06-29T22:17:00+01:00) |
+| Última geração | 2026-06-30T11:47:34.901Z |
+| Path do projeto | `/workspace` |
+| Git commit | `5f84848` (2026-06-30T01:06:17+01:00) |
 
 ---
 
@@ -349,7 +349,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     DatePickerField.tsx
     EmptyState.tsx
     ErrorState.tsx
+    FilterChips.tsx
     LoadingSpinner.tsx
+    PressableScale.tsx
     QueryScreenState.tsx
     ScreenContainer.tsx
     SearchableSelect.tsx
@@ -360,7 +362,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     Toast.tsx
     index.ts
     skeletons/
+      AccountsSkeleton.tsx
       AssetsSkeleton.tsx
+      CreditsSkeleton.tsx
       PricesSkeleton.tsx
       ProfileSkeleton.tsx
   useClientOnlyValue.ts
@@ -709,6 +713,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     receipts.ts
     transactions.ts
   theme/
+    animations.ts
     colors.ts
     index.ts
     spacing.ts
@@ -856,6 +861,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction
 - P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy
 - Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última
+- UX consistency polish — tokens de animação, FilterChips unificado, skeletons em Créditos/Contas, empty states, modais e micro-interações alinhados
 
 ### 🔲 Pendente
 - Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions

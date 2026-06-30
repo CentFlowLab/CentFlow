@@ -4,7 +4,15 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AccountFormModal, AccountListItem } from '@/components/accounts';
 import { AppHeader } from '@/components/layout';
-import { EmptyState, ErrorState, RefetchingIndicator, ScreenContainer, Text } from '@/components/ui';
+import {
+  AccountsSkeleton,
+  EmptyState,
+  ErrorState,
+  RefetchingIndicator,
+  ScreenContainer,
+  SectionHeader,
+  Text,
+} from '@/components/ui';
 import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
@@ -61,9 +69,7 @@ export default function ContasScreen() {
       <View style={styles.screen}>
         {header}
         <ScreenContainer applyBottomSafeInset={false}>
-          <Text variant="caption" color="textMuted">
-            A carregar contas...
-          </Text>
+          <AccountsSkeleton />
         </ScreenContainer>
       </View>
     );
@@ -74,7 +80,12 @@ export default function ContasScreen() {
       <View style={styles.screen}>
         {header}
         <View style={styles.centered}>
-          <ErrorState context="dashboard" error={error} onRetry={() => refetch()} />
+          <ErrorState
+            context="accounts"
+            error={error}
+            onRetry={() => refetch()}
+            retryLoading={isRefetching}
+          />
         </View>
       </View>
     );
@@ -88,9 +99,7 @@ export default function ContasScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
         contentContainerStyle={{ paddingBottom: contentBottomPadding }}>
         <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
-          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-            CONTAS
-          </Text>
+          <SectionHeader title="Contas" />
 
           {accounts.length === 0 ? (
             <EmptyState
@@ -98,13 +107,14 @@ export default function ContasScreen() {
                 <SymbolView
                   name={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}
                   tintColor={colors.primary}
-                  size={40}
+                  size={32}
                 />
               }
               title="Sem contas registadas"
               description="Adiciona as tuas contas bancárias para calcular saldos a partir dos movimentos."
               actionLabel="Criar conta"
               onAction={() => setFormVisible(true)}
+              compact
             />
           ) : (
             <>
@@ -151,10 +161,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-  },
-  sectionLabel: {
-    marginBottom: spacing.md,
-    letterSpacing: 1,
   },
   totalRow: {
     flexDirection: 'row',

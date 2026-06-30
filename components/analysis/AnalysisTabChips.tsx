@@ -1,7 +1,4 @@
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
-
-import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { FilterChips } from '@/components/ui/FilterChips';
 
 type AnalysisTabKey = 'resumo' | 'gastos' | 'divida' | 'patrimonio';
 
@@ -19,50 +16,14 @@ type AnalysisTabChipsProps = {
 
 export function AnalysisTabChips({ value, onChange }: AnalysisTabChipsProps) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}>
-      {TABS.map((tab) => {
-        const active = tab.key === value;
-        return (
-          <Pressable
-            key={tab.key}
-            onPress={() => onChange(tab.key)}
-            style={[styles.chip, active && styles.chipActive]}>
-            <Text variant="bodyMedium" style={active ? styles.chipTextActive : styles.chipText}>
-              {tab.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+    <FilterChips
+      chips={TABS}
+      value={value}
+      onChange={onChange}
+      padded={false}
+      bottomSpacing
+    />
   );
 }
 
 export type { AnalysisTabKey };
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  chip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    color: colors.textSecondary,
-    overflow: 'hidden',
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-  },
-  chipText: {
-    color: colors.textSecondary,
-  },
-  chipTextActive: {
-    color: colors.background,
-    fontWeight: '600',
-  },
-});

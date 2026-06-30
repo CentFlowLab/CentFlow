@@ -42,7 +42,7 @@ import {
   getPeriodOption,
   type AnalysisPeriodKey,
 } from '@/lib/domain/analysis-period';
-import { spacing, colors } from '@/lib/theme';
+import { spacing, colors, animation } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
 const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
@@ -114,7 +114,7 @@ export default function AnalisesScreen() {
           <AnalysisTabChips value={tab} onChange={setTab} />
 
           {tab === 'resumo' ? (
-            <Animated.View entering={FadeIn.duration(200)} key="resumo">
+            <Animated.View entering={FadeIn.duration(animation.contentFade)} key="resumo">
               <AnalysisErrorBoundary label="Insights automáticos">
                 <AutoInsightsCarousel insights={analytics.insights} />
               </AnalysisErrorBoundary>
@@ -142,7 +142,7 @@ export default function AnalisesScreen() {
           ) : null}
 
           {tab === 'gastos' ? (
-            <Animated.View entering={FadeIn.duration(200)} key="gastos">
+            <Animated.View entering={FadeIn.duration(animation.contentFade)} key="gastos">
               <View style={styles.periodSelector}>
                 <SegmentedControl
                   segments={PERIOD_SEGMENTS}
@@ -173,7 +173,7 @@ export default function AnalisesScreen() {
           ) : null}
 
           {tab === 'divida' ? (
-            <Animated.View entering={FadeIn.duration(200)} key="divida">
+            <Animated.View entering={FadeIn.duration(animation.contentFade)} key="divida">
               <AnalysisErrorBoundary label="Créditos">
                 <CreditsAnalysisSection
                   credits={analytics.credits}
@@ -193,7 +193,7 @@ export default function AnalisesScreen() {
           ) : null}
 
           {tab === 'patrimonio' ? (
-            <Animated.View entering={FadeIn.duration(200)} key="patrimonio">
+            <Animated.View entering={FadeIn.duration(animation.contentFade)} key="patrimonio">
               <AnalysisErrorBoundary label="Alocação de património">
                 <PatrimonyAllocationCard allocation={allocation} totalAssets={allocationTotal} />
               </AnalysisErrorBoundary>

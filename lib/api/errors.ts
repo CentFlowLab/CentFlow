@@ -7,6 +7,7 @@ export type ScreenErrorContext =
   | 'analysis'
   | 'prices'
   | 'assets'
+  | 'accounts'
   | 'profile'
   | 'generic';
 
@@ -40,6 +41,11 @@ const SCREEN_ERROR_COPY: Record<ScreenErrorContext, ScreenErrorCopy> = {
     title: 'Ativos indisponíveis',
     fallbackDescription:
       'Objetivos, garantias e inventário não carregaram. Tenta novamente dentro de momentos.',
+  },
+  accounts: {
+    title: 'Contas indisponíveis',
+    fallbackDescription:
+      'Não foi possível carregar as tuas contas bancárias. Verifica a ligação e tenta outra vez.',
   },
   profile: {
     title: 'Perfil indisponível',

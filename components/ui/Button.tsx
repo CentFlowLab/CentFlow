@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, pressScale, radius, spacing } from '@/lib/theme';
 
 import { Text } from './Text';
 
@@ -92,7 +92,10 @@ export function Button({
         style={({ pressed }) => [
           styles.base,
           fullWidth && styles.fullWidth,
-          { opacity: isDisabled ? 0.5 : pressed ? 0.9 : 1 },
+          {
+            opacity: isDisabled ? 0.5 : pressed ? 0.92 : 1,
+            transform: pressed && !isDisabled ? [{ scale: pressScale.subtle }] : undefined,
+          },
           style,
         ]}
         {...props}>
@@ -118,7 +121,8 @@ export function Button({
           borderColor: variantStyle.border,
           borderWidth: variantStyle.border ? 1 : 0,
           borderRadius: radius.md,
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
+          opacity: isDisabled ? 0.5 : pressed ? 0.88 : 1,
+          transform: pressed && !isDisabled ? [{ scale: pressScale.subtle }] : undefined,
         },
         style,
       ]}

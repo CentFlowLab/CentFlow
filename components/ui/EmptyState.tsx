@@ -1,8 +1,10 @@
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { colors, radius, spacing } from '@/lib/theme';
+import { animation, colors, radius, spacing } from '@/lib/theme';
 
 import { Button } from './Button';
+import { Card } from './Card';
 import { Text } from './Text';
 
 type EmptyStateProps = {
@@ -13,7 +15,12 @@ type EmptyStateProps = {
   onAction?: () => void;
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
+  /** Versão mais compacta para secções ou cards. */
   compact?: boolean;
+  /** Renderiza dentro de um Card (útil em análises e secções). */
+  inCard?: boolean;
+  /** Chips de destaque opcionais (ex.: features do empty de ativos). */
+  highlights?: string[];
 };
 
 export function EmptyState({
@@ -25,9 +32,17 @@ export function EmptyState({
   secondaryActionLabel,
   onSecondaryAction,
   compact = false,
+  inCard = false,
+  highlights,
 }: EmptyStateProps) {
-  return (
-    <View style={[styles.container, compact && styles.containerCompact]}>
+  const content = (
+    <Animated.View
+      entering={FadeIn.duration(animation.emptyEnter)}
+      style={[
+        styles.container,
+        compact && styles.containerCompact,
+        inCard && styles.containerInCard,
+      ]}>
       <View style={[styles.iconWrapper, compact && styles.iconWrapperCompact]}>{icon}</View>
       <Text variant={compact ? 'h3' : 'h2'} align="center" style={styles.title}>
         {title}
@@ -35,10 +50,26 @@ export function EmptyState({
       <Text variant="body" color="textSecondary" align="center" style={styles.description}>
         {description}
       </Text>
+      {highlights && highlights.length > 0 ? (
+        <View style={styles.highlights}>
+          {highlights.map((item) => (
+            <View key={item} style={styles.highlightChip}>
+              <Text variant="caption" color="textSecondary">
+                {item}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
       {(actionLabel || secondaryActionLabel) && (
         <View style={styles.actions}>
           {actionLabel && onAction && (
-            <Button label={actionLabel} onPress={onAction} fullWidth />
+            <Button
+              label={actionLabel}
+              onPress={onAction}
+              fullWidth
+              size={compact ? 'md' : 'lg'}
+            />
           )}
           {secondaryActionLabel && onSecondaryAction && (
             <Button
@@ -50,8 +81,18 @@ export function EmptyState({
           )}
         </View>
       )}
-    </View>
+    </Animated.View>
   );
+
+  if (inCard) {
+    return (
+      <Card variant="outlined" padding="lg" style={styles.card}>
+        {content}
+      </Card>
+    );
+  }
+
+  return content;
 }
 
 const styles = StyleSheet.create({
@@ -64,9 +105,18 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   containerCompact: {
+    flex: 0,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xl,
     gap: spacing.sm,
+  },
+  containerInCard: {
+    flex: 0,
+    paddingHorizontal: 0,
+    paddingVertical: spacing.md,
+  },
+  card: {
+    alignItems: 'stretch',
   },
   iconWrapper: {
     width: 72,
@@ -88,6 +138,22 @@ const styles = StyleSheet.create({
   description: {
     maxWidth: 300,
     lineHeight: 22,
+  },
+  highlights: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+    maxWidth: 300,
+  },
+  highlightChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   actions: {
     width: '100%',

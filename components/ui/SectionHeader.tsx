@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { spacing } from '@/lib/theme';
+import { pressScale, spacing } from '@/lib/theme';
 
 import { Text } from './Text';
 
@@ -28,7 +28,10 @@ export function SectionHeader({
         )}
       </View>
       {actionLabel && onAction && (
-        <Pressable onPress={onAction} hitSlop={8}>
+        <Pressable
+          onPress={onAction}
+          hitSlop={8}
+          style={({ pressed }) => pressed && styles.actionPressed}>
           <Text variant="caption" color="primary" style={styles.action}>
             {actionLabel}
           </Text>
@@ -51,5 +54,9 @@ const styles = StyleSheet.create({
   },
   action: {
     fontWeight: '600',
+  },
+  actionPressed: {
+    opacity: 0.75,
+    transform: [{ scale: pressScale.subtle }],
   },
 });

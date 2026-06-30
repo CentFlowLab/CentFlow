@@ -30,16 +30,16 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
 import { logAppError } from '@/lib/diagnostics';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, animation, radius, spacing, spring } from '@/lib/theme';
 
 import { BottomSheetScrollProvider } from './BottomSheetScrollContext';
 import type { BottomSheetScrollController } from './BottomSheetScrollContext';
 
 const DISMISS_DRAG = 110;
 const DISMISS_VELOCITY = 850;
-const OPEN_DURATION = 280;
-const CLOSE_DURATION = 240;
-const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
+const OPEN_DURATION = animation.sheetOpen;
+const CLOSE_DURATION = animation.sheetClose;
+const SPRING_CONFIG = spring.sheet;
 const FALLBACK_SHEET_HEIGHT = 420;
 /** Margem mínima entre teclado e conteúdo/botão. */
 const KEYBOARD_FOOTER_GAP = 16;

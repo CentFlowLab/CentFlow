@@ -112,7 +112,8 @@
     "FIX crash arranque pós-analytics — AnimatedCurrency sem Reanimated (rAF), HealthScoreCard SVG transform, safe-analytics + Error Boundaries, useCentFlowIntelligence protegido",
     "P0 core refinements — formatCurrency guard, health score hasSufficientData, Home NetWorthHeroCard + liabilitiesLoadFailed, onboarding error fix, InventorySection onPrimaryAction",
     "P1 refinements — Análises (dedupe, PatrimonyAllocationCard, empty states, period note), Quick Add despesa rápida, Movimentos filtros, push disabled, PT labels, goals copy",
-    "Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última"
+    "Campo merchant opcional — migration, formulários, OCR, autocomplete, pesquisa, gasto rápido com presets e repetir última",
+    "UX consistency polish — tokens de animação, FilterChips unificado, skeletons em Créditos/Contas, empty states, modais e micro-interações alinhados"
   ],
   "pending": [
     "Aplicar migration 20240624000000_transaction_merchant.sql no Supabase (db push) — coluna merchant em transactions",

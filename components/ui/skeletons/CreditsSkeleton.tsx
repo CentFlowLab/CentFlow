@@ -4,24 +4,11 @@ import { Card } from '@/components/ui';
 import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import { radius, spacing } from '@/lib/theme';
 
-export function AssetsSkeleton() {
+export function CreditsSkeleton() {
   return (
     <View style={styles.container}>
-      <Card variant="elevated" style={styles.overviewCard}>
-        <Skeleton width="40%" height={12} />
-        <View style={styles.overviewRow}>
-          {[1, 2, 3].map((item) => (
-            <SkeletonGroup key={item} gap={spacing.xs} style={styles.overviewItem}>
-              <Skeleton width="100%" height={22} />
-              <Skeleton width="70%" height={10} />
-            </SkeletonGroup>
-          ))}
-        </View>
-      </Card>
+      <Skeleton width="100%" height={40} borderRadius={radius.md} />
 
-      <Skeleton width="100%" height={40} borderRadius={radius.md} style={styles.segment} />
-
-      <Skeleton width="50%" height={14} />
       <Card variant="elevated" style={styles.summaryCard}>
         <Skeleton width="35%" height={10} />
         <Skeleton width="45%" height={24} style={styles.mtSm} />
@@ -45,19 +32,6 @@ export function AssetsSkeleton() {
 const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
-  },
-  overviewCard: {
-    gap: spacing.md,
-  },
-  overviewRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  overviewItem: {
-    flex: 1,
-  },
-  segment: {
-    marginVertical: spacing.sm,
   },
   summaryCard: {
     gap: spacing.xs,

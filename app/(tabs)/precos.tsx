@@ -10,12 +10,12 @@ import {
 } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, SegmentedControl } from '@/components/layout';
-import { ErrorState, LoadingSpinner, ScreenContainer } from '@/components/ui';
+import { ErrorState, CreditsSkeleton, ScreenContainer } from '@/components/ui';
 import { useDeleteCredit, useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { isCardCredit } from '@/lib/credit/credit-type.utils';
 import type { Credit, CreditType } from '@/lib/domain/types';
-import { colors, spacing } from '@/lib/theme';
+import { animation, colors, spacing } from '@/lib/theme';
 
 type CreditTab = 'loans' | 'cards';
 
@@ -80,9 +80,9 @@ export default function PrecosScreen() {
           />
         </View>
       ) : isLoading && !data ? (
-        <View style={styles.centered}>
-          <LoadingSpinner message="A carregar créditos..." />
-        </View>
+        <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
+          <CreditsSkeleton />
+        </ScreenContainer>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -107,7 +107,7 @@ export default function PrecosScreen() {
                 />
               </View>
 
-              <Animated.View key={activeTab} entering={FadeIn.duration(180)}>
+              <Animated.View key={activeTab} entering={FadeIn.duration(animation.contentFade)}>
                 <CreditsSection
                   credits={visibleCredits}
                   variant={activeTab === 'cards' ? 'card' : 'loan'}
