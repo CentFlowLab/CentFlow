@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-30T12:26:00.053Z -->
-<!-- Git: 29ad421 (2026-06-30T11:51:09+00:00) -->
+<!-- Última geração: 2026-06-30T12:29:13.552Z -->
+<!-- Git: 0616298 (2026-06-30T12:26:08+00:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 18 — Prontidão de lançamento (App Store / Play Store)** |
-| Última geração | 2026-06-30T12:26:00.053Z |
+| Última geração | 2026-06-30T12:29:13.552Z |
 | Path do projeto | `/workspace` |
-| Git commit | `29ad421` (2026-06-30T11:51:09+00:00) |
+| Git commit | `0616298` (2026-06-30T12:26:08+00:00) |
 
 ---
 
