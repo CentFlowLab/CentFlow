@@ -1,5 +1,7 @@
 import { SymbolView } from 'expo-symbols';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { CachedImage } from '@/components/ui/CachedImage';
 
 import { Text } from '@/components/ui';
 import type { ReceiptDraft } from '@/lib/domain/receipt.types';
@@ -43,10 +45,10 @@ export function ReceiptPreview({
       </Text>
     </View>
   ) : (
-    <Image
-      source={{ uri: displayUri }}
+    <CachedImage
+      uri={displayUri}
       style={[styles.image, { height: imageHeight }]}
-      resizeMode={isHero ? 'contain' : 'cover'}
+      contentFit={isHero ? 'contain' : 'cover'}
     />
   );
 

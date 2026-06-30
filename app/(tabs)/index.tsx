@@ -16,8 +16,10 @@ import {
 } from '@/components/dashboard';
 import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
-import { AddTransactionModal, QuickExpenseSheet } from '@/components/movements';
+import { LazyAddTransactionModal } from '@/components/movements/LazyAddTransactionModal';
+import { LazyQuickExpenseSheet } from '@/components/movements/LazyQuickExpenseSheet';
 import { ErrorState, RefetchingIndicator, ScreenContainer, Text } from '@/components/ui';
+import { DeferredMount } from '@/components/ui/DeferredMount';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useHomeScreenData } from '@/hooks/queries/useHomeScreenData';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
@@ -273,16 +275,20 @@ function HomeScreenContent({
         </ScreenContainer>
       </ScrollView>
 
-      <AddTransactionModal
-        visible={addMovementVisible}
-        onClose={closeAddMovement}
-        startWithReceiptPicker={startWithReceiptPicker}
-      />
+      <DeferredMount when={addMovementVisible}>
+        <LazyAddTransactionModal
+          visible={addMovementVisible}
+          onClose={closeAddMovement}
+          startWithReceiptPicker={startWithReceiptPicker}
+        />
+      </DeferredMount>
 
-      <QuickExpenseSheet
-        visible={quickExpenseVisible}
-        onClose={() => setQuickExpenseVisible(false)}
-      />
+      <DeferredMount when={quickExpenseVisible}>
+        <LazyQuickExpenseSheet
+          visible={quickExpenseVisible}
+          onClose={() => setQuickExpenseVisible(false)}
+        />
+      </DeferredMount>
 
       <QuickAddMenuSheet
         visible={quickAdd.sheetVisible}
@@ -291,16 +297,20 @@ function HomeScreenContent({
         actions={quickAdd.actions}
       />
 
-      <HomeAttentionSheet
-        visible={attentionSheetVisible}
-        onClose={() => setAttentionSheetVisible(false)}
-        items={attentionItems}
-      />
+      <DeferredMount when={attentionSheetVisible}>
+        <HomeAttentionSheet
+          visible={attentionSheetVisible}
+          onClose={() => setAttentionSheetVisible(false)}
+          items={attentionItems}
+        />
+      </DeferredMount>
 
-      <MonthlySpendableSheet
-        visible={spendableVisible}
-        onClose={() => setSpendableVisible(false)}
-      />
+      <DeferredMount when={spendableVisible}>
+        <MonthlySpendableSheet
+          visible={spendableVisible}
+          onClose={() => setSpendableVisible(false)}
+        />
+      </DeferredMount>
     </View>
   );
 }

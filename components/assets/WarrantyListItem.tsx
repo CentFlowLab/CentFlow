@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -12,7 +13,10 @@ type WarrantyListItemProps = {
   onPress?: (warranty: Warranty) => void;
 };
 
-export function WarrantyListItem({ warranty, onPress }: WarrantyListItemProps) {
+export const WarrantyListItem = memo(function WarrantyListItem({
+  warranty,
+  onPress,
+}: WarrantyListItemProps) {
   const expiry = getWarrantyExpiryInfo(warranty.expiresAt);
   const isUrgent = expiry.status === 'critical' || expiry.status === 'expired';
 
@@ -70,7 +74,7 @@ export function WarrantyListItem({ warranty, onPress }: WarrantyListItemProps) {
     </Card>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   pressed: {

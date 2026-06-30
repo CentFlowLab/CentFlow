@@ -16,4 +16,6 @@ export { ToastProvider, useToast } from './Toast';
 export { Text, Label } from './Text';
 export { ProfileSkeleton } from './skeletons/ProfileSkeleton';
 export { PricesSkeleton } from './skeletons/PricesSkeleton';
+export { DeferredMount } from './DeferredMount';
+export { CachedImage, CachedStaticImage } from './CachedImage';
 export { AssetsSkeleton } from './skeletons/AssetsSkeleton';

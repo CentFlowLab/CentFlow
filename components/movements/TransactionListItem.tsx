@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
@@ -11,7 +12,9 @@ type TransactionListItemProps = {
   transaction: Transaction;
 };
 
-export function TransactionListItem({ transaction }: TransactionListItemProps) {
+export const TransactionListItem = memo(function TransactionListItem({
+  transaction,
+}: TransactionListItemProps) {
   const isIncome = transaction.type === 'income';
   const amountColor = isIncome ? colors.success : colors.danger;
   const prefix = isIncome ? '+' : '−';
@@ -54,7 +57,7 @@ export function TransactionListItem({ transaction }: TransactionListItemProps) {
       </Text>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

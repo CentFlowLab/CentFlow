@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -20,7 +21,10 @@ type GoalListItemProps = {
   onPress?: (goal: Goal) => void;
 };
 
-export function GoalListItem({ goal, onPress }: GoalListItemProps) {
+export const GoalListItem = memo(function GoalListItem({
+  goal,
+  onPress,
+}: GoalListItemProps) {
   const currency = goal.currency ?? 'EUR';
   const { percent, remaining, isComplete } = getGoalProgress(goal);
   const daysLeft = goal.deadline ? daysUntil(goal.deadline) : null;
@@ -123,7 +127,7 @@ export function GoalListItem({ goal, onPress }: GoalListItemProps) {
       {content}
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

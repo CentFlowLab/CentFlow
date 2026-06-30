@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
@@ -17,7 +18,7 @@ type SwipeableTransactionListItemProps = {
   onDelete: (transaction: Transaction) => void;
 };
 
-export function SwipeableTransactionListItem({
+export const SwipeableTransactionListItem = memo(function SwipeableTransactionListItem({
   transaction,
   merchantGroupName,
   onEdit,
@@ -171,7 +172,7 @@ export function SwipeableTransactionListItem({
       {row}
     </Swipeable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {

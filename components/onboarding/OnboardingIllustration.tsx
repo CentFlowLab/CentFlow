@@ -1,10 +1,11 @@
 import {
-  Image,
   StyleSheet,
   Text as RNText,
   View,
   type ImageSourcePropType,
 } from 'react-native';
+
+import { CachedStaticImage } from '@/components/ui/CachedImage';
 
 import { colors } from '@/lib/theme';
 
@@ -50,10 +51,10 @@ export function OnboardingIllustration({
             {emoji}
           </RNText>
         ) : image ? (
-          <Image
+          <CachedStaticImage
             source={image}
             style={{ width: innerSize * 0.7, height: innerSize * 0.7 }}
-            resizeMode="contain"
+            contentFit="contain"
           />
         ) : null}
       </View>

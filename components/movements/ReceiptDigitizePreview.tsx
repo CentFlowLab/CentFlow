@@ -1,10 +1,11 @@
 import { SymbolView } from 'expo-symbols';
 import { useEffect } from 'react';
-import { BackHandler, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SegmentedControl } from '@/components/layout';
 import { Button, Text } from '@/components/ui';
+import { CachedImage } from '@/components/ui/CachedImage';
 import type { ReceiptDraft } from '@/lib/domain/receipt.types';
 import {
   getReceiptDigitizedUri,
@@ -84,7 +85,7 @@ export function ReceiptDigitizePreview({
           />
 
           <View style={styles.previewFrame}>
-            <Image source={{ uri: previewUri }} style={styles.image} resizeMode="contain" />
+            <CachedImage uri={previewUri} style={styles.image} contentFit="contain" />
             <View style={styles.badge}>
               <SymbolView
                 name={{

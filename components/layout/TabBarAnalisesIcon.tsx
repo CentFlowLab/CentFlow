@@ -1,5 +1,5 @@
 import { memo, useEffect } from 'react';
-import { Image, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   interpolate,
   interpolateColor,
@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { CachedStaticImage } from '@/components/ui/CachedImage';
 import { colors } from '@/lib/theme';
 
 /** Símbolo transparente (apenas o emblema) — círculo e glow são desenhados pela app. */
@@ -49,11 +50,10 @@ function TabBarAnalisesIconComponent({ focused }: TabBarAnalisesIconProps) {
         <Animated.View style={[styles.layer, styles.glow, glowStyle]} />
         <Animated.View style={[styles.layer, styles.innerCircle, innerCircleStyle]} />
         <View style={[styles.layer, styles.iconLayer]}>
-          <Image
+          <CachedStaticImage
             source={ANALYSIS_TAB_ICON}
             style={styles.icon}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
+            contentFit="contain"
           />
         </View>
       </View>

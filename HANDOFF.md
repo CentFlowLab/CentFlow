@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-30T11:49:30.310Z -->
-<!-- Git: 5f84848 (2026-06-30T01:06:17+01:00) -->
+<!-- Última geração: 2026-06-30T11:50:52.857Z -->
+<!-- Git: 293a4a5 (2026-06-30T11:49:57+00:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 18 — Prontidão de lançamento (App Store / Play Store)** |
-| Última geração | 2026-06-30T11:49:30.310Z |
+| Última geração | 2026-06-30T11:50:52.857Z |
 | Path do projeto | `/workspace` |
-| Git commit | `5f84848` (2026-06-30T01:06:17+01:00) |
+| Git commit | `293a4a5` (2026-06-30T11:49:57+00:00) |
 
 ---
 
@@ -283,6 +283,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     ConfirmReceiptModal.tsx
     EditTransactionModal.tsx
     ImportCsvModal.tsx
+    LazyAddTransactionModal.tsx
+    LazyQuickExpenseSheet.tsx
     MerchantAutocompleteField.tsx
     MerchantGroupSuggestionGate.tsx
     MerchantGroupSuggestionSheet.tsx
@@ -302,6 +304,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     SwipeableTransactionListItem.tsx
     TransactionForm.tsx
     TransactionListItem.tsx
+    TransactionSectionList.tsx
     TransactionsSkeleton.tsx
     index.ts
     movements.config.ts
@@ -351,9 +354,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AnimatedCurrency.tsx
     BottomActionSheet.tsx
     Button.tsx
+    CachedImage.tsx
     Card.tsx
     CentFlowCalendar.tsx
     DatePickerField.tsx
+    DeferredMount.tsx
     EmptyState.tsx
     ErrorState.tsx
     LoadingSpinner.tsx

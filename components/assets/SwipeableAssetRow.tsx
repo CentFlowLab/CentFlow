@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
@@ -10,7 +11,11 @@ type SwipeableAssetRowProps = {
   onDelete: () => void;
 };
 
-export function SwipeableAssetRow({ children, label, onDelete }: SwipeableAssetRowProps) {
+export const SwipeableAssetRow = memo(function SwipeableAssetRow({
+  children,
+  label,
+  onDelete,
+}: SwipeableAssetRowProps) {
   function confirmDelete() {
     const message = `Eliminar "${label}"?`;
 
@@ -56,7 +61,7 @@ export function SwipeableAssetRow({ children, label, onDelete }: SwipeableAssetR
       {children}
     </Swipeable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {

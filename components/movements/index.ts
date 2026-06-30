@@ -20,3 +20,4 @@ export { SwipeableTransactionListItem } from './SwipeableTransactionListItem';
 export { TransactionForm } from './TransactionForm';
 export { TransactionListItem } from './TransactionListItem';
 export { TransactionsSkeleton } from './TransactionsSkeleton';
+export { TransactionSectionList } from './TransactionSectionList';
