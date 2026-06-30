@@ -54,7 +54,7 @@ export default function ShortcutsScreen() {
         icon={
           isIos
             ? { ios: 'hand.tap.fill', android: 'touch_app', web: 'touch_app' }
-            : { ios: 'widgets', android: 'widgets', web: 'widgets' }
+            : { ios: 'square.grid.2x2.fill', android: 'widgets', web: 'widgets' }
         }
         title={isIos ? 'Toque Atrás do iPhone' : 'Atalhos no Android'}
         description={

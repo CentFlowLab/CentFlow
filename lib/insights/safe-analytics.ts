@@ -12,6 +12,7 @@ import type { Credit } from '@/lib/domain/types';
 import type { Subscription } from '@/lib/domain/assets.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import type { CategoryBreakdownItem } from './category-breakdown';
+import { logAppError } from '@/lib/diagnostics';
 
 function emptyHealthScore(): HealthScoreResult {
   const neutral = {
@@ -52,7 +53,7 @@ export function safeGenerateInsights(input: InsightInput): Insight[] {
   try {
     return generateInsights(input);
   } catch (error) {
-    console.error('[Insights]', error);
+    logAppError('insights', error);
     return [];
   }
 }
@@ -61,7 +62,7 @@ export function safeCalculateHealthScore(input: HealthScoreInput): HealthScoreRe
   try {
     return calculateHealthScore(input);
   } catch (error) {
-    console.error('[HealthScore]', error);
+    logAppError('health-score', error);
     return emptyHealthScore();
   }
 }
@@ -104,19 +105,19 @@ export function computeAnalyticsSnapshot(params: {
   try {
     insights = generateInsights(insightInput);
   } catch (error) {
-    console.error('[Insights]', error);
+    logAppError('insights', error);
   }
 
   try {
     healthScore = calculateHealthScore(healthInput);
   } catch (error) {
-    console.error('[HealthScore]', error);
+    logAppError('health-score', error);
   }
 
   try {
     monthlyComparison = computeMonthlyComparison(safeTxs, referenceDate);
   } catch (error) {
-    console.error('[MonthlyComparison]', error);
+    logAppError('monthly-comparison', error);
   }
 
   try {
@@ -127,25 +128,25 @@ export function computeAnalyticsSnapshot(params: {
       referenceDate,
     );
   } catch (error) {
-    console.error('[SpendingForecast]', error);
+    logAppError('spending-forecast', error);
   }
 
   try {
     categoryBreakdown = computeCategoryBreakdown(safeTxs, referenceDate);
   } catch (error) {
-    console.error('[CategoryBreakdown]', error);
+    logAppError('category-breakdown', error);
   }
 
   try {
     heatmap = computeSpendingHeatmap(safeTxs, referenceDate);
   } catch (error) {
-    console.error('[SpendingHeatmap]', error);
+    logAppError('spending-heatmap', error);
   }
 
   try {
     subscriptionAnalysis = computeSubscriptionAnalysis(safeSubs);
   } catch (error) {
-    console.error('[SubscriptionAnalysis]', error);
+    logAppError('subscription-analysis', error);
   }
 
   return {

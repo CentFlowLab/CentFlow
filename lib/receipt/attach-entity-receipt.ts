@@ -144,5 +144,8 @@ export async function attachReceiptToEntity(
 }
 
 export async function openReceiptUrl(url: string): Promise<void> {
+  if (!/^https?:/i.test(url)) {
+    throw new Error('URL de fatura inválida');
+  }
   await WebBrowser.openBrowserAsync(url);
 }

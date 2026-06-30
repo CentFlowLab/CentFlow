@@ -27,7 +27,6 @@ export class AnalysisErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error) {
     logAppError('analysis-section', error);
-    console.error('[Analysis]', error);
   }
 
   render() {

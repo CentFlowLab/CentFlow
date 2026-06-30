@@ -2,6 +2,7 @@ import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 
+import { logAppError } from '@/lib/diagnostics';
 import { resolveEmailDeepLinkRoute } from '@/lib/email/deep-links';
 
 /**
@@ -10,19 +11,23 @@ import { resolveEmailDeepLinkRoute } from '@/lib/email/deep-links';
 export function EmailDeepLinkHandler() {
   useEffect(() => {
     async function handleUrl(url: string | null) {
-      if (!url || !url.startsWith('centflow://')) return;
+      try {
+        if (!url || !url.startsWith('centflow://')) return;
 
-      if (
-        url.includes('auth/callback') ||
-        url.includes('reset-password') ||
-        url.includes('auth/reset')
-      ) {
-        return;
-      }
+        if (
+          url.includes('auth/callback') ||
+          url.includes('reset-password') ||
+          url.includes('auth/reset')
+        ) {
+          return;
+        }
 
-      const route = resolveEmailDeepLinkRoute(url);
-      if (route) {
-        router.push(route);
+        const route = resolveEmailDeepLinkRoute(url);
+        if (route) {
+          router.push(route);
+        }
+      } catch (error) {
+        logAppError('email-deep-link', error, { url: url ?? undefined });
       }
     }
 

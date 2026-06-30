@@ -29,6 +29,9 @@ export async function openReceiptForTransaction(transaction: Transaction): Promi
   }
 
   if (target) {
+    if (!/^https?:/i.test(target)) {
+      return false;
+    }
     await WebBrowser.openBrowserAsync(target);
     return true;
   }
