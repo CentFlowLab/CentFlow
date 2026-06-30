@@ -42,7 +42,6 @@ import {
   getPeriodOption,
   type AnalysisPeriodKey,
 } from '@/lib/domain/analysis-period';
-import { router } from 'expo-router';
 import { spacing, colors } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
