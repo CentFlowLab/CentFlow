@@ -2,6 +2,10 @@
   "name": "centflow",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@react-native-community/datetimepicker": "9.1.0",
     "@supabase/supabase-js": "^2.108.1",
@@ -61,6 +65,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "handoff": "tsx scripts/generate-handoff.ts",
+    "verify:lockfile": "bash scripts/verify-lockfile.sh",
     "test": "tsx --test lib/**/*.test.ts",
     "test:ocr": "tsx scripts/test-ocr-sanitize.ts",
     "supabase:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts",
