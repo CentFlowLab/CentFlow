@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-29T23:59:08.727Z -->
-<!-- Git: 4d3fe70 (2026-06-29T22:17:00+01:00) -->
+<!-- Última geração: 2026-06-30T11:47:04.448Z -->
+<!-- Git: 5f84848 (2026-06-30T01:06:17+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 17 — Estabilização pré-beta (schema, 5 tabs, Fixos, plano financeiro)** |
-| Última geração | 2026-06-29T23:59:08.727Z |
-| Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `4d3fe70` (2026-06-29T22:17:00+01:00) |
+| Última geração | 2026-06-30T11:47:04.448Z |
+| Path do projeto | `/workspace` |
+| Git commit | `5f84848` (2026-06-30T01:06:17+01:00) |
 
 ---
 
@@ -363,10 +363,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       AssetsSkeleton.tsx
       PricesSkeleton.tsx
       ProfileSkeleton.tsx
-  useClientOnlyValue.ts
-  useClientOnlyValue.web.ts
-  useColorScheme.ts
-  useColorScheme.web.ts
   version/
     ForceUpdateScreen.tsx
   warranties/
@@ -571,7 +567,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     form-dirty.ts
     index.ts
   haptics/
-    light-impact.ts
   home/
     smart-summary.ts
   insights/

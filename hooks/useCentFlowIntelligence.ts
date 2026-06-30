@@ -6,6 +6,7 @@ import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import { logAppError } from '@/lib/diagnostics';
 import { resolveAssistancePreferences } from '@/lib/onboarding/assistance';
 import { getWarrantiesSummary } from '@/lib/domain/warranty.utils';
 import { countRenewalsSoon } from '@/lib/subscriptions/renewal.utils';
@@ -121,7 +122,7 @@ export function useCentFlowIntelligence() {
         subscriptionCount: subscriptions.length,
       };
     } catch (error) {
-      console.error('[CentFlowIntelligence]', error);
+      logAppError('centflow-intelligence', error);
       return {
         score: calculateCentFlowScore({
           netWorth: 0,

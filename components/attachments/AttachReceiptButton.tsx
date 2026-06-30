@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import {
   attachReceiptToEntity,
   openReceiptUrl,
@@ -26,14 +27,17 @@ export function AttachReceiptButton({
   disabled = false,
 }: AttachReceiptButtonProps) {
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   async function handleAttach(source: 'camera' | 'gallery' | 'pdf') {
     setLoading(true);
     try {
       const url = await attachReceiptToEntity(entityType, entityId, source);
       onAttached(url);
-    } catch {
-      // cancelado
+    } catch (error) {
+      if (error instanceof Error && error.message !== 'Seleção cancelada') {
+        showToast('Não foi possível anexar a fatura.', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,7 +51,11 @@ export function AttachReceiptButton({
 
   async function handleView() {
     if (!existingReceiptUrl) return;
-    await openReceiptUrl(existingReceiptUrl);
+    try {
+      await openReceiptUrl(existingReceiptUrl);
+    } catch {
+      showToast('Não foi possível abrir a fatura.', 'error');
+    }
   }
 
   if (loading) {

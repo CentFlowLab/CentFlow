@@ -1,4 +1,5 @@
 import { authService } from '@/lib/auth';
+import { logAppEvent } from '@/lib/diagnostics';
 import { fetchLiabilitiesForUser } from '@/lib/liabilities/liabilities.service';
 import type { Subscription } from '@/lib/domain/assets.types';
 import type { Credit } from '@/lib/domain/types';
@@ -24,7 +25,7 @@ export async function fetchLiabilitiesForHome(): Promise<LiabilitiesFetchResult>
       loadFailed: false,
     };
   } catch (error) {
-    console.warn('[liabilities] Falha ao carregar passivos do utilizador.', error);
+    logAppEvent('warn', 'liabilities-fetch', 'Falha ao carregar passivos do utilizador.');
     return { credits: [], subscriptions: [], loadFailed: true };
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
@@ -36,24 +36,36 @@ export function HealthScoreCard({ score, onPress }: HealthScoreCardProps) {
   const totalScore = hasData && Number.isFinite(score.total) ? Math.max(0, Math.min(100, score.total)) : 0;
   const progress = useSharedValue(0);
   const [displayScore, setDisplayScore] = useState(0);
+  const displayScoreRef = useRef(displayScore);
+  displayScoreRef.current = displayScore;
 
   useEffect(() => {
-    if (!hasData) return;
+    if (!hasData) {
+      setDisplayScore(0);
+      return;
+    }
     progress.value = withTiming(totalScore / 100, {
       duration: 900,
       easing: Easing.out(Easing.cubic),
     });
+    let rafId = 0;
+    let cancelled = false;
     const start = Date.now();
-    const from = displayScore;
+    const from = displayScoreRef.current;
     const to = totalScore;
     const duration = 900;
     const tick = () => {
+      if (cancelled) return;
       const t = Math.min(1, (Date.now() - start) / duration);
       setDisplayScore(Math.round(from + (to - from) * t));
-      if (t < 1) requestAnimationFrame(tick);
+      if (t < 1) rafId = requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
-  }, [progress, totalScore, hasData, displayScore]);
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
+  }, [progress, totalScore, hasData]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),

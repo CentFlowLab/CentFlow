@@ -1,4 +1,5 @@
 export const queryKeys = {
+  /** @deprecated Usar queryKeys.home — mantido só para invalidação de caches legados (OTA). */
   dashboard: ['dashboard'] as const,
   home: ['home'] as const,
   netWorth: ['net-worth'] as const,

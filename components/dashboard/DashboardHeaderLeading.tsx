@@ -6,6 +6,7 @@ import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useProfile } from '@/hooks/queries/useProfile';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import { estimateMonthlyCashflow } from '@/lib/domain/financial';
+import { logAppError } from '@/lib/diagnostics';
 import { getHomeDailyMessage } from '@/lib/insights/home-daily-message';
 import { spacing } from '@/lib/theme';
 
@@ -41,7 +42,7 @@ export function DashboardHeaderLeading() {
         primaryGoalLabel: home?.featuredGoal?.name,
       });
     } catch (error) {
-      console.error('[HomeDailyMessage]', error);
+      logAppError('home-daily-message', error);
       return 'Continua a registar movimentos para insights personalizados.';
     }
   })();
