@@ -5,10 +5,8 @@ import type {
   FinancialLevel,
   FinancialLevelId,
 } from './types';
-import {
-  expenseCountsForBudgetMonth,
-  incomeCountsForBudgetMonth,
-} from '@/lib/domain/monthly-budget-movements';
+import type { FinancialTransaction } from './domain-types';
+import { getMonthlyCashflow } from './transactions';
 
 const LEVELS: FinancialLevel[] = [
   {
@@ -176,20 +174,10 @@ export function estimateMonthlyCashflow(
   income: number;
   expenses: number;
 } {
-  let income = 0;
-  let expenses = 0;
-
-  for (const tx of transactions) {
-    if (tx.type === 'transfer') continue;
-    const asTransaction = tx as Parameters<typeof incomeCountsForBudgetMonth>[0];
-    if (tx.type === 'income' && incomeCountsForBudgetMonth(asTransaction, asOf)) {
-      income += tx.amount;
-    } else if (tx.type === 'expense' && expenseCountsForBudgetMonth(asTransaction, asOf)) {
-      expenses += tx.amount;
-    }
-  }
-
-  return { income, expenses };
+  const cashflowTx = transactions.filter(
+    (tx) => tx.type === 'income' || tx.type === 'expense',
+  ) as FinancialTransaction[];
+  return getMonthlyCashflow(cashflowTx, asOf);
 }
 
 export { LEVELS as FINANCIAL_LEVELS };

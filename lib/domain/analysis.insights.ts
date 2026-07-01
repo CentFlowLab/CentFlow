@@ -2,10 +2,11 @@ import type { AssetsData } from '@/lib/domain/assets.types';
 import type { DashboardData } from '@/lib/domain';
 import type { AnalysisInsight, AnalysisTrends } from '@/lib/domain/analysis.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
-import { isTransactionOccurred } from '@/lib/domain/transaction-date.utils';
+import { calculateGoalProgress } from '@/lib/domain/financial/goals';
+import { compareCategoryPeriods } from '@/lib/domain/financial/insights';
+import { calculateSavingsRate } from '@/lib/domain/financial/savings';
 import { WARRANTY_CRITICAL_DAYS } from '@/lib/domain/warranty.utils';
 import { daysUntil, formatCurrency, formatPercent } from '@/lib/utils/format';
-
 type InsightInput = {
   dashboard: DashboardData;
   transactions: Transaction[];
@@ -13,38 +14,11 @@ type InsightInput = {
   trends: AnalysisTrends;
 };
 
-function parseDate(value: string): Date {
-  return new Date(`${value}T12:00:00`);
+function periodForDays(days: number, offsetDays = 0, asOf = new Date()) {
+  return { kind: 'rolling' as const, days, offsetDays, asOf };
 }
 
-function isWithinLastDays(date: string, days: number, offsetDays = 0, asOf = new Date()): boolean {
-  const target = parseDate(date);
-  const end = new Date(asOf);
-  end.setHours(23, 59, 59, 999);
-  end.setDate(end.getDate() - offsetDays);
-
-  const start = new Date(end);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
-
-  return target >= start && target <= end && isTransactionOccurred(date, asOf);
-}
-
-function sumExpensesByCategory(transactions: Transaction[], days: number, offsetDays = 0) {
-  const totals = new Map<string, { label: string; amount: number }>();
-
-  for (const tx of transactions) {
-    if (tx.type !== 'expense' || !isWithinLastDays(tx.date, days, offsetDays)) continue;
-    const current = totals.get(tx.category) ?? { label: tx.categoryLabel, amount: 0 };
-    current.amount += tx.amount;
-    totals.set(tx.category, current);
-  }
-
-  return totals;
-}
-
-function periodPhrase(days: number): string {
-  return `nos últimos ${days} dias`;
+function periodPhrase(days: number): string {  return `nos últimos ${days} dias`;
 }
 
 export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[] {
@@ -66,8 +40,8 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
   }
 
   if (trends.totalIncome > 0) {
-    const savingsRate = (trends.netCashflow / trends.totalIncome) * 100;
-    if (savingsRate >= 5) {
+    const savings = calculateSavingsRate(trends.totalIncome, trends.totalExpenses);
+    const savingsRate = savings.rate ?? 0;    if (savingsRate >= 5) {
       insights.push({
         id: 'savings-rate-positive',
         type: 'achievement',
@@ -98,33 +72,33 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
     });
   }
 
-  const currentWindow = sumExpensesByCategory(transactions, trends.periodDays, 0);
-  const previousWindow = sumExpensesByCategory(transactions, trends.periodDays, trends.periodDays);
-  const categoryDeltas: AnalysisInsight[] = [];
-
-  for (const [category, current] of currentWindow.entries()) {
-    const previous = previousWindow.get(category);
-    if (!previous || previous.amount <= 0) continue;
-
-    const deltaPercent = ((current.amount - previous.amount) / previous.amount) * 100;
-    if (Math.abs(deltaPercent) < 12) continue;
-
-    categoryDeltas.push({
-      id: `category-delta-${category}`,
-      type: deltaPercent > 0 ? 'warning' : 'opportunity',
-      title:
-        deltaPercent > 0
-          ? `${current.label} aumentou ${formatPercent(deltaPercent, 0, false)}`
-          : `${current.label} diminuiu ${formatPercent(Math.abs(deltaPercent), 0, false)}`,
-      description:
-        deltaPercent > 0
-          ? `Gastaste mais em ${current.label} ${period} face ao período anterior — identifica 1–2 compras evitáveis.`
-          : `Reduziste gastos em ${current.label} — mantém este hábito no próximo período.`,
-      actionLabel: deltaPercent > 0 ? 'Ver movimentos' : undefined,
-      actionRoute: deltaPercent > 0 ? `/(tabs)/movimentos?category=${category}` : undefined,
+  const currentPeriod = periodForDays(trends.periodDays, 0);
+  const previousPeriod = periodForDays(trends.periodDays, trends.periodDays);
+  const categoryDeltas: AnalysisInsight[] = compareCategoryPeriods(
+    transactions,
+    currentPeriod,
+    previousPeriod,
+  )
+    .filter((item) => item.deltaPercent !== null && Math.abs(item.deltaPercent) >= 12)
+    .map((item) => {
+      const deltaPercent = item.deltaPercent ?? 0;
+      const category = item.category.key;
+      const label = item.category.label;
+      return {
+        id: `category-delta-${category}`,
+        type: deltaPercent > 0 ? ('warning' as const) : ('opportunity' as const),
+        title:
+          deltaPercent > 0
+            ? `${label} aumentou ${formatPercent(deltaPercent, 0, false)}`
+            : `${label} diminuiu ${formatPercent(Math.abs(deltaPercent), 0, false)}`,
+        description:
+          deltaPercent > 0
+            ? `Gastaste mais em ${label} ${period} face ao período anterior — identifica 1–2 compras evitáveis.`
+            : `Reduziste gastos em ${label} — mantém este hábito no próximo período.`,
+        actionLabel: deltaPercent > 0 ? 'Ver movimentos' : undefined,
+        actionRoute: deltaPercent > 0 ? `/(tabs)/movimentos?category=${category}` : undefined,
+      };
     });
-  }
-
   categoryDeltas
     .sort((a, b) => (a.type === 'warning' ? -1 : 1))
     .slice(0, 2)
@@ -167,17 +141,16 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
   const featuredGoal = assets.goals
     .map((goal) => ({
       goal,
-      percent: goal.target > 0 ? (goal.current / goal.target) * 100 : 0,
+      progress: calculateGoalProgress(goal),
     }))
-    .sort((a, b) => b.percent - a.percent)[0];
+    .sort((a, b) => b.progress.percent - a.progress.percent)[0];
 
-  if (featuredGoal && featuredGoal.percent >= 75) {
+  if (featuredGoal && featuredGoal.progress.percent >= 75) {
     insights.push({
       id: 'goal-progress',
       type: 'achievement',
       title: 'Objetivo quase concluído',
-      description: `${featuredGoal.goal.name} está a ${formatPercent(featuredGoal.percent, 0, false)} — faltam ${formatCurrency(Math.max(0, featuredGoal.goal.target - featuredGoal.goal.current))}.`,
-      actionLabel: 'Ver objetivos',
+      description: `${featuredGoal.goal.name} está a ${formatPercent(featuredGoal.progress.percent, 0, false)} — faltam ${formatCurrency(featuredGoal.progress.remaining)}.`,      actionLabel: 'Ver objetivos',
       actionRoute: '/(tabs)/ativos?tab=objetivos',
     });
   }

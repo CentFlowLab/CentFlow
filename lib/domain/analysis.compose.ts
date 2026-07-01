@@ -6,7 +6,13 @@ import type {
   SpendingCategorySlice,
 } from '@/lib/domain/analysis.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
-import { isTransactionOccurred } from '@/lib/domain/transaction-date.utils';
+import {
+  getExpenseTotal,
+  getIncomeTotal,
+  getNetCashflow,
+  groupTransactionsByCategory,
+} from '@/lib/domain/financial/transactions';
+import { calculateSavingsRate } from '@/lib/domain/financial/savings';
 import { buildMetricsFromNetWorth } from '@/lib/api/mappers/analysis.mapper';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 import { colors } from '@/lib/theme';
@@ -24,29 +30,8 @@ const SPENDING_CHART_COLORS = [
   colors.danger,
 ];
 
-function parseDate(value: string): Date {
-  return new Date(`${value}T12:00:00`);
-}
-
-function isWithinLastDays(date: string, days: number, offsetDays = 0, asOf = new Date()): boolean {
-  const target = parseDate(date);
-  const end = new Date(asOf);
-  end.setHours(23, 59, 59, 999);
-  end.setDate(end.getDate() - offsetDays);
-
-  const start = new Date(end);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
-
-  return target >= start && target <= end && isTransactionOccurred(date, asOf);
-}
-
-function filterTransactionsByWindow(
-  transactions: Transaction[],
-  days: number,
-  offsetDays = 0,
-): Transaction[] {
-  return transactions.filter((tx) => isWithinLastDays(tx.date, days, offsetDays));
+function periodForDays(days: number, offsetDays = 0, asOf = new Date()) {
+  return { kind: 'rolling' as const, days, offsetDays, asOf };
 }
 
 export function buildAnalysisTrends(
@@ -54,44 +39,27 @@ export function buildAnalysisTrends(
   dashboard: DashboardData,
   periodDays = PERIOD_DAYS,
 ): AnalysisTrends {
-  const recent = filterTransactionsByWindow(transactions, periodDays);
-
-  const totalIncome = recent
-    .filter((tx) => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const totalExpenses = recent
-    .filter((tx) => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const categoryTotals = new Map<string, SpendingCategorySlice>();
-
-  for (const tx of recent) {
-    if (tx.type !== 'expense') continue;
-    const current = categoryTotals.get(tx.category) ?? {
-      key: tx.category,
-      label: tx.categoryLabel,
-      amount: 0,
-    };
-    current.amount += tx.amount;
-    categoryTotals.set(tx.category, current);
-  }
-
-  const spendingByCategory = [...categoryTotals.values()]
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 6);
+  const period = periodForDays(periodDays);
+  const totalIncome = getIncomeTotal(transactions, period);
+  const totalExpenses = getExpenseTotal(transactions, period);
+  const spendingByCategory: SpendingCategorySlice[] = groupTransactionsByCategory(
+    transactions,
+    period,
+  ).slice(0, 6);
 
   return {
     periodDays,
     totalIncome,
     totalExpenses,
-    netCashflow: totalIncome - totalExpenses,
+    netCashflow: getNetCashflow(transactions, period),
     netWorthChangePercent: dashboard.netWorthChangePercent,
     spendingByCategory,
   };
 }
 
 export function buildTrendMetrics(trends: AnalysisTrends): AnalysisData['metrics'] {
+  const savings = calculateSavingsRate(trends.totalIncome, trends.totalExpenses);
+
   return [
     {
       id: 'cashflow',
@@ -106,7 +74,7 @@ export function buildTrendMetrics(trends: AnalysisTrends): AnalysisData['metrics
       id: 'expenses-30d',
       label: 'Rácio de gasto',
       value: formatPercent(
-        trends.totalIncome > 0 ? (trends.totalExpenses / trends.totalIncome) * 100 : 0,
+        savings.income > 0 ? (savings.expenses / savings.income) * 100 : 0,
         0,
         false,
       ),
@@ -135,17 +103,14 @@ export function composeAnalysisFromSources(input: {
   const baseMetrics = buildMetricsFromNetWorth(dashboard.netWorth);
   const trendMetrics = buildTrendMetrics(trends);
 
+  const savings = calculateSavingsRate(trends.totalIncome, trends.totalExpenses);
   const savingsMetric =
-    trends.totalIncome > 0
+    savings.rate !== null
       ? [
           {
             id: 'savings-rate',
             label: 'Taxa de poupança',
-            value: formatPercent(
-              Math.max(0, (trends.netCashflow / trends.totalIncome) * 100),
-              1,
-              false,
-            ),
+            value: formatPercent(Math.max(0, savings.rate), 1, false),
             subtitle: `últimos ${trends.periodDays} dias`,
             trend: trends.netCashflow >= 0 ? ('up' as const) : ('down' as const),
             icon: { ios: 'leaf.fill', android: 'eco', web: 'eco' },
@@ -189,17 +154,14 @@ export function applyAnalysisPeriod(
   const trends = buildAnalysisTrends(transactions, dashboardStub, periodDays);
   const trendMetrics = buildTrendMetrics(trends);
 
+  const savings = calculateSavingsRate(trends.totalIncome, trends.totalExpenses);
   const savingsMetric =
-    trends.totalIncome > 0
+    savings.rate !== null
       ? [
           {
             id: 'savings-rate',
             label: 'Taxa de poupança',
-            value: formatPercent(
-              Math.max(0, (trends.netCashflow / trends.totalIncome) * 100),
-              1,
-              false,
-            ),
+            value: formatPercent(Math.max(0, savings.rate), 1, false),
             subtitle: periodLabel,
             trend: trends.netCashflow >= 0 ? ('up' as const) : ('down' as const),
             icon: { ios: 'leaf.fill', android: 'eco', web: 'eco' },

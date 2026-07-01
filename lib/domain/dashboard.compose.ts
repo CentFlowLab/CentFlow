@@ -6,9 +6,9 @@ import type { AssetsData } from './assets.types';
 import type { DashboardData } from './types';
 import type { Transaction } from './transaction.types';
 import type { Credit } from './types';
+import { getExpenseTotal } from '@/lib/domain/financial/transactions';
 import {
   filterOccurredTransactions,
-  isTransactionOccurred,
   sumTransactionCashBalance,
 } from './transaction-date.utils';
 
@@ -16,20 +16,7 @@ function sumWeeklyExpenses(
   transactions: Transaction[],
   asOf: Date = new Date(),
 ): number {
-  const weekAgo = asOf.getTime() - 7 * 24 * 60 * 60 * 1000;
-
-  return transactions
-    .filter(
-      (tx) =>
-        tx.type === 'expense' &&
-        isTransactionOccurred(tx.date, asOf) &&
-        parseTransactionTime(tx.date) >= weekAgo,
-    )
-    .reduce((sum, tx) => sum + tx.amount, 0);
-}
-
-function parseTransactionTime(date: string): number {
-  return new Date(`${date.slice(0, 10)}T12:00:00`).getTime();
+  return getExpenseTotal(transactions, { kind: 'rolling', days: 7, asOf });
 }
 
 /** Dashboard mínimo a partir de dados Supabase (sem API legacy). */

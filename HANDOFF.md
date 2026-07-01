@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T13:26:34.934Z -->
-<!-- Git: a31620c (2026-07-01T13:15:29+01:00) -->
+<!-- Última geração: 2026-07-01T14:05:23.081Z -->
+<!-- Git: 6463c9f (2026-07-01T14:26:47+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 15 — Contas nos movimentos + objetivos estáveis (UX simplificada)** |
-| Última geração | 2026-07-01T13:26:34.934Z |
+| Fase atual | **Fase 16 — Domínio financeiro central (fonte única de verdade)** |
+| Última geração | 2026-07-01T14:05:23.081Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `a31620c` (2026-07-01T13:15:29+01:00) |
+| Git commit | `6463c9f` (2026-07-01T14:26:47+01:00) |
 
 ---
 
@@ -54,7 +54,7 @@ Património Líq.  = Total Ativos − Total Passivos
 | Passivos (créditos) | 13 250,00 € |
 | **Património Líquido** | **12 041,30 €** |
 | Mês anterior | 9850,00 € |
-| Variação | +22.2% |
+| Variação | +22.3% |
 | Gastos esta semana | 342,50 € |
 | Alertas ativos | 5 |
 | Sugestões | 2 |
@@ -66,14 +66,7 @@ Património Líq.  = Total Ativos − Total Passivos
 - Não duplica saldos de conta com investimentos
 
 ### Funções de domínio (`lib/domain/net-worth.service.ts`)
-- `sumAccountBalances()`
-- `sumInventoryValue()`
-- `sumRecurringInvestments()`
-- `sumCreditLiabilities()`
-- `sumGoalSavings()`
-- `calculateNetWorth()`
-- `buildNetWorthProjection()`
-- `calculateNetWorthChangePercent()`
+
 
 ### Breakdown para donut (`assetsByCategory`)
 - Contas: 12 631,30 €
@@ -506,10 +499,30 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     dashboard.compose.ts
     date-input.schema.ts
     financial/
+      accounts.test.ts
+      accounts.ts
       assistant.ts
       centflow-score.ts
+      dates.test.ts
+      dates.ts
+      domain-types.ts
+      goals.test.ts
+      goals.ts
       index.ts
+      insights.ts
+      liabilities.ts
+      money.test.ts
+      money.ts
+      netWorth.test.ts
+      netWorth.ts
+      projections.ts
+      savings.test.ts
+      savings.ts
       score-explain.ts
+      score.test.ts
+      score.ts
+      transactions.test.ts
+      transactions.ts
       types.ts
     financial-movement.ts
     financial-profile.service.ts
@@ -699,7 +712,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 15 — Contas nos movimentos + objetivos estáveis (UX simplificada)
+## Fase atual: Fase 16 — Domínio financeiro central (fonte única de verdade)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -821,6 +834,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Objetivos — crash modal contribuição (sequência onDismissed), transferência conta→objetivo, UX modal separado
 - Receitas — mês financeiro (budget_month) no orçamento/disponível mensal + campo no formulário
 - UX movimentos — remover mês financeiro confuso, corrigir guardar com conta, layout contas
+- Domínio financeiro central lib/domain/financial/ — money, dates, transactions, accounts, goals, netWorth, savings, score, insights
+- Substituição de cálculos duplicados em analysis.compose, analysis.insights, dashboard.compose
+- Re-exports de compatibilidade (balance, financial-movement, goal.utils, net-worth.service, transaction-date.utils, monthly-budget-movements)
+- Testes unitários do domínio financeiro (money, dates, transactions, accounts, goals, netWorth, savings, score)
+- docs/financial-domain.md — regras, API e como adicionar métricas
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

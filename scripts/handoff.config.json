@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 15 — Contas nos movimentos + objetivos estáveis (UX simplificada)",
+  "currentPhase": "Fase 16 — Domínio financeiro central (fonte única de verdade)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -121,7 +121,12 @@
     "Contas ledger — fix institution/bank schema, goal_contributions, transferências, saldos por conta",
     "Objetivos — crash modal contribuição (sequência onDismissed), transferência conta→objetivo, UX modal separado",
     "Receitas — mês financeiro (budget_month) no orçamento/disponível mensal + campo no formulário",
-    "UX movimentos — remover mês financeiro confuso, corrigir guardar com conta, layout contas"
+    "UX movimentos — remover mês financeiro confuso, corrigir guardar com conta, layout contas",
+    "Domínio financeiro central lib/domain/financial/ — money, dates, transactions, accounts, goals, netWorth, savings, score, insights",
+    "Substituição de cálculos duplicados em analysis.compose, analysis.insights, dashboard.compose",
+    "Re-exports de compatibilidade (balance, financial-movement, goal.utils, net-worth.service, transaction-date.utils, monthly-budget-movements)",
+    "Testes unitários do domínio financeiro (money, dates, transactions, accounts, goals, netWorth, savings, score)",
+    "docs/financial-domain.md — regras, API e como adicionar métricas"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
