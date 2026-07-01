@@ -33,6 +33,7 @@ export function applyOptimisticTransactionUpdate(
           categoryLabel: getCategoryLabel(input.category, input.type),
           description: input.description,
           date: input.date,
+          accountId: input.accountId ?? undefined,
         }
       : transaction,
   );

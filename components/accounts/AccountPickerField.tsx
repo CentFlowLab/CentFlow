@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
@@ -17,21 +18,18 @@ function labelsForType(type: TransactionType | undefined) {
   if (type === 'income') {
     return {
       label: 'Conta de destino',
-      placeholder: 'Escolhe onde entrou o dinheiro',
-      hint: 'Associar movimentos a contas torna os saldos e análises mais precisos.',
+      placeholder: 'Onde entrou o dinheiro',
     };
   }
   if (type === 'expense') {
     return {
       label: 'Conta de origem',
-      placeholder: 'Escolhe de onde saiu o dinheiro',
-      hint: 'Associar movimentos a contas torna os saldos e análises mais precisos.',
+      placeholder: 'De onde saiu o dinheiro',
     };
   }
   return {
     label: 'Conta',
     placeholder: 'Escolhe uma conta',
-    hint: 'Associar movimentos a contas torna os saldos e análises mais precisos.',
   };
 }
 
@@ -45,6 +43,14 @@ export function AccountPickerField({
   const activeAccounts = accounts.filter((account) => account.isActive);
   const copy = labelsForType(transactionType);
 
+  const soleAccountId = activeAccounts.length === 1 ? activeAccounts[0]?.id : undefined;
+  const effectiveValue = value ?? soleAccountId;
+
+  useEffect(() => {
+    if (!soleAccountId || value) return;
+    onChange(soleAccountId);
+  }, [soleAccountId, value, onChange]);
+
   if (!ACCOUNTS_FEATURE_ENABLED) {
     return null;
   }
@@ -52,16 +58,14 @@ export function AccountPickerField({
   if (activeAccounts.length === 0) {
     return (
       <View style={styles.container}>
-        <Text variant="label" color="textSecondary">
-          {copy.label}
-        </Text>
+        <Text variant="label">{copy.label}</Text>
         <Text variant="caption" color="textMuted">
-          {copy.hint}
+          Cria uma conta em Ativos para associar movimentos.
         </Text>
         {onCreateAccount ? (
           <Pressable onPress={onCreateAccount} accessibilityRole="button">
             <Text variant="caption" color="primary" style={styles.createLink}>
-              Criar primeira conta →
+              Criar conta →
             </Text>
           </Pressable>
         ) : null}
@@ -69,21 +73,17 @@ export function AccountPickerField({
     );
   }
 
-  const effectiveValue =
-    value ?? (activeAccounts.length === 1 ? activeAccounts[0]?.id : undefined);
-
   return (
     <View style={styles.container}>
-      <Text variant="label" color="textSecondary">
-        {copy.label}
-      </Text>
+      <Text variant="label">{copy.label}</Text>
       <Text variant="caption" color="textMuted">
         {copy.placeholder}
       </Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chips}>
+        contentContainerStyle={styles.chips}
+        keyboardShouldPersistTaps="handled">
         {activeAccounts.map((account) => {
           const selected = effectiveValue === account.id;
           return (
@@ -111,6 +111,7 @@ const styles = StyleSheet.create({
   chips: {
     gap: spacing.sm,
     paddingRight: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   chip: {
     paddingHorizontal: spacing.md,

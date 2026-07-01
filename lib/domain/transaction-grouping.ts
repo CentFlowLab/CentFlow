@@ -83,7 +83,7 @@ export function groupTransactionsByDay(
     }));
 }
 
-/** Resumo do mês: despesas por data civil; receitas por mês financeiro. */
+/** Resumo do mês civil actual: total líquido e número de movimentos. */
 export function summarizeCurrentMonth(
   transactions: Transaction[],
   now: Date = new Date(),

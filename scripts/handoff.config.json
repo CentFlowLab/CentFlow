@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 15 — Objetivos ligados a contas + mês financeiro de receitas",
+  "currentPhase": "Fase 15 — Contas nos movimentos + objetivos estáveis (UX simplificada)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -120,7 +120,8 @@
     "Auditoria beta — métricas Análises corrigidas (fluxo líquido em €, rácio de gasto)",
     "Contas ledger — fix institution/bank schema, goal_contributions, transferências, saldos por conta",
     "Objetivos — crash modal contribuição (sequência onDismissed), transferência conta→objetivo, UX modal separado",
-    "Receitas — mês financeiro (budget_month) no orçamento/disponível mensal + campo no formulário"
+    "Receitas — mês financeiro (budget_month) no orçamento/disponível mensal + campo no formulário",
+    "UX movimentos — remover mês financeiro confuso, corrigir guardar com conta, layout contas"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

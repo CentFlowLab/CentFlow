@@ -208,7 +208,7 @@ export function GoalFormModal({
             <Text variant="h2">{isEditing ? 'Editar objetivo' : 'Novo objetivo'}</Text>
             <Text variant="caption" color="textMuted">
               {isEditing
-                ? 'Altera o nome, valor alvo ou data prevista'
+                ? 'Ajusta a meta e acompanha o progresso.'
                 : 'Define uma meta de poupança com progresso visível'}
             </Text>
           </View>
@@ -260,7 +260,7 @@ export function GoalFormModal({
       {progress ? (
         <Card variant="outlined" padding="md" style={styles.progressCard}>
           <Text variant="label" color="textMuted">
-            Progresso actual
+            Progresso
           </Text>
           <View style={styles.progressStats}>
             <View style={styles.stat}>
@@ -289,15 +289,6 @@ export function GoalFormModal({
             isComplete={progress.isComplete}
             showLabel={false}
           />
-          {onContribute ? (
-            <Button
-              label="Adicionar dinheiro"
-              variant="secondary"
-              onPress={() => onContribute(goal!)}
-              disabled={isSaving || isDeleting}
-              fullWidth
-            />
-          ) : null}
         </Card>
       ) : null}
 
@@ -352,6 +343,16 @@ export function GoalFormModal({
         }
       />
 
+      {isEditing && goal && onContribute ? (
+        <Button
+          label="Adicionar dinheiro"
+          variant="secondary"
+          onPress={() => onContribute(goal)}
+          disabled={isSaving || isDeleting}
+          fullWidth
+        />
+      ) : null}
+
       {isEditing ? (
         <Button
           label={isDeleting ? 'A eliminar...' : 'Eliminar objetivo'}
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing['3xl'],
   },
   quickDate: {
     alignSelf: 'flex-start',
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryMuted,
   },
   helper: {
-    marginTop: -spacing.md,
+    marginTop: spacing.xs,
   },
   progressCard: {
     gap: spacing.md,

@@ -36,9 +36,7 @@ import { logDoctorValidationFailure, traceMovementError, traceMovementStep } fro
 import { setDiagnosticAction } from '@/lib/diagnostics';
 import { useMovementRenderProbe } from '@/hooks/useMovementRenderProbe';
 import { todayInputDate } from '@/lib/utils/format';
-import { defaultBudgetMonthForDate } from '@/lib/domain/transaction-form';
 
-import { BudgetMonthField } from './BudgetMonthField';
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';
 import { ReceiptAttachmentField } from './ReceiptAttachmentField';
 import { ReceiptDigitizePreview } from './ReceiptDigitizePreview';
@@ -98,7 +96,6 @@ export function AddTransactionModal({
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayInputDate());
-  const [budgetMonth, setBudgetMonth] = useState<string | undefined>();
   const [accountId, setAccountId] = useState<string | undefined>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -125,7 +122,6 @@ export function AddTransactionModal({
     setCategory(defaultCategory);
     setDescription('');
     setDate(todayInputDate());
-    setBudgetMonth(undefined);
     setAccountId(undefined);
     setErrors({});
     setApiError(null);
@@ -151,12 +147,7 @@ export function AddTransactionModal({
     setCategory((current) =>
       current && cats.some((item) => item.id === current) ? current : cats[0]?.id ?? '',
     );
-    if (type === 'income') {
-      setBudgetMonth((current) => current ?? defaultBudgetMonthForDate(date));
-    } else {
-      setBudgetMonth(undefined);
-    }
-  }, [type, visible, date]);
+  }, [type, visible]);
 
   useEffect(() => {
     if (!visible || !startWithReceiptPicker || didAutoPick.current) return;
@@ -283,7 +274,7 @@ export function AddTransactionModal({
       category,
       description: description.trim() || undefined,
       date,
-      budgetMonth: type === 'income' ? budgetMonth ?? defaultBudgetMonthForDate(date) : undefined,
+      accountId: accountId ?? null,
     });
 
     if (!result.success) {
@@ -315,10 +306,6 @@ export function AddTransactionModal({
       const input = {
         ...result.data,
         accountId: accountId ?? null,
-        budgetMonth:
-          result.data.type === 'income'
-            ? result.data.budgetMonth ?? defaultBudgetMonthForDate(date)
-            : undefined,
         ...(processedReceipt
           ? {
               receiptMeta: {
@@ -636,23 +623,13 @@ export function AddTransactionModal({
               onChange={(next) => {
                 traceMovementStep('field_change', { field: 'date', value: next });
                 setDate(next);
-                if (type === 'income') {
-                  setBudgetMonth(defaultBudgetMonthForDate(next));
-                }
               }}
               error={errors.date}
             />
 
-            {type === 'income' ? (
-              <BudgetMonthField
-                date={date}
-                category={category}
-                value={budgetMonth ?? defaultBudgetMonthForDate(date)}
-                onChange={setBudgetMonth}
-              />
-            ) : null}
-
-            <AccountPickerField value={accountId} onChange={setAccountId} transactionType={type} />
+            <View style={styles.accountSection}>
+              <AccountPickerField value={accountId} onChange={setAccountId} transactionType={type} />
+            </View>
           </>
         ) : (
           <Card variant="outlined" style={styles.hintCard}>
@@ -799,5 +776,9 @@ const styles = StyleSheet.create({
   errorCard: {
     borderColor: colors.danger,
     backgroundColor: colors.dangerMuted,
+  },
+  accountSection: {
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.xs,
   },
 });

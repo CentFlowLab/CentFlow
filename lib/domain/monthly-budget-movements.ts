@@ -1,4 +1,3 @@
-import { formatBudgetMonth, resolveTransactionBudgetMonth } from '@/lib/domain/budget-month';
 import {
   isTransactionFuture,
   isTransactionOccurred,
@@ -13,37 +12,23 @@ function isSameCalendarMonth(date: Date, reference: Date): boolean {
   );
 }
 
-function referenceBudgetMonth(reference: Date): string {
-  return formatBudgetMonth(reference);
-}
-
-/** Despesa conta no mês civil da data do movimento. */
-export function expenseCountsForBudgetMonth(tx: Transaction, referenceDate: Date): boolean {
-  if (tx.type !== 'expense') return false;
+function occurredInCalendarMonth(tx: Transaction, referenceDate: Date): boolean {
+  if (tx.type === 'transfer') return false;
   if (!isTransactionOccurred(tx.date, referenceDate)) return false;
   return isSameCalendarMonth(parseTransactionDate(tx.date), referenceDate);
 }
 
-/** Receita conta no mês financeiro (budget_month ou mês da data). */
-export function incomeCountsForBudgetMonth(tx: Transaction, referenceDate: Date): boolean {
-  if (tx.type !== 'income') return false;
-  if (!isTransactionOccurred(tx.date, referenceDate)) return false;
-  return resolveTransactionBudgetMonth(tx) === referenceBudgetMonth(referenceDate);
-}
-
-/** Receita futura com mês financeiro alinhado ao mês de referência. */
-export function futureIncomeCountsForBudgetMonth(tx: Transaction, referenceDate: Date): boolean {
-  if (tx.type !== 'income') return false;
-  if (!isTransactionFuture(tx.date, referenceDate)) return false;
-  return resolveTransactionBudgetMonth(tx) === referenceBudgetMonth(referenceDate);
-}
-
-/** Despesa futura no mês civil de referência. */
-export function futureExpenseCountsForBudgetMonth(tx: Transaction, referenceDate: Date): boolean {
-  if (tx.type !== 'expense') return false;
+function futureInCalendarMonth(tx: Transaction, referenceDate: Date): boolean {
+  if (tx.type === 'transfer') return false;
   if (!isTransactionFuture(tx.date, referenceDate)) return false;
   return isSameCalendarMonth(parseTransactionDate(tx.date), referenceDate);
 }
+
+/** @deprecated alias — receitas e despesas usam mês civil da data do movimento. */
+export const expenseCountsForBudgetMonth = occurredInCalendarMonth;
+export const incomeCountsForBudgetMonth = occurredInCalendarMonth;
+export const futureExpenseCountsForBudgetMonth = futureInCalendarMonth;
+export const futureIncomeCountsForBudgetMonth = futureInCalendarMonth;
 
 export function toSpendableMovement(tx: Transaction): SpendableMovement | null {
   if (tx.type === 'transfer') return null;
@@ -55,7 +40,7 @@ export function filterOccurredForBudgetMonth(
   referenceDate: Date,
 ): SpendableMovement[] {
   return transactions
-    .filter((tx) => expenseCountsForBudgetMonth(tx, referenceDate) || incomeCountsForBudgetMonth(tx, referenceDate))
+    .filter((tx) => occurredInCalendarMonth(tx, referenceDate))
     .map(toSpendableMovement)
     .filter((m): m is SpendableMovement => m !== null);
 }
@@ -65,11 +50,7 @@ export function filterFutureForBudgetMonth(
   referenceDate: Date,
 ): SpendableMovement[] {
   return transactions
-    .filter(
-      (tx) =>
-        futureExpenseCountsForBudgetMonth(tx, referenceDate) ||
-        futureIncomeCountsForBudgetMonth(tx, referenceDate),
-    )
+    .filter((tx) => futureInCalendarMonth(tx, referenceDate))
     .map(toSpendableMovement)
     .filter((m): m is SpendableMovement => m !== null);
 }

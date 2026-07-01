@@ -309,10 +309,11 @@ export default function AtivosScreen() {
         onClose={closeGoalForm}
         onDismissed={() => {
           const pending = pendingContributeGoal.current;
-          if (pending) {
-            pendingContributeGoal.current = null;
+          if (!pending) return;
+          pendingContributeGoal.current = null;
+          requestAnimationFrame(() => {
             setContributeGoal(pending);
-          }
+          });
         }}
         onContribute={(goal) => {
           pendingContributeGoal.current = goal;

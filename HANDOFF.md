@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T12:15:15.684Z -->
-<!-- Git: 904580c (2026-07-01T12:47:49+01:00) -->
+<!-- Última geração: 2026-07-01T13:26:34.934Z -->
+<!-- Git: a31620c (2026-07-01T13:15:29+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 15 — Objetivos ligados a contas + mês financeiro de receitas** |
-| Última geração | 2026-07-01T12:15:15.684Z |
+| Fase atual | **Fase 15 — Contas nos movimentos + objetivos estáveis (UX simplificada)** |
+| Última geração | 2026-07-01T13:26:34.934Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `904580c` (2026-07-01T12:47:49+01:00) |
+| Git commit | `a31620c` (2026-07-01T13:15:29+01:00) |
 
 ---
 
@@ -254,7 +254,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
   movements/
     AddTransactionModal.tsx
-    BudgetMonthField.tsx
     CategoryField.tsx
     ConfirmReceiptModal.tsx
     EditTransactionModal.tsx
@@ -700,7 +699,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 15 — Objetivos ligados a contas + mês financeiro de receitas
+## Fase atual: Fase 15 — Contas nos movimentos + objetivos estáveis (UX simplificada)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -821,6 +820,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Contas ledger — fix institution/bank schema, goal_contributions, transferências, saldos por conta
 - Objetivos — crash modal contribuição (sequência onDismissed), transferência conta→objetivo, UX modal separado
 - Receitas — mês financeiro (budget_month) no orçamento/disponível mensal + campo no formulário
+- UX movimentos — remover mês financeiro confuso, corrigir guardar com conta, layout contas
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

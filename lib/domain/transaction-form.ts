@@ -1,5 +1,4 @@
 import type { CashTransactionType, Transaction } from './transaction.types';
-import { budgetMonthFromDateString } from './budget-month';
 import { formatInputDate } from '@/lib/utils/format';
 
 export type TransactionFormValues = {
@@ -9,17 +8,11 @@ export type TransactionFormValues = {
   description: string;
   date: string;
   accountId?: string;
-  /** YYYY-MM — apenas receitas; vazio = mês da data */
-  budgetMonth?: string;
 };
 
 export function parseTransactionAmount(value: string): number {
   const normalized = value.replace(/\s/g, '').replace(',', '.');
   return Number(normalized);
-}
-
-export function defaultBudgetMonthForDate(date: string): string {
-  return budgetMonthFromDateString(date);
 }
 
 export function transactionToFormValues(transaction: Transaction): TransactionFormValues {
@@ -30,10 +23,6 @@ export function transactionToFormValues(transaction: Transaction): TransactionFo
     description: transaction.description ?? '',
     date: formatInputDate(transaction.date),
     accountId: transaction.accountId ?? undefined,
-    budgetMonth:
-      transaction.type === 'income'
-        ? transaction.budgetMonth ?? defaultBudgetMonthForDate(transaction.date)
-        : undefined,
   };
 }
 
@@ -45,9 +34,5 @@ export function formValuesToUpdateInput(values: TransactionFormValues) {
     description: values.description.trim() || undefined,
     date: values.date,
     accountId: values.accountId || null,
-    budgetMonth:
-      values.type === 'income'
-        ? values.budgetMonth ?? defaultBudgetMonthForDate(values.date)
-        : null,
   };
 }

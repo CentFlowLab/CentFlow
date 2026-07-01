@@ -54,7 +54,6 @@ export function EditTransactionModal({
     category: '',
     description: '',
     date: '',
-    budgetMonth: undefined,
   });
 
   useEffect(() => {
@@ -76,7 +75,6 @@ export function EditTransactionModal({
         description: values.description,
         date: values.date,
         accountId: values.accountId ?? '',
-        budgetMonth: values.budgetMonth ?? '',
       },
       {
         amount: baselineRef.current.amount,
@@ -84,7 +82,6 @@ export function EditTransactionModal({
         description: baselineRef.current.description,
         date: baselineRef.current.date,
         accountId: baselineRef.current.accountId ?? '',
-        budgetMonth: baselineRef.current.budgetMonth ?? '',
       },
     ) || values.type !== baselineRef.current.type;
   }, [visible, transaction, values]);
@@ -204,13 +201,15 @@ export function EditTransactionModal({
         </Card>
       ) : null}
 
-      <Button
-        label={updateMutation.isPending ? 'A guardar...' : 'Guardar alterações'}
-        onPress={handleSave}
-        loading={updateMutation.isPending}
-        fullWidth
-        size="lg"
-      />
+      <View style={styles.footer}>
+        <Button
+          label={updateMutation.isPending ? 'A guardar...' : 'Guardar alterações'}
+          onPress={handleSave}
+          loading={updateMutation.isPending}
+          fullWidth
+          size="lg"
+        />
+      </View>
     </DraggableBottomSheet>
   );
 }
@@ -229,7 +228,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing['3xl'] + spacing.lg,
   },
   receiptNote: {
     flexDirection: 'row',
@@ -243,5 +242,9 @@ const styles = StyleSheet.create({
   errorCard: {
     borderColor: colors.danger,
     backgroundColor: colors.dangerMuted,
+  },
+  footer: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
   },
 });

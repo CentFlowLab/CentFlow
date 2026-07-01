@@ -31,7 +31,7 @@ export type MonthlySpendable = MonthlySpendableOutput & {
 
 /**
  * Liga `calculateMonthlySpendable` aos dados reais (Supabase via TanStack Query).
- * Receitas usam mês financeiro (budget_month); despesas usam mês civil da data.
+ * Movimentos contam no mês civil da data do movimento.
  */
 export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySpendable {
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');

@@ -5,10 +5,8 @@ import { SegmentedControl } from '@/components/layout';
 import { DatePickerField, TextField } from '@/components/ui';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { CashTransactionType } from '@/lib/domain/transaction.types';
-import { defaultBudgetMonthForDate } from '@/lib/domain/transaction-form';
 import { spacing } from '@/lib/theme';
 
-import { BudgetMonthField } from './BudgetMonthField';
 import { CategoryField } from './CategoryField';
 
 type TransactionFormProps = {
@@ -31,12 +29,7 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
   }
 
   function handleTypeChange(type: CashTransactionType) {
-    onChange({
-      ...values,
-      type,
-      category: '',
-      budgetMonth: type === 'income' ? defaultBudgetMonthForDate(values.date) : undefined,
-    });
+    onChange({ ...values, type, category: '' });
   }
 
   return (
@@ -74,31 +67,17 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
       <DatePickerField
         label="Data"
         value={values.date}
-        onChange={(date) =>
-          onChange({
-            ...values,
-            date,
-            budgetMonth:
-              values.type === 'income' ? defaultBudgetMonthForDate(date) : values.budgetMonth,
-          })
-        }
+        onChange={(date) => update('date', date)}
         error={errors?.date}
       />
 
-      {values.type === 'income' ? (
-        <BudgetMonthField
-          date={values.date}
-          category={values.category}
-          value={values.budgetMonth ?? defaultBudgetMonthForDate(values.date)}
-          onChange={(budgetMonth) => update('budgetMonth', budgetMonth)}
+      <View style={styles.accountSection}>
+        <AccountPickerField
+          value={values.accountId}
+          onChange={(accountId) => update('accountId', accountId)}
+          transactionType={values.type}
         />
-      ) : null}
-
-      <AccountPickerField
-        value={values.accountId}
-        onChange={(accountId) => update('accountId', accountId)}
-        transactionType={values.type}
-      />
+      </View>
     </View>
   );
 }
@@ -106,5 +85,9 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
 const styles = StyleSheet.create({
   form: {
     gap: spacing.lg,
+  },
+  accountSection: {
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.xs,
   },
 });

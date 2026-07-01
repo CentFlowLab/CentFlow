@@ -24,25 +24,35 @@ function tx(
     amount: partial.amount,
     date: partial.date,
     currency: 'EUR',
-    budgetMonth: partial.budgetMonth,
   };
 }
 
-test('salário dia 30/06 com mês financeiro Julho entra no disponível de Julho', () => {
+test('receita dia 30/06 conta para junho, não julho', () => {
+  const salary = tx({
+    type: 'income',
+    amount: 1090,
+    date: '2026-06-30',
+    category: 'salary',
+  });
+
+  assert.equal(incomeCountsForBudgetMonth(salary, JUNE_LAST), true);
+  assert.equal(incomeCountsForBudgetMonth(salary, JULY_FIRST), false);
+
+  const juneSummary = summarizeCurrentMonth([salary], JUNE_LAST);
+  assert.equal(juneSummary.net, 1090);
+});
+
+test('receita dia 01/07 conta para julho', () => {
   const transactions = [
     tx({
-      id: 'salary',
       type: 'income',
       amount: 1090,
       date: '2026-06-30',
       category: 'salary',
-      budgetMonth: '2026-07',
     }),
-    tx({ id: 'july-exp', type: 'expense', amount: 200, date: '2026-07-01' }),
+    tx({ type: 'expense', amount: 200, date: '2026-07-01' }),
+    tx({ type: 'income', amount: 500, date: '2026-07-01' }),
   ];
-
-  assert.equal(incomeCountsForBudgetMonth(transactions[0]!, JULY_FIRST), true);
-  assert.equal(incomeCountsForBudgetMonth(transactions[0]!, JUNE_LAST), false);
 
   const occurred = filterOccurredForBudgetMonth(transactions, JULY_FIRST);
   const result = calculateMonthlySpendable({
@@ -51,26 +61,10 @@ test('salário dia 30/06 com mês financeiro Julho entra no disponível de Julho
     referenceDate: JULY_FIRST,
   });
 
-  assert.equal(result.remainingThisMonth, 890);
+  assert.equal(result.remainingThisMonth, 300);
 });
 
-test('Junho não fica inflacionado quando salário é para Julho', () => {
-  const transactions = [
-    tx({
-      type: 'income',
-      amount: 1090,
-      date: '2026-06-30',
-      category: 'salary',
-      budgetMonth: '2026-07',
-    }),
-    tx({ type: 'expense', amount: 300, date: '2026-06-15' }),
-  ];
-
-  const juneSummary = summarizeCurrentMonth(transactions, JUNE_LAST);
-  assert.equal(juneSummary.net, -300);
-});
-
-test('receita sem budget_month usa mês da data', () => {
+test('receita usa mês civil da data', () => {
   const income = tx({ type: 'income', amount: 500, date: '2026-07-01' });
   assert.equal(incomeCountsForBudgetMonth(income, JULY_FIRST), true);
 });

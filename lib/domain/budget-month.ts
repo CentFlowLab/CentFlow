@@ -1,7 +1,8 @@
 import { parseTransactionDate } from '@/lib/domain/transaction-date.utils';
 import type { Transaction } from '@/lib/domain/transaction.types';
+import { inputDateToDate } from '@/lib/utils/format';
 
-/** YYYY-MM — mês financeiro onde o rendimento conta no orçamento. */
+/** YYYY-MM — reservado para futura opção «usar no próximo mês». */
 export type BudgetMonthKey = string;
 
 export function formatBudgetMonth(date: Date): BudgetMonthKey {
@@ -10,13 +11,16 @@ export function formatBudgetMonth(date: Date): BudgetMonthKey {
   return `${year}-${month}`;
 }
 
-export function budgetMonthFromDateString(date: string): BudgetMonthKey {
-  return formatBudgetMonth(parseTransactionDate(date));
+/** Aceita ISO (YYYY-MM-DD) ou DD-MM-AAAA de formulários. */
+export function budgetMonthFromDateString(date: string): BudgetMonthKey | null {
+  const parsed = inputDateToDate(date) ?? parseTransactionDate(date);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return formatBudgetMonth(parsed);
 }
 
 export function parseBudgetMonthLabel(key: BudgetMonthKey): string {
   const [year, month] = key.split('-').map(Number);
-  if (!year || !month) return key;
+  if (!year || !month || year < 1970 || year > 2100) return key;
   const label = new Date(year, month - 1, 1).toLocaleDateString('pt-PT', {
     month: 'long',
     year: 'numeric',
@@ -24,13 +28,15 @@ export function parseBudgetMonthLabel(key: BudgetMonthKey): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-export function nextBudgetMonth(fromDate: string): BudgetMonthKey {
-  const date = parseTransactionDate(fromDate);
-  date.setMonth(date.getMonth() + 1);
-  return formatBudgetMonth(date);
+export function nextBudgetMonth(fromDate: string): BudgetMonthKey | null {
+  const parsed = inputDateToDate(fromDate) ?? parseTransactionDate(fromDate);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setMonth(parsed.getMonth() + 1);
+  return formatBudgetMonth(parsed);
 }
 
 export function budgetMonthOptions(referenceDate = new Date(), count = 4): BudgetMonthKey[] {
+  if (Number.isNaN(referenceDate.getTime())) return [];
   const options: BudgetMonthKey[] = [];
   const cursor = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
   for (let i = 0; i < count; i += 1) {
@@ -40,14 +46,18 @@ export function budgetMonthOptions(referenceDate = new Date(), count = 4): Budge
   return options;
 }
 
-export function resolveTransactionBudgetMonth(tx: Pick<Transaction, 'date' | 'budgetMonth'>): BudgetMonthKey {
-  return tx.budgetMonth ?? budgetMonthFromDateString(tx.date);
+export function resolveTransactionBudgetMonth(
+  tx: Pick<Transaction, 'date' | 'budgetMonth'>,
+): BudgetMonthKey | null {
+  if (tx.budgetMonth) return tx.budgetMonth;
+  return budgetMonthFromDateString(tx.date);
 }
 
 export function isLateMonthPayday(date: string): boolean {
-  const parsed = parseTransactionDate(date);
+  const parsed = inputDateToDate(date) ?? parseTransactionDate(date);
+  if (Number.isNaN(parsed.getTime())) return false;
   const lastDay = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 0).getDate();
-  return parsed.getDate() >= lastDay - 2;
+  return parsed.getDate() >= lastDay - 4;
 }
 
 export function shouldSuggestNextBudgetMonth(date: string, category?: string): boolean {
