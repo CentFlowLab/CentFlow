@@ -1,13 +1,14 @@
 import { StyleSheet, View } from 'react-native';
 
+import { AccountPickerField } from '@/components/accounts';
 import { SegmentedControl } from '@/components/layout';
 import { DatePickerField, TextField } from '@/components/ui';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { CashTransactionType } from '@/lib/domain/transaction.types';
+import { defaultBudgetMonthForDate } from '@/lib/domain/transaction-form';
 import { spacing } from '@/lib/theme';
 
-import { AccountPickerField } from '@/components/accounts';
-
+import { BudgetMonthField } from './BudgetMonthField';
 import { CategoryField } from './CategoryField';
 
 type TransactionFormProps = {
@@ -30,7 +31,12 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
   }
 
   function handleTypeChange(type: CashTransactionType) {
-    onChange({ ...values, type, category: '' });
+    onChange({
+      ...values,
+      type,
+      category: '',
+      budgetMonth: type === 'income' ? defaultBudgetMonthForDate(values.date) : undefined,
+    });
   }
 
   return (
@@ -68,9 +74,25 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
       <DatePickerField
         label="Data"
         value={values.date}
-        onChange={(date) => update('date', date)}
+        onChange={(date) =>
+          onChange({
+            ...values,
+            date,
+            budgetMonth:
+              values.type === 'income' ? defaultBudgetMonthForDate(date) : values.budgetMonth,
+          })
+        }
         error={errors?.date}
       />
+
+      {values.type === 'income' ? (
+        <BudgetMonthField
+          date={values.date}
+          category={values.category}
+          value={values.budgetMonth ?? defaultBudgetMonthForDate(values.date)}
+          onChange={(budgetMonth) => update('budgetMonth', budgetMonth)}
+        />
+      ) : null}
 
       <AccountPickerField
         value={values.accountId}

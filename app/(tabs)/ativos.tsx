@@ -37,6 +37,7 @@ import { colors, spacing } from '@/lib/theme';
 export default function AtivosScreen() {
   const { action, tab } = useLocalSearchParams<{ action?: string; tab?: string }>();
   const handledAction = useRef(false);
+  const pendingContributeGoal = useRef<Goal | null>(null);
   const [activeTab, setActiveTab] = useState<AssetsTab>('objetivos');
   const [goalFormVisible, setGoalFormVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -306,9 +307,16 @@ export default function AtivosScreen() {
         visible={goalFormVisible}
         goal={editingGoal}
         onClose={closeGoalForm}
+        onDismissed={() => {
+          const pending = pendingContributeGoal.current;
+          if (pending) {
+            pendingContributeGoal.current = null;
+            setContributeGoal(pending);
+          }
+        }}
         onContribute={(goal) => {
-          closeGoalForm();
-          setContributeGoal(goal);
+          pendingContributeGoal.current = goal;
+          setGoalFormVisible(false);
         }}
       />
 

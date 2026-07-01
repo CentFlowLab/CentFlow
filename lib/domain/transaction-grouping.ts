@@ -1,5 +1,9 @@
 import type { Transaction } from './transaction.types';
 import { parseTransactionDate } from './transaction-date.utils';
+import {
+  expenseCountsForBudgetMonth,
+  incomeCountsForBudgetMonth,
+} from './monthly-budget-movements';
 
 export type TransactionDaySection = {
   /** Chave estável (YYYY-MM-DD). */
@@ -79,21 +83,21 @@ export function groupTransactionsByDay(
     }));
 }
 
-/** Resumo do mês civil actual: total líquido e número de movimentos. */
+/** Resumo do mês: despesas por data civil; receitas por mês financeiro. */
 export function summarizeCurrentMonth(
   transactions: Transaction[],
   now: Date = new Date(),
 ): MonthSummary {
-  const month = now.getMonth();
-  const year = now.getFullYear();
-
   let net = 0;
   let count = 0;
 
   for (const transaction of transactions) {
-    const date = parseTransactionDate(transaction.date);
-    if (Number.isNaN(date.getTime())) continue;
-    if (date.getMonth() !== month || date.getFullYear() !== year) continue;
+    if (transaction.type === 'transfer') continue;
+    const counts =
+      transaction.type === 'income'
+        ? incomeCountsForBudgetMonth(transaction, now)
+        : expenseCountsForBudgetMonth(transaction, now);
+    if (!counts) continue;
     net += signedAmount(transaction);
     count += 1;
   }

@@ -9,7 +9,7 @@ import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { formFieldsDiffer, formHasAnyText } from '@/lib/forms';
 import type { Goal } from '@/lib/domain/assets.types';
-import { createGoalSchema } from '@/lib/domain/assets.schema';
+import { createGoalSchema, updateGoalSchema } from '@/lib/domain/assets.schema';
 import {
   formatGoalAmount,
   mapZodFieldErrors,
@@ -24,12 +24,19 @@ import { GoalProgressBar } from './GoalProgressBar';
 type GoalFormModalProps = {
   visible: boolean;
   onClose: () => void;
+  onDismissed?: () => void;
   /** Quando definido, o modal entra em modo edição */
   goal?: Goal | null;
   onContribute?: (goal: Goal) => void;
 };
 
-export function GoalFormModal({ visible, onClose, goal = null, onContribute }: GoalFormModalProps) {
+export function GoalFormModal({
+  visible,
+  onClose,
+  onDismissed,
+  goal = null,
+  onContribute,
+}: GoalFormModalProps) {
   const isEditing = Boolean(goal);
   const createGoal = useCreateGoal();
   const updateGoal = useUpdateGoal();
@@ -39,7 +46,6 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
 
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
-  const [current, setCurrent] = useState('');
   const [deadline, setDeadline] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -47,7 +53,7 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
   const isSaving = createGoal.isPending || updateGoal.isPending;
   const isDeleting = deleteGoal.isPending;
 
-  const baselineRef = useRef({ name: '', target: '', current: '', deadline: '' });
+  const baselineRef = useRef({ name: '', target: '', deadline: '' });
 
   useEffect(() => {
     if (!visible) return;
@@ -56,19 +62,16 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
       const next = {
         name: goal.name,
         target: formatGoalAmount(goal.target),
-        current: formatGoalAmount(goal.current),
         deadline: formatInputDate(goal.deadline),
       };
       setName(next.name);
       setTarget(next.target);
-      setCurrent(next.current);
       setDeadline(next.deadline);
       baselineRef.current = next;
     } else {
-      const empty = { name: '', target: '', current: '', deadline: '' };
+      const empty = { name: '', target: '', deadline: '' };
       setName(empty.name);
       setTarget(empty.target);
-      setCurrent(empty.current);
       setDeadline(empty.deadline);
       baselineRef.current = empty;
     }
@@ -83,35 +86,66 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
   const isDirty = useMemo(() => {
     if (!visible) return false;
     if (goal) {
-      return formFieldsDiffer({ name, target, current, deadline }, baselineRef.current);
+      return formFieldsDiffer({ name, target, deadline }, baselineRef.current);
     }
-    return formHasAnyText(name, target, current, deadline);
-  }, [visible, goal, name, target, current, deadline]);
+    return formHasAnyText(name, target, deadline);
+  }, [visible, goal, name, target, deadline]);
+
+  const progress = useMemo(() => {
+    if (!isEditing || !goal) return null;
+    const targetValue = parseGoalAmount(target);
+    if (!target || Number.isNaN(targetValue) || targetValue <= 0) {
+      return getGoalProgress(goal);
+    }
+    return getGoalProgress({
+      ...goal,
+      target: targetValue,
+    });
+  }, [isEditing, goal, target]);
 
   const preview = useMemo(() => {
+    if (isEditing) return null;
     const targetValue = parseGoalAmount(target);
-    const currentValue = current ? parseGoalAmount(current) : 0;
-
     if (!target || Number.isNaN(targetValue) || targetValue <= 0) {
       return null;
     }
-
     return getGoalProgress({
-      id: goal?.id ?? 'preview',
+      id: 'preview',
       name: name || 'Objetivo',
       target: targetValue,
-      current: Number.isNaN(currentValue) ? 0 : currentValue,
+      current: 0,
     });
-  }, [goal?.id, name, target, current]);
+  }, [isEditing, name, target]);
 
   async function handleSave() {
     setApiError(null);
     setErrors({});
 
+    if (isEditing && goal) {
+      const result = updateGoalSchema.safeParse({
+        name,
+        target: parseGoalAmount(target),
+        deadline: deadline || undefined,
+      });
+
+      if (!result.success) {
+        setErrors(mapZodFieldErrors(result.error));
+        return;
+      }
+
+      try {
+        await updateGoal.mutateAsync({ id: goal.id, input: result.data });
+        onClose();
+      } catch (error) {
+        setApiError(getApiErrorMessage(error, 'o objetivo'));
+      }
+      return;
+    }
+
     const result = createGoalSchema.safeParse({
       name,
       target: parseGoalAmount(target),
-      current: current ? parseGoalAmount(current) : 0,
+      current: 0,
       deadline: deadline || undefined,
     });
 
@@ -121,15 +155,10 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
     }
 
     try {
-      if (isEditing && goal) {
-        await updateGoal.mutateAsync({ id: goal.id, input: result.data });
-      } else {
-        await createGoal.mutateAsync(result.data);
-        // Analytics: only on successful creation (not edits)
-        track(AnalyticsEvents.GOAL_CREATED, {
-          target_amount: result.data.target,
-        });
-      }
+      await createGoal.mutateAsync(result.data);
+      track(AnalyticsEvents.GOAL_CREATED, {
+        target_amount: result.data.target,
+      });
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'o objetivo'));
@@ -169,6 +198,7 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
     <DraggableBottomSheet
       visible={visible}
       onClose={onClose}
+      onDismissed={onDismissed}
       isDirty={isDirty}
       maxHeight="92%"
       scrollContentStyle={styles.content}
@@ -178,7 +208,7 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
             <Text variant="h2">{isEditing ? 'Editar objetivo' : 'Novo objetivo'}</Text>
             <Text variant="caption" color="textMuted">
               {isEditing
-                ? 'Actualiza o progresso, meta ou data prevista'
+                ? 'Altera o nome, valor alvo ou data prevista'
                 : 'Define uma meta de poupança com progresso visível'}
             </Text>
           </View>
@@ -199,28 +229,14 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
         error={errors.name}
       />
 
-      <View style={styles.row}>
-        <View style={styles.halfField}>
-          <TextField
-            label="Valor alvo (€)"
-            value={target}
-            onChangeText={setTarget}
-            keyboardType="decimal-pad"
-            placeholder="5000"
-            error={errors.target}
-          />
-        </View>
-        <View style={styles.halfField}>
-          <TextField
-            label="Valor actual (€)"
-            value={current}
-            onChangeText={setCurrent}
-            keyboardType="decimal-pad"
-            placeholder="0"
-            error={errors.current}
-          />
-        </View>
-      </View>
+      <TextField
+        label="Valor alvo (€)"
+        value={target}
+        onChangeText={setTarget}
+        keyboardType="decimal-pad"
+        placeholder="5000"
+        error={errors.target}
+      />
 
       <DatePickerField
         label="Data prevista"
@@ -228,32 +244,71 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
         onChange={setDeadline}
         error={errors.deadline}
       />
-      <Text variant="caption" color="textMuted" style={styles.helper}>
-        Opcional — ajuda a planear o ritmo de poupança
-      </Text>
 
       <Pressable
-        onPress={() =>
-          setDeadline(formatInputDate(new Date(Date.now() + 180 * 86400000)))
-        }
+        onPress={() => setDeadline(formatInputDate(new Date(Date.now() + 180 * 86400000)))}
         style={styles.quickDate}>
         <Text variant="caption" color="primary">
           +6 meses
         </Text>
       </Pressable>
 
-      {preview ? (
-        <Card variant="outlined" padding="md" style={styles.previewCard}>
+      <Text variant="caption" color="textMuted" style={styles.helper}>
+        Opcional — ajuda a planear o ritmo de poupança
+      </Text>
+
+      {progress ? (
+        <Card variant="outlined" padding="md" style={styles.progressCard}>
           <Text variant="label" color="textMuted">
-            Progresso
+            Progresso actual
+          </Text>
+          <View style={styles.progressStats}>
+            <View style={styles.stat}>
+              <Text variant="caption" color="textMuted">
+                Guardado
+              </Text>
+              <Text variant="bodyMedium">{formatCurrency(goal!.current)}</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text variant="caption" color="textMuted">
+                Em falta
+              </Text>
+              <Text variant="bodyMedium">{formatCurrency(progress.remaining)}</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text variant="caption" color="textMuted">
+                Progresso
+              </Text>
+              <Text variant="bodyMedium" color={progress.isComplete ? 'success' : 'primary'}>
+                {progress.percent}%
+              </Text>
+            </View>
+          </View>
+          <GoalProgressBar
+            percent={progress.percent}
+            isComplete={progress.isComplete}
+            showLabel={false}
+          />
+          {onContribute ? (
+            <Button
+              label="Adicionar dinheiro"
+              variant="secondary"
+              onPress={() => onContribute(goal!)}
+              disabled={isSaving || isDeleting}
+              fullWidth
+            />
+          ) : null}
+        </Card>
+      ) : null}
+
+      {preview ? (
+        <Card variant="outlined" padding="md" style={styles.progressCard}>
+          <Text variant="label" color="textMuted">
+            Pré-visualização
           </Text>
           <View style={styles.previewRow}>
-            <Text variant="bodyMedium">
-              {preview.isComplete
-                ? 'Objetivo concluído'
-                : `${formatCurrency(preview.remaining)} em falta`}
-            </Text>
-            <Text variant="bodyMedium" color={preview.isComplete ? 'success' : 'primary'}>
+            <Text variant="bodyMedium">{formatCurrency(preview.remaining)} em falta</Text>
+            <Text variant="bodyMedium" color="primary">
               {preview.percent}%
             </Text>
           </View>
@@ -297,16 +352,6 @@ export function GoalFormModal({ visible, onClose, goal = null, onContribute }: G
         }
       />
 
-      {isEditing && goal && onContribute ? (
-        <Button
-          label="Adicionar dinheiro ao objetivo"
-          variant="secondary"
-          onPress={() => onContribute(goal)}
-          disabled={isSaving || isDeleting}
-          fullWidth
-        />
-      ) : null}
-
       {isEditing ? (
         <Button
           label={isDeleting ? 'A eliminar...' : 'Eliminar objetivo'}
@@ -342,13 +387,6 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingBottom: spacing.xl,
   },
-  row: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  halfField: {
-    flex: 1,
-  },
   quickDate: {
     alignSelf: 'flex-start',
     marginTop: -spacing.sm,
@@ -358,11 +396,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryMuted,
   },
   helper: {
-    marginTop: -spacing.sm,
+    marginTop: -spacing.md,
   },
-  previewCard: {
-    gap: spacing.sm,
+  progressCard: {
+    gap: spacing.md,
     backgroundColor: colors.backgroundElevated,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  stat: {
+    flex: 1,
+    gap: spacing.xs,
   },
   previewRow: {
     flexDirection: 'row',

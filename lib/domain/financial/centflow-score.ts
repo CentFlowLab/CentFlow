@@ -5,7 +5,10 @@ import type {
   FinancialLevel,
   FinancialLevelId,
 } from './types';
-import { isTransactionOccurred } from '../transaction-date.utils';
+import {
+  expenseCountsForBudgetMonth,
+  incomeCountsForBudgetMonth,
+} from '@/lib/domain/monthly-budget-movements';
 
 const LEVELS: FinancialLevel[] = [
   {
@@ -167,24 +170,23 @@ export function monthlySubscriptionTotal(
 }
 
 export function estimateMonthlyCashflow(
-  transactions: Array<{ type: string; amount: number; date: string }>,
+  transactions: Array<{ type: string; amount: number; date: string; budgetMonth?: string | null }>,
   asOf: Date = new Date(),
 ): {
   income: number;
   expenses: number;
 } {
-  const month = asOf.getMonth();
-  const year = asOf.getFullYear();
-
   let income = 0;
   let expenses = 0;
 
   for (const tx of transactions) {
-    if (!isTransactionOccurred(tx.date, asOf)) continue;
-    const date = new Date(`${tx.date.slice(0, 10)}T12:00:00`);
-    if (date.getMonth() !== month || date.getFullYear() !== year) continue;
-    if (tx.type === 'income') income += tx.amount;
-    else expenses += tx.amount;
+    if (tx.type === 'transfer') continue;
+    const asTransaction = tx as Parameters<typeof incomeCountsForBudgetMonth>[0];
+    if (tx.type === 'income' && incomeCountsForBudgetMonth(asTransaction, asOf)) {
+      income += tx.amount;
+    } else if (tx.type === 'expense' && expenseCountsForBudgetMonth(asTransaction, asOf)) {
+      expenses += tx.amount;
+    }
   }
 
   return { income, expenses };

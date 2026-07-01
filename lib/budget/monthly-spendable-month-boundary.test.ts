@@ -3,6 +3,9 @@ import test from 'node:test';
 
 import { calculateMonthlySpendable } from '@/lib/budget/calculateMonthlySpendable';
 import {
+  filterOccurredForBudgetMonth,
+} from '@/lib/domain/monthly-budget-movements';
+import {
   isTransactionFuture,
   isTransactionOccurred,
   parseTransactionDate,
@@ -27,15 +30,15 @@ function tx(
   };
 }
 
-function isSameMonth(date: Date, reference: Date): boolean {
-  return date.getFullYear() === reference.getFullYear() && date.getMonth() === reference.getMonth();
-}
-
 function filterCurrentMonthOccurred(transactions: Transaction[], reference: Date): Transaction[] {
-  return transactions.filter(
-    (item) =>
-      isTransactionOccurred(item.date, reference) &&
-      isSameMonth(parseTransactionDate(item.date), reference),
+  const movements = filterOccurredForBudgetMonth(transactions, reference);
+  return movements.map((movement, index) =>
+    tx({
+      id: `filtered-${index}`,
+      type: movement.type,
+      amount: movement.amount,
+      date: typeof movement.date === 'string' ? movement.date : '2026-07-01',
+    }),
   );
 }
 

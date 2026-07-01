@@ -33,6 +33,8 @@ export interface Transaction {
   accountId?: string | null;
   /** Conta de destino (apenas transferências). */
   destinationAccountId?: string | null;
+  /** Mês financeiro (YYYY-MM) — receitas podem contar num mês diferente da data. */
+  budgetMonth?: string | null;
 }
 
 export interface CreateTransactionInput {
@@ -43,6 +45,7 @@ export interface CreateTransactionInput {
   date: string;
   accountId?: string | null;
   destinationAccountId?: string | null;
+  budgetMonth?: string | null;
   /** Upload + OCR inline (fluxo legado sem confirmação) */
   receipt?: ReceiptDraft;
   /** Talão já processado — usar após ecrã de confirmação */
@@ -81,4 +84,5 @@ export type UpdateTransactionInput = {
   date: string;
   accountId?: string | null;
   destinationAccountId?: string | null;
+  budgetMonth?: string | null;
 };

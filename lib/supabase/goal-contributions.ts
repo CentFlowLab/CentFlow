@@ -1,4 +1,5 @@
 import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
+import { traceGoalContribution } from '@/lib/doctor/goal-contribution-trace';
 
 import type { TablesInsert } from './database.types';
 
@@ -51,6 +52,12 @@ export async function createGoalContribution(input: {
   amount: number;
   note?: string;
 }): Promise<GoalContribution> {
+  traceGoalContribution('service_start', {
+    goalId: input.goalId,
+    accountId: input.accountId,
+    amount: input.amount,
+  });
+
   const supabase = getSupabaseClient();
   const userId = await getUserId();
 
@@ -76,7 +83,10 @@ export async function createGoalContribution(input: {
     .select('*')
     .single();
 
-  if (insertError) throw new Error(insertError.message);
+  if (insertError) {
+    traceGoalContribution('service_insert_error', { code: insertError.code }, 'error');
+    throw new Error(insertError.message);
+  }
 
   const newCurrent = Number(goal.current) + input.amount;
   const { error: updateError } = await supabase
@@ -84,7 +94,11 @@ export async function createGoalContribution(input: {
     .update({ current: newCurrent })
     .eq('id', input.goalId);
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) {
+    traceGoalContribution('service_goal_update_error', { code: updateError.code }, 'error');
+    throw new Error(updateError.message);
+  }
 
+  traceGoalContribution('service_success', { goalId: input.goalId, newCurrent });
   return mapRow(contribution as GoalContributionRow);
 }

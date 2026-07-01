@@ -56,6 +56,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     receiptImage: null,
     accountId: row.account_id ?? undefined,
     destinationAccountId: row.destination_account_id ?? undefined,
+    budgetMonth: (row as TransactionRow).budget_month ?? undefined,
   };
 }
 
@@ -148,6 +149,9 @@ export function toTransactionInsert(
           destination_account_id: input.destinationAccountId ?? null,
         }
       : {}),
+    ...(input.type === 'income' && input.budgetMonth
+      ? { budget_month: input.budgetMonth }
+      : {}),
   };
 }
 
@@ -174,6 +178,9 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
           destination_account_id: input.destinationAccountId ?? null,
         }
       : {}),
+    ...(input.type === 'income'
+      ? { budget_month: input.budgetMonth ?? null }
+      : { budget_month: null }),
   };
 }
 

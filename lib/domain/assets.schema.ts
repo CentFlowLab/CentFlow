@@ -9,6 +9,12 @@ export const createGoalSchema = z.object({
   deadline: optionalInputDateSchema,
 });
 
+export const updateGoalSchema = z.object({
+  name: z.string().min(1, 'Indica o nome do objetivo').max(80),
+  target: z.number().positive('O valor alvo tem de ser superior a zero'),
+  deadline: optionalInputDateSchema,
+});
+
 export const createWarrantySchema = z.object({
   product: z.string().min(1, 'Indica o produto').max(120),
   expiresAt: requiredInputDateSchema,
@@ -26,7 +32,7 @@ export const createInventoryItemSchema = z.object({
 });
 
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
-export type UpdateGoalInput = CreateGoalInput;
+export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
 export type CreateWarrantyInput = z.infer<typeof createWarrantySchema>;
 export type UpdateWarrantyInput = CreateWarrantyInput;
 export type CreateInventoryItemInput = z.infer<typeof createInventoryItemSchema>;

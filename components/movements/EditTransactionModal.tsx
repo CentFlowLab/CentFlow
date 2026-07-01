@@ -54,6 +54,7 @@ export function EditTransactionModal({
     category: '',
     description: '',
     date: '',
+    budgetMonth: undefined,
   });
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export function EditTransactionModal({
         description: values.description,
         date: values.date,
         accountId: values.accountId ?? '',
+        budgetMonth: values.budgetMonth ?? '',
       },
       {
         amount: baselineRef.current.amount,
@@ -82,6 +84,7 @@ export function EditTransactionModal({
         description: baselineRef.current.description,
         date: baselineRef.current.date,
         accountId: baselineRef.current.accountId ?? '',
+        budgetMonth: baselineRef.current.budgetMonth ?? '',
       },
     ) || values.type !== baselineRef.current.type;
   }, [visible, transaction, values]);

@@ -6,13 +6,12 @@ import { useTransactions } from '@/hooks/queries/useTransactions';
 import {
   calculateMonthlySpendable,
   type MonthlySpendableOutput,
-  type SpendableMovement,
 } from '@/lib/budget/calculateMonthlySpendable';
 import {
-  isTransactionFuture,
-  isTransactionOccurred,
-  parseTransactionDate,
-} from '@/lib/domain/transaction-date.utils';
+  filterFutureForBudgetMonth,
+  filterOccurredForBudgetMonth,
+  incomeCountsForBudgetMonth,
+} from '@/lib/domain/monthly-budget-movements';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
 export type UpcomingObligation = {
@@ -30,22 +29,9 @@ export type MonthlySpendable = MonthlySpendableOutput & {
   isLoading: boolean;
 };
 
-function isSameMonth(date: Date, reference: Date): boolean {
-  return (
-    date.getFullYear() === reference.getFullYear() &&
-    date.getMonth() === reference.getMonth()
-  );
-}
-
-function toSpendableMovement(tx: Transaction): SpendableMovement | null {
-  if (tx.type === 'transfer') return null;
-  return { type: tx.type, amount: tx.amount, date: tx.date };
-}
-
 /**
  * Liga `calculateMonthlySpendable` aos dados reais (Supabase via TanStack Query).
- * O orçamento mensal considera apenas movimentos do mês civil actual — sem arrastar
- * défices de meses anteriores para o «Disponível este mês».
+ * Receitas usam mês financeiro (budget_month); despesas usam mês civil da data.
  */
 export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySpendable {
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
@@ -53,16 +39,8 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
   const { data: onboardingAnswers } = useOnboardingAnswers();
 
   return useMemo(() => {
-    const occurredThisMonth = transactions.filter(
-      (tx) =>
-        isTransactionOccurred(tx.date, referenceDate) &&
-        isSameMonth(parseTransactionDate(tx.date), referenceDate),
-    );
-    const futureThisMonth = transactions.filter(
-      (tx) =>
-        isTransactionFuture(tx.date, referenceDate) &&
-        isSameMonth(parseTransactionDate(tx.date), referenceDate),
-    );
+    const occurredThisMonth = filterOccurredForBudgetMonth(transactions, referenceDate);
+    const futureThisMonth = filterFutureForBudgetMonth(transactions, referenceDate);
 
     const subscriptions = liabilities?.subscriptions ?? [];
     const credits = liabilities?.credits ?? [];
@@ -81,8 +59,8 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
       }))
       .filter((installment) => installment.amount > 0);
 
-    const incomeThisMonth = occurredThisMonth
-      .filter((tx) => tx.type === 'income')
+    const incomeThisMonth = transactions
+      .filter((tx) => incomeCountsForBudgetMonth(tx, referenceDate))
       .reduce((sum, tx) => sum + tx.amount, 0);
 
     /** Orçamento inicial a partir do rendimento declarado no onboarding. */
@@ -96,24 +74,16 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
 
     const output = calculateMonthlySpendable({
       currentBalance: 0,
-      currentMonthMovements: occurredThisMonth
-        .map(toSpendableMovement)
-        .filter((m): m is SpendableMovement => m !== null),
-      futureMovements: futureThisMonth
-        .map(toSpendableMovement)
-        .filter((m): m is SpendableMovement => m !== null),
+      currentMonthMovements: occurredThisMonth,
+      futureMovements: futureThisMonth,
       subscriptions: subscriptionInputs,
       creditInstallments: installmentInputs,
       monthlyBudget,
       referenceDate,
     });
 
-    const futureIncome = futureThisMonth
-      .filter((tx) => tx.type === 'income')
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const futureExpense = futureThisMonth
-      .filter((tx) => tx.type === 'expense')
-      .reduce((sum, tx) => sum + tx.amount, 0);
+    const futureIncome = sumFutureByType(transactions, referenceDate, 'income');
+    const futureExpense = sumFutureByType(transactions, referenceDate, 'expense');
 
     const upcomingSubscriptions: UpcomingObligation[] = subscriptions
       .filter((subscription) => subscription.amount > 0)
@@ -142,4 +112,15 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
       isLoading: txLoading || liabLoading,
     };
   }, [transactions, liabilities, onboardingAnswers, referenceDate, txLoading, liabLoading]);
+}
+
+function sumFutureByType(
+  transactions: Transaction[],
+  referenceDate: Date,
+  type: 'income' | 'expense',
+): number {
+  const future = filterFutureForBudgetMonth(transactions, referenceDate);
+  return future
+    .filter((movement) => movement.type === type)
+    .reduce((sum, movement) => sum + movement.amount, 0);
 }

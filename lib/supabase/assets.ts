@@ -7,6 +7,7 @@ import type {
   CreateGoalInput,
   CreateInventoryItemInput,
   CreateWarrantyInput,
+  UpdateGoalInput,
   UpdateInventoryItemInput,
   UpdateWarrantyInput,
 } from '@/lib/domain/assets.schema';
@@ -132,7 +133,7 @@ export async function createGoal(input: CreateGoalInput): Promise<Goal> {
   return mapGoalRow(data as GoalRow);
 }
 
-export async function updateGoal(id: string, input: CreateGoalInput): Promise<Goal> {
+export async function updateGoal(id: string, input: UpdateGoalInput): Promise<Goal> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -140,7 +141,6 @@ export async function updateGoal(id: string, input: CreateGoalInput): Promise<Go
     .update({
       name: input.name.trim(),
       target: input.target,
-      current: input.current ?? 0,
       deadline: input.deadline || null,
     })
     .eq('id', id)

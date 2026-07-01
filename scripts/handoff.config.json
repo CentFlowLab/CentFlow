@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 14 — Contas como ledger: institution fix, movimentos, objetivos, transferências",
+  "currentPhase": "Fase 15 — Objetivos ligados a contas + mês financeiro de receitas",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -118,7 +118,9 @@
     "Auditoria beta — insights Análises acionáveis (taxa poupança, recorrentes, categorias) + CTAs ligados",
     "Auditoria beta — mentor Home data-driven (orçamento diário, património, recorrentes)",
     "Auditoria beta — métricas Análises corrigidas (fluxo líquido em €, rácio de gasto)",
-    "Contas ledger — fix institution/bank schema, goal_contributions, transferências, saldos por conta"
+    "Contas ledger — fix institution/bank schema, goal_contributions, transferências, saldos por conta",
+    "Objetivos — crash modal contribuição (sequência onDismissed), transferência conta→objetivo, UX modal separado",
+    "Receitas — mês financeiro (budget_month) no orçamento/disponível mensal + campo no formulário"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

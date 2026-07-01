@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T11:01:56.787Z -->
-<!-- Git: b0893e6 (2026-07-01T12:01:39+01:00) -->
+<!-- Última geração: 2026-07-01T11:47:39.452Z -->
+<!-- Git: bf5dbad (2026-07-01T12:03:56+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 14 — Contas como ledger: institution fix, movimentos, objetivos, transferências** |
-| Última geração | 2026-07-01T11:01:56.787Z |
+| Fase atual | **Fase 15 — Objetivos ligados a contas + mês financeiro de receitas** |
+| Última geração | 2026-07-01T11:47:39.452Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `b0893e6` (2026-07-01T12:01:39+01:00) |
+| Git commit | `bf5dbad` (2026-07-01T12:03:56+01:00) |
 
 ---
 
@@ -254,6 +254,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
   movements/
     AddTransactionModal.tsx
+    BudgetMonthField.tsx
     CategoryField.tsx
     ConfirmReceiptModal.tsx
     EditTransactionModal.tsx
@@ -484,6 +485,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     runtime-context.ts
   doctor/
     financial-mutation-trace.ts
+    goal-contribution-trace.ts
     index.ts
     log-mutation.ts
     movement-flow-trace.ts
@@ -501,6 +503,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     assets.types.ts
     attention-items.test.ts
     attention-items.ts
+    budget-month.ts
     dashboard.compose.ts
     date-input.schema.ts
     financial/
@@ -518,6 +521,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     home-motivation.ts
     home.types.ts
     index.ts
+    monthly-budget-movements.test.ts
+    monthly-budget-movements.ts
     net-worth-monthly.ts
     net-worth-projection.test.ts
     net-worth.service.test.ts
@@ -695,7 +700,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 14 — Contas como ledger: institution fix, movimentos, objetivos, transferências
+## Fase atual: Fase 15 — Objetivos ligados a contas + mês financeiro de receitas
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -814,6 +819,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Auditoria beta — mentor Home data-driven (orçamento diário, património, recorrentes)
 - Auditoria beta — métricas Análises corrigidas (fluxo líquido em €, rácio de gasto)
 - Contas ledger — fix institution/bank schema, goal_contributions, transferências, saldos por conta
+- Objetivos — crash modal contribuição (sequência onDismissed), transferência conta→objetivo, UX modal separado
+- Receitas — mês financeiro (budget_month) no orçamento/disponível mensal + campo no formulário
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

@@ -2,6 +2,12 @@ import { z } from 'zod';
 
 import { requiredInputDateSchema } from './date-input.schema';
 
+const budgetMonthSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}$/, 'Mês financeiro inválido')
+  .optional()
+  .nullable();
+
 export const createTransactionSchema = z.object({
   type: z.enum(['expense', 'income']),
   amount: z
@@ -10,6 +16,7 @@ export const createTransactionSchema = z.object({
   category: z.string().min(1, 'Escolhe uma categoria'),
   description: z.string().max(200, 'Máximo 200 caracteres').optional(),
   date: requiredInputDateSchema,
+  budgetMonth: budgetMonthSchema,
 });
 
 export const updateTransactionSchema = createTransactionSchema;
