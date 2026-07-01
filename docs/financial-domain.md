@@ -82,3 +82,54 @@ npx tsc --noEmit
 ```
 
 Testes do domínio: `lib/domain/financial/*.test.ts`
+
+## Transferências entre contas (ledger)
+
+### Modelo de dados
+
+Não existe tabela `account_transfers`. Transferências internas são uma linha em `public.transactions`:
+
+| Campo | Papel |
+|-------|-------|
+| `type = 'transfer'` | Marca transferência interna |
+| `account_id` | Conta de origem |
+| `destination_account_id` | Conta de destino |
+| `amount` | Valor movido (> 0) |
+
+Garantias no Postgres (migration `20240629000000_transfer_constraints.sql`):
+
+- RLS activo em `transactions` — policies `*_own` por `auth.uid() = user_id`
+- `CHECK (amount > 0)`
+- `CHECK` de transferência: origem e destino obrigatórios e distintos
+
+### Saldos derivados (sem `current_balance`)
+
+Saldos de conta **não são persistidos**. Calculam-se em runtime:
+
+```
+saldo = initial_balance + movimentos + transferências − contribuições objetivo
+```
+
+Implementação: `calculateAccountBalance()` em `accounts.ts`.
+
+**Criar transferência** → insert único em `transactions` → saldos recalculados na próxima query.
+
+**Eliminar transferência** → delete da linha → saldos revertem automaticamente (mesma fórmula, sem a linha).
+
+Não há rollback manual de `current_balance` — não existe coluna equivalente em `accounts`.
+
+### RPC atómica (pendente)
+
+Ainda **não existe** RPC `create_account_transfer()`. Risco **baixo** na v1:
+
+- Operação = **insert único** (não há duas escritas independentes)
+- Validação dupla: app (`isTransferValid`) + CHECK SQL
+
+**Futuro:** RPC server-side com transacção explícita para validar saldo e inserir numa operação atómica.
+
+### QA manual — eliminar transferência
+
+1. Conta A = 713 €, Conta B = 371 € após transferência de 300 €
+2. Eliminar a transferência na lista Movimentos
+3. Validar: A = 1013 €, B = 71 €, total = 1084 €
+4. Receitas/despesas/análises inalteradas

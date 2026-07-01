@@ -45,3 +45,48 @@ test('transferência entre contas — total conservado', () => {
   const total = calculateTotalAccountsBalance(accounts, [transfer], []);
   assert.equal(total, 700);
 });
+
+test('eliminar transferência reverte saldos (ledger derivado)', () => {
+  const transfer = {
+    id: 't-del',
+    type: 'transfer' as const,
+    amount: 300,
+    accountId: 'acc-1',
+    destinationAccountId: 'acc-2',
+    date: '2026-07-10',
+    category: 'transfer',
+    categoryLabel: 'Transferência',
+    currency: 'EUR',
+  };
+  const accounts = [
+    { id: 'acc-1', name: 'Moey', initialBalance: 1013.2, type: 'checking' as const, isActive: true, currency: 'EUR' },
+    { id: 'acc-2', name: 'Santander', initialBalance: 71, type: 'checking' as const, isActive: true, currency: 'EUR' },
+  ];
+
+  const withTransfer = calculateAccountBalance({
+    account: accounts[0],
+    transactions: [transfer],
+  });
+  const withoutTransfer = calculateAccountBalance({
+    account: accounts[0],
+    transactions: [],
+  });
+  assert.equal(withTransfer, 713.2);
+  assert.equal(withoutTransfer, 1013.2);
+
+  const toWith = calculateAccountBalance({
+    account: accounts[1],
+    transactions: [transfer],
+  });
+  const toWithout = calculateAccountBalance({
+    account: accounts[1],
+    transactions: [],
+  });
+  assert.equal(toWith, 371);
+  assert.equal(toWithout, 71);
+
+  const totalWith = calculateTotalAccountsBalance(accounts, [transfer], []);
+  const totalWithout = calculateTotalAccountsBalance(accounts, [], []);
+  assert.equal(totalWith, totalWithout);
+  assert.equal(totalWith, 1084.2);
+});

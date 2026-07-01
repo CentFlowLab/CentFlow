@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T16:35:16.906Z -->
-<!-- Git: b3b2f86 (2026-07-01T16:46:31+01:00) -->
+<!-- Última geração: 2026-07-01T16:52:25.737Z -->
+<!-- Git: b97b05c (2026-07-01T17:35:46+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 18 — Ledger de transferências entre contas** |
-| Última geração | 2026-07-01T16:35:16.906Z |
+| Última geração | 2026-07-01T16:52:25.737Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `b3b2f86` (2026-07-01T16:46:31+01:00) |
+| Git commit | `b97b05c` (2026-07-01T17:35:46+01:00) |
 
 ---
 
@@ -853,6 +853,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - docs/financial-domain.md — regras, API e como adicionar métricas
 - Doctor 2.0 — resumo de saúde, agrupamento de operações, timeline, erros humanos, performance, BD, pesquisa/filtros, export JSON/TXT
 - Transferências entre contas — validação origem≠destino, preview de impacto, saldo insuficiente bloqueado, exclusão de receitas/despesas/análises, Doctor account_transfer, testes domínio
+- Pre-release ledger — migration remota aplicada, cleanup transferências órfãs, CHECK amount>0 e origem≠destino, doc RPC pendente, teste delete reverte saldo
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
