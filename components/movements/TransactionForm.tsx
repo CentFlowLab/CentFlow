@@ -6,6 +6,8 @@ import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { TransactionType } from '@/lib/domain/transaction.types';
 import { spacing } from '@/lib/theme';
 
+import { AccountPickerField } from '@/components/accounts';
+
 import { CategoryField } from './CategoryField';
 
 type TransactionFormProps = {
@@ -68,6 +70,11 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
         value={values.date}
         onChange={(date) => update('date', date)}
         error={errors?.date}
+      />
+
+      <AccountPickerField
+        value={values.accountId}
+        onChange={(accountId) => update('accountId', accountId)}
       />
     </View>
   );

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { AccountPickerField } from '@/components/accounts';
 import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
@@ -95,6 +96,7 @@ export function AddTransactionModal({
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayInputDate());
+  const [accountId, setAccountId] = useState<string | undefined>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -120,6 +122,7 @@ export function AddTransactionModal({
     setCategory(defaultCategory);
     setDescription('');
     setDate(todayInputDate());
+    setAccountId(undefined);
     setErrors({});
     setApiError(null);
     setProcessedReceipt(null);
@@ -301,6 +304,7 @@ export function AddTransactionModal({
     try {
       const input = {
         ...result.data,
+        accountId: accountId ?? null,
         ...(processedReceipt
           ? {
               receiptMeta: {
@@ -362,6 +366,7 @@ export function AddTransactionModal({
         category: confirmation.category,
         description: confirmation.description,
         date: confirmation.date,
+        accountId: accountId ?? null,
         receiptMeta: {
           receiptId: processed.receiptId,
           receiptUrl: processed.receiptUrl,
@@ -620,6 +625,8 @@ export function AddTransactionModal({
               }}
               error={errors.date}
             />
+
+            <AccountPickerField value={accountId} onChange={setAccountId} />
           </>
         ) : (
           <Card variant="outlined" style={styles.hintCard}>

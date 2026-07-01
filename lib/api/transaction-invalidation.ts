@@ -10,6 +10,7 @@ export function invalidateTransactionQueryTargets(queryClient: QueryClient): voi
   queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
   queryClient.invalidateQueries({ queryKey: queryKeys.financialProfile });
   queryClient.invalidateQueries({ queryKey: queryKeys.netWorth });
+  queryClient.invalidateQueries({ queryKey: queryKeys.accounts });
 }
 
 export const TRANSACTION_INVALIDATION_ROOT_KEYS = [

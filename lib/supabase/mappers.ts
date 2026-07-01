@@ -14,6 +14,7 @@ import type {
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import type { LoginCredentials, RegisterCredentials, User } from '@/lib/auth/types';
+import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 
 import type { OcrResultRow, ReceiptRow, TransactionRow } from './database.types';
 
@@ -53,7 +54,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     receiptId: row.receipt_id,
     receiptUrl: null,
     receiptImage: null,
-    accountId: (row as TransactionRow & { account_id?: string | null }).account_id ?? undefined,
+    accountId: row.account_id ?? undefined,
   };
 }
 
@@ -140,6 +141,9 @@ export function toTransactionInsert(
     transaction_date: input.date,
     currency: 'EUR',
     receipt_id: input.receiptId ?? null,
+    ...(ACCOUNTS_FEATURE_ENABLED && input.accountId
+      ? { account_id: input.accountId }
+      : {}),
   };
 }
 
@@ -160,6 +164,7 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
     category: input.category,
     description: input.description?.trim() || null,
     transaction_date: input.date,
+    ...(ACCOUNTS_FEATURE_ENABLED ? { account_id: input.accountId ?? null } : {}),
   };
 }
 

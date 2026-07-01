@@ -74,12 +74,14 @@ export function EditTransactionModal({
         category: values.category,
         description: values.description,
         date: values.date,
+        accountId: values.accountId ?? '',
       },
       {
         amount: baselineRef.current.amount,
         category: baselineRef.current.category,
         description: baselineRef.current.description,
         date: baselineRef.current.date,
+        accountId: baselineRef.current.accountId ?? '',
       },
     ) || values.type !== baselineRef.current.type;
   }, [visible, transaction, values]);

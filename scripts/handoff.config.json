@@ -111,7 +111,8 @@
     "Pré-beta — bug dia 1: Disponível este mês considera só movimentos do mês civil actual (sem arrasto de défices)",
     "Pré-beta — categorias de receita separadas (fontes de rendimento) vs despesas; labels PT sempre visíveis",
     "Pré-beta — microcopy Subscrições → Despesas recorrentes em toda a UI visível",
-    "Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data"
+    "Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data",
+    "Movimentos — seletor de conta opcional (AccountPickerField) com account_id no Supabase"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

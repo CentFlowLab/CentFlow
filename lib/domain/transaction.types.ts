@@ -37,6 +37,7 @@ export interface CreateTransactionInput {
   category: string;
   description?: string;
   date: string;
+  accountId?: string | null;
   /** Upload + OCR inline (fluxo legado sem confirmação) */
   receipt?: ReceiptDraft;
   /** Talão já processado — usar após ecrã de confirmação */
@@ -73,4 +74,5 @@ export type UpdateTransactionInput = {
   category: string;
   description?: string;
   date: string;
+  accountId?: string | null;
 };

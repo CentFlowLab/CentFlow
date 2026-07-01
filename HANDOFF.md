@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T00:58:13.431Z -->
-<!-- Git: 7f55d52 (2026-06-27T20:34:34+01:00) -->
+<!-- Última geração: 2026-07-01T01:07:11.004Z -->
+<!-- Git: fba69eb (2026-07-01T01:58:22+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home** |
-| Última geração | 2026-07-01T00:58:13.431Z |
+| Última geração | 2026-07-01T01:07:11.004Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `7f55d52` (2026-06-27T20:34:34+01:00) |
+| Git commit | `fba69eb` (2026-07-01T01:58:22+01:00) |
 
 ---
 
@@ -171,6 +171,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   accounts/
     AccountFormModal.tsx
     AccountListItem.tsx
+    AccountPickerField.tsx
     index.ts
   analysis/
     AnalysisMetricCard.tsx
@@ -801,6 +802,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Pré-beta — categorias de receita separadas (fontes de rendimento) vs despesas; labels PT sempre visíveis
 - Pré-beta — microcopy Subscrições → Despesas recorrentes em toda a UI visível
 - Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data
+- Movimentos — seletor de conta opcional (AccountPickerField) com account_id no Supabase
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
