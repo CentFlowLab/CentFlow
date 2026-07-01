@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T01:07:11.004Z -->
-<!-- Git: fba69eb (2026-07-01T01:58:22+01:00) -->
+<!-- Última geração: 2026-07-01T01:17:24.610Z -->
+<!-- Git: ece1af7 (2026-07-01T02:07:34+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home** |
-| Última geração | 2026-07-01T01:07:11.004Z |
+| Última geração | 2026-07-01T01:17:24.610Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `fba69eb` (2026-07-01T01:58:22+01:00) |
+| Git commit | `ece1af7` (2026-07-01T02:07:34+01:00) |
 
 ---
 
@@ -803,10 +803,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Pré-beta — microcopy Subscrições → Despesas recorrentes em toda a UI visível
 - Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data
 - Movimentos — seletor de conta opcional (AccountPickerField) com account_id no Supabase
+- Migrations Supabase sincronizadas — merchant_groups, merchant e delete_own_account restauradas; db push OK
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
-- Aplicar migration 20240622000000_credit_commission_rate.sql no Supabase (db push) — necessária para editar comissão de amortização; a criação normal de crédito já não depende dela
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
 - Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)
 - EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)
