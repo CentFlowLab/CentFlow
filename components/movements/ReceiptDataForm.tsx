@@ -10,7 +10,7 @@ import {
   wasOcrFieldEdited,
 } from '@/lib/domain/receipt-confirmation';
 import type { ReceiptFormValues, ReceiptOcrResult } from '@/lib/domain/receipt.types';
-import type { TransactionType } from '@/lib/domain/transaction.types';
+import type { CashTransactionType } from '@/lib/domain/transaction.types';
 import { getOcrFieldConfidence } from '@/lib/receipt/ocr-confidence';
 import { colors, spacing } from '@/lib/theme';
 
@@ -51,7 +51,7 @@ export function ReceiptDataForm({
   }
 
   // T4d: ao alternar para Receita/Reembolso, sugere a categoria "Reembolso".
-  function handleTypeChange(type: TransactionType) {
+  function handleTypeChange(type: CashTransactionType) {
     if (type === values.type) return;
     const stillValid = getCategoriesForType(type).some((c) => c.id === values.category);
     onChange({

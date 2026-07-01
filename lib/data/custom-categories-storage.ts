@@ -1,4 +1,4 @@
-import type { TransactionType } from '@/lib/domain/transaction.types';
+import type { CashTransactionType } from '@/lib/domain/transaction.types';
 import { readUserJson, writeUserJson } from '@/lib/storage/local-flags';
 
 const SCOPE = 'custom_categories';
@@ -14,7 +14,7 @@ function emptyStore(): StoredCustomCategories {
 
 export async function loadCustomCategories(
   userId: string,
-  type: TransactionType,
+  type: CashTransactionType,
 ): Promise<string[]> {
   const stored = await readUserJson<StoredCustomCategories>(SCOPE, userId);
   return stored?.[type] ?? [];
@@ -22,7 +22,7 @@ export async function loadCustomCategories(
 
 export async function addCustomCategory(
   userId: string,
-  type: TransactionType,
+  type: CashTransactionType,
   label: string,
 ): Promise<void> {
   const trimmed = label.trim();

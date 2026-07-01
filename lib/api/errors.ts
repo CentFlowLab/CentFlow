@@ -135,6 +135,18 @@ export function getScreenErrorContent(
   if (error instanceof Error && error.message && error.message !== 'NETWORK_ERROR') {
     const normalized = error.message.toLowerCase();
 
+    if (
+      normalized.includes('schema cache') ||
+      normalized.includes('could not find') ||
+      normalized.includes('column') ||
+      normalized.includes('pgrst')
+    ) {
+      return {
+        title: copy.title,
+        description: `Não foi possível concluir o pedido. Tenta novamente.`,
+      };
+    }
+
     if (normalized.includes('jwt') || normalized.includes('session')) {
       return {
         title: copy.title,
@@ -163,6 +175,20 @@ export function getScreenErrorContent(
 
 /** Mensagem curta para toasts, modais e campos inline. */
 export function getApiErrorMessage(error: unknown, context = 'os dados'): string {
+  if (error instanceof Error) {
+    const normalized = error.message.toLowerCase();
+    if (
+      normalized.includes('schema cache') ||
+      normalized.includes('could not find') ||
+      normalized.includes('pgrst')
+    ) {
+      if (context === 'a conta') {
+        return 'Não foi possível guardar a conta. Tenta novamente.';
+      }
+      return `Não foi possível guardar ${context}. Tenta novamente.`;
+    }
+  }
+
   const { description } = getScreenErrorContent(error, 'generic');
   if (description !== SCREEN_ERROR_COPY.generic.fallbackDescription) {
     return description;

@@ -1,25 +1,47 @@
 import type { BankAccount } from '@/lib/domain/account.types';
+import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
+import {
+  accountMovementDelta,
+  goalContributionDelta,
+} from '@/lib/domain/financial-movement';
 import type { Transaction } from '@/lib/domain/transaction.types';
-import { transactionCashDelta } from '@/lib/domain/transaction-date.utils';
 
-/** Saldo de uma conta = saldo inicial + movimentos associados. */
-export function calculateAccountBalance(
-  account: Pick<BankAccount, 'initialBalance'>,
-  transactions: Transaction[],
-): number {
-  const movementNet = transactions.reduce((sum, tx) => sum + transactionCashDelta(tx), 0);
-  return round2(account.initialBalance + movementNet);
+export type AccountBalanceInput = {
+  account: Pick<BankAccount, 'id' | 'initialBalance'>;
+  transactions: Transaction[];
+  goalContributions?: GoalContribution[];
+};
+
+/** Saldo = inicial + movimentos/transferências − contribuições para objetivos. */
+export function calculateAccountBalance(input: AccountBalanceInput): number {
+  const movementNet = input.transactions.reduce(
+    (sum, tx) => sum + accountMovementDelta(tx, input.account.id),
+    0,
+  );
+  const contributionsNet = goalContributionDelta(
+    input.goalContributions ?? [],
+    input.account.id,
+  );
+
+  return round2(input.account.initialBalance + movementNet + contributionsNet);
 }
 
 export function enrichAccountsWithBalances(
   accounts: BankAccount[],
   transactions: Transaction[],
+  goalContributions: GoalContribution[] = [],
 ): BankAccount[] {
   return accounts.map((account) => {
-    const linked = transactions.filter((tx) => tx.accountId === account.id);
+    const linked = transactions.filter(
+      (tx) => tx.accountId === account.id || tx.destinationAccountId === account.id,
+    );
     return {
       ...account,
-      balance: calculateAccountBalance(account, linked),
+      balance: calculateAccountBalance({
+        account,
+        transactions: linked,
+        goalContributions,
+      }),
     };
   });
 }

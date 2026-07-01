@@ -5,6 +5,7 @@ export { SubscriptionFormModal } from './SubscriptionFormModal';
 export { CreditsSection } from './CreditsSection';
 export { SubscriptionsSection } from './SubscriptionsSection';
 export { AddAssetModal, InventoryFormModal } from './InventoryFormModal';
+export { GoalContributeModal } from './GoalContributeModal';
 export { AddGoalModal, GoalFormModal } from './GoalFormModal';
 export { AddWarrantyModal, WarrantyFormModal } from './WarrantyFormModal';
 export { ASSETS_EMPTY_CONFIG, ASSETS_SEGMENTS, ASSETS_SECTION_META } from './assets.config';

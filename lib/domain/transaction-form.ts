@@ -1,8 +1,8 @@
-import type { Transaction, TransactionType } from './transaction.types';
+import type { CashTransactionType, Transaction } from './transaction.types';
 import { formatInputDate } from '@/lib/utils/format';
 
 export type TransactionFormValues = {
-  type: TransactionType;
+  type: CashTransactionType;
   amount: string;
   category: string;
   description: string;
@@ -17,7 +17,7 @@ export function parseTransactionAmount(value: string): number {
 
 export function transactionToFormValues(transaction: Transaction): TransactionFormValues {
   return {
-    type: transaction.type,
+    type: transaction.type === 'transfer' ? 'expense' : transaction.type,
     amount: String(transaction.amount),
     category: transaction.category,
     description: transaction.description ?? '',

@@ -6,9 +6,11 @@ import type {
   ReceiptOcrResult,
 } from './receipt.types';
 
-export type TransactionType = 'expense' | 'income';
+export type CashTransactionType = 'expense' | 'income';
 
-export type TransactionFilter = 'all' | TransactionType;
+export type TransactionType = CashTransactionType | 'transfer';
+
+export type TransactionFilter = 'all' | CashTransactionType;
 
 export interface Transaction {
   id: string;
@@ -27,8 +29,10 @@ export interface Transaction {
   receiptImage?: string | null;
   /** Itens de linha confirmados do talão */
   receiptItems?: ReceiptConfirmedItem[];
-  /** Conta associada (opcional). */
+  /** Conta associada (origem para despesa/transferência; destino para receita). */
   accountId?: string | null;
+  /** Conta de destino (apenas transferências). */
+  destinationAccountId?: string | null;
 }
 
 export interface CreateTransactionInput {
@@ -38,6 +42,7 @@ export interface CreateTransactionInput {
   description?: string;
   date: string;
   accountId?: string | null;
+  destinationAccountId?: string | null;
   /** Upload + OCR inline (fluxo legado sem confirmação) */
   receipt?: ReceiptDraft;
   /** Talão já processado — usar após ecrã de confirmação */
@@ -75,4 +80,5 @@ export type UpdateTransactionInput = {
   description?: string;
   date: string;
   accountId?: string | null;
+  destinationAccountId?: string | null;
 };

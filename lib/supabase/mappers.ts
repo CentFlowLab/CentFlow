@@ -55,6 +55,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     receiptUrl: null,
     receiptImage: null,
     accountId: row.account_id ?? undefined,
+    destinationAccountId: row.destination_account_id ?? undefined,
   };
 }
 
@@ -141,8 +142,11 @@ export function toTransactionInsert(
     transaction_date: input.date,
     currency: 'EUR',
     receipt_id: input.receiptId ?? null,
-    ...(ACCOUNTS_FEATURE_ENABLED && input.accountId
-      ? { account_id: input.accountId }
+    ...(ACCOUNTS_FEATURE_ENABLED
+      ? {
+          account_id: input.accountId ?? null,
+          destination_account_id: input.destinationAccountId ?? null,
+        }
       : {}),
   };
 }
@@ -164,7 +168,12 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
     category: input.category,
     description: input.description?.trim() || null,
     transaction_date: input.date,
-    ...(ACCOUNTS_FEATURE_ENABLED ? { account_id: input.accountId ?? null } : {}),
+    ...(ACCOUNTS_FEATURE_ENABLED
+      ? {
+          account_id: input.accountId ?? null,
+          destination_account_id: input.destinationAccountId ?? null,
+        }
+      : {}),
   };
 }
 

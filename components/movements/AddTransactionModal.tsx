@@ -23,7 +23,7 @@ import { CategoryField } from './CategoryField';
 import { formValuesToConfirmation } from '@/lib/domain/receipt-confirmation';
 import { createTransactionSchema } from '@/lib/domain/transaction.schema';
 import type { ProcessedReceipt, ReceiptFormValues } from '@/lib/domain/receipt.types';
-import type { Transaction, TransactionFilter, TransactionType } from '@/lib/domain/transaction.types';
+import type { CashTransactionType, Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 import {
   getApiErrorMessage,
   getReceiptUploadErrorMessage,
@@ -91,7 +91,7 @@ export function AddTransactionModal({
   const [isUploadingOnly, setIsUploadingOnly] = useState(false);
   const [retakePending, setRetakePending] = useState(false);
 
-  const [type, setType] = useState<TransactionType>('expense');
+  const [type, setType] = useState<CashTransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -106,7 +106,7 @@ export function AddTransactionModal({
   const processPhaseLabel = processReceipt.phaseLabel;
 
   const showTypePicker = presetFilter === 'all';
-  const lockedType: TransactionType | null =
+  const lockedType: CashTransactionType | null =
     presetFilter === 'expense' ? 'expense' : presetFilter === 'income' ? 'income' : null;
 
   useEffect(() => {
@@ -626,7 +626,7 @@ export function AddTransactionModal({
               error={errors.date}
             />
 
-            <AccountPickerField value={accountId} onChange={setAccountId} />
+            <AccountPickerField value={accountId} onChange={setAccountId} transactionType={type} />
           </>
         ) : (
           <Card variant="outlined" style={styles.hintCard}>

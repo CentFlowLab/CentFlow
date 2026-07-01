@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SegmentedControl } from '@/components/layout';
 import { DatePickerField, TextField } from '@/components/ui';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
-import type { TransactionType } from '@/lib/domain/transaction.types';
+import type { CashTransactionType } from '@/lib/domain/transaction.types';
 import { spacing } from '@/lib/theme';
 
 import { AccountPickerField } from '@/components/accounts';
@@ -29,7 +29,7 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
     onChange({ ...values, [key]: value });
   }
 
-  function handleTypeChange(type: TransactionType) {
+  function handleTypeChange(type: CashTransactionType) {
     onChange({ ...values, type, category: '' });
   }
 
@@ -75,6 +75,7 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
       <AccountPickerField
         value={values.accountId}
         onChange={(accountId) => update('accountId', accountId)}
+        transactionType={values.type}
       />
     </View>
   );

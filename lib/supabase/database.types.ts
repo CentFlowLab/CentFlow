@@ -157,6 +157,7 @@ export type Database = {
       }
       accounts: {
         Row: {
+          bank: string | null
           color: string | null
           created_at: string
           currency: string
@@ -171,6 +172,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank?: string | null
           color?: string | null
           created_at?: string
           currency?: string
@@ -185,6 +187,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank?: string | null
           color?: string | null
           created_at?: string
           currency?: string
@@ -199,6 +202,51 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      goal_contributions: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          goal_id: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_contributions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goals: {
         Row: {
@@ -513,6 +561,7 @@ export type Database = {
           created_at: string
           currency: string
           description: string | null
+          destination_account_id: string | null
           id: string
           receipt_id: string | null
           transaction_date: string
@@ -527,6 +576,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          destination_account_id?: string | null
           id?: string
           receipt_id?: string | null
           transaction_date?: string
@@ -541,6 +591,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          destination_account_id?: string | null
           id?: string
           receipt_id?: string | null
           transaction_date?: string

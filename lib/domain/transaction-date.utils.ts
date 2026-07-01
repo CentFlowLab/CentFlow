@@ -49,6 +49,7 @@ export function filterFutureTransactions(
 }
 
 export function transactionCashDelta(tx: Pick<Transaction, 'type' | 'amount'>): number {
+  if (tx.type === 'transfer') return 0;
   return tx.type === 'income' ? tx.amount : -tx.amount;
 }
 

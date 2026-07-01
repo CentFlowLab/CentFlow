@@ -15,6 +15,7 @@ type AccountsSectionProps = {
   onCreate?: () => void;
   onEdit?: (account: BankAccount) => void;
   onLearnMore?: () => void;
+  onTransfer?: () => void;
 };
 
 export function AccountsSection({
@@ -23,6 +24,7 @@ export function AccountsSection({
   onCreate,
   onEdit,
   onLearnMore,
+  onTransfer,
 }: AccountsSectionProps) {
   if (accounts.length === 0) {
     return (
@@ -50,6 +52,19 @@ export function AccountsSection({
           <AccountListItem key={account.id} account={account} onPress={onEdit} />
         ))}
       </View>
+
+      {onTransfer && accounts.length >= 2 ? (
+        <Pressable onPress={onTransfer} style={styles.addHint} accessibilityRole="button">
+          <SymbolView
+            name={{ ios: 'arrow.left.arrow.right', android: 'swap_horiz', web: 'swap_horiz' }}
+            tintColor={colors.primary}
+            size={18}
+          />
+          <Text variant="caption" color="primary">
+            Transferir entre contas
+          </Text>
+        </Pressable>
+      ) : null}
 
       {onCreate ? (
         <Pressable onPress={onCreate} style={styles.addHint} accessibilityRole="button">

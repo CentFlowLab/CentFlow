@@ -5,10 +5,10 @@ import {
   addCustomCategory as persistCustomCategory,
   loadCustomCategories,
 } from '@/lib/data/custom-categories-storage';
-import type { TransactionType } from '@/lib/domain/transaction.types';
+import type { CashTransactionType } from '@/lib/domain/transaction.types';
 
 /** Categorias personalizadas do utilizador (guardadas localmente, por tipo). */
-export function useCustomCategories(type: TransactionType) {
+export function useCustomCategories(type: CashTransactionType) {
   const { user } = useAuth();
   const userId = user?.id ?? '';
   const [customCategories, setCustomCategories] = useState<string[]>([]);

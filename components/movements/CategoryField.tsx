@@ -11,11 +11,11 @@ import {
   type CategoryGroup,
   type TransactionCategory,
 } from '@/lib/data/transaction-categories';
-import type { TransactionType } from '@/lib/domain/transaction.types';
+import type { CashTransactionType } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
 
 type CategoryFieldProps = {
-  type: TransactionType;
+  type: CashTransactionType;
   value: string;
   onChange: (categoryId: string) => void;
   label?: string;
@@ -96,7 +96,7 @@ export function CategoryField({ type, value, onChange, label = 'Categoria', erro
 
 type CategoryPickerSheetProps = {
   visible: boolean;
-  type: TransactionType;
+  type: CashTransactionType;
   value: string;
   onClose: () => void;
   onSelect: (categoryId: string) => void;

@@ -37,7 +37,8 @@ function isSameMonth(date: Date, reference: Date): boolean {
   );
 }
 
-function toSpendableMovement(tx: Transaction): SpendableMovement {
+function toSpendableMovement(tx: Transaction): SpendableMovement | null {
+  if (tx.type === 'transfer') return null;
   return { type: tx.type, amount: tx.amount, date: tx.date };
 }
 
@@ -95,8 +96,12 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
 
     const output = calculateMonthlySpendable({
       currentBalance: 0,
-      currentMonthMovements: occurredThisMonth.map(toSpendableMovement),
-      futureMovements: futureThisMonth.map(toSpendableMovement),
+      currentMonthMovements: occurredThisMonth
+        .map(toSpendableMovement)
+        .filter((m): m is SpendableMovement => m !== null),
+      futureMovements: futureThisMonth
+        .map(toSpendableMovement)
+        .filter((m): m is SpendableMovement => m !== null),
       subscriptions: subscriptionInputs,
       creditInstallments: installmentInputs,
       monthlyBudget,

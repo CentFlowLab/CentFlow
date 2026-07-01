@@ -1,4 +1,4 @@
-import type { TransactionType } from './transaction.types';
+import type { CashTransactionType, TransactionType } from './transaction.types';
 
 /** Imagem seleccionada localmente — antes do upload ao backend. */
 export interface ReceiptDraft {
@@ -71,7 +71,7 @@ export interface ReceiptConfirmedItem {
 
 /** Dados revistos pelo utilizador no ecrã de confirmação */
 export interface ReceiptConfirmationInput {
-  type: TransactionType;
+  type: CashTransactionType;
   merchantName: string;
   amount: number;
   category: string;
@@ -99,7 +99,7 @@ export type ReceiptFormItem = {
 };
 
 export type ReceiptFormValues = {
-  type: TransactionType;
+  type: CashTransactionType;
   merchantName: string;
   amount: string;
   category: string;

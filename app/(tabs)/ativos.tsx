@@ -3,11 +3,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AccountFormModal } from '@/components/accounts';
+import { AccountFormModal, TransferAccountModal } from '@/components/accounts';
 import {
   ASSETS_EMPTY_CONFIG,
   AccountsSection,
   AssetsOverviewCard,
+  GoalContributeModal,
   GoalFormModal,
   GoalsSection,
   InventoryFormModal,
@@ -45,6 +46,8 @@ export default function AtivosScreen() {
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
   const [accountFormVisible, setAccountFormVisible] = useState(false);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
+  const [transferVisible, setTransferVisible] = useState(false);
+  const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
   const {
@@ -290,6 +293,7 @@ export default function AtivosScreen() {
                 onCreate={openCreateAccount}
                 onEdit={openEditAccount}
                 onLearnMore={handleLearnMore}
+                onTransfer={() => setTransferVisible(true)}
               />
             ) : null}
 
@@ -298,7 +302,26 @@ export default function AtivosScreen() {
         </ScrollView>
       )}
 
-      <GoalFormModal visible={goalFormVisible} goal={editingGoal} onClose={closeGoalForm} />
+      <GoalFormModal
+        visible={goalFormVisible}
+        goal={editingGoal}
+        onClose={closeGoalForm}
+        onContribute={(goal) => {
+          closeGoalForm();
+          setContributeGoal(goal);
+        }}
+      />
+
+      <GoalContributeModal
+        visible={Boolean(contributeGoal)}
+        goal={contributeGoal}
+        onClose={() => setContributeGoal(null)}
+        onCreateAccount={() => {
+          setContributeGoal(null);
+          setActiveTab('contas');
+          openCreateAccount();
+        }}
+      />
 
       <WarrantyFormModal
         visible={warrantyFormVisible}
@@ -317,6 +340,8 @@ export default function AtivosScreen() {
         account={editingAccount}
         onClose={closeAccountForm}
       />
+
+      <TransferAccountModal visible={transferVisible} onClose={() => setTransferVisible(false)} />
 
       <QuickAddMenuSheet
         visible={quickAdd.sheetVisible}

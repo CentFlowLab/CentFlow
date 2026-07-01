@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T01:30:10.401Z -->
-<!-- Git: 94ce449 (2026-07-01T02:17:39+01:00) -->
+<!-- Última geração: 2026-07-01T11:01:56.787Z -->
+<!-- Git: b0893e6 (2026-07-01T12:01:39+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 13 — Auditoria beta: navegação, insights financeiros, mentor Home** |
-| Última geração | 2026-07-01T01:30:10.401Z |
+| Fase atual | **Fase 14 — Contas como ledger: institution fix, movimentos, objetivos, transferências** |
+| Última geração | 2026-07-01T11:01:56.787Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `94ce449` (2026-07-01T02:17:39+01:00) |
+| Git commit | `b0893e6` (2026-07-01T12:01:39+01:00) |
 
 ---
 
@@ -172,6 +172,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AccountFormModal.tsx
     AccountListItem.tsx
     AccountPickerField.tsx
+    TransferAccountModal.tsx
     index.ts
   analysis/
     AnalysisMetricCard.tsx
@@ -358,6 +359,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useDashboardData.ts
     useEmailEvents.ts
     useFinancialProfile.ts
+    useGoalContributions.ts
     useHomeScreenData.ts
     useLiabilities.ts
     useNetWorth.ts
@@ -507,8 +509,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       index.ts
       score-explain.ts
       types.ts
+    financial-movement.ts
     financial-profile.service.ts
     financial-profile.types.ts
+    goal-contribution.types.ts
     goal-form.utils.ts
     goal.utils.ts
     home-motivation.ts
@@ -649,6 +653,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     client.ts
     config.ts
     database.types.ts
+    goal-contributions.ts
     index.ts
     liabilities.ts
     mappers.ts
@@ -690,7 +695,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 13 — Auditoria beta: navegação, insights financeiros, mentor Home
+## Fase atual: Fase 14 — Contas como ledger: institution fix, movimentos, objetivos, transferências
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -808,6 +813,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Auditoria beta — insights Análises acionáveis (taxa poupança, recorrentes, categorias) + CTAs ligados
 - Auditoria beta — mentor Home data-driven (orçamento diário, património, recorrentes)
 - Auditoria beta — métricas Análises corrigidas (fluxo líquido em €, rácio de gasto)
+- Contas ledger — fix institution/bank schema, goal_contributions, transferências, saldos por conta
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

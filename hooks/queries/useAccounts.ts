@@ -11,6 +11,7 @@ import { enrichAccountsWithBalances } from '@/lib/accounts/balance';
 import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import type { BankAccount } from '@/lib/domain/account.types';
 import { useAuth } from '@/lib/auth';
+import { useGoalContributions } from '@/hooks/queries/useGoalContributions';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 
 export function useAccounts() {
@@ -27,9 +28,10 @@ export function useAccounts() {
 export function useAccountsWithBalances() {
   const accountsQuery = useAccounts();
   const { data: transactions = [] } = useTransactions('all');
+  const { data: goalContributions = [] } = useGoalContributions();
 
   const accounts = accountsQuery.data ?? [];
-  const withBalances = enrichAccountsWithBalances(accounts, transactions);
+  const withBalances = enrichAccountsWithBalances(accounts, transactions, goalContributions);
 
   return {
     ...accountsQuery,
