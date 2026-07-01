@@ -112,7 +112,13 @@ export function useCreateTransaction() {
         traceMovementStep('mutation_success', { component: 'useCreateTransaction' });
       }
       invalidateTransactionQueries(queryClient);
-      if (variables.creditId || variables.type === 'credit_payment') {
+      if (
+        variables.creditId ||
+        variables.type === 'credit_payment' ||
+        variables.type === 'credit_card_payment' ||
+        variables.type === 'credit_card_purchase' ||
+        variables.type === 'credit_card_refund'
+      ) {
         invalidateAssetsQueries(queryClient);
         void queryClient.invalidateQueries({ queryKey: ['liabilities'] });
       }

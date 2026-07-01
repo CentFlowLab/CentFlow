@@ -44,6 +44,8 @@ import { ReceiptOcrProcessingOverlay } from './ReceiptOcrProcessingOverlay';
 
 export type TransactionModalPreset = TransactionFilter;
 
+type MovementFormKind = 'expense' | 'income' | 'transfer' | 'credit_card_payment' | 'refund';
+
 type AddTransactionModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -51,11 +53,22 @@ type AddTransactionModalProps = {
   /** Filtro activo em Movimentos — define tipo inicial e se mostra selector. */
   presetFilter?: TransactionModalPreset;
   onImportCsv?: () => void;
+  onRequestTransfer?: () => void;
+  onRequestCardPayment?: () => void;
+  onRequestRefund?: () => void;
 };
 
 const TYPE_SEGMENTS = [
   { key: 'expense' as const, label: 'Despesa' },
   { key: 'income' as const, label: 'Receita' },
+];
+
+const MOVEMENT_KIND_SEGMENTS: Array<{ key: MovementFormKind; label: string }> = [
+  { key: 'expense', label: 'Despesa' },
+  { key: 'income', label: 'Receita' },
+  { key: 'transfer', label: 'Transferência' },
+  { key: 'credit_card_payment', label: 'Pagamento cartão' },
+  { key: 'refund', label: 'Reembolso' },
 ];
 
 function parseAmount(value: string): number {
@@ -69,6 +82,9 @@ export function AddTransactionModal({
   startWithReceiptPicker = false,
   presetFilter = 'all',
   onImportCsv,
+  onRequestTransfer,
+  onRequestCardPayment,
+  onRequestRefund,
 }: AddTransactionModalProps) {
   useDiagnosticScreen(visible ? 'movement_create' : 'movement_create_closed');
   useMovementRenderProbe(visible);
@@ -92,6 +108,7 @@ export function AddTransactionModal({
   const [retakePending, setRetakePending] = useState(false);
 
   const [type, setType] = useState<CashTransactionType>('expense');
+  const [movementKind, setMovementKind] = useState<MovementFormKind>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -263,9 +280,37 @@ export function AddTransactionModal({
     }
   }
 
+  function resolveSubmitType(): import('@/lib/domain/transaction.types').TransactionType {
+    if (movementKind === 'expense') {
+      if (paymentMethod?.kind === 'card') return 'credit_card_purchase';
+      return 'expense';
+    }
+    return movementKind === 'income' ? 'income' : 'expense';
+  }
+
   function resolvePaymentFields() {
-    if (type === 'expense') return paymentSelectionToFields(paymentMethod);
-    return { accountId: accountId ?? null, creditId: null };
+    if (movementKind === 'expense') return paymentSelectionToFields(paymentMethod);
+    if (movementKind === 'income') return { accountId: accountId ?? null, creditId: null };
+    return { accountId: null, creditId: null };
+  }
+
+  function handleMovementKindChange(next: MovementFormKind) {
+    traceMovementStep('field_change', { field: 'movementKind', value: next });
+    setMovementKind(next);
+    if (next === 'income') setType('income');
+    if (next === 'expense') setType('expense');
+    if (next === 'transfer') {
+      onRequestTransfer?.();
+      onClose();
+    }
+    if (next === 'credit_card_payment') {
+      onRequestCardPayment?.();
+      onClose();
+    }
+    if (next === 'refund') {
+      onRequestRefund?.();
+      onClose();
+    }
   }
 
   async function handleSaveManual() {
@@ -276,8 +321,9 @@ export function AddTransactionModal({
 
     const parsedAmount = parseAmount(amount);
     const paymentFields = resolvePaymentFields();
+    const submitType = resolveSubmitType();
     const result = createTransactionSchema.safeParse({
-      type,
+      type: submitType,
       amount: parsedAmount,
       category,
       description: description.trim() || undefined,
@@ -340,7 +386,14 @@ export function AddTransactionModal({
 
       if (isFirst) {
         track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, {
-          type: result.data.type === 'credit_payment' ? 'expense' : result.data.type,
+          type:
+            result.data.type === 'credit_card_purchase' ||
+            result.data.type === 'credit_card_payment' ||
+            result.data.type === 'credit_payment'
+              ? 'expense'
+              : result.data.type === 'credit_card_refund'
+                ? 'income'
+                : result.data.type,
         });
       }
 
@@ -576,12 +629,9 @@ export function AddTransactionModal({
           <>
             {showTypePicker ? (
               <SegmentedControl
-                segments={TYPE_SEGMENTS}
-                value={type}
-                onChange={(next) => {
-                  traceMovementStep('field_change', { field: 'type', value: next });
-                  setType(next);
-                }}
+                segments={MOVEMENT_KIND_SEGMENTS}
+                value={movementKind}
+                onChange={handleMovementKindChange}
               />
             ) : (
               <Card variant="outlined" padding="md" style={styles.lockedTypeCard}>
@@ -640,11 +690,11 @@ export function AddTransactionModal({
             />
 
             <View style={styles.accountSection}>
-              {type === 'expense' ? (
+              {movementKind === 'expense' ? (
                 <PaymentMethodPickerField value={paymentMethod} onChange={setPaymentMethod} />
-              ) : (
-                <AccountPickerField value={accountId} onChange={setAccountId} transactionType={type} />
-              )}
+              ) : movementKind === 'income' ? (
+                <AccountPickerField value={accountId} onChange={setAccountId} transactionType="income" />
+              ) : null}
             </View>
           </>
         ) : (

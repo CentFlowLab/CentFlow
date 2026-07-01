@@ -4,6 +4,8 @@ import {
   filterOccurredForMonthlyBudget,
   filterOccurredInCalendarMonth,
 } from '@/lib/domain/financial/transactions';
+import { countsAsBudgetExpense } from '@/lib/domain/financial/transaction-kind';
+import { resolveTransactionKind } from '@/lib/domain/financial/transaction-kind';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
 export function incomeCountsForBudgetMonth(tx: Transaction, referenceDate: Date): boolean {
@@ -12,7 +14,7 @@ export function incomeCountsForBudgetMonth(tx: Transaction, referenceDate: Date)
 }
 
 export function expenseCountsForBudgetMonth(tx: Transaction, referenceDate: Date): boolean {
-  if (tx.type !== 'expense') return false;
+  if (!countsAsBudgetExpense(tx)) return false;
   return filterOccurredInCalendarMonth([tx], referenceDate).length > 0;
 }
 
@@ -31,6 +33,20 @@ export function filterFutureForBudgetMonth(
 }
 
 export function toSpendableMovement(tx: Transaction): SpendableMovement | null {
-  if (tx.type === 'transfer' || tx.type === 'credit_payment') return null;
-  return { type: tx.type, amount: tx.amount, date: tx.date };
+  const kind = resolveTransactionKind(tx);
+  if (
+    kind === 'transfer' ||
+    kind === 'credit_card_payment' ||
+    kind === 'credit_card_refund' ||
+    kind === 'balance_adjustment'
+  ) {
+    return null;
+  }
+  if (kind === 'credit_card_purchase') {
+    return { type: 'expense', amount: tx.amount, date: tx.date };
+  }
+  if (kind === 'income' || kind === 'expense') {
+    return { type: kind, amount: tx.amount, date: tx.date };
+  }
+  return null;
 }

@@ -7,6 +7,8 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
+import { TransferAccountModal } from '@/components/accounts';
+import { PayCreditCardModal } from '@/components/assets/PayCreditCardModal';
 import {
   AddTransactionModal,
   EditTransactionModal,
@@ -14,6 +16,7 @@ import {
   MovementSearchBar,
   MOVEMENTS_EMPTY_CONFIG,
   PendingSubscriptionModal,
+  RefundTransactionModal,
   SwipeableTransactionListItem,
   TransactionsSkeleton,
   type MovementTab,
@@ -62,6 +65,9 @@ export default function MovimentosScreen() {
   const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [transferVisible, setTransferVisible] = useState(false);
+  const [payCardVisible, setPayCardVisible] = useState(false);
+  const [refundVisible, setRefundVisible] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions('all');
@@ -408,6 +414,23 @@ export default function MovimentosScreen() {
         onClose={closeAddModal}
         startWithReceiptPicker={startWithReceiptPicker}
         presetFilter={filter}
+        onRequestTransfer={() => setTransferVisible(true)}
+        onRequestCardPayment={() => setPayCardVisible(true)}
+        onRequestRefund={() => setRefundVisible(true)}
+      />
+
+      <TransferAccountModal visible={transferVisible} onClose={() => setTransferVisible(false)} />
+
+      <PayCreditCardModal
+        visible={payCardVisible}
+        credit={null}
+        onClose={() => setPayCardVisible(false)}
+      />
+
+      <RefundTransactionModal
+        visible={refundVisible}
+        onClose={() => setRefundVisible(false)}
+        transactions={data ?? []}
       />
 
       <EditTransactionModal

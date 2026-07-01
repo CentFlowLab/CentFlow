@@ -1,9 +1,11 @@
-import type { Transaction } from './transaction.types';
+import type { Transaction } from '@/lib/domain/transaction.types';
 import { parseTransactionDate } from './transaction-date.utils';
 import {
   expenseCountsForBudgetMonth,
   incomeCountsForBudgetMonth,
 } from './monthly-budget-movements';
+import { calculateBudgetImpact } from './financial/ledger-impact';
+import { resolveTransactionKind } from './financial/transaction-kind';
 
 export type TransactionDaySection = {
   /** Chave estável (YYYY-MM-DD). */
@@ -53,8 +55,11 @@ function dayLabel(key: string, now: Date = new Date()): string {
 }
 
 function signedAmount(transaction: Transaction): number {
-  if (transaction.type === 'transfer' || transaction.type === 'credit_payment') return 0;
-  return transaction.type === 'income' ? transaction.amount : -transaction.amount;
+  const kind = resolveTransactionKind(transaction);
+  if (kind === 'transfer' || kind === 'credit_card_payment') return 0;
+  if (kind === 'income' || kind === 'credit_card_refund') return transaction.amount;
+  if (kind === 'expense' || kind === 'credit_card_purchase') return -transaction.amount;
+  return 0;
 }
 
 /** Agrupa movimentos por dia civil, ordenados do mais recente para o mais antigo. */
@@ -93,7 +98,8 @@ export function summarizeCurrentMonth(
   let count = 0;
 
   for (const transaction of transactions) {
-    if (transaction.type === 'transfer' || transaction.type === 'credit_payment') continue;
+    if (resolveTransactionKind(transaction) === 'transfer') continue;
+    if (resolveTransactionKind(transaction) === 'credit_card_payment') continue;
     const counts =
       transaction.type === 'income'
         ? incomeCountsForBudgetMonth(transaction, now)

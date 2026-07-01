@@ -4,7 +4,14 @@ import { requiredInputDateSchema } from './date-input.schema';
 
 export const createTransactionSchema = z
   .object({
-    type: z.enum(['expense', 'income', 'credit_payment']),
+    type: z.enum([
+      'expense',
+      'income',
+      'credit_payment',
+      'credit_card_purchase',
+      'credit_card_payment',
+      'credit_card_refund',
+    ]),
     amount: z
       .number({ error: 'Indica um valor válido' })
       .positive('O valor tem de ser superior a zero'),
@@ -13,11 +20,26 @@ export const createTransactionSchema = z
     date: requiredInputDateSchema,
     accountId: z.string().nullable().optional(),
     creditId: z.string().nullable().optional(),
+    relatedTransactionId: z.string().nullable().optional(),
   })
-  .refine((data) => !(data.accountId && data.creditId), {
-    message: 'Escolhe conta ou cartão, não ambos.',
-    path: ['accountId'],
-  });
+  .refine(
+    (data) => {
+      if (data.type === 'credit_card_purchase' || data.type === 'credit_card_refund') {
+        return Boolean(data.creditId) && !data.accountId;
+      }
+      if (data.type === 'credit_card_payment' || data.type === 'credit_payment') {
+        return Boolean(data.accountId) && Boolean(data.creditId);
+      }
+      if (data.type === 'expense') {
+        return Boolean(data.accountId) || Boolean(data.creditId);
+      }
+      return !(data.accountId && data.creditId);
+    },
+    {
+      message: 'Escolhe conta ou cartão conforme o tipo de movimento.',
+      path: ['accountId'],
+    },
+  );
 
 export const updateTransactionSchema = createTransactionSchema;
 

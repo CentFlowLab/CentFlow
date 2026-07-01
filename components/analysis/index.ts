@@ -1,8 +1,14 @@
+export { AnalysisDebtTab } from './AnalysisDebtTab';
+export { AnalysisExpandableSection } from './AnalysisExpandableSection';
 export { AnalysisMetricCard } from './AnalysisMetricCard';
+export { AnalysisPatrimonyTab } from './AnalysisPatrimonyTab';
 export { AnalysisSkeleton } from './AnalysisSkeleton';
+export { AnalysisSpendingTab } from './AnalysisSpendingTab';
+export { AnalysisSummaryTab } from './AnalysisSummaryTab';
 export { InsightsSection } from './InsightsSection';
 export { PatrimonyAllocationCard } from './PatrimonyAllocationCard';
 export { PricesInsightsSection } from './PricesInsightsSection';
+export { SpendingCalendarCard } from './SpendingCalendarCard';
 export { SpendingCategoryCard } from './SpendingCategoryCard';
 export { SpendingTrendBars } from './SpendingTrendBars';
 export { TrendsSummaryCard } from './TrendsSummaryCard';

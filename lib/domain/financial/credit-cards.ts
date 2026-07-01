@@ -2,6 +2,7 @@ import type { Credit } from '@/lib/domain/types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
 import { addMoney, roundMoney, subtractMoney } from './money';
+import { resolveTransactionKind } from './transaction-kind';
 
 export type CreditCardPurchaseInput = {
   credit: Pick<Credit, 'id' | 'outstandingBalance' | 'originalAmount'>;
@@ -42,7 +43,7 @@ export function recordCreditCardPurchase(input: CreditCardPurchaseInput): {
   return { newBalance };
 }
 
-/** Pagamento do cartão — reduz dívida (conta debitada via movimento credit_payment). */
+/** Pagamento do cartão — reduz dívida (conta debitada via movimento credit_card_payment). */
 export function recordCreditCardPayment(input: CreditCardPaymentInput): {
   newCreditBalance: number;
   newAccountBalance: number;
@@ -62,8 +63,10 @@ export function creditBalanceDeltaForTransaction(
 ): number {
   if (!tx.creditId) return 0;
   const sign = direction === 'apply' ? 1 : -1;
-  if (tx.type === 'expense') return sign * tx.amount;
-  if (tx.type === 'credit_payment') return sign * -tx.amount;
+  const kind = resolveTransactionKind(tx);
+  if (kind === 'credit_card_purchase') return sign * tx.amount;
+  if (kind === 'credit_card_payment') return sign * -tx.amount;
+  if (kind === 'credit_card_refund') return sign * -tx.amount;
   return 0;
 }
 
@@ -80,11 +83,17 @@ export function applyCreditBalanceDelta(
 export function isCreditCardExpense(
   tx: Pick<Transaction, 'type' | 'creditId'>,
 ): boolean {
-  return tx.type === 'expense' && Boolean(tx.creditId);
+  return resolveTransactionKind(tx) === 'credit_card_purchase';
 }
 
 export function isCreditCardPaymentTransaction(
   tx: Pick<Transaction, 'type'>,
 ): boolean {
-  return tx.type === 'credit_payment';
+  return resolveTransactionKind(tx) === 'credit_card_payment';
+}
+
+export function isCreditCardRefundTransaction(
+  tx: Pick<Transaction, 'type'>,
+): boolean {
+  return resolveTransactionKind(tx) === 'credit_card_refund';
 }

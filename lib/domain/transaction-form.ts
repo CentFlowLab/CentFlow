@@ -1,3 +1,4 @@
+import { resolveTransactionKind } from './financial/transaction-kind';
 import type { CashTransactionType, Transaction } from './transaction.types';
 import { formatInputDate } from '@/lib/utils/format';
 
@@ -16,7 +17,12 @@ export function parseTransactionAmount(value: string): number {
 }
 
 export function isTransactionEditable(transaction: Transaction): boolean {
-  return transaction.type !== 'transfer' && transaction.type !== 'credit_payment';
+  const kind = resolveTransactionKind(transaction);
+  return (
+    kind !== 'transfer' &&
+    kind !== 'credit_card_payment' &&
+    kind !== 'credit_card_refund'
+  );
 }
 
 export function transactionToFormValues(transaction: Transaction): TransactionFormValues {

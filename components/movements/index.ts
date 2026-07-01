@@ -1,3 +1,4 @@
+export { RefundTransactionModal } from './RefundTransactionModal';
 export { AddTransactionModal } from './AddTransactionModal';
 export { ConfirmReceiptModal } from './ConfirmReceiptModal';
 export { EditTransactionModal } from './EditTransactionModal';

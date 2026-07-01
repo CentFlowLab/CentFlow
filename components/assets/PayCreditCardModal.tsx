@@ -98,7 +98,7 @@ export function PayCreditCardModal({ visible, credit, onClose }: PayCreditCardMo
 
     try {
       await createTransaction.mutateAsync({
-        type: 'credit_payment',
+        type: 'credit_card_payment',
         amount: parsedAmount,
         category: 'credit',
         description: note.trim() || `Pagamento ${activeCredit.name}`,
@@ -132,7 +132,7 @@ export function PayCreditCardModal({ visible, credit, onClose }: PayCreditCardMo
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 24) + 80 }]}>
         <Text variant="caption" color="textMuted">
-          Liquida dívida do cartão sem contar como despesa nova.
+          Pagamentos de cartão não contam como nova despesa. A despesa já contou quando compraste.
         </Text>
 
         <Card variant="outlined" style={styles.summaryCard}>

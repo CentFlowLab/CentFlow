@@ -4,6 +4,7 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import { Card, Text } from '@/components/ui';
 import { getCategoryById } from '@/lib/data/transaction-categories';
+import { resolveTransactionKind } from '@/lib/domain/financial/transaction-kind';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
@@ -25,11 +26,13 @@ export function SwipeableTransactionListItem({
   onEdit,
   onDelete,
 }: SwipeableTransactionListItemProps) {
-  const isTransfer = transaction.type === 'transfer';
-  const isCreditPayment = transaction.type === 'credit_payment';
-  const isCardExpense = transaction.type === 'expense' && Boolean(transaction.creditId);
-  const isIncome = transaction.type === 'income';
-  const isNonCashMovement = isTransfer || isCreditPayment;
+  const kind = resolveTransactionKind(transaction);
+  const isTransfer = kind === 'transfer';
+  const isCreditPayment = kind === 'credit_card_payment';
+  const isCardExpense = kind === 'credit_card_purchase';
+  const isCardRefund = kind === 'credit_card_refund';
+  const isIncome = kind === 'income';
+  const isNonCashMovement = isTransfer || isCreditPayment || isCardRefund;
   const amountColor = isNonCashMovement
     ? colors.primary
     : isIncome
@@ -38,7 +41,7 @@ export function SwipeableTransactionListItem({
   const prefix = isNonCashMovement ? '' : isIncome ? '+' : '−';
   const category = getCategoryById(
     transaction.category,
-    transaction.type === 'credit_payment' ? 'expense' : transaction.type,
+    isCreditPayment || isCardExpense || isCardRefund ? 'expense' : transaction.type,
   );
   const transferIcon = {
     ios: 'arrow.left.arrow.right',
@@ -74,6 +77,8 @@ export function SwipeableTransactionListItem({
       ? cardName && fromName
         ? `${fromName} → ${cardName}`
         : transaction.description?.trim() || 'Pagamento de cartão'
+      : isCardRefund && cardName
+        ? `${transaction.description?.trim() || 'Reembolso'} · ${cardName}`
       : isCardExpense && cardName
         ? `${transaction.description?.trim() || transaction.categoryLabel} · ${cardName}`
         : transaction.description?.trim() || transaction.categoryLabel;
@@ -83,6 +88,8 @@ export function SwipeableTransactionListItem({
       ? 'Transferência'
       : isCreditPayment
         ? 'Pagamento cartão'
+        : isCardRefund
+          ? 'Reembolso cartão'
         : isCardExpense
           ? `${transaction.categoryLabel} · Cartão`
           : transaction.categoryLabel,

@@ -3,28 +3,31 @@ import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
 import { addMoney, roundMoney } from './money';
+import { resolveTransactionKind } from './transaction-kind';
 
 export function accountMovementDelta(
   tx: Pick<Transaction, 'type' | 'amount' | 'accountId' | 'destinationAccountId' | 'creditId'>,
   accountId: string,
 ): number {
-  if (tx.type === 'transfer') {
+  const kind = resolveTransactionKind(tx);
+
+  if (kind === 'transfer') {
     if (tx.accountId === accountId) return -tx.amount;
     if (tx.destinationAccountId === accountId) return tx.amount;
     return 0;
   }
 
-  if (tx.type === 'credit_payment') {
+  if (kind === 'credit_card_payment') {
     if (tx.accountId === accountId) return -tx.amount;
     return 0;
   }
 
-  if (tx.type === 'expense' && tx.creditId && !tx.accountId) {
+  if (kind === 'credit_card_purchase' || kind === 'credit_card_refund') {
     return 0;
   }
 
   if (tx.accountId !== accountId) return 0;
-  return tx.type === 'income' ? tx.amount : -tx.amount;
+  return kind === 'income' ? tx.amount : -tx.amount;
 }
 
 export function goalContributionDelta(

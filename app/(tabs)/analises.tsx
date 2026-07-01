@@ -2,13 +2,11 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import {
-  AnalysisMetricCard,
+  AnalysisDebtTab,
+  AnalysisPatrimonyTab,
   AnalysisSkeleton,
-  InsightsSection,
-  PricesInsightsSection,
-  SpendingCategoryCard,
-  SpendingTrendBars,
-  TrendsSummaryCard,
+  AnalysisSpendingTab,
+  AnalysisSummaryTab,
 } from '@/components/analysis';
 import { AppHeader, SegmentedControl } from '@/components/layout';
 import {
@@ -19,20 +17,23 @@ import {
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
 import { useAssets } from '@/hooks/queries/useAssets';
-import { usePricesData } from '@/hooks/queries/usePricesData';
 import { useTransactions } from '@/hooks/queries/useTransactions';
-import {
-  applyAnalysisPeriod,
-} from '@/lib/domain/analysis.compose';
+import { applyAnalysisPeriod } from '@/lib/domain/analysis.compose';
 import {
   ANALYSIS_PERIOD_OPTIONS,
-  computeSpendingByCategory,
-  computeSpendingBuckets,
   getPeriodOption,
   type AnalysisPeriodKey,
 } from '@/lib/domain/analysis-period';
-import { router } from 'expo-router';
-import { spacing, colors } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
+
+type AnalysisTabKey = 'summary' | 'spending' | 'debt' | 'patrimony';
+
+const TAB_SEGMENTS: Array<{ key: AnalysisTabKey; label: string }> = [
+  { key: 'summary', label: 'Resumo' },
+  { key: 'spending', label: 'Gastos' },
+  { key: 'debt', label: 'Dívida' },
+  { key: 'patrimony', label: 'Património' },
+];
 
 const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
   key: option.key,
@@ -41,10 +42,10 @@ const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
 
 export default function AnalisesScreen() {
   const { data: baseData, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
-  const { data: pricesData } = usePricesData();
   const { data: transactions = [] } = useTransactions('all');
   const { data: assetsData } = useAssets();
 
+  const [activeTab, setActiveTab] = useState<AnalysisTabKey>('summary');
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
   const periodOption = getPeriodOption(period);
 
@@ -58,15 +59,6 @@ export default function AnalisesScreen() {
       assetsData ?? undefined,
     );
   }, [baseData, transactions, periodOption.days, periodOption.label, assetsData]);
-
-  const periodCategories = useMemo(
-    () => computeSpendingByCategory(transactions, periodOption.days),
-    [transactions, periodOption.days],
-  );
-  const spendingBuckets = useMemo(
-    () => computeSpendingBuckets(transactions, periodOption),
-    [transactions, periodOption],
-  );
 
   return (
     <View style={styles.screen}>
@@ -89,47 +81,26 @@ export default function AnalisesScreen() {
         <ScreenContainer applyBottomSafeInset={false}>
           <SectionHeader title="Análises" subtitle={`Período · ${periodOption.label}`} />
 
-          <View style={styles.periodSelector}>
-            <SegmentedControl
-              segments={PERIOD_SEGMENTS}
-              value={period}
-              onChange={setPeriod}
-            />
+          <View style={styles.tabSelector}>
+            <SegmentedControl segments={TAB_SEGMENTS} value={activeTab} onChange={setActiveTab} />
           </View>
 
-          <TrendsSummaryCard
-            trends={data.trends}
-            periodLabel={data.periodLabel}
-            showNetWorthChange={false}
-          />
-
-          <SpendingTrendBars buckets={spendingBuckets} periodLabel={periodOption.label} />
-
-          <SpendingCategoryCard
-            categories={periodCategories}
-            periodLabel={periodOption.label}
-          />
-
-          <SectionHeader
-            title="Métricas"
-            subtitle="Indicadores chave do período"
-          />
-          <View style={styles.metricsGrid}>
-            {data.metrics
-              .filter((metric) => !isPatrimonyMetric(metric.id))
-              .map((metric) => (
-                <AnalysisMetricCard key={metric.id} metric={metric} />
-              ))}
-          </View>
-
-          <InsightsSection insights={data.insights} />
-
-          {pricesData ? (
-            <PricesInsightsSection
-              prices={pricesData}
-              onAddMovement={() => router.push('/(tabs)/movimentos?action=new-movement')}
-            />
+          {activeTab === 'spending' ? (
+            <View style={styles.periodSelector}>
+              <SegmentedControl
+                segments={PERIOD_SEGMENTS}
+                value={period}
+                onChange={setPeriod}
+              />
+            </View>
           ) : null}
+
+          {activeTab === 'summary' ? <AnalysisSummaryTab data={data} /> : null}
+          {activeTab === 'spending' ? (
+            <AnalysisSpendingTab transactions={transactions} period={period} />
+          ) : null}
+          {activeTab === 'debt' ? <AnalysisDebtTab /> : null}
+          {activeTab === 'patrimony' ? <AnalysisPatrimonyTab data={data} /> : null}
 
           <RefetchingIndicator visible={isRefetching} />
         </ScreenContainer>
@@ -138,33 +109,18 @@ export default function AnalisesScreen() {
   );
 }
 
-function isPatrimonyMetric(id: string): boolean {
-  return (
-    id === 'debt-ratio' ||
-    id === 'investment-share' ||
-    id === 'liquidity' ||
-    id === 'inventory-share'
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   centered: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
   },
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing['2xl'],
+  tabSelector: {
+    marginBottom: spacing.md,
   },
   periodSelector: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
 });

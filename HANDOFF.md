@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T21:04:33.588Z -->
-<!-- Git: e561501 (2026-07-01T17:53:03+01:00) -->
+<!-- Última geração: 2026-07-01T23:46:09.167Z -->
+<!-- Git: b17006e (2026-07-01T22:15:18+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 19 — Cartões de crédito no ledger** |
-| Última geração | 2026-07-01T21:04:33.588Z |
+| Fase atual | **Fase 20 — Ledger cartão + reembolsos + Análises compactas** |
+| Última geração | 2026-07-01T23:46:09.167Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `e561501` (2026-07-01T17:53:03+01:00) |
+| Git commit | `b17006e` (2026-07-01T22:15:18+01:00) |
 
 ---
 
@@ -169,11 +169,17 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     TransferAccountModal.tsx
     index.ts
   analysis/
+    AnalysisDebtTab.tsx
+    AnalysisExpandableSection.tsx
     AnalysisMetricCard.tsx
+    AnalysisPatrimonyTab.tsx
     AnalysisSkeleton.tsx
+    AnalysisSpendingTab.tsx
+    AnalysisSummaryTab.tsx
     InsightsSection.tsx
     PatrimonyAllocationCard.tsx
     PricesInsightsSection.tsx
+    SpendingCalendarCard.tsx
     SpendingCategoryCard.tsx
     SpendingTrendBars.tsx
     TrendsSummaryCard.tsx
@@ -268,6 +274,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     ReceiptItemsSummary.tsx
     ReceiptOcrProcessingOverlay.tsx
     ReceiptPreview.tsx
+    RefundTransactionModal.tsx
     SwipeableTransactionListItem.tsx
     TransactionForm.tsx
     TransactionListItem.tsx
@@ -524,6 +531,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       goals.ts
       index.ts
       insights.ts
+      ledger-impact.test.ts
+      ledger-impact.ts
       liabilities.ts
       money.test.ts
       money.ts
@@ -535,6 +544,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       score-explain.ts
       score.test.ts
       score.ts
+      spending-calendar.ts
+      transaction-kind.ts
       transactions.test.ts
       transactions.ts
       transfers.test.ts
@@ -728,7 +739,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 19 — Cartões de crédito no ledger
+## Fase atual: Fase 20 — Ledger cartão + reembolsos + Análises compactas
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -859,6 +870,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Transferências entre contas — validação origem≠destino, preview de impacto, saldo insuficiente bloqueado, exclusão de receitas/despesas/análises, Doctor account_transfer, testes domínio
 - Pre-release ledger — migration remota aplicada, cleanup transferências órfãs, CHECK amount>0 e origem≠destino, doc RPC pendente, teste delete reverte saldo
 - Cartões de crédito no ledger — compra (expense+credit_id), pagamento (credit_payment), PaymentMethodPicker, PayCreditCardModal, domínio credit-cards, sem dupla contagem
+- Tipos canónicos credit_card_purchase/payment/refund + domínio ledger-impact (orçamento, conta, cartão, reembolsos)
+- Reembolsos no cartão — RefundTransactionModal, reduz dívida e despesa líquida sem contar como receita
+- Análises compactas — 4 tabs (Resumo/Gastos/Dívida/Património) + calendário heatmap de gastos
+- Formulário movimentos — selector Despesa/Receita/Transferência/Pagamento/Reembolso com microcopy
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
@@ -873,7 +888,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal
 - OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual
 - Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA
-- Cartão de crédito reutiliza colunas existentes (originalAmount=limite, termMonths=dia de fecho, interestRateAnnual=TAN); migration dedicada fica para depois
+- Migration credit_card types aplicada no remoto (20240702100000)
 
 ---
 

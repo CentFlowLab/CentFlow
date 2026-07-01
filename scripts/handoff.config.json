@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 19 — Cartões de crédito no ledger",
+  "currentPhase": "Fase 20 — Ledger cartão + reembolsos + Análises compactas",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -130,7 +130,11 @@
     "Doctor 2.0 — resumo de saúde, agrupamento de operações, timeline, erros humanos, performance, BD, pesquisa/filtros, export JSON/TXT",
     "Transferências entre contas — validação origem≠destino, preview de impacto, saldo insuficiente bloqueado, exclusão de receitas/despesas/análises, Doctor account_transfer, testes domínio",
     "Pre-release ledger — migration remota aplicada, cleanup transferências órfãs, CHECK amount>0 e origem≠destino, doc RPC pendente, teste delete reverte saldo",
-    "Cartões de crédito no ledger — compra (expense+credit_id), pagamento (credit_payment), PaymentMethodPicker, PayCreditCardModal, domínio credit-cards, sem dupla contagem"
+    "Cartões de crédito no ledger — compra (expense+credit_id), pagamento (credit_payment), PaymentMethodPicker, PayCreditCardModal, domínio credit-cards, sem dupla contagem",
+    "Tipos canónicos credit_card_purchase/payment/refund + domínio ledger-impact (orçamento, conta, cartão, reembolsos)",
+    "Reembolsos no cartão — RefundTransactionModal, reduz dívida e despesa líquida sem contar como receita",
+    "Análises compactas — 4 tabs (Resumo/Gastos/Dívida/Património) + calendário heatmap de gastos",
+    "Formulário movimentos — selector Despesa/Receita/Transferência/Pagamento/Reembolso com microcopy"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
@@ -145,7 +149,7 @@
     "Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal",
     "OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual",
     "Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA",
-    "Cartão de crédito reutiliza colunas existentes (originalAmount=limite, termMonths=dia de fecho, interestRateAnnual=TAN); migration dedicada fica para depois"
+    "Migration credit_card types aplicada no remoto (20240702100000)"
   ],
   "outputFile": "HANDOFF.md"
 }

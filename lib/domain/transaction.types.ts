@@ -8,7 +8,20 @@ import type {
 
 export type CashTransactionType = 'expense' | 'income';
 
-export type TransactionType = CashTransactionType | 'transfer' | 'credit_payment';
+export type CreditCardTransactionType =
+  | 'credit_card_purchase'
+  | 'credit_card_payment'
+  | 'credit_card_refund';
+
+/** @deprecated Preferir credit_card_payment — mantido para leitura de dados legados. */
+export type LegacyCreditPaymentType = 'credit_payment';
+
+export type TransactionType =
+  | CashTransactionType
+  | 'transfer'
+  | LegacyCreditPaymentType
+  | CreditCardTransactionType
+  | 'balance_adjustment';
 
 export type TransactionFilter = 'all' | CashTransactionType | 'transfer';
 
@@ -33,8 +46,10 @@ export interface Transaction {
   accountId?: string | null;
   /** Conta de destino (apenas transferências). */
   destinationAccountId?: string | null;
-  /** Cartão de crédito (despesa no cartão ou pagamento credit_payment). */
+  /** Cartão de crédito (compra, pagamento ou reembolso). */
   creditId?: string | null;
+  /** Movimento original associado (ex.: reembolso de uma compra). */
+  relatedTransactionId?: string | null;
   /** Mês financeiro (YYYY-MM) — receitas podem contar num mês diferente da data. */
   budgetMonth?: string | null;
 }
@@ -48,6 +63,7 @@ export interface CreateTransactionInput {
   accountId?: string | null;
   destinationAccountId?: string | null;
   creditId?: string | null;
+  relatedTransactionId?: string | null;
   budgetMonth?: string | null;
   /** Upload + OCR inline (fluxo legado sem confirmação) */
   receipt?: ReceiptDraft;
@@ -88,5 +104,6 @@ export type UpdateTransactionInput = {
   accountId?: string | null;
   destinationAccountId?: string | null;
   creditId?: string | null;
+  relatedTransactionId?: string | null;
   budgetMonth?: string | null;
 };

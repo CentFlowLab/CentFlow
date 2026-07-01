@@ -27,7 +27,10 @@ function toId(value: string | number | undefined): string {
 function normalizeType(raw?: string): TransactionType {
   const value = raw?.toLowerCase();
   if (value === 'transfer') return 'transfer';
-  if (value === 'credit_payment') return 'credit_payment';
+  if (value === 'credit_payment' || value === 'credit_card_payment') return 'credit_card_payment';
+  if (value === 'credit_card_purchase') return 'credit_card_purchase';
+  if (value === 'credit_card_refund') return 'credit_card_refund';
+  if (value === 'balance_adjustment') return 'balance_adjustment';
   if (value === 'income' || value === 'receita' || value === 'credit') {
     return 'income';
   }
@@ -74,6 +77,8 @@ export function mapTransaction(raw: RawTransaction): Transaction {
     accountId: pick(raw.accountId, raw.account_id)?.toString() ?? null,
     destinationAccountId: pick(raw.destinationAccountId, raw.destination_account_id)?.toString() ?? null,
     creditId: pick(raw.creditId, raw.credit_id)?.toString() ?? null,
+    relatedTransactionId:
+      pick(raw.relatedTransactionId, raw.related_transaction_id)?.toString() ?? null,
   };
 }
 

@@ -20,6 +20,8 @@ type PaymentMethodPickerFieldProps = {
   value?: PaymentMethodSelection;
   onChange: (selection: PaymentMethodSelection) => void;
   onCreateAccount?: () => void;
+  /** Limita seleção a um tipo (ex.: reembolso só no cartão). */
+  restrictTo?: PaymentMethodKind;
 };
 
 export function paymentSelectionToFields(selection: PaymentMethodSelection): {
@@ -35,6 +37,7 @@ export function PaymentMethodPickerField({
   value,
   onChange,
   onCreateAccount,
+  restrictTo,
 }: PaymentMethodPickerFieldProps) {
   const { data: accounts = [] } = useAccountsWithBalances();
   const { data: liabilities } = useLiabilities();
@@ -45,7 +48,9 @@ export function PaymentMethodPickerField({
   );
 
   const [mode, setMode] = useState<PaymentMethodKind>(
-    value?.kind ?? (activeAccounts.length > 0 ? 'account' : cards.length > 0 ? 'card' : 'account'),
+    restrictTo ??
+      value?.kind ??
+      (activeAccounts.length > 0 ? 'account' : cards.length > 0 ? 'card' : 'account'),
   );
 
   const soleAccountId = activeAccounts.length === 1 ? activeAccounts[0]?.id : undefined;
@@ -84,7 +89,7 @@ export function PaymentMethodPickerField({
         {hint}
       </Text>
 
-      {(activeAccounts.length > 0 || cards.length > 0) && (
+      {(activeAccounts.length > 0 || cards.length > 0) && !restrictTo ? (
         <View style={styles.modeRow}>
           {activeAccounts.length > 0 ? (
             <Pressable
@@ -115,9 +120,9 @@ export function PaymentMethodPickerField({
             </Pressable>
           ) : null}
         </View>
-      )}
+      ) : null}
 
-      {mode === 'account' ? (
+      {mode === 'account' && restrictTo !== 'card' ? (
         activeAccounts.length === 0 ? (
           <Text variant="caption" color="textMuted">
             Cria uma conta em Ativos para associar movimentos.
@@ -156,7 +161,7 @@ export function PaymentMethodPickerField({
             })}
           </ScrollView>
         )
-      ) : cards.length === 0 ? (
+      ) : restrictTo === 'account' ? null : cards.length === 0 ? (
         <Text variant="caption" color="textMuted">
           Adiciona um cartão em Créditos para registar compras no cartão.
         </Text>

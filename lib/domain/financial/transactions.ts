@@ -9,14 +9,25 @@ import {
 } from './dates';
 import { addMoney, roundMoney } from './money';
 import type { CategoryTotal, FinancialTransaction, MerchantTotal } from './domain-types';
+import {
+  calculateBudgetImpact,
+  calculateNetSpending,
+  getIncomeTotalFromLedger,
+} from './ledger-impact';
+import { resolveTransactionKind } from './transaction-kind';
 
-export function isRealCashflowTransaction(tx: Pick<FinancialTransaction, 'type'>): boolean {
-  return tx.type === 'income' || tx.type === 'expense';
+export function isRealCashflowTransaction(tx: Pick<FinancialTransaction, 'type' | 'creditId'>): boolean {
+  const kind = resolveTransactionKind(tx);
+  return kind === 'income' || kind === 'expense';
 }
 
-export function transactionCashDelta(tx: Pick<FinancialTransaction, 'type' | 'amount'>): number {
-  if (tx.type === 'transfer' || tx.type === 'credit_payment') return 0;
-  return tx.type === 'income' ? tx.amount : -tx.amount;
+export function transactionCashDelta(tx: Pick<FinancialTransaction, 'type' | 'amount' | 'creditId'>): number {
+  const kind = resolveTransactionKind(tx);
+  if (kind === 'transfer' || kind === 'credit_card_payment' || kind === 'credit_card_refund') {
+    return 0;
+  }
+  if (kind === 'credit_card_purchase') return 0;
+  return kind === 'income' ? tx.amount : -tx.amount;
 }
 
 export function filterTransactionsByPeriod(
@@ -44,22 +55,14 @@ export function getIncomeTotal(
   transactions: FinancialTransaction[],
   period: FinancialPeriod,
 ): number {
-  return roundMoney(
-    filterTransactionsByPeriod(transactions, period)
-      .filter((tx) => tx.type === 'income')
-      .reduce((sum, tx) => addMoney(sum, tx.amount), 0),
-  );
+  return getIncomeTotalFromLedger(transactions, period);
 }
 
 export function getExpenseTotal(
   transactions: FinancialTransaction[],
   period: FinancialPeriod,
 ): number {
-  return roundMoney(
-    filterTransactionsByPeriod(transactions, period)
-      .filter((tx) => tx.type === 'expense')
-      .reduce((sum, tx) => addMoney(sum, tx.amount), 0),
-  );
+  return calculateNetSpending(transactions, period);
 }
 
 export function getNetCashflow(
@@ -100,16 +103,19 @@ export function groupTransactionsByCategory(
 ): CategoryTotal[] {
   const totals = new Map<string, CategoryTotal>();
   for (const tx of filterTransactionsByPeriod(transactions, period)) {
-    if (tx.type !== 'expense') continue;
+    const impact = calculateBudgetImpact(tx);
+    if (impact.budgetExpenseDelta === 0) continue;
     const current = totals.get(tx.category) ?? {
       key: tx.category,
       label: tx.categoryLabel,
       amount: 0,
     };
-    current.amount = addMoney(current.amount, tx.amount);
+    current.amount = addMoney(current.amount, impact.budgetExpenseDelta);
     totals.set(tx.category, current);
   }
-  return [...totals.values()].sort((a, b) => b.amount - a.amount);
+  return [...totals.values()]
+    .filter((item) => item.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
 }
 
 export function getTopCategory(
@@ -125,17 +131,20 @@ export function groupTransactionsByMerchant(
 ): MerchantTotal[] {
   const totals = new Map<string, MerchantTotal>();
   for (const tx of filterTransactionsByPeriod(transactions, period)) {
-    if (tx.type !== 'expense') continue;
+    const impact = calculateBudgetImpact(tx);
+    if (impact.budgetExpenseDelta === 0) continue;
     const key = (tx.description?.trim() || tx.categoryLabel || 'Outros').toLowerCase();
     const current = totals.get(key) ?? {
       key,
       label: tx.description?.trim() || tx.categoryLabel || 'Outros',
       amount: 0,
     };
-    current.amount = addMoney(current.amount, tx.amount);
+    current.amount = addMoney(current.amount, impact.budgetExpenseDelta);
     totals.set(key, current);
   }
-  return [...totals.values()].sort((a, b) => b.amount - a.amount);
+  return [...totals.values()]
+    .filter((item) => item.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
 }
 
 export function getTopMerchant(
@@ -178,8 +187,22 @@ export function filterOccurredInCalendarMonth(
 }
 
 export function toSpendableMovement(tx: FinancialTransaction) {
-  if (tx.type === 'transfer' || tx.type === 'credit_payment') return null;
-  return { type: tx.type as 'income' | 'expense', amount: tx.amount, date: tx.date };
+  const kind = resolveTransactionKind(tx);
+  if (
+    kind === 'transfer' ||
+    kind === 'credit_card_payment' ||
+    kind === 'credit_card_refund' ||
+    kind === 'balance_adjustment'
+  ) {
+    return null;
+  }
+  if (kind === 'credit_card_purchase') {
+    return { type: 'expense' as const, amount: tx.amount, date: tx.date };
+  }
+  if (kind === 'income' || kind === 'expense') {
+    return { type: kind, amount: tx.amount, date: tx.date };
+  }
+  return null;
 }
 
 export function filterOccurredForMonthlyBudget(

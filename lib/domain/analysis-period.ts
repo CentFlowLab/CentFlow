@@ -1,5 +1,7 @@
 import type { SpendingCategorySlice } from '@/lib/domain/analysis.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
+import { calculateBudgetImpact } from '@/lib/domain/financial/ledger-impact';
+import { calendarSpendingDelta } from '@/lib/domain/financial/spending-calendar';
 import { isTransactionOccurred, parseTransactionDate } from '@/lib/domain/transaction-date.utils';
 
 export type AnalysisPeriodKey = 'week' | 'month' | 'quarter' | 'halfyear' | 'year';
@@ -44,18 +46,22 @@ export function computeSpendingByCategory(
   const totals = new Map<string, SpendingCategorySlice>();
 
   for (const tx of transactions) {
-    if (tx.type !== 'expense') continue;
+    const impact = calculateBudgetImpact(tx);
+    if (impact.budgetExpenseDelta === 0) continue;
     if (!isWithinLastDays(tx.date, days, asOf)) continue;
     const current = totals.get(tx.category) ?? {
       key: tx.category,
       label: tx.categoryLabel,
       amount: 0,
     };
-    current.amount += tx.amount;
+    current.amount += impact.budgetExpenseDelta;
     totals.set(tx.category, current);
   }
 
-  return [...totals.values()].sort((a, b) => b.amount - a.amount).slice(0, 6);
+  return [...totals.values()]
+    .filter((item) => item.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 6);
 }
 
 export type SpendingBucket = {
@@ -83,17 +89,18 @@ export function computeSpendingBuckets(
 
     let amount = 0;
     for (const tx of transactions) {
-      if (tx.type !== 'expense') continue;
+      const delta = calendarSpendingDelta(tx);
+      if (delta === 0) continue;
       const target = parseTransactionDate(tx.date);
       if (target >= start && target <= end) {
-        amount += tx.amount;
+        amount += delta;
       }
     }
 
     buckets.push({
       key: `${start.toISOString().slice(0, 10)}`,
       label: bucketLabel(option, end),
-      amount,
+      amount: Math.max(0, amount),
     });
   }
 
