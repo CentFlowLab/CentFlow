@@ -19,3 +19,15 @@ export {
 } from './runtime-context';
 
 export { isDiagnosticsEnabled } from './config';
+
+export * from './doctor-types';
+export { groupAppLogEntries, filterOperations } from './doctor-grouping';
+export { humanizeStep, humanizeError, resolveOperationTitle } from './doctor-humanize';
+export {
+  buildDoctorViewModel,
+  computeDoctorSummary,
+  computePerformanceMetrics,
+  getDoctorEnvironmentContext,
+  runDoctorHealthChecks,
+} from './doctor-metrics';
+export { exportDoctorJson, exportDoctorText } from './doctor-export';

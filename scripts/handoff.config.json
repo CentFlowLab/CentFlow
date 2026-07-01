@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 16 — Domínio financeiro central (fonte única de verdade)",
+  "currentPhase": "Fase 17 — Doctor 2.0 (centro de diagnóstico inteligente)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -126,7 +126,8 @@
     "Substituição de cálculos duplicados em analysis.compose, analysis.insights, dashboard.compose",
     "Re-exports de compatibilidade (balance, financial-movement, goal.utils, net-worth.service, transaction-date.utils, monthly-budget-movements)",
     "Testes unitários do domínio financeiro (money, dates, transactions, accounts, goals, netWorth, savings, score)",
-    "docs/financial-domain.md — regras, API e como adicionar métricas"
+    "docs/financial-domain.md — regras, API e como adicionar métricas",
+    "Doctor 2.0 — resumo de saúde, agrupamento de operações, timeline, erros humanos, performance, BD, pesquisa/filtros, export JSON/TXT"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

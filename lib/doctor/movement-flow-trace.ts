@@ -44,6 +44,7 @@ type TraceMeta = Record<string, unknown>;
 let lastStep: MovementFlowStep | string = 'idle';
 let lastStepAt = Date.now();
 let stallTimer: ReturnType<typeof setTimeout> | null = null;
+let currentOperationId: string | null = null;
 const fieldChangeThrottle = new Map<string, number>();
 
 const STALL_WARN_MS = 12_000;
@@ -85,6 +86,12 @@ export function traceMovementStep(
     fieldChangeThrottle.set(key, now);
   }
 
+  if (step === 'save_click' || step === 'mutation_start') {
+    if (!currentOperationId) {
+      currentOperationId = `movement-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    }
+  }
+
   lastStep = step;
   lastStepAt = Date.now();
   setDiagnosticAction(`movement:${step}`);
@@ -95,6 +102,7 @@ export function traceMovementStep(
     screen: 'movement_create',
     component: meta?.component ?? 'AddTransactionModal',
     elapsedSinceLastMs: meta?.elapsedSinceLastMs,
+    operationId: currentOperationId ?? undefined,
     ...meta,
   };
 
@@ -123,6 +131,9 @@ export function traceMovementStep(
     step === 'form_close_request'
   ) {
     clearStallWatch();
+    if (step === 'mutation_settled' || step === 'mutation_error') {
+      currentOperationId = null;
+    }
   }
 }
 

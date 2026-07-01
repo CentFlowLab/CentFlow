@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T14:06:00.014Z -->
-<!-- Git: ef91cba (2026-07-01T15:05:36+01:00) -->
+<!-- Última geração: 2026-07-01T15:45:33.652Z -->
+<!-- Git: 7afd13b (2026-07-01T15:31:55+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 16 — Domínio financeiro central (fonte única de verdade)** |
-| Última geração | 2026-07-01T14:06:00.014Z |
+| Fase atual | **Fase 17 — Doctor 2.0 (centro de diagnóstico inteligente)** |
+| Última geração | 2026-07-01T15:45:33.652Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `ef91cba` (2026-07-01T15:05:36+01:00) |
+| Git commit | `7afd13b` (2026-07-01T15:31:55+01:00) |
 
 ---
 
@@ -227,6 +227,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     DiagnosticLogPanel.tsx
     DiagnosticOverlay.tsx
     DiagnosticsBootstrap.tsx
+    DoctorOperationCard.tsx
+    DoctorSections.tsx
     index.ts
   features/
     FeatureAreaGate.tsx
@@ -473,6 +475,13 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   diagnostics/
     app-log.ts
     config.ts
+    doctor-export.ts
+    doctor-grouping.test.ts
+    doctor-grouping.ts
+    doctor-humanize.test.ts
+    doctor-humanize.ts
+    doctor-metrics.ts
+    doctor-types.ts
     index.ts
     runtime-context.ts
   doctor/
@@ -712,7 +721,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 16 — Domínio financeiro central (fonte única de verdade)
+## Fase atual: Fase 17 — Doctor 2.0 (centro de diagnóstico inteligente)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -839,6 +848,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Re-exports de compatibilidade (balance, financial-movement, goal.utils, net-worth.service, transaction-date.utils, monthly-budget-movements)
 - Testes unitários do domínio financeiro (money, dates, transactions, accounts, goals, netWorth, savings, score)
 - docs/financial-domain.md — regras, API e como adicionar métricas
+- Doctor 2.0 — resumo de saúde, agrupamento de operações, timeline, erros humanos, performance, BD, pesquisa/filtros, export JSON/TXT
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

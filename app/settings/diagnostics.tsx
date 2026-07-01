@@ -1,25 +1,35 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ScrollView, Share, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppHeader } from '@/components/layout';
-import { Button, ScreenContainer, Text } from '@/components/ui';
-import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
-import { useToast } from '@/components/ui/Toast';
+import { DoctorOperationCard } from '@/components/diagnostics/DoctorOperationCard';
 import {
+  DoctorDatabaseSection,
+  DoctorFilterBar,
+  DoctorPerformanceSection,
+  DoctorSummarySection,
+} from '@/components/diagnostics/DoctorSections';
+import { AppHeader } from '@/components/layout';
+import { Button, ScreenContainer, Text, TextField } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
+import { queryClient } from '@/lib/api/queryClient';
+import { useAuth } from '@/lib/auth';
+import {
+  buildDoctorViewModel,
   clearAppLog,
-  exportAppLogText,
+  exportDoctorJson,
+  exportDoctorText,
+  filterOperations,
   isDiagnosticsEnabled,
+  runDoctorHealthChecks,
   subscribeAppLog,
   type AppLogEntry,
+  type DoctorFilter,
+  type DoctorHealthSnapshot,
+  type DoctorTab,
 } from '@/lib/diagnostics';
-import {
-  getMovementFlowDebugState,
-  MOVEMENT_FLOW_SOURCE,
-  FINANCIAL_MUTATION_SOURCE,
-  OCR_FLOW_SOURCE,
-} from '@/lib/doctor';
 import {
   EMAIL_STATUS_LABELS,
   EMAIL_TYPE_LABELS,
@@ -31,16 +41,42 @@ import {
   type LifecycleEmailType,
 } from '@/lib/email';
 import { useEmailEvents } from '@/hooks/queries/useEmailEvents';
-import { useAuth } from '@/lib/auth';
 import { colors, radius, spacing } from '@/lib/theme';
 
-const FINANCIAL_SOURCES = new Set([
-  MOVEMENT_FLOW_SOURCE,
-  FINANCIAL_MUTATION_SOURCE,
-  OCR_FLOW_SOURCE,
-  'doctor:mutation',
-  'doctor:validation',
-]);
+const TABS: Array<{ key: DoctorTab; label: string }> = [
+  { key: 'summary', label: 'Resumo' },
+  { key: 'errors', label: 'Erros' },
+  { key: 'performance', label: 'Performance' },
+  { key: 'sync', label: 'Sync' },
+  { key: 'database', label: 'BD' },
+  { key: 'logs', label: 'Logs' },
+];
+
+const FILTERS: Array<{ key: DoctorFilter; label: string }> = [
+  { key: 'all', label: 'Todos' },
+  { key: 'errors', label: 'Erros' },
+  { key: 'warnings', label: 'Warnings' },
+  { key: 'movement', label: 'Movimentos' },
+  { key: 'goal', label: 'Objetivos' },
+  { key: 'account', label: 'Contas' },
+  { key: 'ocr', label: 'OCR' },
+  { key: 'performance', label: 'Performance' },
+  { key: 'auth', label: 'Auth' },
+  { key: 'supabase', label: 'Supabase' },
+  { key: 'sync', label: 'Sync' },
+];
+
+const DEFAULT_HEALTH: DoctorHealthSnapshot = {
+  checkedAt: new Date(0).toISOString(),
+  supabase: { status: 'unknown', message: 'A carregar…' },
+  session: { status: 'unknown' },
+  refreshToken: { status: 'unknown' },
+  rls: { status: 'unknown' },
+  migrations: { status: 'unknown' },
+  storage: { status: 'unknown' },
+  ota: { status: 'unknown' },
+  cache: { status: 'unknown', pendingQueries: 0 },
+};
 
 export default function DiagnosticsSettingsScreen() {
   useDiagnosticScreen('doctor');
@@ -49,18 +85,49 @@ export default function DiagnosticsSettingsScreen() {
   const { showToast } = useToast();
   const { user } = useAuth();
   const [entries, setEntries] = useState<AppLogEntry[]>([]);
-  const [financialOnly, setFinancialOnly] = useState(true);
+  const [health, setHealth] = useState<DoctorHealthSnapshot>(DEFAULT_HEALTH);
+  const [tab, setTab] = useState<DoctorTab>('summary');
+  const [filter, setFilter] = useState<DoctorFilter>('all');
+  const [search, setSearch] = useState('');
   const [emailLoading, setEmailLoading] = useState<LifecycleEmailType | null>(null);
   const [emailPreviewMode, setEmailPreviewMode] = useState(true);
   const [emailProviderStatus, setEmailProviderStatus] = useState<EmailProviderStatus | null>(null);
   const [emailStatusLine, setEmailStatusLine] = useState<string | null>(null);
   const { data: emailEvents, refetch: refetchEmailEvents } = useEmailEvents();
 
-  const visibleEntries = financialOnly
-    ? entries.filter((e) => FINANCIAL_SOURCES.has(e.source))
-    : entries;
+  const refreshHealth = useCallback(async () => {
+    const snapshot = await runDoctorHealthChecks(queryClient);
+    setHealth(snapshot);
+  }, []);
 
-  const flowState = getMovementFlowDebugState();
+  useEffect(() => {
+    if (!isDiagnosticsEnabled()) {
+      router.back();
+      return;
+    }
+    const unsub = subscribeAppLog(setEntries);
+    void refreshHealth();
+    const interval = setInterval(() => void refreshHealth(), 15_000);
+    return () => {
+      unsub();
+      clearInterval(interval);
+    };
+  }, [refreshHealth]);
+
+  useEffect(() => {
+    if (!isEmailDevToolsEnabled()) return;
+    void fetchEmailProviderStatus().then(setEmailProviderStatus);
+  }, [emailLoading]);
+
+  const view = useMemo(() => buildDoctorViewModel(entries, health), [entries, health]);
+
+  const visibleOperations = useMemo(() => {
+    const base =
+      tab === 'errors'
+        ? filterOperations(view.operations, 'errors', search)
+        : filterOperations(view.operations, filter, search);
+    return base;
+  }, [view.operations, tab, filter, search]);
 
   const emailTestTypes = Object.keys(EMAIL_TYPE_LABELS) as LifecycleEmailType[];
 
@@ -97,27 +164,29 @@ export default function DiagnosticsSettingsScreen() {
     }
   }
 
-  useEffect(() => {
-    if (!isDiagnosticsEnabled()) {
-      router.back();
-      return;
-    }
-    return subscribeAppLog(setEntries);
-  }, []);
-
-  useEffect(() => {
-    if (!isEmailDevToolsEnabled()) return;
-    void fetchEmailProviderStatus().then(setEmailProviderStatus);
-  }, [emailLoading]);
-
-  async function handleShare() {
+  async function handleShare(format: 'txt' | 'json') {
     try {
+      const message = format === 'json' ? exportDoctorJson(entries, health) : exportDoctorText(entries, health);
       await Share.share({
-        message: exportAppLogText(),
-        title: 'CentFlow Doctor — Log',
+        message,
+        title: 'CentFlow Doctor — Diagnóstico',
       });
     } catch {
-      showToast('Não foi possível partilhar o log.', 'error');
+      showToast('Não foi possível exportar.', 'error');
+    }
+  }
+
+  async function handleCopyLastError() {
+    const lastError = view.operations.find((op) => op.humanError)?.humanError;
+    if (!lastError) {
+      showToast('Sem erros para copiar.', 'info');
+      return;
+    }
+    const text = `${lastError.title}\n${lastError.message}\n\n${lastError.technicalMessage}`;
+    try {
+      await Share.share({ message: text, title: 'Erro CentFlow' });
+    } catch {
+      showToast('Não foi possível copiar.', 'error');
     }
   }
 
@@ -125,7 +194,7 @@ export default function DiagnosticsSettingsScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="CentFlow Doctor" subtitle="Erros, mutations e contexto técnico" showBack />
+      <AppHeader title="CentFlow Doctor" subtitle="Centro de diagnóstico inteligente" showBack />
 
       <ScrollView
         contentContainerStyle={[
@@ -133,40 +202,91 @@ export default function DiagnosticsSettingsScreen() {
           { paddingBottom: Math.max(insets.bottom, spacing['2xl']) },
         ]}>
         <ScreenContainer scrollable={false}>
-          <Text variant="body" color="textSecondary" style={styles.lead}>
-            Filtra por operações financeiras (movimentos, OCR, créditos, objetivos, etc.).
-            Se aparecer STALL, o último passo indica onde a UI parou.
-          </Text>
-
-          {financialOnly ? (
-            <Text variant="caption" color="textMuted" style={styles.flowState}>
-              Último passo: {flowState.lastStep} · há {flowState.msSinceLastStep}ms
-            </Text>
-          ) : null}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+            {TABS.map((item) => (
+              <Pressable
+                key={item.key}
+                onPress={() => setTab(item.key)}
+                style={[styles.tabChip, tab === item.key && styles.tabChipActive]}>
+                <Text variant="caption" color={tab === item.key ? 'primary' : 'textMuted'}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
 
           <View style={styles.actions}>
+            <Button label="Actualizar diagnóstico" variant="secondary" onPress={() => void refreshHealth()} fullWidth />
+            <Button label="Exportar TXT" onPress={() => void handleShare('txt')} fullWidth />
+            <Button label="Exportar JSON" variant="secondary" onPress={() => void handleShare('json')} fullWidth />
+            <Button label="Copiar último erro" variant="ghost" onPress={() => void handleCopyLastError()} fullWidth />
             <Button
-              label={financialOnly ? 'Ver todos os logs' : 'Só operações financeiras'}
-              variant="secondary"
-              onPress={() => setFinancialOnly((v) => !v)}
-              fullWidth
-            />
-            <Button label="Partilhar log" onPress={() => void handleShare()} fullWidth />
-            <Button
-              label="Limpar log"
+              label="Limpar logs"
               variant="ghost"
               onPress={() => {
                 clearAppLog();
-                showToast('Log limpo.', 'info');
+                showToast('Logs limpos.', 'info');
               }}
               fullWidth
             />
           </View>
 
+          {tab === 'summary' ? <DoctorSummarySection summary={view.summary} health={view.health} /> : null}
+
+          {tab === 'performance' ? <DoctorPerformanceSection metrics={view.performance} /> : null}
+
+          {tab === 'sync' ? (
+            <View style={styles.wrap}>
+              <Text variant="body" color="textSecondary">
+                Cache: {view.health.cache.message}
+              </Text>
+              <Text variant="body" color="textSecondary">
+                Queries pendentes: {view.health.cache.pendingQueries}
+              </Text>
+              <Text variant="body" color="textSecondary">
+                Última invalidação:{' '}
+                {view.summary.lastSyncAt
+                  ? new Date(view.summary.lastSyncAt).toLocaleString('pt-PT')
+                  : 'Nenhuma registada'}
+              </Text>
+              <Text variant="caption" color="textMuted">
+                OTA: {view.health.ota.message} ({view.environment.otaChannel ?? '—'})
+              </Text>
+            </View>
+          ) : null}
+
+          {tab === 'database' ? <DoctorDatabaseSection health={view.health} /> : null}
+
+          {tab === 'errors' || tab === 'logs' ? (
+            <View style={styles.wrap}>
+              <TextField
+                label="Pesquisar"
+                value={search}
+                onChangeText={setSearch}
+                placeholder="movement, ocr, cache, error…"
+              />
+              {tab === 'logs' ? (
+                <DoctorFilterBar filters={FILTERS} active={filter} onChange={(key) => setFilter(key as DoctorFilter)} />
+              ) : null}
+
+              {visibleOperations.length === 0 ? (
+                <Text variant="body" color="textMuted" align="center">
+                  {tab === 'errors'
+                    ? 'Sem erros registados — boa sinal!'
+                    : 'Sem operações. Executa acções na app (movimento, objetivo, OCR…) para ver diagnósticos agrupados.'}
+                </Text>
+              ) : (
+                visibleOperations.map((operation) => (
+                  <DoctorOperationCard key={operation.id} operation={operation} />
+                ))
+              )}
+            </View>
+          ) : null}
+
           {isEmailDevToolsEnabled() ? (
             <View style={styles.emailSection}>
               <Text variant="label" color="textMuted">
-                Resend / lifecycle
+                Resend / lifecycle (dev)
               </Text>
               <Text variant="caption" color={emailProviderStatus?.resendConfigured ? 'primary' : 'warning'}>
                 {describeEmailProviderStatus(emailProviderStatus)}
@@ -176,14 +296,6 @@ export default function DiagnosticsSettingsScreen() {
                   {emailStatusLine}
                 </Text>
               ) : null}
-              {user?.email ? (
-                <Text variant="caption" color="textMuted">
-                  Conta: {user.email}
-                </Text>
-              ) : null}
-              <Text variant="label" color="textMuted" style={styles.emailHistoryTitle}>
-                Testar emails lifecycle
-              </Text>
               <Button
                 label={emailPreviewMode ? 'Modo: preview (sem enviar)' : 'Modo: envio real (Resend)'}
                 variant="ghost"
@@ -201,76 +313,16 @@ export default function DiagnosticsSettingsScreen() {
                   fullWidth
                 />
               ))}
-
-              <Text variant="label" color="textMuted" style={styles.emailHistoryTitle}>
-                Histórico de emails (sem dados sensíveis)
-              </Text>
-              {(emailEvents ?? []).length === 0 ? (
-                <Text variant="caption" color="textMuted">
-                  Sem eventos registados. Testa um tipo acima.
-                </Text>
-              ) : (
-                (emailEvents ?? []).map((event) => (
-                  <View key={event.id} style={styles.emailEvent}>
-                    <Text variant="caption" color="textMuted">
-                      {EMAIL_STATUS_LABELS[event.status]} ·{' '}
-                      {EMAIL_TYPE_LABELS[event.emailType as LifecycleEmailType] ?? event.emailType}
-                    </Text>
-                    <Text variant="caption" color="textSecondary">
-                      {new Date(event.sentAt).toLocaleString('pt-PT')}
-                    </Text>
-                    {event.error ? (
-                      <Text variant="caption" color="danger">
-                        {event.error}
-                      </Text>
-                    ) : null}
-                  </View>
-                ))
-              )}
+              {(emailEvents ?? []).slice(0, 5).map((event) => (
+                <View key={event.id} style={styles.emailEvent}>
+                  <Text variant="caption" color="textMuted">
+                    {EMAIL_STATUS_LABELS[event.status]} ·{' '}
+                    {EMAIL_TYPE_LABELS[event.emailType as LifecycleEmailType] ?? event.emailType}
+                  </Text>
+                </View>
+              ))}
             </View>
           ) : null}
-
-          <View style={styles.list}>
-            {visibleEntries.length === 0 ? (
-              <Text variant="body" color="textMuted" align="center">
-                Sem entradas {financialOnly ? 'movement_create' : ''}. Abre o modal e tenta guardar um movimento.
-              </Text>
-            ) : null}
-            {visibleEntries.map((entry) => (
-              <View
-                key={entry.id}
-                style={[
-                  styles.entry,
-                  entry.source === MOVEMENT_FLOW_SOURCE && styles.entryMovement,
-                ]}>
-                <Text variant="caption" color={entry.level === 'error' ? 'danger' : 'textMuted'}>
-                  {entry.severity.toUpperCase()} · {entry.level.toUpperCase()} · {entry.source}
-                </Text>
-                <Text variant="bodyMedium" color={entry.source === MOVEMENT_FLOW_SOURCE ? 'primary' : 'text'}>
-                  {entry.context?.step ? String(entry.context.step) : entry.message}
-                </Text>
-                {entry.context?.step && entry.message !== entry.context.step ? (
-                  <Text variant="caption" color="textSecondary">
-                    {entry.message}
-                  </Text>
-                ) : null}
-                {entry.context?.screen ? (
-                  <Text variant="caption" color="textSecondary">
-                    screen: {String(entry.context.screen)}
-                    {entry.context.action ? ` · action: ${String(entry.context.action)}` : ''}
-                  </Text>
-                ) : null}
-                {entry.stack ? (
-                  <Text variant="caption" color="textMuted" style={styles.mono}>
-                    {entry.stack}
-                  </Text>
-                ) : null}
-                <Text variant="caption" color="textMuted">
-                  {new Date(entry.timestamp).toLocaleString('pt-PT')}
-                </Text>
-              </View>
-            ))}
-          </View>
         </ScreenContainer>
       </ScrollView>
     </View>
@@ -285,23 +337,35 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: spacing.md,
   },
-  lead: {
-    lineHeight: 22,
-    marginBottom: spacing.sm,
-  },
-  flowState: {
+  tabs: {
+    gap: spacing.xs,
     marginBottom: spacing.md,
+  },
+  tabChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  tabChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
   },
   actions: {
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
+  wrap: {
+    gap: spacing.md,
+  },
   emailSection: {
     gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  emailHistoryTitle: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xl,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   emailEvent: {
     padding: spacing.sm,
@@ -309,25 +373,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceElevated,
-    gap: 2,
-  },
-  list: {
-    gap: spacing.md,
-  },
-  entry: {
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-  },
-  entryMovement: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryMuted,
-  },
-  mono: {
-    fontFamily: 'monospace',
-    lineHeight: 16,
   },
 });
