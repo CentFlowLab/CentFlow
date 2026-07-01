@@ -192,6 +192,18 @@ export async function updateTransaction(
   return transaction;
 }
 
+export async function fetchTransactionById(transactionId: string): Promise<Transaction | null> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('id', transactionId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapTransactionRow(data);
+}
+
 export async function deleteTransaction(transactionId: string): Promise<void> {
   const supabase = getSupabaseClient();
   const { error } = await supabase.from('transactions').delete().eq('id', transactionId);

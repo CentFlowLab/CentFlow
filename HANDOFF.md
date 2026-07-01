@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T16:52:25.737Z -->
-<!-- Git: b97b05c (2026-07-01T17:35:46+01:00) -->
+<!-- Última geração: 2026-07-01T21:04:33.588Z -->
+<!-- Git: e561501 (2026-07-01T17:53:03+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 18 — Ledger de transferências entre contas** |
-| Última geração | 2026-07-01T16:52:25.737Z |
+| Fase atual | **Fase 19 — Cartões de crédito no ledger** |
+| Última geração | 2026-07-01T21:04:33.588Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `b97b05c` (2026-07-01T17:35:46+01:00) |
+| Git commit | `e561501` (2026-07-01T17:53:03+01:00) |
 
 ---
 
@@ -165,6 +165,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AccountFormModal.tsx
     AccountListItem.tsx
     AccountPickerField.tsx
+    PaymentMethodPickerField.tsx
     TransferAccountModal.tsx
     index.ts
   analysis/
@@ -459,6 +460,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     credit-analysis.test.ts
     credit-analysis.ts
     credit-dates.ts
+    credit-ledger-sync.ts
     credit-reminder-storage.ts
     credit-type.utils.test.ts
     credit-type.utils.ts
@@ -513,6 +515,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       accounts.ts
       assistant.ts
       centflow-score.ts
+      credit-cards.test.ts
+      credit-cards.ts
       dates.test.ts
       dates.ts
       domain-types.ts
@@ -724,7 +728,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 18 — Ledger de transferências entre contas
+## Fase atual: Fase 19 — Cartões de crédito no ledger
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -854,6 +858,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Doctor 2.0 — resumo de saúde, agrupamento de operações, timeline, erros humanos, performance, BD, pesquisa/filtros, export JSON/TXT
 - Transferências entre contas — validação origem≠destino, preview de impacto, saldo insuficiente bloqueado, exclusão de receitas/despesas/análises, Doctor account_transfer, testes domínio
 - Pre-release ledger — migration remota aplicada, cleanup transferências órfãs, CHECK amount>0 e origem≠destino, doc RPC pendente, teste delete reverte saldo
+- Cartões de crédito no ledger — compra (expense+credit_id), pagamento (credit_payment), PaymentMethodPicker, PayCreditCardModal, domínio credit-cards, sem dupla contagem
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

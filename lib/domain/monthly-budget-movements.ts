@@ -31,6 +31,6 @@ export function filterFutureForBudgetMonth(
 }
 
 export function toSpendableMovement(tx: Transaction): SpendableMovement | null {
-  if (tx.type === 'transfer') return null;
+  if (tx.type === 'transfer' || tx.type === 'credit_payment') return null;
   return { type: tx.type, amount: tx.amount, date: tx.date };
 }

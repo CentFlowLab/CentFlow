@@ -66,20 +66,26 @@ export default function MovimentosScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions('all');
   const { data: accounts = [] } = useAccountsWithBalances();
-  const accountById = useMemo(
-    () => Object.fromEntries(accounts.map((account) => [account.id, account.name])),
-    [accounts],
-  );
-  const { contentBottomPadding } = useResponsiveLayout();
-  const { refreshing, onRefresh } = usePullToRefresh(refetch);
-  const deleteMutation = useDeleteTransaction();
-  const { showToast } = useToast();
-
   const {
     data: liabilities,
     refetch: refetchLiabilities,
     isRefetching: isRefetchingLiabilities,
   } = useLiabilities();
+  const accountById = useMemo(
+    () => Object.fromEntries(accounts.map((account) => [account.id, account.name])),
+    [accounts],
+  );
+  const creditById = useMemo(
+    () =>
+      Object.fromEntries(
+        (liabilities?.credits ?? []).map((credit) => [credit.id, credit.name]),
+      ),
+    [liabilities?.credits],
+  );
+  const { contentBottomPadding } = useResponsiveLayout();
+  const { refreshing, onRefresh } = usePullToRefresh(refetch);
+  const deleteMutation = useDeleteTransaction();
+  const { showToast } = useToast();
   const deleteSubscription = useDeleteSubscription();
   const saveSubscription = useSaveSubscription();
   const {
@@ -192,7 +198,7 @@ export default function MovimentosScreen() {
     !suppressDetectionRef.current;
 
   function handleEdit(transaction: Transaction) {
-    if (transaction.type === 'transfer') return;
+    if (transaction.type === 'transfer' || transaction.type === 'credit_payment') return;
     setEditingTransaction(transaction);
   }
 
@@ -294,6 +300,7 @@ export default function MovimentosScreen() {
                 <SwipeableTransactionListItem
                   transaction={item}
                   accountById={accountById}
+                  creditById={creditById}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />

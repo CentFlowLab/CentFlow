@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useToast } from '@/components/ui/Toast';
 import { useCreateTransaction } from '@/hooks/queries/useTransactions';
-import { useLiabilities, useSaveCredit } from '@/hooks/queries/useLiabilities';
+import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useAuth } from '@/lib/auth';
+import { isCardCredit } from '@/lib/credit/credit-type.utils';
 import {
   addDaysIso,
   advanceMonthSameDayIso,
@@ -18,17 +19,17 @@ import {
 import { todayInputDate } from '@/lib/utils/format';
 
 import { CreditPaymentReminderModal } from './CreditPaymentReminderModal';
+import { PayCreditCardModal } from './PayCreditCardModal';
 
 /**
- * Verifica créditos com pagamento previsto para hoje (ou já passado) e pede
- * confirmação do débito ao utilizador. Montado no layout das tabs.
+ * Verifica créditos com pagamento previsto para hoje (ou já passado).
+ * Cartões → modal «Pagar cartão»; empréstimos → lembrete clássico.
  */
 export function CreditPaymentReminderGate() {
   const { user, isAuthenticated } = useAuth();
   const userId = user?.id ?? '';
   const { data } = useLiabilities();
   const credits = useMemo(() => data?.credits ?? [], [data?.credits]);
-  const saveCredit = useSaveCredit();
   const createTransaction = useCreateTransaction();
   const { showToast } = useToast();
 
@@ -68,7 +69,7 @@ export function CreditPaymentReminderGate() {
     await saveCreditReminderState(userId, next);
   }
 
-  async function handleConfirm(amount: number) {
+  async function handleLoanConfirm(amount: number) {
     if (!current) return;
     const oldDate = current.nextPaymentDate;
     try {
@@ -80,7 +81,6 @@ export function CreditPaymentReminderGate() {
         date: todayInputDate(),
       });
       const newDate = oldDate ? advanceMonthSameDayIso(oldDate) : firstDayOfNextMonthIso();
-      await saveCredit.mutateAsync({ ...current, nextPaymentDate: newDate });
       await persistState({ ...(reminderState ?? {}), [current.id]: { handledDate: oldDate } });
       setDismissed((prev) => [...prev, current.id]);
       showToast('Pagamento registado.', 'success');
@@ -103,12 +103,22 @@ export function CreditPaymentReminderGate() {
     if (current) setDismissed((prev) => [...prev, current.id]);
   }
 
+  if (current && isCardCredit(current.creditType)) {
+    return (
+      <PayCreditCardModal
+        visible
+        credit={current}
+        onClose={handleClose}
+      />
+    );
+  }
+
   return (
     <CreditPaymentReminderModal
       visible={Boolean(current)}
       credit={current}
-      isSaving={createTransaction.isPending || saveCredit.isPending}
-      onConfirm={handleConfirm}
+      isSaving={createTransaction.isPending}
+      onConfirm={handleLoanConfirm}
       onSnooze={handleSnooze}
       onClose={handleClose}
     />

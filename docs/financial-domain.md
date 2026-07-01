@@ -83,7 +83,19 @@ npx tsc --noEmit
 
 Testes do domínio: `lib/domain/financial/*.test.ts`
 
-## Transferências entre contas (ledger)
+## Cartões de crédito (ledger)
+
+Cartão **não é conta corrente** — é passivo (`credits` com `creditType: 'card'`).
+
+| Operação | Tipo | Efeito |
+|----------|------|--------|
+| Compra no cartão | `expense` + `credit_id` | +dívida, conta como despesa, **não** debita conta |
+| Pagar cartão | `credit_payment` + `account_id` + `credit_id` | −conta, −dívida, **não** é despesa |
+
+Funções: `lib/domain/financial/credit-cards.ts`
+
+Sincronização de `outstandingBalance`: `lib/credit/credit-ledger-sync.ts` (após create/delete de movimentos ligados).
+
 
 ### Modelo de dados
 

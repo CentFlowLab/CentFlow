@@ -56,6 +56,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     receiptImage: null,
     accountId: row.account_id ?? undefined,
     destinationAccountId: row.destination_account_id ?? undefined,
+    creditId: (row as TransactionRow & { credit_id?: string | null }).credit_id ?? undefined,
     budgetMonth: (row as TransactionRow).budget_month ?? undefined,
   };
 }
@@ -147,6 +148,7 @@ export function toTransactionInsert(
       ? {
           account_id: input.accountId ?? null,
           destination_account_id: input.destinationAccountId ?? null,
+          credit_id: input.creditId ?? null,
         }
       : {}),
   };
@@ -173,6 +175,7 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
       ? {
           account_id: input.accountId ?? null,
           destination_account_id: input.destinationAccountId ?? null,
+          credit_id: input.creditId ?? null,
         }
       : {}),
   };

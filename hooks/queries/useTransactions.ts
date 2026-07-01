@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { useState } from 'react';
 
 import { queryKeys } from '@/lib/api/keys';
-import { invalidateTransactionQueries } from '@/lib/api/invalidate-queries';
+import { invalidateAssetsQueries, invalidateTransactionQueries } from '@/lib/api/invalidate-queries';
 import {
   applyOptimisticTransactionDelete,
   applyOptimisticTransactionUpdate,
@@ -112,6 +112,10 @@ export function useCreateTransaction() {
         traceMovementStep('mutation_success', { component: 'useCreateTransaction' });
       }
       invalidateTransactionQueries(queryClient);
+      if (variables.creditId || variables.type === 'credit_payment') {
+        invalidateAssetsQueries(queryClient);
+        void queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      }
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
@@ -190,6 +194,9 @@ export function useDeleteTransaction() {
         payload: { transactionId },
       });
     },
-    onSettled: () => invalidateTransactionQueries(queryClient),
+    onSettled: () => {
+      invalidateTransactionQueries(queryClient);
+      void queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+    },
   });
 }

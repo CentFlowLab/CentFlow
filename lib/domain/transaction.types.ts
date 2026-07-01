@@ -8,7 +8,7 @@ import type {
 
 export type CashTransactionType = 'expense' | 'income';
 
-export type TransactionType = CashTransactionType | 'transfer';
+export type TransactionType = CashTransactionType | 'transfer' | 'credit_payment';
 
 export type TransactionFilter = 'all' | CashTransactionType | 'transfer';
 
@@ -33,6 +33,8 @@ export interface Transaction {
   accountId?: string | null;
   /** Conta de destino (apenas transferências). */
   destinationAccountId?: string | null;
+  /** Cartão de crédito (despesa no cartão ou pagamento credit_payment). */
+  creditId?: string | null;
   /** Mês financeiro (YYYY-MM) — receitas podem contar num mês diferente da data. */
   budgetMonth?: string | null;
 }
@@ -45,6 +47,7 @@ export interface CreateTransactionInput {
   date: string;
   accountId?: string | null;
   destinationAccountId?: string | null;
+  creditId?: string | null;
   budgetMonth?: string | null;
   /** Upload + OCR inline (fluxo legado sem confirmação) */
   receipt?: ReceiptDraft;
@@ -84,5 +87,6 @@ export type UpdateTransactionInput = {
   date: string;
   accountId?: string | null;
   destinationAccountId?: string | null;
+  creditId?: string | null;
   budgetMonth?: string | null;
 };

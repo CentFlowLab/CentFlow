@@ -6,6 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import {
   CreditFormModal,
   CreditsSection,
+  PayCreditCardModal,
   RegisterCreditPaymentModal,
 } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
@@ -138,14 +139,25 @@ export default function PrecosScreen() {
         }}
       />
 
-      <RegisterCreditPaymentModal
-        visible={paymentVisible}
-        credit={paymentCredit}
-        onClose={() => {
-          setPaymentVisible(false);
-          setPaymentCredit(null);
-        }}
-      />
+      {paymentCredit && isCardCredit(paymentCredit.creditType) ? (
+        <PayCreditCardModal
+          visible={paymentVisible}
+          credit={paymentCredit}
+          onClose={() => {
+            setPaymentVisible(false);
+            setPaymentCredit(null);
+          }}
+        />
+      ) : (
+        <RegisterCreditPaymentModal
+          visible={paymentVisible}
+          credit={paymentCredit}
+          onClose={() => {
+            setPaymentVisible(false);
+            setPaymentCredit(null);
+          }}
+        />
+      )}
     </View>
   );
 }

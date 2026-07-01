@@ -27,6 +27,8 @@ export interface RawTransaction {
   accountId?: string | null;
   destination_account_id?: string | null;
   destinationAccountId?: string | null;
+  credit_id?: string | null;
+  creditId?: string | null;
 }
 
 export interface RawTransactionsResponse {

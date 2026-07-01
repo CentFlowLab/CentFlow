@@ -15,7 +15,7 @@ export function isRealCashflowTransaction(tx: Pick<FinancialTransaction, 'type'>
 }
 
 export function transactionCashDelta(tx: Pick<FinancialTransaction, 'type' | 'amount'>): number {
-  if (tx.type === 'transfer') return 0;
+  if (tx.type === 'transfer' || tx.type === 'credit_payment') return 0;
   return tx.type === 'income' ? tx.amount : -tx.amount;
 }
 
@@ -178,7 +178,7 @@ export function filterOccurredInCalendarMonth(
 }
 
 export function toSpendableMovement(tx: FinancialTransaction) {
-  if (tx.type === 'transfer') return null;
+  if (tx.type === 'transfer' || tx.type === 'credit_payment') return null;
   return { type: tx.type as 'income' | 'expense', amount: tx.amount, date: tx.date };
 }
 
@@ -199,7 +199,6 @@ export function filterFutureForMonthlyBudget(
   return transactions
     .filter(
       (tx) =>
-        tx.type !== 'transfer' &&
         isTransactionFuture(tx.date, referenceDate) &&
         getMonthKey(parseIsoDate(tx.date.slice(0, 10))) === monthKey,
     )

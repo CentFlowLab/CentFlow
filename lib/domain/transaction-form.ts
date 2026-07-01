@@ -16,7 +16,7 @@ export function parseTransactionAmount(value: string): number {
 }
 
 export function isTransactionEditable(transaction: Transaction): boolean {
-  return transaction.type !== 'transfer';
+  return transaction.type !== 'transfer' && transaction.type !== 'credit_payment';
 }
 
 export function transactionToFormValues(transaction: Transaction): TransactionFormValues {

@@ -5,12 +5,21 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 import { addMoney, roundMoney } from './money';
 
 export function accountMovementDelta(
-  tx: Pick<Transaction, 'type' | 'amount' | 'accountId' | 'destinationAccountId'>,
+  tx: Pick<Transaction, 'type' | 'amount' | 'accountId' | 'destinationAccountId' | 'creditId'>,
   accountId: string,
 ): number {
   if (tx.type === 'transfer') {
     if (tx.accountId === accountId) return -tx.amount;
     if (tx.destinationAccountId === accountId) return tx.amount;
+    return 0;
+  }
+
+  if (tx.type === 'credit_payment') {
+    if (tx.accountId === accountId) return -tx.amount;
+    return 0;
+  }
+
+  if (tx.type === 'expense' && tx.creditId && !tx.accountId) {
     return 0;
   }
 

@@ -113,6 +113,7 @@ export async function createMockTransaction(
     receiptImage: receipt?.receiptImage ?? input.receipt?.localUri ?? null,
     accountId: input.accountId ?? null,
     destinationAccountId: input.destinationAccountId ?? null,
+    creditId: input.creditId ?? null,
     budgetMonth: input.budgetMonth ?? null,
   };
 
@@ -154,11 +155,16 @@ export async function updateMockTransaction(
     date: input.date,
     accountId: input.accountId ?? existing.accountId,
     destinationAccountId: input.destinationAccountId ?? existing.destinationAccountId,
+    creditId: input.creditId ?? existing.creditId,
     budgetMonth: input.budgetMonth ?? existing.budgetMonth,
   };
 
   store = [...store.slice(0, index), updated, ...store.slice(index + 1)];
   return updated;
+}
+
+export async function findMockTransaction(transactionId: string): Promise<Transaction | null> {
+  return store.find((tx) => tx.id === transactionId) ?? null;
 }
 
 export async function deleteMockTransaction(transactionId: string): Promise<void> {

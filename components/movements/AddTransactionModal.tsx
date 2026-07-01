@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { AccountPickerField } from '@/components/accounts';
+import { AccountPickerField, PaymentMethodPickerField, paymentSelectionToFields, type PaymentMethodSelection } from '@/components/accounts';
 import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
@@ -97,6 +97,7 @@ export function AddTransactionModal({
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayInputDate());
   const [accountId, setAccountId] = useState<string | undefined>();
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodSelection>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -123,6 +124,7 @@ export function AddTransactionModal({
     setDescription('');
     setDate(todayInputDate());
     setAccountId(undefined);
+    setPaymentMethod(undefined);
     setErrors({});
     setApiError(null);
     setProcessedReceipt(null);
@@ -261,6 +263,11 @@ export function AddTransactionModal({
     }
   }
 
+  function resolvePaymentFields() {
+    if (type === 'expense') return paymentSelectionToFields(paymentMethod);
+    return { accountId: accountId ?? null, creditId: null };
+  }
+
   async function handleSaveManual() {
     traceMovementStep('save_click', { path: 'manual' });
     setApiError(null);
@@ -268,13 +275,15 @@ export function AddTransactionModal({
     traceMovementStep('validation_start', { type, category, amountLen: amount.length });
 
     const parsedAmount = parseAmount(amount);
+    const paymentFields = resolvePaymentFields();
     const result = createTransactionSchema.safeParse({
       type,
       amount: parsedAmount,
       category,
       description: description.trim() || undefined,
       date,
-      accountId: accountId ?? null,
+      accountId: paymentFields.accountId,
+      creditId: paymentFields.creditId,
     });
 
     if (!result.success) {
@@ -305,7 +314,7 @@ export function AddTransactionModal({
     try {
       const input = {
         ...result.data,
-        accountId: accountId ?? null,
+        ...paymentFields,
         ...(processedReceipt
           ? {
               receiptMeta: {
@@ -330,7 +339,9 @@ export function AddTransactionModal({
       traceMovementStep('mutation_success', { path: 'manual' });
 
       if (isFirst) {
-        track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, { type: result.data.type });
+        track(AnalyticsEvents.FIRST_TRANSACTION_CREATED, {
+          type: result.data.type === 'credit_payment' ? 'expense' : result.data.type,
+        });
       }
 
       showToast('Movimento guardado.', 'success');
@@ -361,13 +372,14 @@ export function AddTransactionModal({
 
     try {
       traceMovementStep('mutation_start', { path: 'receipt_confirm', isFirst });
+      const paymentFields = resolvePaymentFields();
       const outcome = await createMutation.mutateAsync({
         type: confirmation.type,
         amount: confirmation.amount,
         category: confirmation.category,
         description: confirmation.description,
         date: confirmation.date,
-        accountId: accountId ?? null,
+        ...paymentFields,
         receiptMeta: {
           receiptId: processed.receiptId,
           receiptUrl: processed.receiptUrl,
@@ -628,7 +640,11 @@ export function AddTransactionModal({
             />
 
             <View style={styles.accountSection}>
-              <AccountPickerField value={accountId} onChange={setAccountId} transactionType={type} />
+              {type === 'expense' ? (
+                <PaymentMethodPickerField value={paymentMethod} onChange={setPaymentMethod} />
+              ) : (
+                <AccountPickerField value={accountId} onChange={setAccountId} transactionType={type} />
+              )}
             </View>
           </>
         ) : (

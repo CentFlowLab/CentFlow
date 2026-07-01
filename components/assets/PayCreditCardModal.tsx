@@ -1,0 +1,229 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { AccountPickerField } from '@/components/accounts/AccountPickerField';
+import { DraggableBottomSheet } from '@/components/layout';
+import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
+import { useCreateTransaction } from '@/hooks/queries/useTransactions';
+import { useLiabilities } from '@/hooks/queries/useLiabilities';
+import { getApiErrorMessage } from '@/lib/api/errors';
+import { isCardCredit } from '@/lib/credit/credit-type.utils';
+import {
+  calculateCreditCardBalance,
+  recordCreditCardPayment,
+} from '@/lib/domain/financial/credit-cards';
+import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
+import type { Credit } from '@/lib/domain/types';
+import { colors, spacing } from '@/lib/theme';
+import { formatCurrency, todayInputDate } from '@/lib/utils/format';
+import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
+
+type PayCreditCardModalProps = {
+  visible: boolean;
+  credit: Credit | null;
+  onClose: () => void;
+};
+
+export function PayCreditCardModal({ visible, credit, onClose }: PayCreditCardModalProps) {
+  const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
+  const createTransaction = useCreateTransaction();
+  const { data: accounts = [] } = useAccountsWithBalances();
+  const { data: liabilities } = useLiabilities();
+
+  const [accountId, setAccountId] = useState<string | undefined>();
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(todayInputDate());
+  const [note, setNote] = useState('');
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const cards = useMemo(
+    () => (liabilities?.credits ?? []).filter((c) => isCardCredit(c.creditType)),
+    [liabilities?.credits],
+  );
+  const activeCredit = credit ?? cards[0] ?? null;
+
+  useEffect(() => {
+    if (!visible) return;
+    const suggested = activeCredit?.nextPaymentAmount ?? activeCredit?.outstandingBalance;
+    setAmount(suggested ? String(suggested) : '');
+    setDate(todayInputDate());
+    setNote('');
+    setApiError(null);
+    setAccountId(undefined);
+  }, [visible, activeCredit?.id]);
+
+  const parsedAmount = useMemo(() => {
+    if (!amount.trim()) return Number.NaN;
+    return parseGoalAmount(amount);
+  }, [amount]);
+
+  const fromAccount = accounts.find((a) => a.id === accountId);
+  const fromBalance = fromAccount?.balance ?? fromAccount?.initialBalance ?? 0;
+
+  const impact = useMemo(() => {
+    if (!activeCredit || Number.isNaN(parsedAmount) || parsedAmount <= 0) return null;
+    return recordCreditCardPayment({
+      credit: activeCredit,
+      amount: parsedAmount,
+      fromAccountBalance: fromBalance,
+    });
+  }, [activeCredit, parsedAmount, fromBalance]);
+
+  const insufficientFunds =
+    !Number.isNaN(parsedAmount) && parsedAmount > 0 && parsedAmount > fromBalance;
+
+  async function handleConfirm() {
+    if (!activeCredit) return;
+    setApiError(null);
+
+    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      setApiError('Indica um valor válido.');
+      return;
+    }
+    if (!accountId) {
+      setApiError('Escolhe a conta de origem.');
+      return;
+    }
+    if (parsedAmount > fromBalance) {
+      setApiError('Saldo insuficiente nesta conta.');
+      return;
+    }
+    if (parsedAmount > activeCredit.outstandingBalance) {
+      setApiError('O valor excede a dívida do cartão.');
+      return;
+    }
+
+    try {
+      await createTransaction.mutateAsync({
+        type: 'credit_payment',
+        amount: parsedAmount,
+        category: 'credit',
+        description: note.trim() || `Pagamento ${activeCredit.name}`,
+        date,
+        accountId,
+        creditId: activeCredit.id,
+      });
+      showToast(`Pagamento de ${formatCurrency(parsedAmount)} registado.`, 'success');
+      onClose();
+    } catch (error) {
+      setApiError(getApiErrorMessage(error, 'o pagamento'));
+      showToast('Não foi possível registar o pagamento.', 'error');
+    }
+  }
+
+  if (!activeCredit) return null;
+
+  const canConfirm =
+    Boolean(accountId) &&
+    !Number.isNaN(parsedAmount) &&
+    parsedAmount > 0 &&
+    !insufficientFunds &&
+    parsedAmount <= activeCredit.outstandingBalance;
+
+  return (
+    <DraggableBottomSheet visible={visible} onClose={onClose}>
+      <Text variant="h3" style={styles.sheetTitle}>
+        Pagar cartão
+      </Text>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 24) + 80 }]}>
+        <Text variant="caption" color="textMuted">
+          Liquida dívida do cartão sem contar como despesa nova.
+        </Text>
+
+        <Card variant="outlined" style={styles.summaryCard}>
+          <Text variant="label">{activeCredit.name}</Text>
+          <Text variant="caption" color="textSecondary">
+            Dívida actual: {formatCurrency(calculateCreditCardBalance(activeCredit))}
+          </Text>
+        </Card>
+
+        <AccountPickerField
+          value={accountId}
+          onChange={setAccountId}
+          transactionType="expense"
+        />
+
+        <TextField
+          label="Valor"
+          value={amount}
+          onChangeText={setAmount}
+          keyboardType="decimal-pad"
+          placeholder="0,00"
+        />
+
+        <DatePickerField label="Data" value={date} onChange={setDate} />
+
+        <TextField
+          label="Nota (opcional)"
+          value={note}
+          onChangeText={setNote}
+          placeholder="Ex.: pagamento mensal"
+        />
+
+        {impact ? (
+          <Card variant="outlined" style={styles.impactCard}>
+            <Text variant="caption" color="textMuted">
+              Impacto
+            </Text>
+            {fromAccount ? (
+              <Text variant="body">
+                {fromAccount.name}: {formatCurrency(fromBalance)} →{' '}
+                {formatCurrency(impact.newAccountBalance)}
+              </Text>
+            ) : null}
+            <Text variant="body">
+              {activeCredit.name}: {formatCurrency(activeCredit.outstandingBalance)} →{' '}
+              {formatCurrency(impact.newCreditBalance)}
+            </Text>
+          </Card>
+        ) : null}
+
+        {insufficientFunds ? (
+          <Text variant="caption" color="danger">
+            Saldo insuficiente nesta conta.
+          </Text>
+        ) : null}
+
+        {apiError ? (
+          <Text variant="caption" color="danger">
+            {apiError}
+          </Text>
+        ) : null}
+
+        <View style={styles.footer}>
+          <Button
+            label={createTransaction.isPending ? 'A guardar...' : 'Confirmar pagamento'}
+            onPress={handleConfirm}
+            disabled={!canConfirm || createTransaction.isPending}
+          />
+        </View>
+      </ScrollView>
+    </DraggableBottomSheet>
+  );
+}
+
+const styles = StyleSheet.create({
+  sheetTitle: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  content: {
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  summaryCard: {
+    gap: spacing.xs,
+  },
+  impactCard: {
+    gap: spacing.xs,
+    backgroundColor: colors.surface,
+  },
+  footer: {
+    marginTop: spacing.lg,
+  },
+});

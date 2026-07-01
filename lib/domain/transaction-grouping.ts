@@ -53,7 +53,7 @@ function dayLabel(key: string, now: Date = new Date()): string {
 }
 
 function signedAmount(transaction: Transaction): number {
-  if (transaction.type === 'transfer') return 0;
+  if (transaction.type === 'transfer' || transaction.type === 'credit_payment') return 0;
   return transaction.type === 'income' ? transaction.amount : -transaction.amount;
 }
 
@@ -93,7 +93,7 @@ export function summarizeCurrentMonth(
   let count = 0;
 
   for (const transaction of transactions) {
-    if (transaction.type === 'transfer') continue;
+    if (transaction.type === 'transfer' || transaction.type === 'credit_payment') continue;
     const counts =
       transaction.type === 'income'
         ? incomeCountsForBudgetMonth(transaction, now)

@@ -4,6 +4,7 @@ import {
   createMockTransaction,
   deleteMockTransaction,
   fetchMockTransactions,
+  findMockTransaction,
   updateMockTransaction,
 } from '@/lib/api/mock-transactions';
 import {
@@ -23,7 +24,9 @@ import {
   uploadReceipt,
 } from '@/lib/api/services/receipt.service';
 import { isMockAuthEnabled } from '@/lib/auth';
+import { syncCreditBalanceFromTransaction } from '@/lib/credit/credit-ledger-sync';
 import { isSupabaseEnabled, supabaseTransactions } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { traceMovementError, traceMovementStep, traceTransferError, traceTransferStep } from '@/lib/doctor';
 import { traceFinancialMutationError, traceOcrFailure } from '@/lib/doctor/financial-mutation-trace';
 import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
@@ -173,6 +176,7 @@ export async function createTransaction(
     date: input.confirmation?.date ?? input.date,
     accountId: input.accountId,
     destinationAccountId: input.destinationAccountId,
+    creditId: input.creditId,
     budgetMonth: input.budgetMonth,
   };
 
@@ -259,6 +263,11 @@ export async function createTransaction(
     itemsSavedCount,
   });
 
+  const userId = await resolveTransactionUserId();
+  if (userId && transaction.creditId) {
+    await syncCreditBalanceFromTransaction(userId, transaction, 'apply');
+  }
+
   return {
     transaction,
     ocrResult,
@@ -289,15 +298,36 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(transactionId: string): Promise<void> {
+  const userId = await resolveTransactionUserId();
+  let existing: Transaction | null = null;
+
   if (isMockAuthEnabled()) {
-    return deleteMockTransaction(transactionId);
+    existing = await findMockTransaction(transactionId);
+  } else if (isSupabaseEnabled()) {
+    existing = await supabaseTransactions.fetchTransactionById(transactionId);
   }
 
-  if (isSupabaseEnabled()) {
-    return supabaseTransactions.deleteTransaction(transactionId);
+  if (isMockAuthEnabled()) {
+    await deleteMockTransaction(transactionId);
+  } else if (isSupabaseEnabled()) {
+    await supabaseTransactions.deleteTransaction(transactionId);
+  } else {
+    await apiFetch<void>(API_ENDPOINTS.transaction(transactionId), {
+      method: 'DELETE',
+    });
   }
 
-  await apiFetch<void>(API_ENDPOINTS.transaction(transactionId), {
-    method: 'DELETE',
-  });
+  if (userId && existing?.creditId) {
+    await syncCreditBalanceFromTransaction(userId, existing, 'reverse');
+  }
+}
+
+async function resolveTransactionUserId(): Promise<string | null> {
+  if (isMockAuthEnabled()) return 'mock-user-1';
+  if (!isSupabaseEnabled()) return null;
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
 }

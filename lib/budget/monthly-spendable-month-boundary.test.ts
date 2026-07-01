@@ -54,11 +54,13 @@ test('dia 1 — movimentos de Junho não entram no disponível de Julho', () => 
 
   const result = calculateMonthlySpendable({
     currentBalance: 0,
-    currentMonthMovements: occurredThisMonth.map((item) => ({
-      type: item.type === 'transfer' ? 'expense' : item.type,
-      amount: item.amount,
-      date: item.date,
-    })),
+    currentMonthMovements: occurredThisMonth
+      .filter((item) => item.type === 'income' || item.type === 'expense')
+      .map((item) => ({
+        type: item.type as 'income' | 'expense',
+        amount: item.amount,
+        date: item.date,
+      })),
     referenceDate: JULY_FIRST,
   });
 

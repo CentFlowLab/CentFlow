@@ -13,6 +13,7 @@ const ACTION_ICON_COLOR = '#FFFFFF';
 type SwipeableTransactionListItemProps = {
   transaction: Transaction;
   accountById?: Record<string, string>;
+  creditById?: Record<string, string>;
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
 };
@@ -20,40 +21,71 @@ type SwipeableTransactionListItemProps = {
 export function SwipeableTransactionListItem({
   transaction,
   accountById = {},
+  creditById = {},
   onEdit,
   onDelete,
 }: SwipeableTransactionListItemProps) {
   const isTransfer = transaction.type === 'transfer';
+  const isCreditPayment = transaction.type === 'credit_payment';
+  const isCardExpense = transaction.type === 'expense' && Boolean(transaction.creditId);
   const isIncome = transaction.type === 'income';
-  const amountColor = isTransfer ? colors.primary : isIncome ? colors.success : colors.danger;
-  const prefix = isTransfer ? '' : isIncome ? '+' : '−';
-  const category = getCategoryById(transaction.category, transaction.type);
+  const isNonCashMovement = isTransfer || isCreditPayment;
+  const amountColor = isNonCashMovement
+    ? colors.primary
+    : isIncome
+      ? colors.success
+      : colors.danger;
+  const prefix = isNonCashMovement ? '' : isIncome ? '+' : '−';
+  const category = getCategoryById(
+    transaction.category,
+    transaction.type === 'credit_payment' ? 'expense' : transaction.type,
+  );
   const transferIcon = {
     ios: 'arrow.left.arrow.right',
     android: 'swap_horiz',
     web: 'swap_horiz',
   } as const;
+  const paymentIcon = {
+    ios: 'creditcard.fill',
+    android: 'credit_card',
+    web: 'credit_card',
+  } as const;
   const icon = isTransfer
     ? transferIcon
-    : category?.icon ?? {
-        ios: 'ellipsis.circle.fill',
-        android: 'more_horiz',
-        web: 'more_horiz',
-      };
+    : isCreditPayment
+      ? paymentIcon
+      : category?.icon ?? {
+          ios: 'ellipsis.circle.fill',
+          android: 'more_horiz',
+          web: 'more_horiz',
+        };
 
   const fromName = transaction.accountId ? accountById[transaction.accountId] : undefined;
   const toName = transaction.destinationAccountId
     ? accountById[transaction.destinationAccountId]
     : undefined;
+  const cardName = transaction.creditId ? creditById[transaction.creditId] : undefined;
 
   const title = isTransfer
     ? fromName && toName
       ? `${fromName} → ${toName}`
       : transaction.description?.trim() || 'Transferência entre contas'
-    : transaction.description?.trim() || transaction.categoryLabel;
+    : isCreditPayment
+      ? cardName && fromName
+        ? `${fromName} → ${cardName}`
+        : transaction.description?.trim() || 'Pagamento de cartão'
+      : isCardExpense && cardName
+        ? `${transaction.description?.trim() || transaction.categoryLabel} · ${cardName}`
+        : transaction.description?.trim() || transaction.categoryLabel;
 
   const subtitleParts = [
-    isTransfer ? 'Transferência' : transaction.categoryLabel,
+    isTransfer
+      ? 'Transferência'
+      : isCreditPayment
+        ? 'Pagamento cartão'
+        : isCardExpense
+          ? `${transaction.categoryLabel} · Cartão`
+          : transaction.categoryLabel,
     formatDateShort(transaction.date),
   ];
   if (hasReceipt(transaction)) subtitleParts.push('Talão');
@@ -83,7 +115,7 @@ export function SwipeableTransactionListItem({
   function renderRightActions() {
     return (
       <View style={styles.actions}>
-        {!isTransfer ? (
+        {!isTransfer && !isCreditPayment ? (
           <Pressable
             onPress={() => onEdit(transaction)}
             style={({ pressed }) => [
@@ -123,18 +155,22 @@ export function SwipeableTransactionListItem({
   const row = (
     <Pressable
       onPress={() => {
-        if (!isTransfer) onEdit(transaction);
+        if (!isTransfer && !isCreditPayment) onEdit(transaction);
       }}
       onLongPress={() => {
-        if (!isTransfer) onEdit(transaction);
+        if (!isTransfer && !isCreditPayment) onEdit(transaction);
       }}
       delayLongPress={320}
-      style={({ pressed }) => [pressed && !isTransfer && styles.rowPressed]}>
-      <Card variant="elevated" style={[styles.card, isTransfer && styles.cardTransfer]}>
+      style={({ pressed }) => [pressed && !isTransfer && !isCreditPayment && styles.rowPressed]}>
+      <Card variant="elevated" style={[styles.card, isNonCashMovement && styles.cardTransfer]}>
         <View
           style={[
             styles.iconWrapper,
-            isTransfer ? styles.iconTransfer : isIncome ? styles.iconIncome : styles.iconExpense,
+            isNonCashMovement
+              ? styles.iconTransfer
+              : isIncome
+                ? styles.iconIncome
+                : styles.iconExpense,
           ]}>
           <SymbolView name={icon} tintColor={amountColor} size={20} />
         </View>
@@ -152,6 +188,18 @@ export function SwipeableTransactionListItem({
           <View style={styles.transferBadge}>
             <Text variant="caption" color="primary">
               Transferência
+            </Text>
+          </View>
+        ) : isCreditPayment ? (
+          <View style={styles.transferBadge}>
+            <Text variant="caption" color="primary">
+              Pagamento cartão
+            </Text>
+          </View>
+        ) : isCardExpense ? (
+          <View style={styles.transferBadge}>
+            <Text variant="caption" color="primary">
+              Cartão
             </Text>
           </View>
         ) : hasReceiptFlag ? (
@@ -175,7 +223,7 @@ export function SwipeableTransactionListItem({
       <View style={styles.wrapper}>
         {row}
         <View style={styles.webActions}>
-          {!isTransfer ? (
+          {!isTransfer && !isCreditPayment ? (
             <Pressable
               onPress={() => onEdit(transaction)}
               style={[styles.webActionBtn, styles.editAction]}

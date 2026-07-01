@@ -190,7 +190,7 @@ export function CreditsSection({
                 )}
                 {onRegisterPayment ? (
                   <Button
-                    label="Registar pagamento"
+                    label={isCardVariant ? 'Pagar cartão' : 'Registar pagamento'}
                     variant="secondary"
                     size="sm"
                     onPress={() => onRegisterPayment(credit)}
