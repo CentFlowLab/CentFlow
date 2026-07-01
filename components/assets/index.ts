@@ -10,6 +10,7 @@ export { AddWarrantyModal, WarrantyFormModal } from './WarrantyFormModal';
 export { ASSETS_EMPTY_CONFIG, ASSETS_SEGMENTS, ASSETS_SECTION_META } from './assets.config';
 export { AssetsEmptyState } from './AssetsEmptyState';
 export { AssetsOverviewCard } from './AssetsOverviewCard';
+export { AccountsSection } from './AccountsSection';
 export { AssetsSectionShell } from './AssetsSectionShell';
 export { AssetsTabToolbar } from './AssetsTabToolbar';
 export { GoalListItem } from './GoalListItem';

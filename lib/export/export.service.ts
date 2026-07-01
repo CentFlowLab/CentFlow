@@ -278,7 +278,7 @@ function buildPdfHtml(input: FinancialPdfInput): string {
     sections.movimentos ? section('Movimentos recentes', buildTransactionRows(transactions)) : '',
     sections.objetivos ? section('Objectivos', buildGoalsSection(assets)) : '',
     sections.ativos ? section('Ativos', buildAssetsSummary(assets)) : '',
-    sections.subscricoes ? section('Subscrições', buildSubscriptionsSection(assets)) : '',
+    sections.subscricoes ? section('Despesas recorrentes', buildSubscriptionsSection(assets)) : '',
   ].join('');
 
   return `

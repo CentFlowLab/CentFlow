@@ -4,15 +4,15 @@ import test from 'node:test';
 import { pluralize, pluralizeSubscricoes } from '@/lib/utils/pluralize';
 
 test('pluralizeSubscricoes — singular', () => {
-  assert.equal(pluralizeSubscricoes(1), '1 subscrição a renovar');
+  assert.equal(pluralizeSubscricoes(1), '1 despesa recorrente a renovar');
 });
 
 test('pluralizeSubscricoes — plural', () => {
-  assert.equal(pluralizeSubscricoes(3), '3 subscrições a renovar');
+  assert.equal(pluralizeSubscricoes(3), '3 despesas recorrentes a renovar');
 });
 
 test('pluralizeSubscricoes — zero usa plural', () => {
-  assert.equal(pluralizeSubscricoes(0), '0 subscrições a renovar');
+  assert.equal(pluralizeSubscricoes(0), '0 despesas recorrentes a renovar');
 });
 
 test('pluralize genérico respeita singular/plural', () => {

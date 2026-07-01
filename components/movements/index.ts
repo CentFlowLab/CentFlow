@@ -3,6 +3,7 @@ export { ConfirmReceiptModal } from './ConfirmReceiptModal';
 export { EditTransactionModal } from './EditTransactionModal';
 export { MOVEMENTS_EMPTY_CONFIG, MOVEMENTS_VIEW_SEGMENTS } from './movements.config';
 export { MovementFilterChips, type MovementTab } from './MovementFilterChips';
+export { MovementSearchBar } from './MovementSearchBar';
 export { PendingSubscriptionModal } from './PendingSubscriptionModal';
 export { QuickExpenseSheet } from './QuickExpenseSheet';
 export { OcrDetectionSummary } from './OcrDetectionSummary';

@@ -294,7 +294,7 @@ export function ProfileHubSections({
               onPress={() => router.push('/(tabs)/ativos?tab=objetivos')}
             />
             <StatCell
-              label="Subscrições"
+              label="Despesas recorrentes"
               value={activeSubscriptions}
               onPress={() => router.push('/(tabs)/movimentos?view=subscricoes')}
             />

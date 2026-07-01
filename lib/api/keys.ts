@@ -16,6 +16,7 @@ export const queryKeys = {
   financialProfile: ['financial-profile'] as const,
   assets: ['assets'] as const,
   liabilities: (userId: string) => ['liabilities', userId] as const,
+  accounts: ['accounts'] as const,
   prices: ['prices'] as const,
   emailEvents: (userId: string) => ['email-events', userId] as const,
 } as const;

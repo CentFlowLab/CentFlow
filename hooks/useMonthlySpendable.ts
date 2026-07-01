@@ -12,8 +12,6 @@ import {
   isTransactionFuture,
   isTransactionOccurred,
   parseTransactionDate,
-  sumTransactionCashBalance,
-  transactionCashDelta,
 } from '@/lib/domain/transaction-date.utils';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
@@ -45,8 +43,8 @@ function toSpendableMovement(tx: Transaction): SpendableMovement {
 
 /**
  * Liga `calculateMonthlySpendable` aos dados reais (Supabase via TanStack Query).
- * O saldo actual é tratado como saldo de início de mês para evitar dupla contagem
- * com os movimentos já ocorridos este mês.
+ * O orçamento mensal considera apenas movimentos do mês civil actual — sem arrastar
+ * défices de meses anteriores para o «Disponível este mês».
  */
 export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySpendable {
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
@@ -64,13 +62,6 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
         isTransactionFuture(tx.date, referenceDate) &&
         isSameMonth(parseTransactionDate(tx.date), referenceDate),
     );
-
-    const allOccurredNet = sumTransactionCashBalance(transactions, 'occurred', referenceDate);
-    const occurredThisMonthNet = occurredThisMonth.reduce(
-      (sum, tx) => sum + transactionCashDelta(tx),
-      0,
-    );
-    const startOfMonthBalance = allOccurredNet - occurredThisMonthNet;
 
     const subscriptions = liabilities?.subscriptions ?? [];
     const credits = liabilities?.credits ?? [];
@@ -103,7 +94,7 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
         : undefined;
 
     const output = calculateMonthlySpendable({
-      currentBalance: startOfMonthBalance,
+      currentBalance: 0,
       currentMonthMovements: occurredThisMonth.map(toSpendableMovement),
       futureMovements: futureThisMonth.map(toSpendableMovement),
       subscriptions: subscriptionInputs,

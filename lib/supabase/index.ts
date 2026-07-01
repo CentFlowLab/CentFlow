@@ -10,6 +10,7 @@ export * as supabaseTransactions from './transactions';
 export * as supabaseReceipts from './receipts';
 export * as supabaseAssets from './assets';
 export * as supabaseLiabilities from './liabilities';
+export * as supabaseAccounts from './accounts';
 export type {
   Database,
   Profile,

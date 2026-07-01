@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado",
+  "currentPhase": "Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -104,7 +104,14 @@
     "HOTFIX loop infinito FaceID — BiometricGate com aprovação por sessão (singleton), guarda isPrompting (ref) e cooldown que ignora as transições inactive→active provocadas pelo próprio diálogo de FaceID; sem auto-repetição após falha",
     "FaceID — escape de emergência sempre visível (entrar com email e password → desativa biometria + signOut); após 3 falhas passa a ação primária; 'Terminar sessão' sempre disponível",
     "Definições → Segurança — desativar biometria exige confirmação por password (Alert.prompt iOS, valida via authService.login), nunca por FaceID",
-    "HOTFIX loop de FaceID bem-sucedido — distinção determinística entre 'inactive' (provocado pelo diálogo de FaceID) e 'background' real: só repede biometria após background genuíno (hasBackgroundedRef), eliminando o ciclo de autenticações com sucesso; removido o cooldown frágil baseado em tempo"
+    "HOTFIX loop de FaceID bem-sucedido — distinção determinística entre 'inactive' (provocado pelo diálogo de FaceID) e 'background' real: só repede biometria após background genuíno (hasBackgroundedRef), eliminando o ciclo de autenticações com sucesso; removido o cooldown frágil baseado em tempo",
+    "Pré-beta — pesquisa de movimentos (MovementSearchBar + filterTransactionsBySearch) com chips Todos/Despesas/Receitas/Despesas recorrentes",
+    "Pré-beta — período 6 meses nas Análises (halfyear) com trends/métricas/insights dinâmicos via applyAnalysisPeriod",
+    "Pré-beta — secção Contas em Ativos (CRUD Supabase, saldos, total consolidado)",
+    "Pré-beta — bug dia 1: Disponível este mês considera só movimentos do mês civil actual (sem arrasto de défices)",
+    "Pré-beta — categorias de receita separadas (fontes de rendimento) vs despesas; labels PT sempre visíveis",
+    "Pré-beta — microcopy Subscrições → Despesas recorrentes em toda a UI visível",
+    "Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

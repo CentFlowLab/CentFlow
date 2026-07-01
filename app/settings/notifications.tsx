@@ -109,7 +109,7 @@ export default function NotificationsScreen() {
             disabled={updatePreferences.isPending}
           />
           <SettingsToggleRow
-            label="Subscrições a renovar"
+            label="Despesas recorrentes a renovar"
             description="Aviso antes da renovação"
             value={preferences.emailSubscriptionRenewals}
             onValueChange={(value) => handleEmailToggle('emailSubscriptionRenewals', value)}

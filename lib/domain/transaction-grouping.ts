@@ -1,4 +1,5 @@
 import type { Transaction } from './transaction.types';
+import { parseTransactionDate } from './transaction-date.utils';
 
 export type TransactionDaySection = {
   /** Chave estável (YYYY-MM-DD). */
@@ -15,21 +16,24 @@ export type MonthSummary = {
   count: number;
 };
 
-function toDayKey(iso: string): string {
-  // Usa a componente de data local para agrupar por dia civil.
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso.slice(0, 10);
+function dayKeyFromDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
+function toDayKey(iso: string): string {
+  const date = parseTransactionDate(iso);
+  if (Number.isNaN(date.getTime())) return iso.slice(0, 10);
+  return dayKeyFromDate(date);
+}
+
 function dayLabel(key: string, now: Date = new Date()): string {
-  const todayKey = toDayKey(now.toISOString());
+  const todayKey = dayKeyFromDate(now);
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  const yesterdayKey = toDayKey(yesterday.toISOString());
+  const yesterdayKey = dayKeyFromDate(yesterday);
 
   if (key === todayKey) return 'Hoje';
   if (key === yesterdayKey) return 'Ontem';
@@ -87,7 +91,7 @@ export function summarizeCurrentMonth(
   let count = 0;
 
   for (const transaction of transactions) {
-    const date = new Date(transaction.date);
+    const date = parseTransactionDate(transaction.date);
     if (Number.isNaN(date.getTime())) continue;
     if (date.getMonth() !== month || date.getFullYear() !== year) continue;
     net += signedAmount(transaction);

@@ -12,6 +12,7 @@ export type QuickAddHandlers = {
   onCredit?: () => void;
   onAsset?: () => void;
   onWarranty?: () => void;
+  onAccount?: () => void;
 };
 
 export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
@@ -74,6 +75,13 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
           handlers.onWarranty();
         } else {
           router.push('/(tabs)/ativos?action=new-warranty');
+        }
+        break;
+      case 'account':
+        if (handlers.onAccount) {
+          handlers.onAccount();
+        } else {
+          router.push('/(tabs)/ativos?action=new-account&tab=contas');
         }
         break;
     }

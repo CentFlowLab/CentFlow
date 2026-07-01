@@ -131,10 +131,12 @@ export function composeAnalysisFromSources(input: {
   dashboard: DashboardData;
   transactions: Transaction[];
   assets: AssetsData;
+  periodDays?: number;
   periodLabel?: string;
 }): AnalysisData {
   const { dashboard, transactions, assets } = input;
-  const trends = buildAnalysisTrends(transactions, dashboard);
+  const periodDays = input.periodDays ?? PERIOD_DAYS;
+  const trends = buildAnalysisTrends(transactions, dashboard, periodDays);
   const baseMetrics = buildMetricsFromNetWorth(dashboard.netWorth);
   const trendMetrics = buildTrendMetrics(trends);
 
@@ -172,6 +174,63 @@ export function composeAnalysisFromSources(input: {
     metrics,
     insights,
     trends,
-    periodLabel: input.periodLabel ?? `Últimos ${PERIOD_DAYS} dias`,
+    periodLabel: input.periodLabel ?? `Últimos ${periodDays} dias`,
+  };
+}
+
+/** Reaplica o período seleccionado aos dados base de análises. */
+export function applyAnalysisPeriod(
+  base: AnalysisData,
+  transactions: Transaction[],
+  periodDays: number,
+  periodLabel: string,
+  assets?: AssetsData,
+): AnalysisData {
+  const dashboardStub = {
+    netWorth: base.netWorth,
+    netWorthChangePercent: base.trends.netWorthChangePercent,
+  } as DashboardData;
+
+  const trends = buildAnalysisTrends(transactions, dashboardStub, periodDays);
+  const trendMetrics = buildTrendMetrics(trends);
+
+  const savingsMetric =
+    trends.totalIncome > 0
+      ? [
+          {
+            id: 'savings-rate',
+            label: 'Taxa de poupança',
+            value: formatPercent(
+              Math.max(0, (trends.netCashflow / trends.totalIncome) * 100),
+              1,
+              false,
+            ),
+            subtitle: periodLabel,
+            trend: trends.netCashflow >= 0 ? ('up' as const) : ('down' as const),
+            icon: { ios: 'leaf.fill', android: 'eco', web: 'eco' },
+            color: colors.success,
+          },
+        ]
+      : [];
+
+  const patrimonyMetrics = base.metrics.filter((metric) =>
+    ['debt-ratio', 'investment-share', 'liquidity', 'inventory-share'].includes(metric.id),
+  );
+
+  const insights = assets
+    ? generateAnalysisInsights({
+        dashboard: dashboardStub,
+        transactions,
+        assets,
+        trends,
+      })
+    : base.insights;
+
+  return {
+    ...base,
+    trends,
+    metrics: [...savingsMetric, ...trendMetrics, ...patrimonyMetrics].slice(0, 6),
+    insights,
+    periodLabel,
   };
 }

@@ -207,7 +207,7 @@ export function getPriorityFeatures(answers: OnboardingAnswers): PriorityFeature
   }
 
   if (areas.has('subscriptions')) {
-    features.push({ emoji: '📱', label: 'Subscrições' });
+    features.push({ emoji: '📱', label: 'Despesas recorrentes' });
   }
 
   if (features.length === 0) {

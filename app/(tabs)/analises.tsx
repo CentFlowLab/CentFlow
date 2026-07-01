@@ -18,8 +18,12 @@ import {
   SectionHeader,
 } from '@/components/ui';
 import { useAnalysisData } from '@/hooks/queries/useAnalysisData';
+import { useAssets } from '@/hooks/queries/useAssets';
 import { usePricesData } from '@/hooks/queries/usePricesData';
 import { useTransactions } from '@/hooks/queries/useTransactions';
+import {
+  applyAnalysisPeriod,
+} from '@/lib/domain/analysis.compose';
 import {
   ANALYSIS_PERIOD_OPTIONS,
   computeSpendingByCategory,
@@ -36,12 +40,24 @@ const PERIOD_SEGMENTS = ANALYSIS_PERIOD_OPTIONS.map((option) => ({
 }));
 
 export default function AnalisesScreen() {
-  const { data, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
+  const { data: baseData, isLoading, isError, error, refetch, isRefetching } = useAnalysisData();
   const { data: pricesData } = usePricesData();
   const { data: transactions = [] } = useTransactions('all');
+  const { data: assetsData } = useAssets();
 
   const [period, setPeriod] = useState<AnalysisPeriodKey>('month');
   const periodOption = getPeriodOption(period);
+
+  const data = useMemo(() => {
+    if (!baseData) return null;
+    return applyAnalysisPeriod(
+      baseData,
+      transactions,
+      periodOption.days,
+      periodOption.label,
+      assetsData ?? undefined,
+    );
+  }, [baseData, transactions, periodOption.days, periodOption.label, assetsData]);
 
   const periodCategories = useMemo(
     () => computeSpendingByCategory(transactions, periodOption.days),
@@ -71,7 +87,7 @@ export default function AnalisesScreen() {
         </View>
       ) : (
         <ScreenContainer applyBottomSafeInset={false}>
-          <SectionHeader title="Análises" subtitle={`Últimos · ${periodOption.label}`} />
+          <SectionHeader title="Análises" subtitle={`Período · ${periodOption.label}`} />
 
           <View style={styles.periodSelector}>
             <SegmentedControl

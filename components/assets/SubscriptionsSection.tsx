@@ -55,7 +55,7 @@ export function SubscriptionsSection({
         <View style={styles.summaryRow}>
           <View>
             <Text variant="caption" color="textMuted">
-              Total mensal em subscrições
+              Total mensal em despesas recorrentes
             </Text>
             <Text variant="h2" color="primary">
               {formatCurrency(monthlyTotal)}

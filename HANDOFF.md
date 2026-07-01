@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-06-27T19:34:17.615Z -->
-<!-- Git: 681c11e (2026-06-27T20:01:19+01:00) -->
+<!-- Última geração: 2026-07-01T00:58:13.431Z -->
+<!-- Git: 7f55d52 (2026-06-27T20:34:34+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado** |
-| Última geração | 2026-06-27T19:34:17.615Z |
+| Fase atual | **Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home** |
+| Última geração | 2026-07-01T00:58:13.431Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `681c11e` (2026-06-27T20:01:19+01:00) |
+| Git commit | `7f55d52` (2026-06-27T20:34:34+01:00) |
 
 ---
 
@@ -168,6 +168,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     privacy.tsx
     security.tsx
     shortcuts.tsx
+  accounts/
+    AccountFormModal.tsx
+    AccountListItem.tsx
+    index.ts
   analysis/
     AnalysisMetricCard.tsx
     AnalysisSkeleton.tsx
@@ -253,6 +257,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     EditTransactionModal.tsx
     ImportCsvModal.tsx
     MovementFilterChips.tsx
+    MovementSearchBar.tsx
     OcrDetectionSummary.tsx
     OcrResultCard.tsx
     PendingSubscriptionModal.tsx
@@ -344,6 +349,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   mutations/
     useProfileMutations.ts
   queries/
+    useAccounts.ts
     useActiveSessions.ts
     useAnalysisData.ts
     useAssets.ts
@@ -379,6 +385,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useSubscriptionDetection.ts
   useTabBarBottomInset.ts
   useTabBarMetrics.ts
+  accounts/
+    balance.test.ts
+    balance.ts
   analytics/
     analytics.service.ts
     events.ts
@@ -403,6 +412,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     mock-transactions.ts
     queryClient.ts
     services/
+      accounts.service.ts
       analysis.service.ts
       assets.service.ts
       csv-import.service.ts
@@ -440,10 +450,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   budget/
     calculateMonthlySpendable.test.ts
     calculateMonthlySpendable.ts
+    monthly-spendable-month-boundary.test.ts
   config/
     app-variant.ts
     data-mode.ts
     demo-mode.ts
+    product-features.ts
     runtime-env.ts
   credit/
     credit-analysis.test.ts
@@ -475,6 +487,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     quick-expense-link-trace.ts
     quick-expense-trace.ts
   domain/
+    __tests__/
+      analysis-period.test.ts
+    account.types.ts
     analysis-period.ts
     analysis.compose.ts
     analysis.insights.ts
@@ -495,6 +510,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     financial-profile.types.ts
     goal-form.utils.ts
     goal.utils.ts
+    home-motivation.ts
     home.types.ts
     index.ts
     net-worth-monthly.ts
@@ -508,6 +524,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     transaction-date.utils.ts
     transaction-form.ts
     transaction-grouping.ts
+    transaction-search.test.ts
+    transaction-search.ts
     transaction.schema.ts
     transaction.types.ts
     types.ts
@@ -623,6 +641,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     renewal.utils.ts
     subscription-utils.ts
   supabase/
+    accounts.ts
     app-config.ts
     assets.ts
     auth.ts
@@ -670,7 +689,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 11 — Quick Expense via URL scheme com parâmetros (amount/category/note), guarda automática sem formulário + guia Back Tap atualizado
+## Fase atual: Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -775,6 +794,13 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - FaceID — escape de emergência sempre visível (entrar com email e password → desativa biometria + signOut); após 3 falhas passa a ação primária; 'Terminar sessão' sempre disponível
 - Definições → Segurança — desativar biometria exige confirmação por password (Alert.prompt iOS, valida via authService.login), nunca por FaceID
 - HOTFIX loop de FaceID bem-sucedido — distinção determinística entre 'inactive' (provocado pelo diálogo de FaceID) e 'background' real: só repede biometria após background genuíno (hasBackgroundedRef), eliminando o ciclo de autenticações com sucesso; removido o cooldown frágil baseado em tempo
+- Pré-beta — pesquisa de movimentos (MovementSearchBar + filterTransactionsBySearch) com chips Todos/Despesas/Receitas/Despesas recorrentes
+- Pré-beta — período 6 meses nas Análises (halfyear) com trends/métricas/insights dinâmicos via applyAnalysisPeriod
+- Pré-beta — secção Contas em Ativos (CRUD Supabase, saldos, total consolidado)
+- Pré-beta — bug dia 1: Disponível este mês considera só movimentos do mês civil actual (sem arrasto de défices)
+- Pré-beta — categorias de receita separadas (fontes de rendimento) vs despesas; labels PT sempre visíveis
+- Pré-beta — microcopy Subscrições → Despesas recorrentes em toda a UI visível
+- Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

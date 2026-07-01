@@ -50,7 +50,7 @@ export const PDF_SECTION_OPTIONS: PdfSectionOption[] = [
   },
   {
     id: 'subscricoes',
-    label: 'Subscrições',
+    label: 'Despesas recorrentes',
     description: 'Custos recorrentes mensais.',
   },
 ];

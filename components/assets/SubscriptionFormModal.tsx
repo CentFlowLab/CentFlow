@@ -105,7 +105,7 @@ export function SubscriptionFormModal({
 
     const parsedAmount = parseGoalAmount(amount);
     if (!name.trim()) {
-      setApiError('Indica o nome da subscrição.');
+      setApiError('Indica o nome da despesa recorrente.');
       return;
     }
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -127,18 +127,18 @@ export function SubscriptionFormModal({
         billingInterval,
         renewsAt: parsedRenewsAt,
       });
-      showToast(isEditing ? 'Subscrição actualizada.' : 'Subscrição adicionada.', 'success');
+      showToast(isEditing ? 'Despesa recorrente actualizada.' : 'Despesa recorrente adicionada.', 'success');
       onClose();
     } catch (error) {
-      setApiError(getApiErrorMessage(error, 'a subscrição'));
-      showToast('Não conseguimos guardar esta subscrição. Tenta novamente.', 'error');
+      setApiError(getApiErrorMessage(error, 'a despesa recorrente'));
+      showToast('Não conseguimos guardar esta despesa recorrente. Tenta novamente.', 'error');
     }
   }
 
   function confirmDelete() {
     if (!subscription) return;
 
-    Alert.alert('Eliminar subscrição', `Queres remover «${subscription.name}»?`, [
+    Alert.alert('Eliminar despesa recorrente', `Queres remover «${subscription.name}»?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -148,7 +148,7 @@ export function SubscriptionFormModal({
             await deleteSubscription.mutateAsync(subscription.id);
             onClose();
           } catch (error) {
-            setApiError(getApiErrorMessage(error, 'a subscrição'));
+            setApiError(getApiErrorMessage(error, 'a despesa recorrente'));
           }
         },
       },
@@ -164,7 +164,7 @@ export function SubscriptionFormModal({
       scrollContentStyle={styles.form}
       header={(requestClose) => (
         <View style={styles.header}>
-          <Text variant="h2">{isEditing ? 'Editar subscrição' : 'Nova subscrição'}</Text>
+          <Text variant="h2">{isEditing ? 'Editar despesa recorrente' : 'Nova despesa recorrente'}</Text>
           <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
             <SymbolView
               name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
@@ -218,7 +218,7 @@ export function SubscriptionFormModal({
         ) : null}
 
         <Button
-          label={isSaving ? 'A guardar...' : isEditing ? 'Guardar alterações' : 'Adicionar subscrição'}
+          label={isSaving ? 'A guardar...' : isEditing ? 'Guardar alterações' : 'Adicionar despesa recorrente'}
           onPress={handleSave}
           loading={isSaving}
           disabled={isSaving || isDeleting}
@@ -227,7 +227,7 @@ export function SubscriptionFormModal({
 
         {isEditing ? (
           <Button
-            label={isDeleting ? 'A eliminar...' : 'Eliminar subscrição'}
+            label={isDeleting ? 'A eliminar...' : 'Eliminar despesa recorrente'}
             variant="ghost"
             onPress={confirmDelete}
             loading={isDeleting}

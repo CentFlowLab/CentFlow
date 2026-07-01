@@ -32,7 +32,7 @@ export function PendingSubscriptionModal({
       header={(requestClose) => (
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text variant="h2">Nova subscrição?</Text>
+            <Text variant="h2">Nova despesa recorrente?</Text>
             <Text variant="caption" color="textMuted">
               Detetámos um padrão recorrente nos teus movimentos
             </Text>
@@ -73,7 +73,7 @@ export function PendingSubscriptionModal({
       </Card>
 
       <Text variant="body" color="textSecondary" style={styles.note}>
-        Queres adicionar esta subscrição ao teu registo para acompanhar custos e renovações?
+        Queres adicionar esta despesa recorrente ao teu registo para acompanhar custos e renovações?
       </Text>
 
       <View style={styles.actions}>
@@ -85,7 +85,7 @@ export function PendingSubscriptionModal({
           fullWidth
         />
         <Button
-          label="Não é subscrição"
+          label="Não é recorrente"
           variant="ghost"
           onPress={onDismiss}
           disabled={isSaving}

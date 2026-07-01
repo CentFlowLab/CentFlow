@@ -3,8 +3,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
+import { AccountFormModal } from '@/components/accounts';
 import {
   ASSETS_EMPTY_CONFIG,
+  AccountsSection,
   AssetsOverviewCard,
   GoalFormModal,
   GoalsSection,
@@ -22,10 +24,12 @@ import {
   useDeleteInventoryItem,
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
+import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { QuickAddScreenContext } from '@/lib/navigation/quick-add-context';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
+import type { BankAccount } from '@/lib/domain/account.types';
 import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 
@@ -39,8 +43,16 @@ export default function AtivosScreen() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [inventoryFormVisible, setInventoryFormVisible] = useState(false);
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
+  const [accountFormVisible, setAccountFormVisible] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
+  const {
+    data: accounts = [],
+    totalBalance,
+    refetch: refetchAccounts,
+    isRefetching: isRefetchingAccounts,
+  } = useAccountsWithBalances();
   const { contentBottomPadding } = useResponsiveLayout();
   const deleteGoal = useDeleteGoal();
   const deleteWarranty = useDeleteWarranty();
@@ -59,8 +71,9 @@ export default function AtivosScreen() {
       goals: assets.goals.length,
       warranties: assets.warranties.length,
       inventory: assets.inventory.length,
+      accounts: accounts.length,
     }),
-    [assets],
+    [assets, accounts.length],
   );
 
   function handleLearnMore() {
@@ -69,7 +82,7 @@ export default function AtivosScreen() {
   }
 
   useEffect(() => {
-    if (tab === 'objetivos' || tab === 'garantias' || tab === 'inventario') {
+    if (tab === 'objetivos' || tab === 'garantias' || tab === 'inventario' || tab === 'contas') {
       setActiveTab(tab);
     }
   }, [tab]);
@@ -96,6 +109,13 @@ export default function AtivosScreen() {
       setActiveTab('inventario');
       setEditingInventory(null);
       setInventoryFormVisible(true);
+      return;
+    }
+
+    if (action === 'new-account') {
+      setActiveTab('contas');
+      setEditingAccount(null);
+      setAccountFormVisible(true);
     }
   }, [action]);
 
@@ -144,8 +164,25 @@ export default function AtivosScreen() {
     setEditingInventory(null);
   }
 
+  function openCreateAccount() {
+    setEditingAccount(null);
+    setAccountFormVisible(true);
+  }
+
+  function openEditAccount(account: BankAccount) {
+    setEditingAccount(account);
+    setAccountFormVisible(true);
+  }
+
+  function closeAccountForm() {
+    setAccountFormVisible(false);
+    setEditingAccount(null);
+  }
+
   const assetsQuickAddContext: QuickAddScreenContext =
-    activeTab === 'garantias'
+    activeTab === 'contas'
+      ? 'ativos_contas'
+      : activeTab === 'garantias'
       ? 'ativos_garantias'
       : activeTab === 'inventario'
         ? 'ativos_inventario'
@@ -155,6 +192,7 @@ export default function AtivosScreen() {
     onGoal: openCreateGoal,
     onWarranty: openCreateWarranty,
     onAsset: openCreateInventory,
+    onAccount: openCreateAccount,
   });
 
   return (
@@ -191,8 +229,8 @@ export default function AtivosScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={() => refetch()}
+              refreshing={isRefetching || isRefetchingAccounts}
+              onRefresh={() => Promise.all([refetch(), refetchAccounts()])}
               tintColor={colors.primary}
             />
           }
@@ -245,7 +283,17 @@ export default function AtivosScreen() {
               </FeatureAreaGate>
             ) : null}
 
-            <RefetchingIndicator visible={isRefetching && !isLoading} />
+            {activeTab === 'contas' ? (
+              <AccountsSection
+                accounts={accounts}
+                totalBalance={totalBalance}
+                onCreate={openCreateAccount}
+                onEdit={openEditAccount}
+                onLearnMore={handleLearnMore}
+              />
+            ) : null}
+
+            <RefetchingIndicator visible={(isRefetching || isRefetchingAccounts) && !isLoading} />
           </ScreenContainer>
         </ScrollView>
       )}
@@ -262,6 +310,12 @@ export default function AtivosScreen() {
         visible={inventoryFormVisible}
         item={editingInventory}
         onClose={closeInventoryForm}
+      />
+
+      <AccountFormModal
+        visible={accountFormVisible}
+        account={editingAccount}
+        onClose={closeAccountForm}
       />
 
       <QuickAddMenuSheet

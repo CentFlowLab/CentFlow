@@ -22,7 +22,7 @@ function buildSavingsTip(input: AssistantInput, score: CentFlowScoreResult): str
   if (input.monthlySubscriptionCost >= 40 && input.monthlyIncome > 0) {
     const pct = Math.round((input.monthlySubscriptionCost / input.monthlyIncome) * 100);
     if (pct >= 8) {
-      return `Podes poupar cerca de ${Math.round(input.monthlySubscriptionCost * 0.25)}€/mês revendo subscrições.`;
+      return `Podes poupar cerca de ${Math.round(input.monthlySubscriptionCost * 0.25)}€/mês revendo despesas recorrentes.`;
     }
   }
   if (score.breakdown.savings < 12 && input.monthlyExpenses > 0) {
@@ -93,7 +93,7 @@ function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] 
       ),
       priority: 'medium',
       actionId: 'add_subscription',
-      actionLabel: 'Adicionar subscrição',
+      actionLabel: 'Adicionar despesa recorrente',
     });
   }
 
@@ -160,7 +160,7 @@ export function buildDailyAssistantPlan(input: AssistantInput): DailyAssistantPl
     insights.push({
       id: 'subs-load',
       emoji: '💡',
-      title: 'Subscrições a pesar no orçamento',
+      title: 'Despesas recorrentes a pesar no orçamento',
       description: 'Identifica 1–2 serviços que podes cancelar ou downgrade.',
       priority: 'medium',
       actionId: 'review_subscriptions',

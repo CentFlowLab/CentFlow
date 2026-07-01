@@ -27,10 +27,10 @@ export const SCORE_DIMENSIONS: ScoreDimensionMeta[] = [
   },
   {
     key: 'subscriptions',
-    label: 'Subscrições',
+    label: 'Despesas recorrentes',
     maxPoints: 20,
-    earnedLabel: 'Subscrições organizadas no orçamento',
-    improveLabel: 'Adiciona subscrições e revê custos recorrentes',
+    earnedLabel: 'Despesas recorrentes organizadas no orçamento',
+    improveLabel: 'Adiciona despesas recorrentes e revê custos fixos',
   },
   {
     key: 'goals',

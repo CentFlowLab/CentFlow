@@ -1,7 +1,7 @@
 import type { InventoryItem } from './types';
 import type { Credit } from './types';
 
-export type AssetsTab = 'objetivos' | 'garantias' | 'inventario';
+export type AssetsTab = 'objetivos' | 'garantias' | 'inventario' | 'contas';
 
 export type MovementsView = 'movimentos' | 'subscricoes';
 
@@ -53,4 +53,5 @@ export type AssetsCounts = {
   goals: number;
   warranties: number;
   inventory: number;
+  accounts: number;
 };

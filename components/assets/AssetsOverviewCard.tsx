@@ -15,6 +15,7 @@ const TAB_COUNT_KEY: Record<AssetsTab, keyof AssetsCounts> = {
   objetivos: 'goals',
   garantias: 'warranties',
   inventario: 'inventory',
+  contas: 'accounts',
 };
 
 const OVERVIEW_ITEMS: Array<{
@@ -44,6 +45,13 @@ const OVERVIEW_ITEMS: Array<{
     icon: { ios: 'shippingbox.fill', android: 'inventory_2', web: 'inventory_2' },
     color: colors.success,
     bg: colors.successMuted,
+  },
+  {
+    key: 'contas',
+    label: 'Contas',
+    icon: { ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' },
+    color: colors.warning,
+    bg: colors.accentMuted,
   },
 ];
 
@@ -93,10 +101,12 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   item: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '45%',
     alignItems: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.md,

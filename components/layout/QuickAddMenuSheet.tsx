@@ -14,7 +14,8 @@ export type QuickAddActionId =
   | 'goal'
   | 'credit'
   | 'asset'
-  | 'warranty';
+  | 'warranty'
+  | 'account';
 
 type QuickAddItem = {
   id: QuickAddActionId;
@@ -52,7 +53,7 @@ const ALL_ITEMS: QuickAddItem[] = [
   },
   {
     id: 'subscription',
-    label: 'Nova subscrição',
+    label: 'Nova despesa recorrente',
     description: 'Controla custos recorrentes',
     icon: { ios: 'repeat.circle.fill', android: 'autorenew', web: 'autorenew' },
     color: colors.accent,
@@ -81,6 +82,14 @@ const ALL_ITEMS: QuickAddItem[] = [
     icon: { ios: 'shield.fill', android: 'verified_user', web: 'verified_user' },
     color: colors.primary,
     bg: colors.primaryMuted,
+  },
+  {
+    id: 'account',
+    label: 'Nova conta',
+    description: 'Regista onde está o teu dinheiro',
+    icon: { ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' },
+    color: colors.warning,
+    bg: colors.accentMuted,
   },
   {
     id: 'product',

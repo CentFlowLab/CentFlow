@@ -134,7 +134,7 @@ export const EXPENSE_CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    title: 'Subscrições',
+    title: 'Despesas recorrentes',
     items: [
       { id: 'streaming', label: 'Streaming', icon: ICONS.tv },
       { id: 'software', label: 'Software', icon: ICONS.laptop },
@@ -166,13 +166,21 @@ export const EXPENSE_CATEGORY_GROUPS: CategoryGroup[] = [
 
 export const INCOME_CATEGORY_GROUPS: CategoryGroup[] = [
   {
-    title: 'Rendimentos',
+    title: 'Rendimentos principais',
     items: [
       { id: 'salary', label: 'Salário', icon: ICONS.banknote },
       { id: 'freelance', label: 'Freelance', icon: ICONS.laptop },
-      { id: 'investment', label: 'Investimentos', icon: ICONS.chart },
+      { id: 'bonus', label: 'Subsídio / bónus', icon: ICONS.gift },
+    ],
+  },
+  {
+    title: 'Outras entradas',
+    items: [
       { id: 'refund', label: 'Reembolso', icon: ICONS.refund },
-      { id: 'other', label: 'Outros', icon: ICONS.dots },
+      { id: 'sale', label: 'Venda', icon: ICONS.bag },
+      { id: 'investment', label: 'Investimentos', icon: ICONS.chart },
+      { id: 'gift_income', label: 'Oferta recebida', icon: ICONS.gift },
+      { id: 'other', label: 'Outra fonte', icon: ICONS.dots },
     ],
   },
 ];
@@ -195,7 +203,10 @@ const LEGACY_CATEGORY_LABELS: Record<string, string> = {
   shopping: 'Compras',
   health: 'Saúde',
   leisure: 'Lazer',
-  subscriptions: 'Subscrições',
+  subscriptions: 'Despesas recorrentes',
+  bonus: 'Subsídio / bónus',
+  sale: 'Venda',
+  gift_income: 'Oferta recebida',
 };
 
 export function getCategoryGroups(type: TransactionType): CategoryGroup[] {

@@ -3,10 +3,9 @@ import test from 'node:test';
 
 import { calculateMonthlySpendable } from '@/lib/budget/calculateMonthlySpendable';
 
-// Data de referência fixa a meio do mês (15 de junho de 2026) para resultados
-// determinísticos. Junho tem 30 dias → daysRemaining = 30 - 15 + 1 = 16.
 const MID_JUNE = new Date(2026, 5, 15);
 const LAST_DAY_JUNE = new Date(2026, 5, 30);
+const JULY_FIRST = new Date(2026, 6, 1);
 
 test('sem orçamento — saldo 500, sem futuros → remainingThisMonth = 500', () => {
   const result = calculateMonthlySpendable({
@@ -81,4 +80,23 @@ test('saldo negativo projetado — saldo 100, despesas futuras 300 → NEGATIVE_
   });
   assert.equal(result.projectedEndOfMonthBalance, -200);
   assert.ok(result.warnings.some((warning) => warning.code === 'NEGATIVE_PROJECTED'));
+});
+
+test('dia 1 do mês — salário futuro no mês actual, sem arrasto de Junho', () => {
+  const result = calculateMonthlySpendable({
+    currentBalance: 0,
+    futureMovements: [{ type: 'income', amount: 2000, date: '2026-07-25' }],
+    referenceDate: JULY_FIRST,
+  });
+  assert.equal(result.remainingThisMonth, 2000);
+});
+
+test('dia 1 do mês — cálculo isolado ignora défice acumulado anterior', () => {
+  const result = calculateMonthlySpendable({
+    currentBalance: 0,
+    currentMonthMovements: [],
+    futureMovements: [{ type: 'income', amount: 1500, date: '2026-07-05' }],
+    referenceDate: JULY_FIRST,
+  });
+  assert.equal(result.remainingThisMonth, 1500);
 });

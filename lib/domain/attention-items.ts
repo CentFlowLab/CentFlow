@@ -88,7 +88,7 @@ export function buildAttentionItems(input: {
     items.push({
       id: `subscription-${subscription.id}`,
       type: 'subscription',
-      title: diffDays === 0 ? 'Renova hoje' : 'Renovação de subscrição',
+      title: diffDays === 0 ? 'Renova hoje' : 'Renovação de despesa recorrente',
       description: subscription.name,
       dueDate: subscription.renewsAt,
       priority: diffDays <= 3 ? 'high' : 'medium',

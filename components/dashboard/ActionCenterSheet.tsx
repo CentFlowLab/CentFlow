@@ -34,7 +34,7 @@ const ACTIONS: ActionItem[] = [
   },
   {
     id: 'add_subscription',
-    label: 'Adicionar subscrição',
+    label: 'Adicionar despesa recorrente',
     description: 'Controla custos recorrentes',
     icon: { ios: 'repeat.circle.fill', android: 'autorenew', web: 'autorenew' },
   },

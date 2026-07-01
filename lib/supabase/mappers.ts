@@ -53,6 +53,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     receiptId: row.receipt_id,
     receiptUrl: null,
     receiptImage: null,
+    accountId: (row as TransactionRow & { account_id?: string | null }).account_id ?? undefined,
   };
 }
 

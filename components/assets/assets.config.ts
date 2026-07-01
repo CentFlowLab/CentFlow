@@ -57,6 +57,19 @@ export const ASSETS_EMPTY_CONFIG: Record<AssetsTab, AssetsEmptyConfig> = {
       'Base para seguros e garantias',
     ],
   },
+  contas: {
+    icon: { ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' },
+    title: 'Onde está o teu dinheiro?',
+    description:
+      'Regista contas à ordem, poupança ou carteiras digitais para ver o total disponível num só lugar.',
+    actionLabel: 'Adicionar conta',
+    secondaryActionLabel: 'Porquê registar',
+    highlights: [
+      'Total consolidado em contas',
+      'Tipos: ordem, poupança, digital',
+      'Saldo inicial personalizável',
+    ],
+  },
 };
 
 export const ASSETS_SECTION_META: Record<
@@ -77,5 +90,10 @@ export const ASSETS_SECTION_META: Record<
     title: 'Inventário de bens',
     subtitle: 'Ativos físicos e valor estimado',
     addLabel: 'Novo item',
+  },
+  contas: {
+    title: 'Contas',
+    subtitle: 'Dinheiro disponível por conta',
+    addLabel: 'Nova conta',
   },
 };

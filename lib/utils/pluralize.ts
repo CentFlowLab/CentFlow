@@ -5,9 +5,9 @@ export function pluralize(count: number, singular: string, plural: string): stri
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-/** "1 subscrição a renovar" / "3 subscrições a renovar". */
+/** "1 despesa recorrente a renovar" / "3 despesas recorrentes a renovar". */
 export function pluralizeSubscricoes(count: number): string {
   return count === 1
-    ? `${count} subscrição a renovar`
-    : `${count} subscrições a renovar`;
+    ? `${count} despesa recorrente a renovar`
+    : `${count} despesas recorrentes a renovar`;
 }

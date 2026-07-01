@@ -93,7 +93,7 @@ export const FEATURE_AREA_CONFIG: Record<FeatureAreaId, FeatureAreaConfig> = {
   subscriptions: {
     id: 'subscriptions',
     emoji: '📱',
-    label: 'Subscrições',
+    label: 'Despesas recorrentes',
     description: 'Custos recorrentes e renovações',
     activateHint: 'Activa para controlar subscrições',
   },
@@ -153,7 +153,7 @@ export const LIFE_AREA_OPTIONS: SelectOption<LifeAreaId>[] = [
   { id: 'car', emoji: '🚗', label: 'Automóvel' },
   { id: 'credits', emoji: '💳', label: 'Créditos' },
   { id: 'online_shopping', emoji: '📦', label: 'Compras frequentes online' },
-  { id: 'subscriptions', emoji: '📱', label: 'Subscrições' },
+  { id: 'subscriptions', emoji: '📱', label: 'Despesas recorrentes' },
   { id: 'investments', emoji: '📈', label: 'Investimentos' },
   { id: 'savings_goals', emoji: '🎯', label: 'Objetivos de poupança' },
   { id: 'keeps_receipts', emoji: '🧾', label: 'Guarda faturas / talões' },

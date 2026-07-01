@@ -11,6 +11,7 @@ import {
   AddTransactionModal,
   EditTransactionModal,
   MovementFilterChips,
+  MovementSearchBar,
   MOVEMENTS_EMPTY_CONFIG,
   PendingSubscriptionModal,
   SwipeableTransactionListItem,
@@ -37,6 +38,10 @@ import {
   groupTransactionsByDay,
   summarizeCurrentMonth,
 } from '@/lib/domain/transaction-grouping';
+import {
+  buildRecurringNameList,
+  filterTransactionsBySearch,
+} from '@/lib/domain/transaction-search';
 import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
@@ -55,9 +60,10 @@ export default function MovimentosScreen() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
-    useTransactions(filter);
+    useTransactions('all');
   const { contentBottomPadding } = useResponsiveLayout();
   const { refreshing, onRefresh } = usePullToRefresh(refetch);
   const deleteMutation = useDeleteTransaction();
@@ -77,12 +83,30 @@ export default function MovimentosScreen() {
   } = useSubscriptionDetection();
 
   const subscriptions = liabilities?.subscriptions ?? [];
-  const transactions = useMemo(() => data ?? [], [data]);
+  const recurringNames = useMemo(
+    () => buildRecurringNameList(subscriptions),
+    [subscriptions],
+  );
+  const transactions = useMemo(() => {
+    const all = data ?? [];
+    const typeFilter = filter === 'all' ? 'all' : filter;
+    return filterTransactionsBySearch(all, {
+      query: searchQuery,
+      typeFilter,
+      recurringNames,
+    });
+  }, [data, filter, searchQuery, recurringNames]);
   const { data: onboardingAnswers } = useOnboardingAnswers();
-  const emptyDescription = getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter);
+  const hasSearch = searchQuery.trim().length > 0;
+  const emptyDescription = hasSearch
+    ? 'Nenhum movimento encontrado. Tenta pesquisar por comerciante, categoria ou valor.'
+    : getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
   const sections = useMemo(() => groupTransactionsByDay(transactions), [transactions]);
-  const monthSummary = useMemo(() => summarizeCurrentMonth(transactions), [transactions]);
+  const monthSummary = useMemo(
+    () => summarizeCurrentMonth(data ?? []),
+    [data],
+  );
 
   useEffect(() => {
     if (view === 'creditos') {
@@ -193,10 +217,10 @@ export default function MovimentosScreen() {
         billingInterval: activeDetection.billingInterval,
         notes: `Detetada automaticamente (${activeDetection.transactionIds.length} movimentos)`,
       });
-      showToast('Subscrição adicionada.', 'success');
+      showToast('Despesa recorrente adicionada.', 'success');
       markCurrentConfirmed();
     } catch {
-      showToast('Não foi possível guardar a subscrição.', 'error');
+      showToast('Não foi possível guardar a despesa recorrente.', 'error');
     }
   }
 
@@ -234,6 +258,10 @@ export default function MovimentosScreen() {
       <View style={styles.filters}>
         <MovementFilterChips value={activeTab} onChange={handleTabChange} />
       </View>
+
+      {activeView === 'movimentos' ? (
+        <MovementSearchBar value={searchQuery} onChange={setSearchQuery} />
+      ) : null}
 
       {activeView === 'movimentos' ? (
         <Animated.View key={`movs-${filter}`} entering={FadeIn.duration(180)} style={styles.flex}>
@@ -321,7 +349,7 @@ export default function MovimentosScreen() {
                       size={32}
                     />
                   }
-                  title="O teu histórico começa aqui"
+                  title={hasSearch ? 'Sem resultados' : 'O teu histórico começa aqui'}
                   description={emptyDescription}
                   actionLabel="Adicionar movimento"
                   onAction={() => openAddModal(false)}
