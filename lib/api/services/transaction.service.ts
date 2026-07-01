@@ -24,7 +24,7 @@ import {
 } from '@/lib/api/services/receipt.service';
 import { isMockAuthEnabled } from '@/lib/auth';
 import { isSupabaseEnabled, supabaseTransactions } from '@/lib/supabase';
-import { traceMovementError, traceMovementStep } from '@/lib/doctor';
+import { traceMovementError, traceMovementStep, traceTransferError, traceTransferStep } from '@/lib/doctor';
 import { traceFinancialMutationError, traceOcrFailure } from '@/lib/doctor/financial-mutation-trace';
 import type { ReceiptOcrResult } from '@/lib/domain/receipt.types';
 import type {
@@ -97,8 +97,23 @@ export async function createTransaction(
   input: CreateTransactionInput,
   options?: CreateTransactionOptions,
 ): Promise<CreateTransactionOutcome> {
-  traceMovementStep('mutation_service_start', {
-    component: 'transaction.service',
+  const isTransfer = input.type === 'transfer';
+  const traceStep = (step: string, meta?: Record<string, unknown>) => {
+    if (isTransfer) {
+      traceTransferStep(step, { component: 'transaction.service', ...meta });
+    } else {
+      traceMovementStep(step, { component: 'transaction.service', ...meta });
+    }
+  };
+  const traceError = (step: string, error: unknown, meta?: Record<string, unknown>) => {
+    if (isTransfer) {
+      traceTransferError(step, error, { component: 'transaction.service', ...meta });
+    } else {
+      traceMovementError(step, error, { component: 'transaction.service', ...meta });
+    }
+  };
+
+  traceStep('mutation_service_start', {
     hasReceipt: Boolean(input.receipt || input.receiptMeta),
     hasConfirmation: Boolean(input.confirmation),
   });
@@ -111,14 +126,14 @@ export async function createTransaction(
 
   if (input.receipt && !receiptId) {
     options?.onPhase?.('uploading_receipt');
-    traceMovementStep('mutation_service_upload', { component: 'transaction.service' });
+    traceStep('mutation_service_upload');
     const upload = await uploadReceipt(input.receipt);
     receiptId = upload.id;
     receiptUrl = upload.url;
     receiptImage = upload.localUri ?? upload.url;
 
     options?.onPhase?.('processing_ocr');
-    traceMovementStep('mutation_service_ocr', { component: 'transaction.service', skipOcr: input.skipOcr });
+    traceStep('mutation_service_ocr', { skipOcr: input.skipOcr });
     if (!input.skipOcr) {
       try {
         ocrResult = await processReceiptOcr(upload.id, upload.ocrResult);
@@ -146,8 +161,7 @@ export async function createTransaction(
   }
 
   options?.onPhase?.('creating_transaction');
-  traceMovementStep('mutation_service_creating', {
-    component: 'transaction.service',
+  traceStep('mutation_service_creating', {
     backend: isMockAuthEnabled() ? 'mock' : isSupabaseEnabled() ? 'supabase' : 'api',
   });
 
@@ -157,6 +171,9 @@ export async function createTransaction(
     category: input.confirmation?.category ?? input.category,
     description: input.confirmation?.description ?? input.description,
     date: input.confirmation?.date ?? input.date,
+    accountId: input.accountId,
+    destinationAccountId: input.destinationAccountId,
+    budgetMonth: input.budgetMonth,
   };
 
   let transaction: Transaction;
@@ -168,7 +185,7 @@ export async function createTransaction(
       receiptImage,
     });
   } else if (isSupabaseEnabled()) {
-    traceMovementStep('mutation_service_supabase_insert', { component: 'transaction.service' });
+    traceStep('mutation_service_supabase_insert');
     transaction = await supabaseTransactions.createTransaction({
       ...transactionInput,
       receiptId,
@@ -237,8 +254,7 @@ export async function createTransaction(
     }
   }
 
-  traceMovementStep('mutation_service_done', {
-    component: 'transaction.service',
+  traceStep('mutation_service_done', {
     transactionId: transaction.id,
     itemsSavedCount,
   });

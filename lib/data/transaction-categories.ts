@@ -218,6 +218,7 @@ export function getCategoriesForType(type: TransactionType): TransactionCategory
 }
 
 export function getCategoryLabel(categoryId: string, type: TransactionType): string {
+  if (type === 'transfer') return 'Transferência';
   const fromCatalog = getCategoriesForType(type).find((c) => c.id === categoryId);
   if (fromCatalog) return fromCatalog.label;
   if (LEGACY_CATEGORY_LABELS[categoryId]) return LEGACY_CATEGORY_LABELS[categoryId];

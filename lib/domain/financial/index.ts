@@ -11,6 +11,7 @@ export * from './netWorth';
 export * from './projections';
 export * from './savings';
 export * from './insights';
+export * from './transfers';
 export * from './score';
 
 export * from './types';

@@ -3,12 +3,13 @@ import { ScrollView, StyleSheet, Pressable } from 'react-native';
 import { Text } from '@/components/ui';
 import { colors, radius, spacing } from '@/lib/theme';
 
-export type MovementTab = 'all' | 'expense' | 'income' | 'subscricoes';
+export type MovementTab = 'all' | 'expense' | 'income' | 'transfer' | 'subscricoes';
 
 const CHIPS: Array<{ key: MovementTab; label: string }> = [
   { key: 'all', label: 'Todos' },
   { key: 'expense', label: 'Despesas' },
   { key: 'income', label: 'Receitas' },
+  { key: 'transfer', label: 'Transferências' },
   { key: 'subscricoes', label: 'Despesas recorrentes' },
 ];
 

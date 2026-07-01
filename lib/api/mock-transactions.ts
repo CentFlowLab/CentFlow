@@ -111,6 +111,9 @@ export async function createMockTransaction(
     receiptId: receipt?.receiptId ?? null,
     receiptUrl: receipt?.receiptUrl ?? null,
     receiptImage: receipt?.receiptImage ?? input.receipt?.localUri ?? null,
+    accountId: input.accountId ?? null,
+    destinationAccountId: input.destinationAccountId ?? null,
+    budgetMonth: input.budgetMonth ?? null,
   };
 
   store = [transaction, ...store];
@@ -149,6 +152,9 @@ export async function updateMockTransaction(
     categoryLabel: getCategoryLabel(input.category, input.type),
     description: input.description,
     date: input.date,
+    accountId: input.accountId ?? existing.accountId,
+    destinationAccountId: input.destinationAccountId ?? existing.destinationAccountId,
+    budgetMonth: input.budgetMonth ?? existing.budgetMonth,
   };
 
   store = [...store.slice(0, index), updated, ...store.slice(index + 1)];

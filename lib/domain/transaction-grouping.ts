@@ -53,6 +53,7 @@ function dayLabel(key: string, now: Date = new Date()): string {
 }
 
 function signedAmount(transaction: Transaction): number {
+  if (transaction.type === 'transfer') return 0;
   return transaction.type === 'income' ? transaction.amount : -transaction.amount;
 }
 

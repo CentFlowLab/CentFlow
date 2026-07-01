@@ -141,6 +141,7 @@ export function resolveOperationTitle(action: string, entries: AppLogEntry[]): s
   if (a.includes('movement_create') || a === 'create_transaction') return 'Movimento criado';
   if (a.includes('movement_update')) return 'Movimento editado';
   if (a.includes('movement_delete')) return 'Movimento eliminado';
+  if (a.includes('account_transfer')) return 'Transferência criada';
   if (a.includes('goal_contribution') || a.includes('goal_contribute')) return 'Contribuição para objetivo';
   if (a.includes('goal_create')) return 'Objetivo criado';
   if (a.includes('goal_update')) return 'Objetivo editado';
@@ -161,7 +162,7 @@ export function resolveOperationTitle(action: string, entries: AppLogEntry[]): s
 
 export function resolveOperationCategory(action: string, source: string): import('./doctor-types').DoctorCategory {
   const key = `${action} ${source}`.toLowerCase();
-  if (key.includes('movement') || key.includes('transaction')) return 'movement';
+  if (key.includes('movement') || key.includes('transaction') || key.includes('account_transfer')) return 'movement';
   if (key.includes('goal')) return 'goal';
   if (key.includes('account')) return 'account';
   if (key.includes('ocr')) return 'ocr';

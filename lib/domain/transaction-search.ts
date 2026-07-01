@@ -69,12 +69,14 @@ export function filterTransactionsBySearch(
     if (matchesAmount(tx, query)) return true;
 
     const label = getCategoryLabel(tx.category, tx.type);
+    const typeLabel =
+      tx.type === 'expense' ? 'despesa' : tx.type === 'income' ? 'receita' : 'transferencia';
     const fields = [
       tx.description,
       tx.categoryLabel,
       label,
       tx.category,
-      tx.type === 'expense' ? 'despesa' : 'receita',
+      typeLabel,
       String(tx.amount),
     ];
 

@@ -526,10 +526,11 @@ export function getPersonalizedEmptyStateCopy(
 /** Used by Home screen "sem movimentos" empty block and movimentos tab */
 export function getContextualNoTransactionsMessage(
   answers: OnboardingAnswers | null,
-  filter: 'all' | 'expense' | 'income' = 'all',
+  filter: 'all' | 'expense' | 'income' | 'transfer' = 'all',
 ): string {
   if (filter !== 'all') {
     if (filter === 'expense') return 'Não tens despesas registadas neste filtro.';
+    if (filter === 'transfer') return 'Não tens transferências registadas.';
     return 'Não tens receitas registadas neste filtro.';
   }
 

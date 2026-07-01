@@ -12,28 +12,53 @@ const ACTION_ICON_COLOR = '#FFFFFF';
 
 type SwipeableTransactionListItemProps = {
   transaction: Transaction;
+  accountById?: Record<string, string>;
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
 };
 
 export function SwipeableTransactionListItem({
   transaction,
+  accountById = {},
   onEdit,
   onDelete,
 }: SwipeableTransactionListItemProps) {
+  const isTransfer = transaction.type === 'transfer';
   const isIncome = transaction.type === 'income';
-  const amountColor = isIncome ? colors.success : colors.danger;
-  const prefix = isIncome ? '+' : '−';
+  const amountColor = isTransfer ? colors.primary : isIncome ? colors.success : colors.danger;
+  const prefix = isTransfer ? '' : isIncome ? '+' : '−';
   const category = getCategoryById(transaction.category, transaction.type);
-  const icon = category?.icon ?? {
-    ios: 'ellipsis.circle.fill',
-    android: 'more_horiz',
-    web: 'more_horiz',
-  };
-  const title = transaction.description?.trim() || transaction.categoryLabel;
-  const hasReceipt = Boolean(
-    transaction.receiptId || transaction.receiptImage || transaction.receiptUrl,
-  );
+  const transferIcon = {
+    ios: 'arrow.left.arrow.right',
+    android: 'swap_horiz',
+    web: 'swap_horiz',
+  } as const;
+  const icon = isTransfer
+    ? transferIcon
+    : category?.icon ?? {
+        ios: 'ellipsis.circle.fill',
+        android: 'more_horiz',
+        web: 'more_horiz',
+      };
+
+  const fromName = transaction.accountId ? accountById[transaction.accountId] : undefined;
+  const toName = transaction.destinationAccountId
+    ? accountById[transaction.destinationAccountId]
+    : undefined;
+
+  const title = isTransfer
+    ? fromName && toName
+      ? `${fromName} → ${toName}`
+      : transaction.description?.trim() || 'Transferência entre contas'
+    : transaction.description?.trim() || transaction.categoryLabel;
+
+  const subtitleParts = [
+    isTransfer ? 'Transferência' : transaction.categoryLabel,
+    formatDateShort(transaction.date),
+  ];
+  if (hasReceipt(transaction)) subtitleParts.push('Talão');
+
+  const hasReceiptFlag = hasReceipt(transaction);
 
   function confirmDelete() {
     const message = `Tens a certeza que queres eliminar "${title}"? Esta ação não pode ser desfeita.`;
@@ -58,21 +83,23 @@ export function SwipeableTransactionListItem({
   function renderRightActions() {
     return (
       <View style={styles.actions}>
-        <Pressable
-          onPress={() => onEdit(transaction)}
-          style={({ pressed }) => [
-            styles.actionButton,
-            styles.editAction,
-            pressed && styles.actionPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Editar movimento">
-          <SymbolView
-            name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
-            tintColor={ACTION_ICON_COLOR}
-            size={22}
-          />
-        </Pressable>
+        {!isTransfer ? (
+          <Pressable
+            onPress={() => onEdit(transaction)}
+            style={({ pressed }) => [
+              styles.actionButton,
+              styles.editAction,
+              pressed && styles.actionPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Editar movimento">
+            <SymbolView
+              name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
+              tintColor={ACTION_ICON_COLOR}
+              size={22}
+            />
+          </Pressable>
+        ) : null}
 
         <Pressable
           onPress={confirmDelete}
@@ -95,12 +122,20 @@ export function SwipeableTransactionListItem({
 
   const row = (
     <Pressable
-      onPress={() => onEdit(transaction)}
-      onLongPress={() => onEdit(transaction)}
+      onPress={() => {
+        if (!isTransfer) onEdit(transaction);
+      }}
+      onLongPress={() => {
+        if (!isTransfer) onEdit(transaction);
+      }}
       delayLongPress={320}
-      style={({ pressed }) => [pressed && styles.rowPressed]}>
-      <Card variant="elevated" style={styles.card}>
-        <View style={[styles.iconWrapper, isIncome ? styles.iconIncome : styles.iconExpense]}>
+      style={({ pressed }) => [pressed && !isTransfer && styles.rowPressed]}>
+      <Card variant="elevated" style={[styles.card, isTransfer && styles.cardTransfer]}>
+        <View
+          style={[
+            styles.iconWrapper,
+            isTransfer ? styles.iconTransfer : isIncome ? styles.iconIncome : styles.iconExpense,
+          ]}>
           <SymbolView name={icon} tintColor={amountColor} size={20} />
         </View>
 
@@ -109,12 +144,17 @@ export function SwipeableTransactionListItem({
             {title}
           </Text>
           <Text variant="caption" color="textMuted" numberOfLines={1}>
-            {transaction.categoryLabel} · {formatDateShort(transaction.date)}
-            {hasReceipt ? ' · Talão' : ''}
+            {subtitleParts.join(' · ')}
           </Text>
         </View>
 
-        {hasReceipt ? (
+        {isTransfer ? (
+          <View style={styles.transferBadge}>
+            <Text variant="caption" color="primary">
+              Transferência
+            </Text>
+          </View>
+        ) : hasReceiptFlag ? (
           <SymbolView
             name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
             tintColor={colors.textMuted}
@@ -135,14 +175,16 @@ export function SwipeableTransactionListItem({
       <View style={styles.wrapper}>
         {row}
         <View style={styles.webActions}>
-          <Pressable
-            onPress={() => onEdit(transaction)}
-            style={[styles.webActionBtn, styles.editAction]}
-            accessibilityLabel="Editar movimento">
-            <Text variant="caption" style={styles.webActionText}>
-              Editar
-            </Text>
-          </Pressable>
+          {!isTransfer ? (
+            <Pressable
+              onPress={() => onEdit(transaction)}
+              style={[styles.webActionBtn, styles.editAction]}
+              accessibilityLabel="Editar movimento">
+              <Text variant="caption" style={styles.webActionText}>
+                Editar
+              </Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={confirmDelete}
             style={[styles.webActionBtn, styles.deleteAction]}
@@ -168,6 +210,10 @@ export function SwipeableTransactionListItem({
   );
 }
 
+function hasReceipt(transaction: Transaction): boolean {
+  return Boolean(transaction.receiptId || transaction.receiptImage || transaction.receiptUrl);
+}
+
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: spacing.md,
@@ -179,12 +225,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    minHeight: 72,
+    paddingVertical: spacing.md,
+  },
+  cardTransfer: {
+    borderColor: colors.primary,
+    borderWidth: 1,
   },
   iconWrapper: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -194,38 +244,43 @@ const styles = StyleSheet.create({
   iconExpense: {
     backgroundColor: colors.dangerMuted,
   },
+  iconTransfer: {
+    backgroundColor: colors.primaryMuted,
+  },
   content: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 2,
+  },
+  transferBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primaryMuted,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingLeft: spacing.sm,
     marginBottom: spacing.md,
-    height: 72,
   },
   actionButton: {
-    width: 56,
-    height: 56,
-    borderRadius: radius.lg,
-    alignItems: 'center',
+    width: 72,
     justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: spacing.xs,
+    borderRadius: radius.md,
+    alignSelf: 'stretch',
+  },
+  actionPressed: {
+    opacity: 0.85,
   },
   editAction: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryDark,
   },
   deleteAction: {
     backgroundColor: colors.danger,
   },
-  actionPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.96 }],
-  },
   webActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: spacing.sm,
     marginTop: -spacing.sm,
     marginBottom: spacing.md,

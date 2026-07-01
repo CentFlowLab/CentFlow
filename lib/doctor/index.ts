@@ -40,4 +40,10 @@ export {
   type MovementFlowStep,
 } from './movement-flow-trace';
 
+export {
+  traceTransferStep,
+  traceTransferError,
+  TRANSFER_FLOW_SOURCE,
+} from './transfer-flow-trace';
+
 export const DOCTOR_SOURCE = 'centflow-doctor';

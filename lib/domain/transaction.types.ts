@@ -10,7 +10,7 @@ export type CashTransactionType = 'expense' | 'income';
 
 export type TransactionType = CashTransactionType | 'transfer';
 
-export type TransactionFilter = 'all' | CashTransactionType;
+export type TransactionFilter = 'all' | CashTransactionType | 'transfer';
 
 export interface Transaction {
   id: string;

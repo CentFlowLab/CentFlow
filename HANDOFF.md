@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T15:45:54.793Z -->
-<!-- Git: 22b1760 (2026-07-01T16:45:41+01:00) -->
+<!-- Última geração: 2026-07-01T16:35:16.906Z -->
+<!-- Git: b3b2f86 (2026-07-01T16:46:31+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 17 — Doctor 2.0 (centro de diagnóstico inteligente)** |
-| Última geração | 2026-07-01T15:45:54.793Z |
+| Fase atual | **Fase 18 — Ledger de transferências entre contas** |
+| Última geração | 2026-07-01T16:35:16.906Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `22b1760` (2026-07-01T16:45:41+01:00) |
+| Git commit | `b3b2f86` (2026-07-01T16:46:31+01:00) |
 
 ---
 
@@ -492,6 +492,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     movement-flow-trace.ts
     quick-expense-link-trace.ts
     quick-expense-trace.ts
+    transfer-flow-trace.ts
   domain/
     __tests__/
       analysis-period.test.ts
@@ -532,6 +533,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       score.ts
       transactions.test.ts
       transactions.ts
+      transfers.test.ts
+      transfers.ts
       types.ts
     financial-movement.ts
     financial-profile.service.ts
@@ -721,7 +724,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 17 — Doctor 2.0 (centro de diagnóstico inteligente)
+## Fase atual: Fase 18 — Ledger de transferências entre contas
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -849,6 +852,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Testes unitários do domínio financeiro (money, dates, transactions, accounts, goals, netWorth, savings, score)
 - docs/financial-domain.md — regras, API e como adicionar métricas
 - Doctor 2.0 — resumo de saúde, agrupamento de operações, timeline, erros humanos, performance, BD, pesquisa/filtros, export JSON/TXT
+- Transferências entre contas — validação origem≠destino, preview de impacto, saldo insuficiente bloqueado, exclusão de receitas/despesas/análises, Doctor account_transfer, testes domínio
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

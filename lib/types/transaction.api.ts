@@ -23,6 +23,10 @@ export interface RawTransaction {
   receiptUrl?: string | null;
   receipt_image?: string | null;
   receiptImage?: string | null;
+  account_id?: string | null;
+  accountId?: string | null;
+  destination_account_id?: string | null;
+  destinationAccountId?: string | null;
 }
 
 export interface RawTransactionsResponse {

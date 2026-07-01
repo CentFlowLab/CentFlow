@@ -20,6 +20,7 @@ import {
 } from '@/components/movements';
 import { EmptyState, ErrorState, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
+import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
@@ -64,6 +65,11 @@ export default function MovimentosScreen() {
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions('all');
+  const { data: accounts = [] } = useAccountsWithBalances();
+  const accountById = useMemo(
+    () => Object.fromEntries(accounts.map((account) => [account.id, account.name])),
+    [accounts],
+  );
   const { contentBottomPadding } = useResponsiveLayout();
   const { refreshing, onRefresh } = usePullToRefresh(refetch);
   const deleteMutation = useDeleteTransaction();
@@ -186,6 +192,7 @@ export default function MovimentosScreen() {
     !suppressDetectionRef.current;
 
   function handleEdit(transaction: Transaction) {
+    if (transaction.type === 'transfer') return;
     setEditingTransaction(transaction);
   }
 
@@ -286,6 +293,7 @@ export default function MovimentosScreen() {
               renderItem={({ item }) => (
                 <SwipeableTransactionListItem
                   transaction={item}
+                  accountById={accountById}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />

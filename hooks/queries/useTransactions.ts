@@ -16,7 +16,7 @@ import {
   updateTransaction,
 } from '@/lib/api/services/transaction.service';
 import { useAuth } from '@/lib/auth';
-import { logDoctorMutationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
+import { logDoctorMutationFailure, traceMovementError, traceMovementStep, traceTransferError, traceTransferStep } from '@/lib/doctor';
 import type {
   CreateTransactionInput,
   CreateTransactionPhase,
@@ -65,39 +65,58 @@ export function useCreateTransaction() {
 
   const mutation = useMutation({
     mutationFn: async (input: CreateTransactionInput) => {
-      traceMovementStep('mutation_start', {
-        component: 'useCreateTransaction',
-        type: input.type,
-        category: input.category,
-      });
+      const traceStep = (step: string, meta?: Record<string, unknown>) => {
+        if (input.type === 'transfer') {
+          traceTransferStep(step, { component: 'useCreateTransaction', ...meta });
+        } else {
+          traceMovementStep(step, { component: 'useCreateTransaction', ...meta });
+        }
+      };
+      const traceError = (step: string, error: unknown, meta?: Record<string, unknown>) => {
+        if (input.type === 'transfer') {
+          traceTransferError(step, error, { component: 'useCreateTransaction', ...meta });
+        } else {
+          traceMovementError(step, error, { component: 'useCreateTransaction', ...meta });
+        }
+      };
+
+      traceStep('mutation_start', { type: input.type, category: input.category });
       try {
         const outcome = await createTransaction(input, {
           onPhase: (phase) => {
             setPhase(phase);
-            traceMovementStep('mutation_phase', { phase, component: 'useCreateTransaction' });
+            traceStep('mutation_phase', { phase });
           },
         });
         return outcome;
       } catch (error) {
-        traceMovementError('mutation_error', error, { component: 'useCreateTransaction' });
+        traceError('mutation_error', error);
         throw error;
       }
     },
-    onSettled: (_data, error) => {
-      traceMovementStep(error ? 'mutation_error' : 'mutation_settled', {
-        component: 'useCreateTransaction',
-        hadError: Boolean(error),
-      });
+    onSettled: (_data, error, variables) => {
+      const traceStep = (step: string, meta?: Record<string, unknown>) => {
+        if (variables?.type === 'transfer') {
+          traceTransferStep(step, { component: 'useCreateTransaction', ...meta });
+        } else {
+          traceMovementStep(step, { component: 'useCreateTransaction', ...meta });
+        }
+      };
+      traceStep(error ? 'mutation_error' : 'mutation_settled', { hadError: Boolean(error) });
       queueMicrotask(() => setPhase(null));
     },
-    onSuccess: () => {
-      traceMovementStep('mutation_success', { component: 'useCreateTransaction' });
+    onSuccess: (_data, variables) => {
+      if (variables.type === 'transfer') {
+        traceTransferStep('mutation_success', { component: 'useCreateTransaction' });
+      } else {
+        traceMovementStep('mutation_success', { component: 'useCreateTransaction' });
+      }
       invalidateTransactionQueries(queryClient);
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
-        action: 'create_transaction',
-        screen: 'AddTransactionModal',
+        action: variables.type === 'transfer' ? 'account_transfer' : 'create_transaction',
+        screen: variables.type === 'transfer' ? 'TransferAccountModal' : 'AddTransactionModal',
         payload: { type: variables.type, category: variables.category },
       });
     },

@@ -15,9 +15,16 @@ export function parseTransactionAmount(value: string): number {
   return Number(normalized);
 }
 
+export function isTransactionEditable(transaction: Transaction): boolean {
+  return transaction.type !== 'transfer';
+}
+
 export function transactionToFormValues(transaction: Transaction): TransactionFormValues {
+  if (!isTransactionEditable(transaction)) {
+    throw new Error('Transferências não podem ser editadas como movimentos.');
+  }
   return {
-    type: transaction.type === 'transfer' ? 'expense' : transaction.type,
+    type: transaction.type as CashTransactionType,
     amount: String(transaction.amount),
     category: transaction.category,
     description: transaction.description ?? '',
