@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T14:05:23.081Z -->
-<!-- Git: 6463c9f (2026-07-01T14:26:47+01:00) -->
+<!-- Última geração: 2026-07-01T14:06:00.014Z -->
+<!-- Git: ef91cba (2026-07-01T15:05:36+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 16 — Domínio financeiro central (fonte única de verdade)** |
-| Última geração | 2026-07-01T14:05:23.081Z |
+| Última geração | 2026-07-01T14:06:00.014Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `6463c9f` (2026-07-01T14:26:47+01:00) |
+| Git commit | `ef91cba` (2026-07-01T15:05:36+01:00) |
 
 ---
 
