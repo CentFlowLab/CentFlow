@@ -8,7 +8,7 @@ import type {
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { isTransactionOccurred } from '@/lib/domain/transaction-date.utils';
 import { buildMetricsFromNetWorth } from '@/lib/api/mappers/analysis.mapper';
-import { formatPercent } from '@/lib/utils/format';
+import { formatCurrency, formatPercent } from '@/lib/utils/format';
 import { colors } from '@/lib/theme';
 
 import { generateAnalysisInsights } from './analysis.insights';
@@ -92,16 +92,11 @@ export function buildAnalysisTrends(
 }
 
 export function buildTrendMetrics(trends: AnalysisTrends): AnalysisData['metrics'] {
-  const savingsRate =
-    trends.totalIncome > 0
-      ? (trends.netCashflow / trends.totalIncome) * 100
-      : 0;
-
   return [
     {
       id: 'cashflow',
       label: 'Fluxo líquido',
-      value: formatPercent(trends.netCashflow >= 0 ? savingsRate : Math.abs(savingsRate), 0, false),
+      value: formatCurrency(trends.netCashflow),
       subtitle: `${trends.periodDays} dias`,
       trend: trends.netCashflow >= 0 ? 'up' : 'down',
       icon: { ios: 'arrow.left.arrow.right', android: 'swap_horiz', web: 'swap_horiz' },
@@ -109,7 +104,7 @@ export function buildTrendMetrics(trends: AnalysisTrends): AnalysisData['metrics
     },
     {
       id: 'expenses-30d',
-      label: 'Gastos',
+      label: 'Rácio de gasto',
       value: formatPercent(
         trends.totalIncome > 0 ? (trends.totalExpenses / trends.totalIncome) * 100 : 0,
         0,

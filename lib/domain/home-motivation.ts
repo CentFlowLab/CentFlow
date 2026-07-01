@@ -1,5 +1,6 @@
 import type { MonthlySpendableOutput } from '@/lib/budget/calculateMonthlySpendable';
 import type { AttentionItem } from '@/lib/domain/types';
+import { formatCurrency } from '@/lib/utils/format';
 
 const GENERAL_PHRASES = [
   'Hoje é um bom dia para poupar.',
@@ -13,9 +14,14 @@ const GENERAL_PHRASES = [
 
 export type HomeMotivationContext = {
   referenceDate?: Date;
-  spendable?: Pick<MonthlySpendableOutput, 'remainingThisMonth' | 'projectedEndOfMonthBalance'>;
+  spendable?: Pick<
+    MonthlySpendableOutput,
+    'remainingThisMonth' | 'projectedEndOfMonthBalance' | 'dailyAvailable' | 'daysRemaining'
+  >;
   attentionItems?: AttentionItem[];
   activeGoalsCount?: number;
+  netWorthChangePercent?: number;
+  subscriptionAlertsCount?: number;
 };
 
 function dayIndex(date: Date): number {
@@ -33,14 +39,37 @@ function hasUpcomingPayments(items: AttentionItem[]): boolean {
   );
 }
 
+function countSubscriptionAlerts(items: AttentionItem[]): number {
+  return items.filter((item) => item.type === 'subscription').length;
+}
+
 /** Frase curta e contextual para substituir a data no header da Home. */
 export function getHomeMotivationPhrase(context: HomeMotivationContext = {}): string {
   const date = context.referenceDate ?? new Date();
   const spendable = context.spendable;
   const attention = context.attentionItems ?? [];
+  const subscriptionAlerts =
+    context.subscriptionAlertsCount ?? countSubscriptionAlerts(attention);
 
   if (spendable && spendable.remainingThisMonth < 0) {
     return 'Hoje o foco é recuperar controlo.';
+  }
+
+  if (
+    spendable &&
+    spendable.dailyAvailable > 0 &&
+    spendable.remainingThisMonth > 0 &&
+    spendable.daysRemaining > 0
+  ) {
+    return `Hoje podes gastar até ${formatCurrency(spendable.dailyAvailable)} mantendo o orçamento.`;
+  }
+
+  if (subscriptionAlerts >= 2) {
+    return `Há ${subscriptionAlerts} despesas recorrentes que podes rever.`;
+  }
+
+  if ((context.netWorthChangePercent ?? 0) >= 0.5) {
+    return 'O teu património cresceu este mês.';
   }
 
   if (spendable && spendable.projectedEndOfMonthBalance >= 0 && spendable.remainingThisMonth > 0) {

@@ -35,6 +35,7 @@ export interface AnalysisInsight {
   description: string;
   type: 'opportunity' | 'warning' | 'info' | 'achievement';
   actionLabel?: string;
+  actionRoute?: string;
 }
 
 export interface AnalysisData {

@@ -128,6 +128,7 @@ function buildHomeSuggestions(input: {
       description: 'Um alvo concreto ajuda-te a poupar com mais foco.',
       actionLabel: 'Criar objetivo',
       type: 'goal',
+      ctaRoute: '/(tabs)/ativos?action=new-goal',
     });
   }
 
@@ -135,7 +136,7 @@ function buildHomeSuggestions(input: {
     suggestions.push({
       id: 'sug-review-spending',
       title: 'Revê os gastos desta semana',
-      description: 'Identifica onde podes optimizar antes do fim do mês.',
+      description: 'Identifica onde podes otimizar antes do fim do mês.',
       actionLabel: 'Ver análises',
       type: 'savings',
     });

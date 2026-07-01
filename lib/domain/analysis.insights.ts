@@ -43,9 +43,14 @@ function sumExpensesByCategory(transactions: Transaction[], days: number, offset
   return totals;
 }
 
+function periodPhrase(days: number): string {
+  return `nos últimos ${days} dias`;
+}
+
 export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[] {
   const { dashboard, transactions, assets, trends } = input;
   const insights: AnalysisInsight[] = [];
+  const period = periodPhrase(trends.periodDays);
 
   const change = dashboard.netWorthChangePercent;
   if (Math.abs(change) >= 0.5) {
@@ -55,9 +60,32 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
       title: change >= 0 ? 'Património em alta' : 'Património em queda',
       description:
         change >= 0
-          ? `O teu património cresceu ${formatPercent(change, 1, true)} este mês.`
-          : `O teu património desceu ${formatPercent(Math.abs(change), 1, false)} este mês.`,
+          ? `O teu património cresceu ${formatPercent(change, 1, true)} este mês — mantém o ritmo.`
+          : `O teu património desceu ${formatPercent(Math.abs(change), 1, false)} este mês — revê os gastos fixos.`,
     });
+  }
+
+  if (trends.totalIncome > 0) {
+    const savingsRate = (trends.netCashflow / trends.totalIncome) * 100;
+    if (savingsRate >= 5) {
+      insights.push({
+        id: 'savings-rate-positive',
+        type: 'achievement',
+        title: 'Taxa de poupança positiva',
+        description: `Poupaste ${formatPercent(savingsRate, 0, false)} das receitas ${period}. Considera transferir para um objetivo.`,
+        actionLabel: 'Ver objetivos',
+        actionRoute: '/(tabs)/ativos?tab=objetivos',
+      });
+    } else if (trends.netCashflow < 0) {
+      insights.push({
+        id: 'savings-rate-negative',
+        type: 'warning',
+        title: 'A gastar mais do que recebes',
+        description: `Gastaste ${formatCurrency(Math.abs(trends.netCashflow))} acima das receitas ${period}. Revê as categorias com maior peso.`,
+        actionLabel: 'Ver análises',
+        actionRoute: '/(tabs)/analises',
+      });
+    }
   }
 
   const topCategory = trends.spendingByCategory[0];
@@ -66,12 +94,13 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
       id: 'top-spending-category',
       type: 'info',
       title: 'Maior gasto do período',
-      description: `O teu maior gasto foi em ${topCategory.label} (${formatCurrency(topCategory.amount)} nos últimos ${trends.periodDays} dias).`,
+      description: `${topCategory.label} lidera com ${formatCurrency(topCategory.amount)} ${period} — vale a pena rever se faz sentido para ti.`,
     });
   }
 
   const currentWindow = sumExpensesByCategory(transactions, trends.periodDays, 0);
   const previousWindow = sumExpensesByCategory(transactions, trends.periodDays, trends.periodDays);
+  const categoryDeltas: AnalysisInsight[] = [];
 
   for (const [category, current] of currentWindow.entries()) {
     const previous = previousWindow.get(category);
@@ -80,19 +109,40 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
     const deltaPercent = ((current.amount - previous.amount) / previous.amount) * 100;
     if (Math.abs(deltaPercent) < 12) continue;
 
-    insights.push({
+    categoryDeltas.push({
       id: `category-delta-${category}`,
       type: deltaPercent > 0 ? 'warning' : 'opportunity',
       title:
         deltaPercent > 0
-          ? `Gastaste mais em ${current.label}`
-          : `Gastaste menos em ${current.label}`,
+          ? `${current.label} aumentou ${formatPercent(deltaPercent, 0, false)}`
+          : `${current.label} diminuiu ${formatPercent(Math.abs(deltaPercent), 0, false)}`,
       description:
         deltaPercent > 0
-          ? `Gastaste ${formatPercent(deltaPercent, 0, false)} mais em ${current.label} este mês comparado com o período anterior.`
-          : `Reduziste ${formatPercent(Math.abs(deltaPercent), 0, false)} em ${current.label} face ao período anterior.`,
+          ? `Gastaste mais em ${current.label} ${period} face ao período anterior — identifica 1–2 compras evitáveis.`
+          : `Reduziste gastos em ${current.label} — mantém este hábito no próximo período.`,
+      actionLabel: deltaPercent > 0 ? 'Ver movimentos' : undefined,
+      actionRoute: deltaPercent > 0 ? `/(tabs)/movimentos?category=${category}` : undefined,
     });
-    break;
+  }
+
+  categoryDeltas
+    .sort((a, b) => (a.type === 'warning' ? -1 : 1))
+    .slice(0, 2)
+    .forEach((item) => insights.push(item));
+
+  const monthlySubs = assets.subscriptions.reduce((sum, sub) => sum + sub.amount, 0);
+  if (monthlySubs > 0 && trends.totalIncome > 0) {
+    const subsShare = (monthlySubs / trends.totalIncome) * 100;
+    if (subsShare >= 8) {
+      insights.push({
+        id: 'recurring-weight',
+        type: 'warning',
+        title: 'Despesas recorrentes pesadas',
+        description: `As tuas despesas recorrentes representam ${formatPercent(subsShare, 0, false)} das receitas ${period} — revê cancelamentos possíveis.`,
+        actionLabel: 'Ver recorrentes',
+        actionRoute: '/(tabs)/movimentos?view=subscricoes',
+      });
+    }
   }
 
   const expiringWarranties = assets.warranties.filter((warranty) => {
@@ -108,8 +158,9 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
         expiringWarranties.length === 1
           ? '1 garantia a expirar em breve'
           : `${expiringWarranties.length} garantias a expirar em breve`,
-      description: `Tens ${expiringWarranties.length} garantia${expiringWarranties.length === 1 ? '' : 's'} a expirar nos próximos ${WARRANTY_CRITICAL_DAYS} dias.`,
+      description: `Tens ${expiringWarranties.length} garantia${expiringWarranties.length === 1 ? '' : 's'} a expirar nos próximos ${WARRANTY_CRITICAL_DAYS} dias — verifica se precisas de acção.`,
       actionLabel: 'Ver garantias',
+      actionRoute: '/(tabs)/ativos?tab=garantias',
     });
   }
 
@@ -124,18 +175,19 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
     insights.push({
       id: 'goal-progress',
       type: 'achievement',
-      title: 'Objectivo quase concluído',
+      title: 'Objetivo quase concluído',
       description: `${featuredGoal.goal.name} está a ${formatPercent(featuredGoal.percent, 0, false)} — faltam ${formatCurrency(Math.max(0, featuredGoal.goal.target - featuredGoal.goal.current))}.`,
       actionLabel: 'Ver objetivos',
+      actionRoute: '/(tabs)/ativos?tab=objetivos',
     });
   }
 
-  if (trends.totalIncome > 0 && trends.netCashflow < 0) {
+  if (trends.totalIncome > 0 && trends.netCashflow < 0 && !insights.some((i) => i.id === 'savings-rate-negative')) {
     insights.push({
       id: 'negative-cashflow',
       type: 'warning',
       title: 'Gastos acima das receitas',
-      description: `Nos últimos ${trends.periodDays} dias gastaste ${formatCurrency(Math.abs(trends.netCashflow))} mais do que recebeste.`,
+      description: `${period} gastaste ${formatCurrency(Math.abs(trends.netCashflow))} mais do que recebeste — ajusta o orçamento nas próximas semanas.`,
     });
   }
 

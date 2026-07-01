@@ -81,7 +81,7 @@ export function buildEmailTemplate(
 
     case 'subscription_renewal':
       return wrap({
-        subject: 'Subscrição a renovar em breve',
+        subject: 'Despesa recorrente a renovar em breve',
         preheader: 'Prepara-te para a renovação.',
         greeting,
         body: `A subscrição${extras.name ? ` ${extras.name}` : ''} renova em breve. Revê os detalhes na CentFlow.`,

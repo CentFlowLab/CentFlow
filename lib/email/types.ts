@@ -36,7 +36,7 @@ export const EMAIL_TYPE_LABELS: Record<LifecycleEmailType, string> = {
   inactive_7d: 'Inactivo 7 dias',
   inactive_30d: 'Inactivo 30 dias',
   warranty_expiring: 'Garantia a expirar',
-  subscription_renewal: 'Subscrição a renovar',
+  subscription_renewal: 'Despesa recorrente a renovar',
   credit_payment_due: 'Prestação próxima',
   weekly_digest: 'Resumo semanal',
   tips_insight: 'Dicas e insights',

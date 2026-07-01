@@ -660,7 +660,7 @@ export function getHomePersonalizedInsight(
       message:
         'Regista pagamentos de crédito e subscrições para teres visibilidade real sobre o que sai todos os meses.',
       ctaLabel: 'Registar movimento',
-      ctaRoute: '/(tabs)/movimentos',
+      ctaRoute: '/(tabs)/movimentos?action=new-movement',
     };
   }
 
@@ -715,7 +715,7 @@ export function getHomePersonalizedInsight(
       message:
         'Regista despesas à medida que acontecem — em poucos dias vais perceber para onde vai o dinheiro.',
       ctaLabel: 'Adicionar despesa',
-      ctaRoute: '/(tabs)/movimentos',
+      ctaRoute: '/(tabs)/movimentos?action=new-movement',
     };
   }
 
@@ -799,6 +799,7 @@ export type FallbackSuggestion = {
   description: string;
   type: 'goal' | 'savings' | 'investment' | 'general';
   actionLabel?: string;
+  ctaRoute?: string;
 };
 
 export function getPersonalizedFallbackSuggestions(
@@ -812,6 +813,7 @@ export function getPersonalizedFallbackSuggestions(
         description: 'O OCR preenche o movimento e guarda o histórico para garantias.',
         type: 'general',
         actionLabel: 'Experimentar',
+        ctaRoute: '/(tabs)/movimentos?action=receipt',
       },
     ];
   }
@@ -829,6 +831,7 @@ export function getPersonalizedFallbackSuggestions(
         'É a forma mais rápida de criar movimentos e preparar garantias sem papelada.',
       type: 'general',
       actionLabel: 'Digitalizar talão',
+      ctaRoute: '/(tabs)/movimentos?action=receipt',
     });
   }
 
@@ -843,6 +846,7 @@ export function getPersonalizedFallbackSuggestions(
       description: 'Fundo de emergência, viagem ou entrada de casa — escolhe uma meta e acompanha.',
       type: 'goal',
       actionLabel: 'Criar objetivo',
+      ctaRoute: '/(tabs)/ativos?action=new-goal',
     });
   }
 
@@ -854,6 +858,7 @@ export function getPersonalizedFallbackSuggestions(
         'Regista prestações e custos fixos para saberes quanto comprometido tens por mês.',
       type: 'savings',
       actionLabel: 'Ver movimentos',
+      ctaRoute: '/(tabs)/movimentos?action=new-movement',
     });
   }
 
@@ -864,6 +869,7 @@ export function getPersonalizedFallbackSuggestions(
       description: 'Adiciona bens com valor estimado para enriquecer a visão do património.',
       type: 'investment',
       actionLabel: 'Adicionar bem',
+      ctaRoute: '/(tabs)/ativos?action=new-asset',
     });
   }
 
@@ -874,6 +880,7 @@ export function getPersonalizedFallbackSuggestions(
       description: 'Adiciona um movimento ou digitaliza um talão para activar as análises.',
       type: 'general',
       actionLabel: 'Começar',
+      ctaRoute: '/(tabs)/movimentos?action=new-movement',
     });
   }
 

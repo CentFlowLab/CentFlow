@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home",
+  "currentPhase": "Fase 13 — Auditoria beta: navegação, insights financeiros, mentor Home",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -113,7 +113,11 @@
     "Pré-beta — microcopy Subscrições → Despesas recorrentes em toda a UI visível",
     "Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data",
     "Movimentos — seletor de conta opcional (AccountPickerField) com account_id no Supabase",
-    "Migrations Supabase sincronizadas — merchant_groups, merchant e delete_own_account restauradas; db push OK"
+    "Migrations Supabase sincronizadas — merchant_groups, merchant e delete_own_account restauradas; db push OK",
+    "Auditoria beta — CTAs Home/Sugestões navegam para destinos correctos (talão→movimentos, não Análises)",
+    "Auditoria beta — insights Análises acionáveis (taxa poupança, recorrentes, categorias) + CTAs ligados",
+    "Auditoria beta — mentor Home data-driven (orçamento diário, património, recorrentes)",
+    "Auditoria beta — métricas Análises corrigidas (fluxo líquido em €, rácio de gasto)"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

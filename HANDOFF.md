@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T01:17:24.610Z -->
-<!-- Git: ece1af7 (2026-07-01T02:07:34+01:00) -->
+<!-- Última geração: 2026-07-01T01:30:10.401Z -->
+<!-- Git: 94ce449 (2026-07-01T02:17:39+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home** |
-| Última geração | 2026-07-01T01:17:24.610Z |
+| Fase atual | **Fase 13 — Auditoria beta: navegação, insights financeiros, mentor Home** |
+| Última geração | 2026-07-01T01:30:10.401Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `ece1af7` (2026-07-01T02:07:34+01:00) |
+| Git commit | `94ce449` (2026-07-01T02:17:39+01:00) |
 
 ---
 
@@ -690,7 +690,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 12 — Pré-beta: pesquisa movimentos, 6 meses análises, contas em Ativos, bug dia 1, categorias receitas, frases Home
+## Fase atual: Fase 13 — Auditoria beta: navegação, insights financeiros, mentor Home
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -804,6 +804,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Pré-beta — Home com frases financeiras contextuais (getHomeMotivationPhrase) em vez da data
 - Movimentos — seletor de conta opcional (AccountPickerField) com account_id no Supabase
 - Migrations Supabase sincronizadas — merchant_groups, merchant e delete_own_account restauradas; db push OK
+- Auditoria beta — CTAs Home/Sugestões navegam para destinos correctos (talão→movimentos, não Análises)
+- Auditoria beta — insights Análises acionáveis (taxa poupança, recorrentes, categorias) + CTAs ligados
+- Auditoria beta — mentor Home data-driven (orçamento diário, património, recorrentes)
+- Auditoria beta — métricas Análises corrigidas (fluxo líquido em €, rácio de gasto)
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

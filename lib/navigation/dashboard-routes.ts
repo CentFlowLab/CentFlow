@@ -20,17 +20,35 @@ export function openAttentionItemRoute(type: AttentionItem['type']): void {
   }
 }
 
-export function openSuggestionRoute(type: Suggestion['type']): void {
+const SUGGESTION_ROUTES: Record<string, string> = {
+  'fallback-receipt': '/(tabs)/movimentos?action=receipt',
+  'onboarding-receipt': '/(tabs)/movimentos?action=receipt',
+  'onboarding-goal': '/(tabs)/ativos?action=new-goal',
+  'onboarding-debt': '/(tabs)/movimentos?action=new-movement',
+  'onboarding-wealth': '/(tabs)/ativos?action=new-asset',
+  'onboarding-default': '/(tabs)/movimentos?action=new-movement',
+  'sug-first-goal': '/(tabs)/ativos?action=new-goal',
+  'sug-review-spending': '/(tabs)/analises',
+  'sug-analyses': '/(tabs)/analises',
+};
+
+function routeBySuggestionType(type: Suggestion['type']): string {
   switch (type) {
     case 'goal':
-      router.push('/(tabs)/ativos?tab=objetivos');
-      break;
+      return '/(tabs)/ativos?action=new-goal';
     case 'savings':
     case 'investment':
-      router.push('/(tabs)/analises');
-      break;
+      return '/(tabs)/analises';
     default:
-      router.push('/(tabs)/analises');
-      break;
+      return '/(tabs)/movimentos?action=new-movement';
   }
+}
+
+export function resolveSuggestionRoute(suggestion: Pick<Suggestion, 'id' | 'type' | 'ctaRoute'>): string {
+  if (suggestion.ctaRoute) return suggestion.ctaRoute;
+  return SUGGESTION_ROUTES[suggestion.id] ?? routeBySuggestionType(suggestion.type);
+}
+
+export function openSuggestionRoute(suggestion: Pick<Suggestion, 'id' | 'type' | 'ctaRoute'>): void {
+  router.push(resolveSuggestionRoute(suggestion) as never);
 }

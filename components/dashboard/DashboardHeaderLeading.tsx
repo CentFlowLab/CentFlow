@@ -26,6 +26,7 @@ export function DashboardHeaderLeading() {
     spendable,
     attentionItems: homeData?.attentionItems ?? [],
     activeGoalsCount: assets?.goals.length ?? 0,
+    netWorthChangePercent: homeData?.netWorthChangePercent,
   });
   const contextual = getHomeContextualMessage(answers ?? null);
   const subtitle = getPersonalizedHomeSubtitle(answers ?? null) ?? contextual;

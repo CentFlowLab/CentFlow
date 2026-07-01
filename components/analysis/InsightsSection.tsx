@@ -71,6 +71,12 @@ export function InsightsSection({ insights, onAddMovement }: InsightsSectionProp
 function InsightCard({ insight }: { insight: AnalysisInsight }) {
   const config = INSIGHT_CONFIG[insight.type];
 
+  const handleAction = () => {
+    if (insight.actionRoute) {
+      router.push(insight.actionRoute as never);
+    }
+  };
+
   return (
     <Card variant="outlined" style={styles.insightCard}>
       <View style={[styles.iconBox, { backgroundColor: config.bg }]}>
@@ -83,8 +89,11 @@ function InsightCard({ insight }: { insight: AnalysisInsight }) {
         <Text variant="caption" color="textSecondary">
           {insight.description}
         </Text>
-        {insight.actionLabel ? (
-          <Pressable accessibilityRole="button">
+        {insight.actionLabel && insight.actionRoute ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={insight.actionLabel}
+            onPress={handleAction}>
             <Text variant="caption" color="primary" style={styles.action}>
               {insight.actionLabel} →
             </Text>

@@ -15,6 +15,7 @@ export function mergeHomeSuggestions(
       description: item.description,
       actionLabel: item.actionLabel,
       type: item.type,
+      ctaRoute: item.ctaRoute,
     }),
   );
 

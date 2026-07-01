@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -21,7 +20,7 @@ type SuggestionCardProps = {
 export function SuggestionCard({ suggestion }: SuggestionCardProps) {
   return (
     <Pressable
-      onPress={() => openSuggestionRoute(suggestion.type)}
+      onPress={() => openSuggestionRoute(suggestion)}
       accessibilityRole="button"
       accessibilityLabel={suggestion.title}>
       <Card variant="elevated" style={styles.card}>
