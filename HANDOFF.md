@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T11:47:39.452Z -->
-<!-- Git: bf5dbad (2026-07-01T12:03:56+01:00) -->
+<!-- Última geração: 2026-07-01T12:15:15.684Z -->
+<!-- Git: 904580c (2026-07-01T12:47:49+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 15 — Objetivos ligados a contas + mês financeiro de receitas** |
-| Última geração | 2026-07-01T11:47:39.452Z |
+| Última geração | 2026-07-01T12:15:15.684Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `bf5dbad` (2026-07-01T12:03:56+01:00) |
+| Git commit | `904580c` (2026-07-01T12:47:49+01:00) |
 
 ---
 
