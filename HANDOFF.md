@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T15:45:33.652Z -->
-<!-- Git: 7afd13b (2026-07-01T15:31:55+01:00) -->
+<!-- Última geração: 2026-07-01T15:45:54.793Z -->
+<!-- Git: 22b1760 (2026-07-01T16:45:41+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 17 — Doctor 2.0 (centro de diagnóstico inteligente)** |
-| Última geração | 2026-07-01T15:45:33.652Z |
+| Última geração | 2026-07-01T15:45:54.793Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `7afd13b` (2026-07-01T15:31:55+01:00) |
+| Git commit | `22b1760` (2026-07-01T16:45:41+01:00) |
 
 ---
 
