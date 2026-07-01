@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T23:46:09.167Z -->
-<!-- Git: b17006e (2026-07-01T22:15:18+01:00) -->
+<!-- Última geração: 2026-07-01T23:48:03.065Z -->
+<!-- Git: c082a3a (2026-07-02T00:46:35+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 20 — Ledger cartão + reembolsos + Análises compactas** |
-| Última geração | 2026-07-01T23:46:09.167Z |
+| Última geração | 2026-07-01T23:48:03.065Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `b17006e` (2026-07-01T22:15:18+01:00) |
+| Git commit | `c082a3a` (2026-07-02T00:46:35+01:00) |
 
 ---
 
