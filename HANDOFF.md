@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T08:40:30.052Z -->
-<!-- Git: f69dc53 (2026-07-02T08:44:34+01:00) -->
+<!-- Última geração: 2026-07-02T10:42:37.585Z -->
+<!-- Git: 00b9794 (2026-07-02T09:40:38+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)** |
-| Última geração | 2026-07-02T08:40:30.052Z |
+| Última geração | 2026-07-02T10:42:37.585Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `f69dc53` (2026-07-02T08:44:34+01:00) |
+| Git commit | `00b9794` (2026-07-02T09:40:38+01:00) |
 
 ---
 
@@ -892,6 +892,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Cartões — saldo disponível (limite − dívida) + alerta limite excedido na lista Créditos
 - Despesas recorrentes — Marcar como pago com recurring_id, movimento real e dedup no orçamento
 - Home — card Disponível este mês sem clipping; Créditos — botões empilhados sem texto cortado
+- Migrations remotas aplicadas — credit_card types, goal_withdrawals/loan_payments, recurring_id
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
@@ -906,9 +907,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal
 - OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual
 - Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA
-- Migration credit_card types aplicada no remoto (20240702100000)
-- Migration goal_withdrawals + loan_payments aplicada no remoto (20240703100000)
-- Migration recurring_id em transactions aplicada no remoto (20240704100000)
 
 ---
 
