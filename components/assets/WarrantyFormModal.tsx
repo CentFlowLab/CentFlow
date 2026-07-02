@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePickerField, FormSheetFooter, Text, TextField } from '@/components/ui';
 import {
   useCreateWarranty,
   useDeleteWarranty,
@@ -17,7 +17,7 @@ import { createWarrantySchema } from '@/lib/domain/assets.schema';
 import type { Warranty } from '@/lib/domain/assets.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { getWarrantyExpiryInfo } from '@/lib/domain/warranty.utils';
-import { colors, spacing } from '@/lib/theme';
+import { colors, formSpacing, spacing } from '@/lib/theme';
 import { formatInputDate, inputDateToIso, isValidInputDate } from '@/lib/utils/format';
 
 import { WarrantyReceiptPicker } from './WarrantyReceiptPicker';
@@ -313,8 +313,8 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
         </Card>
       ) : null}
 
-      <Text variant="label" color="textMuted">
-        Associar talão (opcional)
+      <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+        Talão
       </Text>
       <WarrantyReceiptPicker
         transactions={transactions}
@@ -331,23 +331,25 @@ export function WarrantyFormModal({ visible, onClose, warranty = null }: Warrant
         </Card>
       ) : null}
 
-      <Button
-        label={isSaving ? 'A guardar...' : isEditing ? 'Guardar alterações' : 'Guardar garantia'}
-        onPress={handleSave}
-        loading={isSaving}
-        fullWidth
-        size="lg"
-      />
-
-      {isEditing ? (
+      <FormSheetFooter>
         <Button
-          label="Eliminar garantia"
-          variant="ghost"
-          onPress={confirmDelete}
-          loading={isDeleting}
+          label={isSaving ? 'A guardar...' : isEditing ? 'Guardar alterações' : 'Guardar garantia'}
+          onPress={handleSave}
+          loading={isSaving}
           fullWidth
+          size="lg"
         />
-      ) : null}
+
+        {isEditing ? (
+          <Button
+            label="Eliminar garantia"
+            variant="ghost"
+            onPress={confirmDelete}
+            loading={isDeleting}
+            fullWidth
+          />
+        ) : null}
+      </FormSheetFooter>
     </DraggableBottomSheet>
   );
 }
@@ -368,16 +370,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: formSpacing.titleToSubtitle,
     gap: spacing.md,
   },
   headerText: {
     flex: 1,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   content: {
-    gap: spacing.lg,
-    paddingBottom: spacing.xl,
+    gap: formSpacing.groupGap,
+    paddingBottom: formSpacing.contentBottom,
+  },
+  sectionLabel: {
+    marginTop: spacing.sm,
   },
   row: {
     flexDirection: 'row',

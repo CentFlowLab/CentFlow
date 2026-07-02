@@ -146,7 +146,8 @@
     "Orçamento vs património — budget_enabled em contas; investimentos/poupança fora do disponível mensal; transferências orçamento↔investimento",
     "Auditoria beta — motor sugestões financeiras lib/domain/financial/suggestions.ts (TAEG vs investimento, cenários 10/20/30%, disclaimer)",
     "Auditoria beta — testes ledger-audit + suggestions; consumptionSpending filtrado por contas orçamento",
-    "Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)"
+    "Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)",
+    "UX premium — datas DD/MM consistentes, FormSheetFooter, layout/formSpacing tokens, cards movimentos 3 linhas"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

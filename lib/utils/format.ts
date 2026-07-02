@@ -1,3 +1,5 @@
+import { parseFinancialDate, parseIsoDate } from '@/lib/domain/financial/dates';
+
 const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_LOCALE = 'pt-PT';
 
@@ -119,15 +121,69 @@ export function dateToInputDate(date: Date): string {
   return formatInputDate(date);
 }
 
-export function formatDateShort(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
+function localDayKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
-  return new Intl.DateTimeFormat(activeLocale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
+function parseStoredDate(iso: string): Date | null {
+  const key = iso.slice(0, 10);
+  return parseFinancialDate(key) ?? (() => {
+    const parsed = parseIsoDate(key);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  })();
+}
+
+/** Cabeçalho de secção na lista de movimentos: Hoje, Ontem ou «Qui., 03/07». */
+export function formatDaySectionTitle(dayKey: string, now: Date = new Date()): string {
+  const todayKey = localDayKey(now);
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const yesterdayKey = localDayKey(yesterday);
+
+  if (dayKey === todayKey) return 'Hoje';
+  if (dayKey === yesterdayKey) return 'Ontem';
+
+  const date = parseIsoDate(dayKey);
+  if (Number.isNaN(date.getTime())) return dayKey;
+
+  const weekday = new Intl.DateTimeFormat(activeLocale, { weekday: 'short' }).format(date);
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const cap = weekday.charAt(0).toUpperCase() + weekday.slice(1).replace(/\.$/, '');
+  return `${cap}., ${dd}/${mm}`;
+}
+
+/** Data relativa para linhas de movimento: Hoje, Ontem ou DD/MM[/AAAA]. */
+export function formatTransactionDateLabel(iso: string, now: Date = new Date()): string {
+  const key = iso.slice(0, 10);
+  const todayKey = localDayKey(now);
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const yesterdayKey = localDayKey(yesterday);
+
+  if (key === todayKey) return 'Hoje';
+  if (key === yesterdayKey) return 'Ontem';
+
+  const date = parseStoredDate(iso);
+  if (!date) return iso;
+
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  if (date.getFullYear() === now.getFullYear()) return `${dd}/${mm}`;
+  return `${dd}/${mm}/${date.getFullYear()}`;
+}
+
+export function formatDateShort(iso: string): string {
+  const date = parseStoredDate(iso);
+  if (!date) return iso;
+
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 export function toIsoDateString(date: Date = new Date()): string {
@@ -155,7 +211,8 @@ export function formatRelativeDays(days: number): string {
 }
 
 export function daysUntil(dateIso: string, asOf: Date = new Date()): number {
-  const target = new Date(dateIso);
+  const target = parseStoredDate(dateIso);
+  if (!target) return 0;
   const today = new Date(asOf);
   today.setHours(0, 0, 0, 0);
   target.setHours(0, 0, 0, 0);

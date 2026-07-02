@@ -8,6 +8,7 @@ export { Skeleton, SkeletonGroup } from './Skeleton';
 export { SectionHeader } from './SectionHeader';
 export { ScreenContainer } from './ScreenContainer';
 export { TextField } from './TextField';
+export { FormSheetFooter } from './FormSheetFooter';
 export { BottomActionSheet } from './BottomActionSheet';
 export { CentFlowCalendar } from './CentFlowCalendar';
 export { DatePickerField } from './DatePickerField';

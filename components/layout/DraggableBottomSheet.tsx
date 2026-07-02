@@ -30,7 +30,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { confirmDiscardChanges } from '@/lib/forms/discard-changes';
 import { logAppError } from '@/lib/diagnostics';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, formSpacing, layout, radius, spacing } from '@/lib/theme';
 
 import { BottomSheetScrollProvider } from './BottomSheetScrollContext';
 import type { BottomSheetScrollController } from './BottomSheetScrollContext';
@@ -43,8 +43,8 @@ const SPRING_CONFIG = { damping: 22, stiffness: 280, mass: 0.85 };
 const FALLBACK_SHEET_HEIGHT = 420;
 /** Margem mínima entre teclado e conteúdo/botão. */
 const KEYBOARD_FOOTER_GAP = 16;
-/** Reserva para botão Guardar no fundo do scroll (size lg ≈ 56px + margem). */
-const SAVE_BUTTON_RESERVE = 72;
+/** Reserva para botão Guardar no fundo do scroll (size lg + margem). */
+const SAVE_BUTTON_RESERVE = layout.formFooterReserve;
 /** Espaço acima do input após scroll manual/automático. */
 const FOCUS_SCROLL_TOP_INSET = 96;
 const FOCUS_SCROLL_DELAY_IOS = 320;
@@ -102,9 +102,10 @@ export function DraggableBottomSheet({
     ? keyboardAwareBottomPadding(keyboardHeight)
     : 0;
   const scrollBottomPadding =
-    spacing['2xl'] +
+    formSpacing.contentBottom +
+    formSpacing.footerTop +
     (keyboardHeight > 0 ? keyboardInset : sheetBottomPadding) +
-    (keyboardHeight > 0 ? SAVE_BUTTON_RESERVE : 0);
+    (keyboardHeight > 0 ? SAVE_BUTTON_RESERVE : spacing['2xl']);
 
   const scrollController = useMemo<BottomSheetScrollController>(
     () => ({

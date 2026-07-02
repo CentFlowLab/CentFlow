@@ -31,7 +31,7 @@ import {
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { resolveOcrUserMessage, DEFAULT_OCR_FAILED_MESSAGE } from '@/lib/receipt/ocr-messages';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, formSpacing, radius, spacing } from '@/lib/theme';
 import { logDoctorValidationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
 import { setDiagnosticAction } from '@/lib/diagnostics';
 import { useMovementRenderProbe } from '@/hooks/useMovementRenderProbe';
@@ -804,7 +804,8 @@ const styles = StyleSheet.create({
     paddingRight: spacing.md,
   },
   form: {
-    gap: spacing.lg,
+    gap: formSpacing.fieldGap,
+    paddingBottom: formSpacing.contentBottom,
   },
   lockedTypeCard: {
     borderColor: colors.border,

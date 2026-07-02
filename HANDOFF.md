@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T12:53:04.274Z -->
-<!-- Git: 0c4301a (2026-07-02T13:40:14+01:00) -->
+<!-- Última geração: 2026-07-02T17:09:27.955Z -->
+<!-- Git: 848ac08 (2026-07-02T13:53:11+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 22 — Auditoria beta pública (ledger, sugestões reais, hygiene repo)** |
-| Última geração | 2026-07-02T12:53:04.274Z |
+| Última geração | 2026-07-02T17:09:27.955Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `0c4301a` (2026-07-02T13:40:14+01:00) |
+| Git commit | `848ac08` (2026-07-02T13:53:11+01:00) |
 
 ---
 
@@ -331,6 +331,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     DatePickerField.tsx
     EmptyState.tsx
     ErrorState.tsx
+    FormSheetFooter.tsx
     LoadingSpinner.tsx
     QueryScreenState.tsx
     ScreenContainer.tsx
@@ -727,6 +728,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   theme/
     colors.ts
     index.ts
+    layout.ts
     spacing.ts
     typography.ts
   types/
@@ -745,6 +747,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   utils/
     calendar.test.ts
     calendar.ts
+    format.test.ts
     format.ts
     pluralize.test.ts
     pluralize.ts
@@ -904,6 +907,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Auditoria beta — motor sugestões financeiras lib/domain/financial/suggestions.ts (TAEG vs investimento, cenários 10/20/30%, disclaimer)
 - Auditoria beta — testes ledger-audit + suggestions; consumptionSpending filtrado por contas orçamento
 - Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)
+- UX premium — datas DD/MM consistentes, FormSheetFooter, layout/formSpacing tokens, cards movimentos 3 linhas
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

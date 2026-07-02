@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, layout, radius, spacing } from '@/lib/theme';
 
 import { Text } from './Text';
 
@@ -53,7 +53,7 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = disabled || loading;
   const variantStyle = variantStyles[variant];
-  const height = size === 'sm' ? 40 : size === 'lg' ? 52 : 46;
+  const height = layout.buttonHeight[size];
 
   const content = (
     <View style={[styles.content, { height }]}>
@@ -92,7 +92,10 @@ export function Button({
         style={({ pressed }) => [
           styles.base,
           fullWidth && styles.fullWidth,
-          { opacity: isDisabled ? 0.5 : pressed ? 0.9 : 1 },
+          {
+            opacity: isDisabled ? 0.5 : pressed ? 0.92 : 1,
+            transform: [{ scale: pressed && !isDisabled ? 0.98 : 1 }],
+          },
           style,
         ]}
         {...props}>
@@ -118,7 +121,8 @@ export function Button({
           borderColor: variantStyle.border,
           borderWidth: variantStyle.border ? 1 : 0,
           borderRadius: radius.md,
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
+          opacity: isDisabled ? 0.5 : pressed ? 0.88 : 1,
+          transform: [{ scale: pressed && !isDisabled ? 0.98 : 1 }],
         },
         style,
       ]}

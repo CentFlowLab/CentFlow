@@ -11,7 +11,7 @@ import { useBottomSheetScroll } from '@/components/layout/BottomSheetScrollConte
 import { logAppError } from '@/lib/diagnostics';
 import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
 import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, layout, radius, spacing } from '@/lib/theme';
 
 import { Text } from './Text';
 
@@ -140,7 +140,7 @@ export function TextField({
 
 const styles = StyleSheet.create({
   wrapper: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   labelRow: {
     flexDirection: 'row',
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     fontSize: 15,
     color: colors.text,
-    minHeight: 48,
+    minHeight: layout.inputHeight,
   },
   inputError: {
     borderColor: colors.danger,

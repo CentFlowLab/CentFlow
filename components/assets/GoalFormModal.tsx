@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePickerField, FormSheetFooter, Text, TextField } from '@/components/ui';
 import { useCreateGoal, useDeleteGoal, useUpdateGoal } from '@/hooks/queries/useAssets';
 import { AnalyticsEvents, track, useAnalytics } from '@/lib/analytics';
 import { getApiErrorMessage } from '@/lib/api/errors';
@@ -16,7 +16,7 @@ import {
   parseGoalAmount,
 } from '@/lib/domain/goal-form.utils';
 import { getGoalProgress } from '@/lib/domain/goal.utils';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, formSpacing, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatInputDate } from '@/lib/utils/format';
 
 import { GoalProgressBar } from './GoalProgressBar';
@@ -223,94 +223,112 @@ export function GoalFormModal({
           </Pressable>
         </View>
       )}>
-      <TextField
-        label="Nome"
-        value={name}
-        onChangeText={setName}
-        placeholder="Ex: Fundo de emergência"
-        error={errors.name}
-      />
-
-      <TextField
-        label="Valor alvo (€)"
-        value={target}
-        onChangeText={setTarget}
-        keyboardType="decimal-pad"
-        placeholder="5000"
-        error={errors.target}
-      />
-
-      <DatePickerField
-        label="Data prevista"
-        value={deadline}
-        onChange={setDeadline}
-        error={errors.deadline}
-      />
-
-      <Pressable
-        onPress={() => setDeadline(formatInputDate(new Date(Date.now() + 180 * 86400000)))}
-        style={styles.quickDate}>
-        <Text variant="caption" color="primary">
-          +6 meses
+      <View style={styles.section}>
+        <Text variant="label" color="textMuted">
+          Meta
         </Text>
-      </Pressable>
+        <View style={styles.sectionBody}>
+          <TextField
+            label="Nome"
+            value={name}
+            onChangeText={setName}
+            placeholder="Ex: Fundo de emergência"
+            error={errors.name}
+          />
 
-      <Text variant="caption" color="textMuted" style={styles.helper}>
-        Opcional — ajuda a planear o ritmo de poupança
-      </Text>
+          <TextField
+            label="Valor alvo (€)"
+            value={target}
+            onChangeText={setTarget}
+            keyboardType="decimal-pad"
+            placeholder="5000"
+            error={errors.target}
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="label" color="textMuted">
+          Prazo
+        </Text>
+        <View style={styles.sectionBody}>
+          <DatePickerField
+            label="Data prevista"
+            value={deadline}
+            onChange={setDeadline}
+            error={errors.deadline}
+          />
+
+          <Pressable
+            onPress={() => setDeadline(formatInputDate(new Date(Date.now() + 180 * 86400000)))}
+            style={styles.quickDate}>
+            <Text variant="caption" color="primary">
+              +6 meses
+            </Text>
+          </Pressable>
+
+          <Text variant="caption" color="textMuted">
+            Opcional — ajuda a planear o ritmo de poupança
+          </Text>
+        </View>
+      </View>
 
       {progress ? (
-        <Card variant="outlined" padding="md" style={styles.progressCard}>
+        <View style={styles.section}>
           <Text variant="label" color="textMuted">
             Progresso
           </Text>
-          <View style={styles.progressStats}>
-            <View style={styles.stat}>
-              <Text variant="caption" color="textMuted">
-                Guardado
-              </Text>
-              <Text variant="bodyMedium">{formatCurrency(goal!.current)}</Text>
+          <Card variant="outlined" padding="md" style={styles.progressCard}>
+            <View style={styles.progressStats}>
+              <View style={styles.stat}>
+                <Text variant="caption" color="textMuted">
+                  Guardado
+                </Text>
+                <Text variant="bodyMedium">{formatCurrency(goal!.current)}</Text>
+              </View>
+              <View style={styles.stat}>
+                <Text variant="caption" color="textMuted">
+                  Em falta
+                </Text>
+                <Text variant="bodyMedium">{formatCurrency(progress.remaining)}</Text>
+              </View>
+              <View style={styles.stat}>
+                <Text variant="caption" color="textMuted">
+                  Progresso
+                </Text>
+                <Text variant="bodyMedium" color={progress.isComplete ? 'success' : 'primary'}>
+                  {progress.percent}%
+                </Text>
+              </View>
             </View>
-            <View style={styles.stat}>
-              <Text variant="caption" color="textMuted">
-                Em falta
-              </Text>
-              <Text variant="bodyMedium">{formatCurrency(progress.remaining)}</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text variant="caption" color="textMuted">
-                Progresso
-              </Text>
-              <Text variant="bodyMedium" color={progress.isComplete ? 'success' : 'primary'}>
-                {progress.percent}%
-              </Text>
-            </View>
-          </View>
-          <GoalProgressBar
-            percent={progress.percent}
-            isComplete={progress.isComplete}
-            showLabel={false}
-          />
-        </Card>
+            <GoalProgressBar
+              percent={progress.percent}
+              isComplete={progress.isComplete}
+              showLabel={false}
+            />
+          </Card>
+        </View>
       ) : null}
 
       {preview ? (
-        <Card variant="outlined" padding="md" style={styles.progressCard}>
+        <View style={styles.section}>
           <Text variant="label" color="textMuted">
             Pré-visualização
           </Text>
-          <View style={styles.previewRow}>
-            <Text variant="bodyMedium">{formatCurrency(preview.remaining)} em falta</Text>
-            <Text variant="bodyMedium" color="primary">
-              {preview.percent}%
-            </Text>
-          </View>
-          <GoalProgressBar
-            percent={preview.percent}
-            isComplete={preview.isComplete}
-            showLabel={false}
-          />
-        </Card>
+          <Card variant="outlined" padding="md" style={styles.progressCard}>
+            <View style={styles.previewRow}>
+              <Text variant="bodyMedium">{formatCurrency(preview.remaining)} em falta</Text>
+              <Text variant="bodyMedium" color="primary">
+                {preview.percent}%
+              </Text>
+            </View>
+            <GoalProgressBar
+              percent={preview.percent}
+              isComplete={preview.isComplete}
+              showLabel={false}
+            />
+          </Card>
+        </View>
       ) : null}
 
       {apiError ? (
@@ -321,60 +339,62 @@ export function GoalFormModal({
         </Card>
       ) : null}
 
-      <Button
-        label={
-          isSaving
-            ? isEditing
-              ? 'A guardar...'
-              : 'A criar...'
-            : isEditing
-              ? 'Guardar alterações'
-              : 'Criar objetivo'
-        }
-        onPress={handleSave}
-        loading={isSaving}
-        disabled={isDeleting}
-        fullWidth
-        size="lg"
-        icon={
-          <SymbolView
-            name={{ ios: 'target', android: 'flag', web: 'flag' }}
-            tintColor={colors.textInverse}
-            size={18}
+      <FormSheetFooter>
+        <Button
+          label={
+            isSaving
+              ? isEditing
+                ? 'A guardar...'
+                : 'A criar...'
+              : isEditing
+                ? 'Guardar alterações'
+                : 'Criar objetivo'
+          }
+          onPress={handleSave}
+          loading={isSaving}
+          disabled={isDeleting}
+          fullWidth
+          size="lg"
+          icon={
+            <SymbolView
+              name={{ ios: 'target', android: 'flag', web: 'flag' }}
+              tintColor={colors.textInverse}
+              size={18}
+            />
+          }
+        />
+
+        {isEditing && goal && onContribute ? (
+          <Button
+            label="Adicionar dinheiro"
+            variant="secondary"
+            onPress={() => onContribute(goal)}
+            disabled={isSaving || isDeleting}
+            fullWidth
           />
-        }
-      />
+        ) : null}
 
-      {isEditing && goal && onContribute ? (
-        <Button
-          label="Adicionar dinheiro"
-          variant="secondary"
-          onPress={() => onContribute(goal)}
-          disabled={isSaving || isDeleting}
-          fullWidth
-        />
-      ) : null}
+        {isEditing && goal && goal.current > 0 && onWithdraw ? (
+          <Button
+            label="Retirar dinheiro"
+            variant="secondary"
+            onPress={() => onWithdraw(goal)}
+            disabled={isSaving || isDeleting}
+            fullWidth
+          />
+        ) : null}
 
-      {isEditing && goal && goal.current > 0 && onWithdraw ? (
-        <Button
-          label="Retirar dinheiro"
-          variant="secondary"
-          onPress={() => onWithdraw(goal)}
-          disabled={isSaving || isDeleting}
-          fullWidth
-        />
-      ) : null}
-
-      {isEditing ? (
-        <Button
-          label={isDeleting ? 'A eliminar...' : 'Eliminar objetivo'}
-          variant="danger"
-          onPress={confirmDelete}
-          loading={isDeleting}
-          disabled={isSaving}
-          fullWidth
-        />
-      ) : null}
+        {isEditing ? (
+          <Button
+            label={isDeleting ? 'A eliminar...' : 'Eliminar objetivo'}
+            variant="danger"
+            onPress={confirmDelete}
+            loading={isDeleting}
+            disabled={isSaving}
+            fullWidth
+          />
+        ) : null}
+      </FormSheetFooter>
     </DraggableBottomSheet>
   );
 }
@@ -389,27 +409,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: formSpacing.titleToSubtitle,
     gap: spacing.md,
   },
   headerText: {
     flex: 1,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   content: {
-    gap: spacing.lg,
-    paddingBottom: spacing['3xl'],
+    gap: formSpacing.groupGap,
+    paddingBottom: formSpacing.contentBottom,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionBody: {
+    gap: formSpacing.fieldGap,
   },
   quickDate: {
     alignSelf: 'flex-start',
-    marginTop: -spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
     backgroundColor: colors.primaryMuted,
-  },
-  helper: {
-    marginTop: spacing.xs,
   },
   progressCard: {
     gap: spacing.md,

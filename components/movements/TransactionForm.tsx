@@ -5,7 +5,7 @@ import { SegmentedControl } from '@/components/layout';
 import { DatePickerField, TextField } from '@/components/ui';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { CashTransactionType } from '@/lib/domain/transaction.types';
-import { spacing } from '@/lib/theme';
+import { formSpacing, spacing } from '@/lib/theme';
 
 import { CategoryField } from './CategoryField';
 
@@ -84,10 +84,10 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
 
 const styles = StyleSheet.create({
   form: {
-    gap: spacing.lg,
+    gap: formSpacing.fieldGap,
   },
   accountSection: {
-    marginBottom: spacing.lg,
+    marginTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
 });

@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, layout, radius, spacing } from '@/lib/theme';
 
 type Segment<T extends string> = {
   key: T;
@@ -61,9 +61,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   segment: {
-    paddingHorizontal: spacing.lg,
+    minHeight: layout.chipHeight,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   segmentActive: {
     backgroundColor: colors.primaryMuted,

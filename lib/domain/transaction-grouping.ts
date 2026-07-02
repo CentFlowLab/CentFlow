@@ -1,4 +1,5 @@
 import type { Transaction } from '@/lib/domain/transaction.types';
+import { formatDaySectionTitle } from '@/lib/utils/format';
 import { parseTransactionDate } from './transaction-date.utils';
 import {
   expenseCountsForBudgetMonth,
@@ -36,22 +37,7 @@ function toDayKey(iso: string): string {
 }
 
 function dayLabel(key: string, now: Date = new Date()): string {
-  const todayKey = dayKeyFromDate(now);
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const yesterdayKey = dayKeyFromDate(yesterday);
-
-  if (key === todayKey) return 'Hoje';
-  if (key === yesterdayKey) return 'Ontem';
-
-  const [year, month, day] = key.split('-').map(Number);
-  const date = new Date(year, (month ?? 1) - 1, day ?? 1);
-  const formatted = new Intl.DateTimeFormat('pt-PT', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  }).format(date);
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  return formatDaySectionTitle(key, now);
 }
 
 function signedAmount(transaction: Transaction): number {

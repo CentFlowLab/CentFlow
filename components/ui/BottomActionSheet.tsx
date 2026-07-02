@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, formSpacing, radius, spacing } from '@/lib/theme';
 
 import { Text } from './Text';
 
@@ -87,6 +87,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   footer: {
-    marginTop: spacing.md,
+    marginTop: formSpacing.footerTop,
+    paddingTop: spacing.lg,
   },
 });

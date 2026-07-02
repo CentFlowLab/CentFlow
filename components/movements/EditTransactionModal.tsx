@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
-import { Button, Card, Text } from '@/components/ui';
+import { Button, Card, FormSheetFooter, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useUpdateTransaction } from '@/hooks/queries/useTransactions';
 import {
@@ -17,7 +17,7 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { formFieldsDiffer } from '@/lib/forms';
 import { openReceiptForTransaction } from '@/lib/receipt/open-receipt';
-import { colors, spacing } from '@/lib/theme';
+import { colors, formSpacing, spacing } from '@/lib/theme';
 
 import { TransactionForm } from './TransactionForm';
 import { ReceiptItemsSummary } from './ReceiptItemsSummary';
@@ -201,7 +201,7 @@ export function EditTransactionModal({
         </Card>
       ) : null}
 
-      <View style={styles.footer}>
+      <FormSheetFooter>
         <Button
           label={updateMutation.isPending ? 'A guardar...' : 'Guardar alterações'}
           onPress={handleSave}
@@ -209,7 +209,7 @@ export function EditTransactionModal({
           fullWidth
           size="lg"
         />
-      </View>
+      </FormSheetFooter>
     </DraggableBottomSheet>
   );
 }
@@ -219,16 +219,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: formSpacing.titleToSubtitle,
     gap: spacing.md,
   },
   headerText: {
     flex: 1,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   content: {
-    gap: spacing.lg,
-    paddingBottom: spacing['3xl'] + spacing.lg,
+    gap: formSpacing.fieldGap,
+    paddingBottom: formSpacing.contentBottom,
   },
   receiptNote: {
     flexDirection: 'row',
@@ -242,9 +242,5 @@ const styles = StyleSheet.create({
   errorCard: {
     borderColor: colors.danger,
     backgroundColor: colors.dangerMuted,
-  },
-  footer: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
   },
 });

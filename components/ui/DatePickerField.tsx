@@ -7,7 +7,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
 import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, layout, radius, spacing } from '@/lib/theme';
 import {
   DATE_INPUT_PLACEHOLDER,
   dateToInputDate,
@@ -178,7 +178,7 @@ export function DatePickerField({
 
 const styles = StyleSheet.create({
   wrapper: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   labelRow: {
     flexDirection: 'row',
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    minHeight: 48,
+    minHeight: layout.inputHeight,
   },
   fieldPressed: {
     borderColor: colors.primary,

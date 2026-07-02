@@ -58,6 +58,47 @@ export const typography = {
     fontWeight: '500',
     lineHeight: 14,
   },
+  /** Aliases semânticos — preferir estes nomes em UI nova. */
+  titleXL: {
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    lineHeight: 40,
+  },
+  titleL: {
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    lineHeight: 32,
+  },
+  section: {
+    fontSize: 20,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+    lineHeight: 26,
+  },
+  numberLarge: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    lineHeight: 34,
+  },
+  numberMedium: {
+    fontSize: 17,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  chip: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  badge: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    lineHeight: 14,
+  },
 } as const satisfies Record<string, TextStyle>;
 
 export type TypographyKey = keyof typeof typography;

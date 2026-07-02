@@ -7,7 +7,7 @@ import { getCategoryById } from '@/lib/data/transaction-categories';
 import { resolveTransactionKind } from '@/lib/domain/financial/transaction-kind';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
-import { formatCurrency, formatDateShort } from '@/lib/utils/format';
+import { formatCurrency, formatTransactionDateLabel } from '@/lib/utils/format';
 
 const ACTION_ICON_COLOR = '#FFFFFF';
 
@@ -83,21 +83,28 @@ export function SwipeableTransactionListItem({
         ? `${transaction.description?.trim() || transaction.categoryLabel} · ${cardName}`
         : transaction.description?.trim() || transaction.categoryLabel;
 
-  const subtitleParts = [
-    isTransfer
-      ? 'Transferência'
-      : isCreditPayment
-        ? 'Pagamento cartão'
-        : isCardRefund
-          ? 'Reembolso cartão'
+  const categoryLine = isTransfer
+    ? 'Transferência'
+    : isCreditPayment
+      ? 'Pagamento cartão'
+      : isCardRefund
+        ? 'Reembolso cartão'
         : isCardExpense
           ? `${transaction.categoryLabel} · Cartão`
-          : transaction.categoryLabel,
-    formatDateShort(transaction.date),
-  ];
-  if (hasReceipt(transaction)) subtitleParts.push('Talão');
+          : fromName
+            ? `${transaction.categoryLabel} · ${fromName}`
+            : transaction.categoryLabel;
 
-  const hasReceiptFlag = hasReceipt(transaction);
+  const dateLine = formatTransactionDateLabel(transaction.date);
+  const badgeLabel = isTransfer
+    ? 'Transferência'
+    : isCreditPayment
+      ? 'Pagamento cartão'
+      : isCardExpense
+        ? 'Cartão'
+        : transaction.recurringId
+          ? 'Recorrente'
+          : null;
 
   function confirmDelete() {
     const message = `Tens a certeza que queres eliminar "${title}"? Esta ação não pode ser desfeita.`;
@@ -187,40 +194,34 @@ export function SwipeableTransactionListItem({
             {title}
           </Text>
           <Text variant="caption" color="textMuted" numberOfLines={1}>
-            {subtitleParts.join(' · ')}
+            {categoryLine}
+            {hasReceipt(transaction) ? ' · Talão' : ''}
+          </Text>
+          <Text variant="caption" color="textMuted" numberOfLines={1}>
+            {dateLine}
           </Text>
         </View>
 
-        {isTransfer ? (
-          <View style={styles.transferBadge}>
-            <Text variant="caption" color="primary">
-              Transferência
-            </Text>
-          </View>
-        ) : isCreditPayment ? (
-          <View style={styles.transferBadge}>
-            <Text variant="caption" color="primary">
-              Pagamento cartão
-            </Text>
-          </View>
-        ) : isCardExpense ? (
-          <View style={styles.transferBadge}>
-            <Text variant="caption" color="primary">
-              Cartão
-            </Text>
-          </View>
-        ) : hasReceiptFlag ? (
-          <SymbolView
-            name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
-            tintColor={colors.textMuted}
-            size={16}
-          />
-        ) : null}
+        <View style={styles.trailing}>
+          {badgeLabel ? (
+            <View style={styles.transferBadge}>
+              <Text variant="caption" color="primary" style={styles.badgeText}>
+                {badgeLabel}
+              </Text>
+            </View>
+          ) : hasReceipt(transaction) ? (
+            <SymbolView
+              name={{ ios: 'doc.text.fill', android: 'receipt', web: 'receipt' }}
+              tintColor={colors.textMuted}
+              size={16}
+            />
+          ) : null}
 
-        <Text variant="bodyMedium" style={{ color: amountColor }}>
-          {prefix}
-          {formatCurrency(transaction.amount, transaction.currency)}
-        </Text>
+          <Text variant="bodyMedium" style={{ color: amountColor }}>
+            {prefix}
+            {formatCurrency(transaction.amount, transaction.currency)}
+          </Text>
+        </View>
       </Card>
     </Pressable>
   );
@@ -305,12 +306,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     gap: 2,
+    justifyContent: 'center',
+  },
+  trailing: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    minWidth: 88,
   },
   transferBadge: {
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.sm,
     backgroundColor: colors.primaryMuted,
+  },
+  badgeText: {
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',
