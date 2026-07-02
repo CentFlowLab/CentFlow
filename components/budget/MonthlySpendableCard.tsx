@@ -19,7 +19,7 @@ export function MonthlySpendableCard({ onOpenDetails }: MonthlySpendableCardProp
   const reference = new Date();
   const spendable = useMonthlySpendable(reference);
   const valueTone =
-    spendable.remainingThisMonth <= 0
+    spendable.available <= 0
       ? colors.danger
       : spendable.warnings.length > 0
         ? colors.warning
@@ -39,10 +39,10 @@ export function MonthlySpendableCard({ onOpenDetails }: MonthlySpendableCardProp
           />
         </View>
         <Text style={[styles.value, { color: valueTone }]}>
-          {formatCurrency(spendable.remainingThisMonth)}
+          {formatCurrency(spendable.available)}
         </Text>
         <Text variant="caption" color="textSecondary">
-          {formatCurrency(spendable.dailyAvailable)}/dia até {endOfMonthLabel(reference)} ·{' '}
+          {formatCurrency(spendable.dailySafeSpend)}/dia até {endOfMonthLabel(reference)} ·{' '}
           {spendable.daysRemaining} {spendable.daysRemaining === 1 ? 'dia' : 'dias'}
         </Text>
       </Card>

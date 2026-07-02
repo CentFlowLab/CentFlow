@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 20 — Ledger cartão + reembolsos + Análises compactas",
+  "currentPhase": "Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -134,7 +134,11 @@
     "Tipos canónicos credit_card_purchase/payment/refund + domínio ledger-impact (orçamento, conta, cartão, reembolsos)",
     "Reembolsos no cartão — RefundTransactionModal, reduz dívida e despesa líquida sem contar como receita",
     "Análises compactas — 4 tabs (Resumo/Gastos/Dívida/Património) + calendário heatmap de gastos",
-    "Formulário movimentos — selector Despesa/Receita/Transferência/Pagamento/Reembolso com microcopy"
+    "Formulário movimentos — selector Despesa/Receita/Transferência/Pagamento/Reembolso com microcopy",
+    "Orçamento mensal transparente — calculateMonthlyAvailableBreakdown() + fórmula no modal (Home e sheet partilham hook)",
+    "Objetivos reservados — contribuição reduz disponível sem despesa; retirada (GoalWithdrawModal) sem receita",
+    "Créditos empréstimo — mensalidade vs amortização (loan_payments, RegisterLoan* modals, domínio loan-payments)",
+    "Cartões — saldo disponível (limite − dívida) + alerta limite excedido na lista Créditos"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
@@ -149,7 +153,8 @@
     "Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal",
     "OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual",
     "Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA",
-    "Migration credit_card types aplicada no remoto (20240702100000)"
+    "Migration credit_card types aplicada no remoto (20240702100000)",
+    "Migration goal_withdrawals + loan_payments aplicada no remoto (20240703100000)"
   ],
   "outputFile": "HANDOFF.md"
 }

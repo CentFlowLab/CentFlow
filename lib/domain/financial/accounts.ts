@@ -2,7 +2,7 @@ import type { BankAccount } from '@/lib/domain/account.types';
 import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
-import { addMoney, roundMoney } from './money';
+import { addMoney, roundMoney, subtractMoney } from './money';
 import { resolveTransactionKind } from './transaction-kind';
 
 export function accountMovementDelta(
@@ -31,22 +31,36 @@ export function accountMovementDelta(
 }
 
 export function goalContributionDelta(
-  contributions: Pick<GoalContribution, 'accountId' | 'amount'>[],
+  contributions: Pick<GoalContribution, 'accountId' | 'amount' | 'kind'>[],
   accountId: string,
 ): number {
   return contributions.reduce((sum, row) => {
     if (row.accountId !== accountId) return sum;
-    return sum - row.amount;
+    const kind = row.kind ?? 'contribution';
+    return kind === 'withdrawal' ? addMoney(sum, row.amount) : subtractMoney(sum, row.amount);
   }, 0);
 }
+
+import type { LoanPaymentRecord } from '@/lib/domain/financial/loan-payments';
 
 export type AccountBalanceInput = {
   account: Pick<BankAccount, 'id' | 'initialBalance'>;
   transactions: Transaction[];
   goalContributions?: GoalContribution[];
+  loanPayments?: LoanPaymentRecord[];
 };
 
-/** Saldo = inicial + movimentos/transferências − contribuições para objetivos. */
+export function loanPaymentDelta(
+  payments: Pick<LoanPaymentRecord, 'accountId' | 'amount'>[],
+  accountId: string,
+): number {
+  return payments.reduce((sum, row) => {
+    if (row.accountId !== accountId) return sum;
+    return subtractMoney(sum, row.amount);
+  }, 0);
+}
+
+/** Saldo = inicial + movimentos/transferências − contribuições + levantamentos − pagamentos crédito. */
 export function calculateAccountBalance(input: AccountBalanceInput): number {
   const movementNet = input.transactions.reduce(
     (sum, tx) => addMoney(sum, accountMovementDelta(tx, input.account.id)),
@@ -56,14 +70,16 @@ export function calculateAccountBalance(input: AccountBalanceInput): number {
     input.goalContributions ?? [],
     input.account.id,
   );
+  const loanNet = loanPaymentDelta(input.loanPayments ?? [], input.account.id);
 
-  return roundMoney(addMoney(input.account.initialBalance, movementNet, contributionsNet));
+  return roundMoney(addMoney(input.account.initialBalance, movementNet, contributionsNet, loanNet));
 }
 
 export function calculateTotalAccountsBalance(
   accounts: BankAccount[],
   transactions: Transaction[],
   goalContributions: GoalContribution[] = [],
+  loanPayments: LoanPaymentRecord[] = [],
 ): number {
   return roundMoney(
     accounts.reduce((sum, account) => {
@@ -76,6 +92,7 @@ export function calculateTotalAccountsBalance(
           account,
           transactions: linked,
           goalContributions,
+          loanPayments,
         }),
       );
     }, 0),
@@ -86,6 +103,7 @@ export function enrichAccountsWithBalances(
   accounts: BankAccount[],
   transactions: Transaction[],
   goalContributions: GoalContribution[] = [],
+  loanPayments: LoanPaymentRecord[] = [],
 ): BankAccount[] {
   return accounts.map((account) => {
     const linked = transactions.filter(
@@ -97,6 +115,7 @@ export function enrichAccountsWithBalances(
         account,
         transactions: linked,
         goalContributions,
+        loanPayments,
       }),
     };
   });

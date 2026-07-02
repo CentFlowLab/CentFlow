@@ -10,6 +10,7 @@ type GoalContributionRow = {
   goal_id: string;
   account_id: string | null;
   amount: number;
+  kind: string | null;
   note: string | null;
   created_at: string;
 };
@@ -20,6 +21,7 @@ function mapRow(row: GoalContributionRow): GoalContribution {
     goalId: row.goal_id,
     accountId: row.account_id ?? undefined,
     amount: Number(row.amount),
+    kind: (row.kind as GoalContribution['kind']) ?? 'contribution',
     note: row.note ?? undefined,
     createdAt: row.created_at,
   };
@@ -74,6 +76,7 @@ export async function createGoalContribution(input: {
     goal_id: input.goalId,
     account_id: input.accountId,
     amount: input.amount,
+    kind: 'contribution',
     note: input.note ?? null,
   };
 
@@ -100,5 +103,66 @@ export async function createGoalContribution(input: {
   }
 
   traceGoalContribution('service_success', { goalId: input.goalId, newCurrent });
+  return mapRow(contribution as GoalContributionRow);
+}
+
+export async function createGoalWithdrawal(input: {
+  goalId: string;
+  accountId: string;
+  amount: number;
+  note?: string;
+}): Promise<GoalContribution> {
+  traceGoalContribution('withdraw_service_start', {
+    goalId: input.goalId,
+    accountId: input.accountId,
+    amount: input.amount,
+  });
+
+  const supabase = getSupabaseClient();
+  const userId = await getUserId();
+
+  const { data: goal, error: goalError } = await supabase
+    .from('goals')
+    .select('id, current, target')
+    .eq('id', input.goalId)
+    .single();
+
+  if (goalError || !goal) throw new Error('Objetivo não encontrado');
+  if (Number(goal.current) < input.amount) {
+    throw new Error('Valor superior ao guardado no objetivo.');
+  }
+
+  const payload: TablesInsert<'goal_contributions'> = {
+    user_id: userId,
+    goal_id: input.goalId,
+    account_id: input.accountId,
+    amount: input.amount,
+    kind: 'withdrawal',
+    note: input.note ?? null,
+  };
+
+  const { data: contribution, error: insertError } = await supabase
+    .from('goal_contributions')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (insertError) {
+    traceGoalContribution('withdraw_insert_error', { code: insertError.code }, 'error');
+    throw new Error(insertError.message);
+  }
+
+  const newCurrent = Math.max(0, Number(goal.current) - input.amount);
+  const { error: updateError } = await supabase
+    .from('goals')
+    .update({ current: newCurrent })
+    .eq('id', input.goalId);
+
+  if (updateError) {
+    traceGoalContribution('withdraw_goal_update_error', { code: updateError.code }, 'error');
+    throw new Error(updateError.message);
+  }
+
+  traceGoalContribution('withdraw_service_success', { goalId: input.goalId, newCurrent });
   return mapRow(contribution as GoalContributionRow);
 }

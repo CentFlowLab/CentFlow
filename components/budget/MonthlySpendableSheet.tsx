@@ -17,22 +17,26 @@ function formatEndOfMonthLabel(reference: Date): string {
   return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }).format(lastDay);
 }
 
-function StatRow({
+function BreakdownRow({
   label,
   value,
   tone = 'text',
+  prefix = '',
 }: {
   label: string;
-  value: string;
+  value: number;
   tone?: 'text' | 'success' | 'danger' | 'textSecondary';
+  prefix?: string;
 }) {
+  if (value === 0) return null;
   return (
     <View style={styles.statRow}>
       <Text variant="caption" color="textSecondary">
+        {prefix}
         {label}
       </Text>
       <Text variant="bodyMedium" color={tone}>
-        {value}
+        {formatCurrency(value)}
       </Text>
     </View>
   );
@@ -41,9 +45,10 @@ function StatRow({
 export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableSheetProps) {
   const reference = new Date();
   const spendable = useMonthlySpendable(reference);
+  const { components } = spendable;
   const endLabel = formatEndOfMonthLabel(reference);
   const remainingTone =
-    spendable.remainingThisMonth <= 0
+    spendable.available <= 0
       ? colors.danger
       : spendable.warnings.length > 0
         ? colors.warning
@@ -77,77 +82,82 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
           Restam este mês
         </Text>
         <Text style={[styles.heroValue, { color: remainingTone }]}>
-          {formatCurrency(spendable.remainingThisMonth)}
+          {formatCurrency(spendable.available)}
         </Text>
         <Text variant="bodyMedium" color="textSecondary">
-          {formatCurrency(spendable.dailyAvailable)}/dia até {endLabel}
+          {formatCurrency(spendable.dailySafeSpend)}/dia até {endLabel}
         </Text>
-        <View style={styles.heroMetaRow}>
-          <View style={styles.heroPill}>
-            <Text variant="caption" color="primary">
-              {spendable.daysRemaining} {spendable.daysRemaining === 1 ? 'dia' : 'dias'} restantes
-            </Text>
-          </View>
+      </Card>
+
+      <Card variant="outlined" style={styles.detailCard}>
+        <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+          Como calculámos
+        </Text>
+        <BreakdownRow label="Receitas recebidas" value={components.incomeReceived} tone="success" />
+        <BreakdownRow
+          label="Despesas registadas"
+          value={components.registeredExpenses}
+          prefix="− "
+        />
+        <BreakdownRow
+          label="Reservado para objetivos"
+          value={components.goalReserved}
+          prefix="− "
+        />
+        <BreakdownRow
+          label="Obrigações futuras"
+          value={components.futureObligations}
+          prefix="− "
+        />
+        <BreakdownRow
+          label="Mensalidades pagas"
+          value={components.loanPaymentsPaid}
+          prefix="− "
+        />
+        <BreakdownRow
+          label="Amortizações extra"
+          value={components.loanAmortizationsPaid}
+          prefix="− "
+        />
+        <View style={styles.divider} />
+        <View style={styles.statRow}>
+          <Text variant="bodyMedium">= Disponível</Text>
+          <Text variant="bodyMedium" style={{ color: remainingTone }}>
+            {formatCurrency(spendable.available)}
+          </Text>
         </View>
       </Card>
 
-      {spendable.warnings.length > 0 ? (
-        <Card variant="outlined" style={styles.warningCard}>
-          {spendable.warnings.map((warning) => (
-            <View key={warning.code} style={styles.warningRow}>
-              <SymbolView
-                name={{
-                  ios: 'exclamationmark.triangle.fill',
-                  android: 'warning',
-                  web: 'warning',
-                }}
-                tintColor={colors.warning}
-                size={16}
-              />
-              <Text variant="caption" color="textSecondary" style={styles.warningText}>
-                {warning.message}
+      <Card variant="outlined" style={styles.notesCard}>
+        {spendable.notes.map((note) => (
+          <Text key={note} variant="caption" color="textMuted">
+            · {note}
+          </Text>
+        ))}
+      </Card>
+
+      {spendable.obligations.length > 0 ? (
+        <Card variant="outlined" style={styles.detailCard}>
+          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+            Próximas obrigações
+          </Text>
+          {spendable.obligations.map((item) => (
+            <View key={`${item.kind}-${item.id}`} style={styles.statRow}>
+              <Text variant="caption" color="textSecondary">
+                {item.name}
               </Text>
+              <Text variant="bodyMedium">{formatCurrency(item.amount)}</Text>
             </View>
           ))}
         </Card>
       ) : null}
 
-      <Card variant="outlined" style={styles.detailCard}>
-        <StatRow label="Receitas previstas" value={formatCurrency(spendable.futureIncome)} tone="success" />
-        <View style={styles.divider} />
-        <StatRow label="Despesas previstas" value={formatCurrency(spendable.futureExpense)} tone="text" />
-        <View style={styles.divider} />
-        <StatRow
-          label="Projeção fim do mês"
-          value={formatCurrency(spendable.projectedEndOfMonthBalance)}
-          tone={spendable.projectedEndOfMonthBalance < 0 ? 'danger' : 'textSecondary'}
-        />
-      </Card>
-
-      {spendable.upcomingSubscriptions.length > 0 || spendable.upcomingInstallments.length > 0 ? (
-        <Card variant="outlined" style={styles.detailCard}>
-          <Text variant="label" color="textMuted" style={styles.sectionLabel}>
-            Próximas obrigações
-          </Text>
-          {spendable.upcomingSubscriptions.map((item) => (
-            <View key={`sub-${item.id}`} style={styles.statRow}>
-              <Text variant="caption" color="textSecondary">
-                {item.name}
-              </Text>
-              <Text variant="bodyMedium" color="text">
-                {formatCurrency(item.amount)}
-              </Text>
-            </View>
-          ))}
-          {spendable.upcomingInstallments.map((item) => (
-            <View key={`credit-${item.id}`} style={styles.statRow}>
-              <Text variant="caption" color="textSecondary">
-                {item.name} (prestação)
-              </Text>
-              <Text variant="bodyMedium" color="text">
-                {formatCurrency(item.amount)}
-              </Text>
-            </View>
+      {spendable.warnings.length > 0 ? (
+        <Card variant="outlined" style={styles.warningCard}>
+          {spendable.warnings.map((warning) => (
+            <Text key={warning.code} variant="caption" color="textSecondary">
+              {warning.message}
+            </Text>
           ))}
         </Card>
       ) : null}
@@ -177,31 +187,11 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     lineHeight: 58,
   },
-  heroMetaRow: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-  },
-  heroPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.primaryMuted,
-  },
-  warningCard: {
-    gap: spacing.sm,
-    borderColor: colors.warning,
-    backgroundColor: colors.surfaceHighlight,
-  },
-  warningRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  warningText: {
-    flex: 1,
-  },
   detailCard: {
     gap: spacing.sm,
+  },
+  notesCard: {
+    gap: spacing.xs,
   },
   sectionLabel: {
     marginBottom: spacing.xs,
@@ -215,5 +205,11 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: colors.border,
+    marginVertical: spacing.xs,
+  },
+  warningCard: {
+    borderColor: colors.warning,
+    backgroundColor: colors.surfaceHighlight,
+    gap: spacing.xs,
   },
 });

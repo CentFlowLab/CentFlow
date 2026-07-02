@@ -1,126 +1,90 @@
 import { useMemo } from 'react';
 
+import { useGoalContributions } from '@/hooks/queries/useGoalContributions';
+import { useLoanPayments } from '@/hooks/queries/useLoanPayments';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
-import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useTransactions } from '@/hooks/queries/useTransactions';
 import {
-  calculateMonthlySpendable,
-  type MonthlySpendableOutput,
-} from '@/lib/budget/calculateMonthlySpendable';
-import {
-  filterFutureForBudgetMonth,
-  filterOccurredForBudgetMonth,
-  incomeCountsForBudgetMonth,
-} from '@/lib/domain/monthly-budget-movements';
-import type { Transaction } from '@/lib/domain/transaction.types';
+  breakdownToSpendableOutput,
+  type MonthlyAvailableBreakdown,
+} from '@/lib/domain/financial/monthly-available';
+import { buildMonthlyAvailableBreakdown } from '@/lib/domain/financial/monthly-available.compose';
+import type { MonthlyAvailableObligation } from '@/lib/domain/financial/monthly-available';
+import { traceMonthlyAvailableBreakdown } from '@/lib/doctor/loan-payment-trace';
 
-export type UpcomingObligation = {
-  id: string;
-  name: string;
-  amount: number;
-  dueDate?: string;
-};
-
-export type MonthlySpendable = MonthlySpendableOutput & {
+export type MonthlySpendable = MonthlyAvailableBreakdown & {
+  /** @deprecated usar `available` */
+  remainingThisMonth: number;
+  /** @deprecated usar `dailySafeSpend` */
+  dailyAvailable: number;
+  projectedEndOfMonthBalance: number;
   futureIncome: number;
   futureExpense: number;
-  upcomingSubscriptions: UpcomingObligation[];
-  upcomingInstallments: UpcomingObligation[];
+  upcomingSubscriptions: Array<{ id: string; name: string; amount: number; dueDate?: string }>;
+  upcomingInstallments: Array<{ id: string; name: string; amount: number; dueDate?: string }>;
   isLoading: boolean;
 };
 
-/**
- * Liga `calculateMonthlySpendable` aos dados reais (Supabase via TanStack Query).
- * Movimentos contam no mês civil da data do movimento.
- */
 export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySpendable {
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
   const { data: liabilities, isLoading: liabLoading } = useLiabilities();
-  const { data: onboardingAnswers } = useOnboardingAnswers();
+  const { data: goalContributions = [], isLoading: goalsLoading } = useGoalContributions();
+  const { data: loanPayments = [], isLoading: loanLoading } = useLoanPayments();
 
   return useMemo(() => {
-    const occurredThisMonth = filterOccurredForBudgetMonth(transactions, referenceDate);
-    const futureThisMonth = filterFutureForBudgetMonth(transactions, referenceDate);
-
-    const subscriptions = liabilities?.subscriptions ?? [];
-    const credits = liabilities?.credits ?? [];
-
-    const subscriptionInputs = subscriptions
-      .filter((subscription) => subscription.amount > 0)
-      .map((subscription) => ({
-        amount: subscription.amount,
-        dueDate: subscription.renewsAt,
-      }));
-
-    const installmentInputs = credits
-      .map((credit) => ({
-        amount: credit.nextPaymentAmount ?? credit.monthlyPayment ?? 0,
-        dueDate: credit.nextPaymentDate,
-      }))
-      .filter((installment) => installment.amount > 0);
-
-    const incomeThisMonth = transactions
-      .filter((tx) => incomeCountsForBudgetMonth(tx, referenceDate))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-
-    /** Orçamento inicial a partir do rendimento declarado no onboarding. */
-    const onboardingIncome = onboardingAnswers?.monthlyIncome ?? 0;
-    const monthlyBudget =
-      onboardingAnswers?.completed &&
-      onboardingIncome > 0 &&
-      incomeThisMonth <= 0
-        ? onboardingIncome
-        : undefined;
-
-    const output = calculateMonthlySpendable({
-      currentBalance: 0,
-      currentMonthMovements: occurredThisMonth,
-      futureMovements: futureThisMonth,
-      subscriptions: subscriptionInputs,
-      creditInstallments: installmentInputs,
-      monthlyBudget,
+    const breakdown = buildMonthlyAvailableBreakdown({
+      transactions,
+      goalContributions,
+      credits: liabilities?.credits ?? [],
+      subscriptions: liabilities?.subscriptions ?? [],
+      loanPayments,
       referenceDate,
     });
 
-    const futureIncome = sumFutureByType(transactions, referenceDate, 'income');
-    const futureExpense = sumFutureByType(transactions, referenceDate, 'expense');
+    traceMonthlyAvailableBreakdown({
+      available: breakdown.available,
+      income: breakdown.components.incomeReceived,
+      expenses: breakdown.components.registeredExpenses,
+      goals: breakdown.components.goalReserved,
+      obligations: breakdown.components.futureObligations,
+    });
 
-    const upcomingSubscriptions: UpcomingObligation[] = subscriptions
-      .filter((subscription) => subscription.amount > 0)
-      .map((subscription) => ({
-        id: subscription.id,
-        name: subscription.name,
-        amount: subscription.amount,
-        dueDate: subscription.renewsAt,
-      }));
+    const legacy = breakdownToSpendableOutput(breakdown);
 
-    const upcomingInstallments: UpcomingObligation[] = credits
-      .filter((credit) => (credit.nextPaymentAmount ?? credit.monthlyPayment ?? 0) > 0)
-      .map((credit) => ({
-        id: credit.id,
-        name: credit.name,
-        amount: credit.nextPaymentAmount ?? credit.monthlyPayment ?? 0,
-        dueDate: credit.nextPaymentDate,
-      }));
+    const upcomingSubscriptions = breakdown.obligations
+      .filter((o) => o.kind === 'subscription')
+      .map(mapObligation);
+    const upcomingInstallments = breakdown.obligations
+      .filter((o) => o.kind === 'credit_installment')
+      .map(mapObligation);
 
     return {
-      ...output,
-      futureIncome,
-      futureExpense,
+      ...breakdown,
+      ...legacy,
+      futureIncome: 0,
+      futureExpense: 0,
       upcomingSubscriptions,
       upcomingInstallments,
-      isLoading: txLoading || liabLoading,
+      isLoading: txLoading || liabLoading || goalsLoading || loanLoading,
     };
-  }, [transactions, liabilities, onboardingAnswers, referenceDate, txLoading, liabLoading]);
+  }, [
+    transactions,
+    liabilities,
+    goalContributions,
+    loanPayments,
+    referenceDate,
+    txLoading,
+    liabLoading,
+    goalsLoading,
+    loanLoading,
+  ]);
 }
 
-function sumFutureByType(
-  transactions: Transaction[],
-  referenceDate: Date,
-  type: 'income' | 'expense',
-): number {
-  const future = filterFutureForBudgetMonth(transactions, referenceDate);
-  return future
-    .filter((movement) => movement.type === type)
-    .reduce((sum, movement) => sum + movement.amount, 0);
+function mapObligation(item: MonthlyAvailableObligation) {
+  return {
+    id: item.id,
+    name: item.name,
+    amount: item.amount,
+    dueDate: item.dueDate,
+  };
 }

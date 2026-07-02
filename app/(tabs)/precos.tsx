@@ -7,7 +7,8 @@ import {
   CreditFormModal,
   CreditsSection,
   PayCreditCardModal,
-  RegisterCreditPaymentModal,
+  RegisterLoanAmortizationModal,
+  RegisterLoanMonthlyPaymentModal,
 } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, SegmentedControl } from '@/components/layout';
@@ -30,7 +31,11 @@ export default function PrecosScreen() {
   const [creditFormVisible, setCreditFormVisible] = useState(false);
   const [newCreditType, setNewCreditType] = useState<CreditType>('personal');
   const [paymentCredit, setPaymentCredit] = useState<Credit | null>(null);
-  const [paymentVisible, setPaymentVisible] = useState(false);
+  const [cardPaymentVisible, setCardPaymentVisible] = useState(false);
+  const [monthlyCredit, setMonthlyCredit] = useState<Credit | null>(null);
+  const [monthlyVisible, setMonthlyVisible] = useState(false);
+  const [amortizationCredit, setAmortizationCredit] = useState<Credit | null>(null);
+  const [amortizationVisible, setAmortizationVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<CreditTab>('loans');
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useLiabilities();
@@ -38,7 +43,6 @@ export default function PrecosScreen() {
   const deleteCredit = useDeleteCredit();
   const credits = data?.credits ?? [];
 
-  // Cartões → creditType 'card'. Restantes (incluindo sem tipo) → Créditos.
   const visibleCredits = useMemo(
     () =>
       activeTab === 'cards'
@@ -120,7 +124,15 @@ export default function PrecosScreen() {
                   onDelete={(credit) => deleteCredit.mutate(credit.id)}
                   onRegisterPayment={(credit) => {
                     setPaymentCredit(credit);
-                    setPaymentVisible(true);
+                    setCardPaymentVisible(true);
+                  }}
+                  onRegisterMonthlyPayment={(credit) => {
+                    setMonthlyCredit(credit);
+                    setMonthlyVisible(true);
+                  }}
+                  onRegisterAmortization={(credit) => {
+                    setAmortizationCredit(credit);
+                    setAmortizationVisible(true);
                   }}
                 />
               </Animated.View>
@@ -139,25 +151,32 @@ export default function PrecosScreen() {
         }}
       />
 
-      {paymentCredit && isCardCredit(paymentCredit.creditType) ? (
-        <PayCreditCardModal
-          visible={paymentVisible}
-          credit={paymentCredit}
-          onClose={() => {
-            setPaymentVisible(false);
-            setPaymentCredit(null);
-          }}
-        />
-      ) : (
-        <RegisterCreditPaymentModal
-          visible={paymentVisible}
-          credit={paymentCredit}
-          onClose={() => {
-            setPaymentVisible(false);
-            setPaymentCredit(null);
-          }}
-        />
-      )}
+      <PayCreditCardModal
+        visible={cardPaymentVisible}
+        credit={paymentCredit}
+        onClose={() => {
+          setCardPaymentVisible(false);
+          setPaymentCredit(null);
+        }}
+      />
+
+      <RegisterLoanMonthlyPaymentModal
+        visible={monthlyVisible}
+        credit={monthlyCredit}
+        onClose={() => {
+          setMonthlyVisible(false);
+          setMonthlyCredit(null);
+        }}
+      />
+
+      <RegisterLoanAmortizationModal
+        visible={amortizationVisible}
+        credit={amortizationCredit}
+        onClose={() => {
+          setAmortizationVisible(false);
+          setAmortizationCredit(null);
+        }}
+      />
     </View>
   );
 }

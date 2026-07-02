@@ -10,6 +10,7 @@ import {
   AssetsOverviewCard,
   GoalContributeModal,
   GoalFormModal,
+  GoalWithdrawModal,
   GoalsSection,
   InventoryFormModal,
   InventorySection,
@@ -38,6 +39,7 @@ export default function AtivosScreen() {
   const { action, tab } = useLocalSearchParams<{ action?: string; tab?: string }>();
   const handledAction = useRef(false);
   const pendingContributeGoal = useRef<Goal | null>(null);
+  const pendingWithdrawGoal = useRef<Goal | null>(null);
   const [activeTab, setActiveTab] = useState<AssetsTab>('objetivos');
   const [goalFormVisible, setGoalFormVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -49,6 +51,7 @@ export default function AtivosScreen() {
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [transferVisible, setTransferVisible] = useState(false);
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
+  const [withdrawGoal, setWithdrawGoal] = useState<Goal | null>(null);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
   const {
@@ -308,15 +311,28 @@ export default function AtivosScreen() {
         goal={editingGoal}
         onClose={closeGoalForm}
         onDismissed={() => {
-          const pending = pendingContributeGoal.current;
-          if (!pending) return;
-          pendingContributeGoal.current = null;
-          requestAnimationFrame(() => {
-            setContributeGoal(pending);
-          });
+          const pendingContribute = pendingContributeGoal.current;
+          const pendingWithdraw = pendingWithdrawGoal.current;
+          if (pendingContribute) {
+            pendingContributeGoal.current = null;
+            requestAnimationFrame(() => {
+              setContributeGoal(pendingContribute);
+            });
+            return;
+          }
+          if (pendingWithdraw) {
+            pendingWithdrawGoal.current = null;
+            requestAnimationFrame(() => {
+              setWithdrawGoal(pendingWithdraw);
+            });
+          }
         }}
         onContribute={(goal) => {
           pendingContributeGoal.current = goal;
+          setGoalFormVisible(false);
+        }}
+        onWithdraw={(goal) => {
+          pendingWithdrawGoal.current = goal;
           setGoalFormVisible(false);
         }}
       />
@@ -330,6 +346,12 @@ export default function AtivosScreen() {
           setActiveTab('contas');
           openCreateAccount();
         }}
+      />
+
+      <GoalWithdrawModal
+        visible={Boolean(withdrawGoal)}
+        goal={withdrawGoal}
+        onClose={() => setWithdrawGoal(null)}
       />
 
       <WarrantyFormModal

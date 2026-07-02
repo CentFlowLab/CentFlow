@@ -28,6 +28,7 @@ type GoalFormModalProps = {
   /** Quando definido, o modal entra em modo edição */
   goal?: Goal | null;
   onContribute?: (goal: Goal) => void;
+  onWithdraw?: (goal: Goal) => void;
 };
 
 export function GoalFormModal({
@@ -36,6 +37,7 @@ export function GoalFormModal({
   onDismissed,
   goal = null,
   onContribute,
+  onWithdraw,
 }: GoalFormModalProps) {
   const isEditing = Boolean(goal);
   const createGoal = useCreateGoal();
@@ -348,6 +350,16 @@ export function GoalFormModal({
           label="Adicionar dinheiro"
           variant="secondary"
           onPress={() => onContribute(goal)}
+          disabled={isSaving || isDeleting}
+          fullWidth
+        />
+      ) : null}
+
+      {isEditing && goal && goal.current > 0 && onWithdraw ? (
+        <Button
+          label="Retirar dinheiro"
+          variant="secondary"
+          onPress={() => onWithdraw(goal)}
           disabled={isSaving || isDeleting}
           fullWidth
         />

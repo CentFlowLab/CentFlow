@@ -122,6 +122,66 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_payments: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          credit_id: string
+          fees_amount: number | null
+          id: string
+          interest_amount: number | null
+          note: string | null
+          paid_at: string
+          principal_amount: number | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string
+          credit_id: string
+          fees_amount?: number | null
+          id?: string
+          interest_amount?: number | null
+          note?: string | null
+          paid_at?: string
+          principal_amount?: number | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          credit_id?: string
+          fees_amount?: number | null
+          id?: string
+          interest_amount?: number | null
+          note?: string | null
+          paid_at?: string
+          principal_amount?: number | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_payments_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "credits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_events: {
         Row: {
           email_type: string
@@ -210,6 +270,7 @@ export type Database = {
           created_at: string
           goal_id: string
           id: string
+          kind: string
           note: string | null
           user_id: string
         }
@@ -219,6 +280,7 @@ export type Database = {
           created_at?: string
           goal_id: string
           id?: string
+          kind?: string
           note?: string | null
           user_id: string
         }
@@ -228,6 +290,7 @@ export type Database = {
           created_at?: string
           goal_id?: string
           id?: string
+          kind?: string
           note?: string | null
           user_id?: string
         }

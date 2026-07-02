@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-01T23:48:03.065Z -->
-<!-- Git: c082a3a (2026-07-02T00:46:35+01:00) -->
+<!-- Última geração: 2026-07-02T07:43:59.265Z -->
+<!-- Git: 94afcfc (2026-07-02T00:48:30+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 20 — Ledger cartão + reembolsos + Análises compactas** |
-| Última geração | 2026-07-01T23:48:03.065Z |
+| Fase atual | **Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)** |
+| Última geração | 2026-07-02T07:43:59.265Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `c082a3a` (2026-07-02T00:46:35+01:00) |
+| Git commit | `94afcfc` (2026-07-02T00:48:30+01:00) |
 
 ---
 
@@ -365,6 +365,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useGoalContributions.ts
     useHomeScreenData.ts
     useLiabilities.ts
+    useLoanPayments.ts
     useNetWorth.ts
     useOnboardingAnswers.ts
     usePatrimonyAllocation.ts
@@ -497,6 +498,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     financial-mutation-trace.ts
     goal-contribution-trace.ts
     index.ts
+    loan-payment-trace.ts
     log-mutation.ts
     movement-flow-trace.ts
     quick-expense-link-trace.ts
@@ -534,8 +536,13 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       ledger-impact.test.ts
       ledger-impact.ts
       liabilities.ts
+      loan-payments.test.ts
+      loan-payments.ts
       money.test.ts
       money.ts
+      monthly-available.compose.ts
+      monthly-available.test.ts
+      monthly-available.ts
       netWorth.test.ts
       netWorth.ts
       projections.ts
@@ -700,6 +707,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     goal-contributions.ts
     index.ts
     liabilities.ts
+    loan-payments.ts
     mappers.ts
     realtime-sync.ts
     receipt-item-mappers.ts
@@ -739,7 +747,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 20 — Ledger cartão + reembolsos + Análises compactas
+## Fase atual: Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -874,6 +882,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Reembolsos no cartão — RefundTransactionModal, reduz dívida e despesa líquida sem contar como receita
 - Análises compactas — 4 tabs (Resumo/Gastos/Dívida/Património) + calendário heatmap de gastos
 - Formulário movimentos — selector Despesa/Receita/Transferência/Pagamento/Reembolso com microcopy
+- Orçamento mensal transparente — calculateMonthlyAvailableBreakdown() + fórmula no modal (Home e sheet partilham hook)
+- Objetivos reservados — contribuição reduz disponível sem despesa; retirada (GoalWithdrawModal) sem receita
+- Créditos empréstimo — mensalidade vs amortização (loan_payments, RegisterLoan* modals, domínio loan-payments)
+- Cartões — saldo disponível (limite − dívida) + alerta limite excedido na lista Créditos
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
@@ -889,6 +901,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual
 - Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA
 - Migration credit_card types aplicada no remoto (20240702100000)
+- Migration goal_withdrawals + loan_payments aplicada no remoto (20240703100000)
 
 ---
 

@@ -3,17 +3,19 @@ import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 
 import type { GoalProgressResult } from './domain-types';
 export type { GoalProgressResult };
-import { addMoney, roundMoney } from './money';
+import { addMoney, roundMoney, subtractMoney } from './money';
 
 export function resolveGoalCurrent(
   goal: Pick<Goal, 'current'>,
-  contributions: Pick<GoalContribution, 'amount'>[] = [],
+  contributions: Pick<GoalContribution, 'amount' | 'kind'>[] = [],
 ): number {
   if (contributions.length === 0) return roundMoney(goal.current);
-  const fromContributions = contributions.reduce(
-    (sum, row) => addMoney(sum, row.amount),
-    0,
-  );
+  const fromContributions = contributions.reduce((sum, row) => {
+    const kind = row.kind ?? 'contribution';
+    return kind === 'withdrawal'
+      ? subtractMoney(sum, row.amount)
+      : addMoney(sum, row.amount);
+  }, 0);
   return roundMoney(Math.max(fromContributions, goal.current));
 }
 
