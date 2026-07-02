@@ -5,7 +5,7 @@ import { groupTransactionsByCategory } from './transactions';
 
 export type InsightSeverity = 'positive' | 'neutral' | 'warning' | 'critical';
 
-export type FinancialInsight = {
+export type AnalysisInsight = {
   title: string;
   message: string;
   severity: InsightSeverity;
@@ -20,7 +20,7 @@ export function buildCategoryOverspendInsight(input: {
   averageTotal: number;
   periodLabel: string;
   dailyRecovery?: number;
-}): FinancialInsight | null {
+}): AnalysisInsight | null {
   if (input.averageTotal <= 0 || input.currentTotal <= input.averageTotal) return null;
 
   const overshootPercent = roundMoney(

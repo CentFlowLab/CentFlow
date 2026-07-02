@@ -1,146 +1,37 @@
-import { calculateNetWorth, buildNetWorthProjection } from './net-worth.service';
-import { buildAttentionItems } from './attention-items';
-import type { Suggestion } from './types';
-import { calculateMonthlyNetWorthMetrics } from './net-worth-monthly';
 import type { AssetsData } from './assets.types';
 import type { DashboardData } from './types';
 import type { Transaction } from './transaction.types';
 import type { Credit } from './types';
-import { getExpenseTotal } from '@/lib/domain/financial/transactions';
 import {
-  filterOccurredTransactions,
-  sumTransactionCashBalance,
-} from './transaction-date.utils';
+  calculateFinancialState,
+  financialStateToDashboard,
+} from '@/lib/domain/financial/financial-state';
 
-function sumWeeklyExpenses(
-  transactions: Transaction[],
-  asOf: Date = new Date(),
-): number {
-  return getExpenseTotal(transactions, { kind: 'rolling', days: 7, asOf });
-}
+/** Movimentos já ocorridos — reutilizável em análises e score. */
+export { filterOccurredTransactions } from '@/lib/domain/financial/transactions';
 
 /** Dashboard mínimo a partir de dados Supabase (sem API legacy). */
 export function composeDashboardFromLocalSources(input: {
   transactions: Transaction[];
   assets: AssetsData;
   credits?: Credit[];
+  accounts?: Parameters<typeof calculateFinancialState>[0]['accounts'];
+  goalContributions?: Parameters<typeof calculateFinancialState>[0]['goalContributions'];
+  loanPayments?: Parameters<typeof calculateFinancialState>[0]['loanPayments'];
   /** Data de referência — útil em testes; omissão = hoje. */
   asOf?: Date;
 }): DashboardData {
-  const asOf = input.asOf ?? new Date();
-  const occurredCash = sumTransactionCashBalance(input.transactions, 'occurred', asOf);
-  const futureMovementsDelta = sumTransactionCashBalance(
-    input.transactions,
-    'future',
-    asOf,
-  );
-  const credits = input.credits ?? [];
-
-  // Objetivos são alocação virtual do saldo (mental accounting), não um ativo
-  // adicional. O dinheiro guardado num objetivo já está contabilizado no saldo
-  // de movimentos — somá-lo outra vez duplicaria o património. Por isso o PL
-  // NÃO inclui `goal.current` (savings: 0). Os objetivos continuam visíveis no
-  // ecrã Ativos com o seu progresso próprio.
-  const netWorth = calculateNetWorth({
-    accounts: [
-      {
-        id: 'derived-cash',
-        name: 'Saldo estimado',
-        balance: occurredCash,
-        currency: 'EUR',
-      },
-    ],
-    inventory: input.assets.inventory,
-    investments: [],
-    savings: 0,
-    credits,
-  });
-
-  const projection = buildNetWorthProjection(netWorth.netWorth, futureMovementsDelta);
-
-  const monthlyMetrics = calculateMonthlyNetWorthMetrics(
-    input.transactions,
-    {
-      inventory: input.assets.inventory,
-      investments: [],
-      credits,
-      savings: 0,
-    },
-    netWorth.netWorth,
-    asOf,
-  );
-
-  const attentionItems = buildAttentionItems({
-    warranties: input.assets.warranties,
-    credits,
+  const state = calculateFinancialState({
+    transactions: input.transactions,
+    accounts: input.accounts,
+    credits: input.credits ?? input.assets.credits,
+    goals: input.assets.goals,
+    goalContributions: input.goalContributions,
     subscriptions: input.assets.subscriptions,
-    goals: input.assets.goals,
-    asOf,
+    inventory: input.assets.inventory,
+    loanPayments: input.loanPayments,
+    today: input.asOf,
   });
 
-  const suggestions = buildHomeSuggestions({
-    goals: input.assets.goals,
-    hasTransactions: input.transactions.length > 0,
-    weeklySpending: sumWeeklyExpenses(input.transactions, asOf),
-    netWorthChangePercent: monthlyMetrics.netWorthChangePercent,
-  });
-
-  return {
-    netWorth,
-    projection,
-    previousMonthNetWorth: monthlyMetrics.previousMonthNetWorth,
-    netWorthChangePercent: monthlyMetrics.netWorthChangePercent,
-    weeklySpending: sumWeeklyExpenses(input.transactions, asOf),
-    netWorthChangeThisMonth: monthlyMetrics.netWorthChangeThisMonth,
-    personalInflation: null,
-    attentionItems,
-    suggestions,
-  };
+  return financialStateToDashboard(state);
 }
-
-function buildHomeSuggestions(input: {
-  goals: AssetsData['goals'];
-  hasTransactions: boolean;
-  weeklySpending: number;
-  netWorthChangePercent: number;
-}): Suggestion[] {
-  const suggestions: Suggestion[] = [];
-
-  // Sugestão de onboarding — só para quem ainda não tem objetivos NEM movimentos.
-  // Quem já regista movimentos não deve ver o convite de "primeiro objetivo".
-  if (input.goals.length === 0 && !input.hasTransactions) {
-    suggestions.push({
-      id: 'sug-first-goal',
-      title: 'Define o teu primeiro objetivo',
-      description: 'Um alvo concreto ajuda-te a poupar com mais foco.',
-      actionLabel: 'Criar objetivo',
-      type: 'goal',
-      ctaRoute: '/(tabs)/ativos?action=new-goal',
-    });
-  }
-
-  if (input.weeklySpending > 0 && input.netWorthChangePercent < 0) {
-    suggestions.push({
-      id: 'sug-review-spending',
-      title: 'Revê os gastos desta semana',
-      description: 'Identifica onde podes otimizar antes do fim do mês.',
-      actionLabel: 'Ver análises',
-      type: 'savings',
-    });
-  }
-
-  if (suggestions.length === 0) {
-    suggestions.push({
-      id: 'sug-analyses',
-      title: 'Explora as tuas análises',
-      description: 'Vê como o património está distribuído entre categorias.',
-      actionLabel: 'Abrir análises',
-      type: 'general',
-    });
-  }
-
-  return suggestions.slice(0, 2);
-}
-
-/** Movimentos já ocorridos — reutilizável em análises e score. */
-export { filterOccurredTransactions };

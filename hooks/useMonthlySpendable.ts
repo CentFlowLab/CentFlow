@@ -1,16 +1,11 @@
 import { useMemo } from 'react';
 
-import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
-import { useGoalContributions } from '@/hooks/queries/useGoalContributions';
-import { useLoanPayments } from '@/hooks/queries/useLoanPayments';
-import { useLiabilities } from '@/hooks/queries/useLiabilities';
-import { useTransactions } from '@/hooks/queries/useTransactions';
+import { useFinancialState } from '@/hooks/useFinancialState';
 import {
   breakdownToSpendableOutput,
   type MonthlyAvailableBreakdown,
+  type MonthlyAvailableObligation,
 } from '@/lib/domain/financial/monthly-available';
-import { buildMonthlyAvailableBreakdown } from '@/lib/domain/financial/monthly-available.compose';
-import type { MonthlyAvailableObligation } from '@/lib/domain/financial/monthly-available';
 import { traceMonthlyAvailableBreakdown } from '@/lib/doctor/loan-payment-trace';
 
 export type MonthlySpendable = MonthlyAvailableBreakdown & {
@@ -27,22 +22,48 @@ export type MonthlySpendable = MonthlyAvailableBreakdown & {
 };
 
 export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySpendable {
-  const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
-  const { data: accounts = [], isLoading: accountsLoading } = useAccountsWithBalances();
-  const { data: liabilities, isLoading: liabLoading } = useLiabilities();
-  const { data: goalContributions = [], isLoading: goalsLoading } = useGoalContributions();
-  const { data: loanPayments = [], isLoading: loanLoading } = useLoanPayments();
+  const { state, isLoading } = useFinancialState({ referenceDate });
 
   return useMemo(() => {
-    const breakdown = buildMonthlyAvailableBreakdown({
-      accounts,
-      transactions,
-      goalContributions,
-      credits: liabilities?.credits ?? [],
-      subscriptions: liabilities?.subscriptions ?? [],
-      loanPayments,
-      referenceDate,
-    });
+    if (!state) {
+      return {
+        available: 0,
+        dailySafeSpend: 0,
+        components: {
+          budgetAccountBalance: 0,
+          incomeReceived: 0,
+          registeredExpenses: 0,
+          creditCardPayments: 0,
+          creditCardPurchases: 0,
+          goalReserved: 0,
+          futureObligations: 0,
+          loanPaymentsPaid: 0,
+          loanAmortizationsPaid: 0,
+          financialCharges: 0,
+          movedOutOfBudget: 0,
+          movedIntoBudget: 0,
+          consumptionSpending: 0,
+        },
+        obligations: [],
+        budgetAccountsIncluded: [],
+        budgetAccountsExcluded: [],
+        daysRemaining: 1,
+        monthEndProjection: 0,
+        consumptionSpending: 0,
+        warnings: [],
+        notes: [],
+        remainingThisMonth: 0,
+        dailyAvailable: 0,
+        projectedEndOfMonthBalance: 0,
+        futureIncome: 0,
+        futureExpense: 0,
+        upcomingSubscriptions: [],
+        upcomingInstallments: [],
+        isLoading,
+      };
+    }
+
+    const breakdown = state.budget;
 
     traceMonthlyAvailableBreakdown({
       available: breakdown.available,
@@ -55,10 +76,10 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
     const legacy = breakdownToSpendableOutput(breakdown);
 
     const upcomingSubscriptions = breakdown.obligations
-      .filter((o) => o.kind === 'subscription')
+      .filter((o: MonthlyAvailableObligation) => o.kind === 'subscription')
       .map(mapObligation);
     const upcomingInstallments = breakdown.obligations
-      .filter((o) => o.kind === 'credit_installment')
+      .filter((o: MonthlyAvailableObligation) => o.kind === 'credit_installment')
       .map(mapObligation);
 
     return {
@@ -68,21 +89,9 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
       futureExpense: 0,
       upcomingSubscriptions,
       upcomingInstallments,
-      isLoading: txLoading || accountsLoading || liabLoading || goalsLoading || loanLoading,
+      isLoading,
     };
-  }, [
-    transactions,
-    liabilities,
-    goalContributions,
-    loanPayments,
-    accounts,
-    referenceDate,
-    txLoading,
-    accountsLoading,
-    liabLoading,
-    goalsLoading,
-    loanLoading,
-  ]);
+  }, [state, isLoading]);
 }
 
 function mapObligation(item: MonthlyAvailableObligation) {

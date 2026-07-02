@@ -2,14 +2,7 @@ import { shouldUseMockData } from '@/lib/config/data-mode';
 import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import { composeDashboardFromLocalSources } from '@/lib/domain/dashboard.compose';
-import { enrichAccountsWithBalances } from '@/lib/domain/financial/accounts';
-import { buildMonthlyAvailableBreakdown } from '@/lib/domain/financial/monthly-available.compose';
-import {
-  buildFinancialSuggestions,
-  mapFinancialSuggestionsToHome,
-} from '@/lib/domain/financial/suggestions';
 import type { HomeScreenData } from '@/lib/domain/home.types';
-import type { DashboardData } from '@/lib/domain/types';
 import { isSupabaseEnabled, supabaseGoalContributions, supabaseLoanPayments } from '@/lib/supabase';
 
 import { buildMockHomeScreenData, composeHomeScreenData } from '../mock-home';
@@ -18,53 +11,6 @@ import { fetchAssetsData } from './assets.service';
 import { fetchDashboardData } from './dashboard.service';
 import { fetchCreditsForCurrentUser } from './liabilities-fetch';
 import { fetchTransactions } from './transaction.service';
-
-function attachFinancialSuggestions(
-  dashboard: DashboardData,
-  input: {
-    accounts: Awaited<ReturnType<typeof fetchAccountsData>>;
-    transactions: Awaited<ReturnType<typeof fetchTransactions>>;
-    goalContributions: Awaited<ReturnType<typeof supabaseGoalContributions.fetchGoalContributions>>;
-    loanPayments: Awaited<ReturnType<typeof supabaseLoanPayments.fetchLoanPayments>>;
-    credits: Awaited<ReturnType<typeof fetchCreditsForCurrentUser>>;
-    subscriptions: Awaited<ReturnType<typeof fetchAssetsData>>['subscriptions'];
-  },
-) {
-  if (!ACCOUNTS_FEATURE_ENABLED) return dashboard;
-
-  const accountsWithBalances = enrichAccountsWithBalances(
-    input.accounts,
-    input.transactions,
-    input.goalContributions,
-    input.loanPayments,
-  );
-
-  const breakdown = buildMonthlyAvailableBreakdown({
-    accounts: input.accounts,
-    transactions: input.transactions,
-    goalContributions: input.goalContributions,
-    credits: input.credits,
-    subscriptions: input.subscriptions,
-    loanPayments: input.loanPayments,
-  });
-
-  const financial = mapFinancialSuggestionsToHome(
-    buildFinancialSuggestions({
-      accounts: accountsWithBalances,
-      credits: input.credits,
-      monthlyAvailable: breakdown.available,
-    }),
-  );
-
-  const seen = new Set<string>();
-  const merged = [...financial, ...dashboard.suggestions].filter((item) => {
-    if (seen.has(item.id)) return false;
-    seen.add(item.id);
-    return true;
-  });
-
-  return { ...dashboard, suggestions: merged.slice(0, 3) };
-}
 
 /**
  * Dados agregados do ecrã Início.
@@ -90,14 +36,13 @@ export async function fetchHomeScreenData(): Promise<HomeScreenData> {
     ]);
 
   if (isSupabaseEnabled()) {
-    const baseDashboard = composeDashboardFromLocalSources({ transactions, assets, credits });
-    const dashboard = attachFinancialSuggestions(baseDashboard, {
-      accounts,
+    const dashboard = composeDashboardFromLocalSources({
       transactions,
-      goalContributions,
-      loanPayments,
+      assets,
       credits,
-      subscriptions: assets.subscriptions,
+      accounts: ACCOUNTS_FEATURE_ENABLED ? accounts : undefined,
+      goalContributions: ACCOUNTS_FEATURE_ENABLED ? goalContributions : undefined,
+      loanPayments: ACCOUNTS_FEATURE_ENABLED ? loanPayments : undefined,
     });
     return composeHomeScreenData(dashboard, assets, transactions, 'live');
   }

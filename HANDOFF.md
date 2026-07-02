@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T17:09:27.955Z -->
-<!-- Git: 848ac08 (2026-07-02T13:53:11+01:00) -->
+<!-- Última geração: 2026-07-02T17:29:35.624Z -->
+<!-- Git: 683acc9 (2026-07-02T18:09:28+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 22 — Auditoria beta pública (ledger, sugestões reais, hygiene repo)** |
-| Última geração | 2026-07-02T17:09:27.955Z |
+| Fase atual | **Fase 23 — Financial Core Engine v2 (single source of truth)** |
+| Última geração | 2026-07-02T17:29:35.624Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `848ac08` (2026-07-02T13:53:11+01:00) |
+| Git commit | `683acc9` (2026-07-02T18:09:28+01:00) |
 
 ---
 
@@ -380,6 +380,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useCustomCategories.ts
   useDiagnosticScreen.ts
   useFeatureAreas.ts
+  useFinancialState.ts
   useFormDismiss.ts
   useImportCsv.ts
   useKeyboardVisible.ts
@@ -525,25 +526,41 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     financial/
       accounts.test.ts
       accounts.ts
+      analytics.ts
+      assets.ts
       assistant.ts
       budget-accounts.test.ts
       budget-accounts.ts
+      budget.ts
+      calendar.ts
+      cashflow.ts
       centflow-score.ts
       credit-cards.test.ts
       credit-cards.ts
+      creditCards.ts
+      credits.ts
       dates.test.ts
       dates.ts
       domain-types.ts
+      events.ts
+      explain.ts
+      financial-doctor.ts
+      financial-state.test.ts
+      financial-state.ts
+      financial-state.types.ts
+      forecast.ts
       goals.test.ts
       goals.ts
       index.ts
       insights.ts
+      investments.ts
       ledger-audit.test.ts
       ledger-impact.test.ts
       ledger-impact.ts
       liabilities.ts
       loan-payments.test.ts
       loan-payments.ts
+      metrics.ts
       money.test.ts
       money.ts
       monthly-available.compose.test.ts
@@ -552,6 +569,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       monthly-available.ts
       netWorth.test.ts
       netWorth.ts
+      opportunities.ts
       projections.ts
       savings.test.ts
       savings.ts
@@ -561,6 +579,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       spending-calendar.ts
       subscription-payments.test.ts
       subscription-payments.ts
+      subscriptions.ts
       suggestions.test.ts
       suggestions.ts
       transaction-kind.ts
@@ -760,7 +779,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 22 — Auditoria beta pública (ledger, sugestões reais, hygiene repo)
+## Fase atual: Fase 23 — Financial Core Engine v2 (single source of truth)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -908,6 +927,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Auditoria beta — testes ledger-audit + suggestions; consumptionSpending filtrado por contas orçamento
 - Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)
 - UX premium — datas DD/MM consistentes, FormSheetFooter, layout/formSpacing tokens, cards movimentos 3 linhas
+- Financial Core v2 — calculateFinancialState(), módulos puros, eventos, calendário, métricas, oportunidades, doctor, useFinancialState
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
