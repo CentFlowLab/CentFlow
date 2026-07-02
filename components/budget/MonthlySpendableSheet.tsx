@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { DraggableBottomSheet } from '@/components/layout';
 import { Card, Text } from '@/components/ui';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
 type MonthlySpendableSheetProps = {
@@ -65,7 +65,7 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
           <View>
             <Text variant="h2">Disponível até ao fim do mês</Text>
             <Text variant="caption" color="textMuted">
-              Orçamento mensal — não é o teu património
+              Dinheiro nas contas para gastar — não inclui compras no cartão
             </Text>
           </View>
           <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
@@ -87,6 +87,12 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
         <Text variant="bodyMedium" color="textSecondary">
           {formatCurrency(spendable.dailySafeSpend)}/dia até {endLabel}
         </Text>
+        {spendable.consumptionSpending > 0 ? (
+          <Text variant="caption" color="textMuted">
+            Gastos de consumo este mês: {formatCurrency(spendable.consumptionSpending)} (inclui
+            cartão)
+          </Text>
+        ) : null}
       </Card>
 
       <Card variant="outlined" style={styles.detailCard}>
@@ -95,8 +101,13 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
         </Text>
         <BreakdownRow label="Receitas recebidas" value={components.incomeReceived} tone="success" />
         <BreakdownRow
-          label="Despesas registadas"
+          label="Despesas em conta"
           value={components.registeredExpenses}
+          prefix="− "
+        />
+        <BreakdownRow
+          label="Pagamentos de cartão"
+          value={components.creditCardPayments}
           prefix="− "
         />
         <BreakdownRow
@@ -119,6 +130,27 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
           value={components.loanAmortizationsPaid}
           prefix="− "
         />
+        {components.creditCardPurchases > 0 ? (
+          <View style={styles.infoBlock}>
+            <View style={styles.statRow}>
+              <Text variant="caption" color="textSecondary">
+                Compras com cartão
+              </Text>
+              <Text variant="bodyMedium" color="textSecondary">
+                {formatCurrency(0)}
+              </Text>
+            </View>
+            <Text variant="caption" color="textMuted">
+              {formatCurrency(components.creditCardPurchases)} em consumo — não reduzem o
+              disponível agora. Entram nos gastos e aumentam a dívida do cartão.
+            </Text>
+          </View>
+        ) : null}
+        {components.creditCardPayments > 0 ? (
+          <Text variant="caption" color="textMuted">
+            Pagamentos de cartão reduzem o dinheiro disponível porque saem de uma conta.
+          </Text>
+        ) : null}
         <View style={styles.divider} />
         <View style={styles.statRow}>
           <Text variant="bodyMedium">= Disponível</Text>
@@ -189,6 +221,10 @@ const styles = StyleSheet.create({
   },
   detailCard: {
     gap: spacing.sm,
+  },
+  infoBlock: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   notesCard: {
     gap: spacing.xs,

@@ -18,7 +18,12 @@ export type MonthlyAvailableObligation = {
 
 export type MonthlyAvailableComponents = {
   incomeReceived: number;
+  /** Despesas pagas por conta (exclui compras no cartão). */
   registeredExpenses: number;
+  /** Pagamentos de cartão — saem de conta, reduzem disponível. */
+  creditCardPayments: number;
+  /** Compras no cartão — informativo; não reduzem disponível. */
+  creditCardPurchases: number;
   goalReserved: number;
   futureObligations: number;
   loanPaymentsPaid: number;
@@ -28,8 +33,10 @@ export type MonthlyAvailableComponents = {
 
 export type MonthlyAvailableBreakdownInput = {
   incomeReceived: number;
-  /** Despesas de consumo (conta + cartão), líquidas de reembolsos. */
+  /** Despesas pagas por conta (exclui credit_card_purchase). */
   registeredExpenses: number;
+  creditCardPayments?: number;
+  creditCardPurchases?: number;
   goalReserved: number;
   futureObligations: number;
   /** Total já pago em mensalidades de crédito este mês (cash out). */
@@ -38,6 +45,8 @@ export type MonthlyAvailableBreakdownInput = {
   loanAmortizationsPaid?: number;
   /** Juros/encargos das mensalidades (informativo; já incluídos em loanPaymentsPaid). */
   financialCharges?: number;
+  /** Gastos de consumo totais (conta + cartão) — para análises, não reduz disponível directamente. */
+  consumptionSpending?: number;
   referenceDate?: Date;
 };
 
@@ -46,6 +55,8 @@ export type MonthlyAvailableBreakdown = {
   dailySafeSpend: number;
   daysRemaining: number;
   monthEndProjection: number;
+  /** Gastos de consumo do mês (inclui cartão) — separado do disponível em contas. */
+  consumptionSpending: number;
   components: MonthlyAvailableComponents;
   obligations: MonthlyAvailableObligation[];
   warnings: SpendableWarning[];
@@ -65,10 +76,14 @@ export function calculateMonthlyAvailableBreakdown(
   const loanPaymentsPaid = input.loanPaymentsPaid ?? 0;
   const loanAmortizationsPaid = input.loanAmortizationsPaid ?? 0;
   const financialCharges = input.financialCharges ?? 0;
+  const creditCardPayments = input.creditCardPayments ?? 0;
+  const creditCardPurchases = input.creditCardPurchases ?? 0;
 
   const components: MonthlyAvailableComponents = {
     incomeReceived: roundMoney(input.incomeReceived),
     registeredExpenses: roundMoney(input.registeredExpenses),
+    creditCardPayments: roundMoney(creditCardPayments),
+    creditCardPurchases: roundMoney(creditCardPurchases),
     goalReserved: roundMoney(input.goalReserved),
     futureObligations: roundMoney(input.futureObligations),
     loanPaymentsPaid: roundMoney(loanPaymentsPaid),
@@ -78,6 +93,7 @@ export function calculateMonthlyAvailableBreakdown(
 
   let available = components.incomeReceived;
   available = subtractMoney(available, components.registeredExpenses);
+  available = subtractMoney(available, components.creditCardPayments);
   available = subtractMoney(available, components.goalReserved);
   available = subtractMoney(available, components.futureObligations);
   available = subtractMoney(available, components.loanPaymentsPaid);
@@ -89,6 +105,11 @@ export function calculateMonthlyAvailableBreakdown(
 
   const monthEndProjection = roundMoney(
     addMoney(available, subtractMoney(0, components.futureObligations)),
+  );
+
+  const consumptionSpending = roundMoney(
+    input.consumptionSpending ??
+      addMoney(components.registeredExpenses, components.creditCardPurchases),
   );
 
   const warnings: SpendableWarning[] = [];
@@ -106,8 +127,10 @@ export function calculateMonthlyAvailableBreakdown(
   }
 
   const notes = [
+    'Disponível este mês = dinheiro nas contas para gastar até ao fim do mês.',
+    'Compras no cartão entram nos gastos do mês, mas não reduzem o disponível agora.',
+    'Pagamentos de cartão saem de uma conta e reduzem o disponível.',
     'Reservado para objetivos reduz o disponível, mas não é despesa de consumo.',
-    'Pagamentos de cartão não contam como nova despesa.',
     'Transferências entre contas não alteram o disponível total.',
     'Amortizações extra reduzem dívida sem contar como consumo.',
   ];
@@ -117,6 +140,7 @@ export function calculateMonthlyAvailableBreakdown(
     dailySafeSpend,
     daysRemaining,
     monthEndProjection,
+    consumptionSpending,
     components,
     obligations,
     warnings,

@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T10:42:37.585Z -->
-<!-- Git: 00b9794 (2026-07-02T09:40:38+01:00) -->
+<!-- Última geração: 2026-07-02T11:54:05.599Z -->
+<!-- Git: 7127fd6 (2026-07-02T11:42:58+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)** |
-| Última geração | 2026-07-02T10:42:37.585Z |
+| Última geração | 2026-07-02T11:54:05.599Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `00b9794` (2026-07-02T09:40:38+01:00) |
+| Git commit | `7127fd6` (2026-07-02T11:42:58+01:00) |
 
 ---
 
@@ -542,6 +542,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       loan-payments.ts
       money.test.ts
       money.ts
+      monthly-available.compose.test.ts
       monthly-available.compose.ts
       monthly-available.test.ts
       monthly-available.ts
@@ -893,6 +894,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Despesas recorrentes — Marcar como pago com recurring_id, movimento real e dedup no orçamento
 - Home — card Disponível este mês sem clipping; Créditos — botões empilhados sem texto cortado
 - Migrations remotas aplicadas — credit_card types, goal_withdrawals/loan_payments, recurring_id
+- Orçamento mensal — compras no cartão excluídas do disponível; pagamentos de cartão e despesas em conta reduzem; consumptionSpending separado para análises
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

@@ -206,6 +206,45 @@ export function getIncomeTotalFromLedger(
   );
 }
 
+/** Cash-out das contas que reduz “Disponível este mês” (exclui compras no cartão). */
+export function calculateMonthlyAvailableCashImpact(
+  transactions: TransactionLike[],
+  period: FinancialPeriod,
+): {
+  accountExpenses: number;
+  creditCardPayments: number;
+  creditCardPurchases: number;
+} {
+  let accountExpenses = 0;
+  let creditCardPayments = 0;
+  let creditCardPurchases = 0;
+
+  for (const tx of filterTransactionsByPeriod(transactions as Transaction[], period)) {
+    const kind = resolveTransactionKind(tx);
+    const amount = tx.amount ?? 0;
+
+    switch (kind) {
+      case 'expense':
+        accountExpenses = addMoney(accountExpenses, amount);
+        break;
+      case 'credit_card_purchase':
+        creditCardPurchases = addMoney(creditCardPurchases, amount);
+        break;
+      case 'credit_card_payment':
+        creditCardPayments = addMoney(creditCardPayments, amount);
+        break;
+      default:
+        break;
+    }
+  }
+
+  return {
+    accountExpenses: roundMoney(accountExpenses),
+    creditCardPayments: roundMoney(creditCardPayments),
+    creditCardPurchases: roundMoney(creditCardPurchases),
+  };
+}
+
 export function ledgerKindLabel(kind: LedgerTransactionKind): string {
   const labels: Record<LedgerTransactionKind, string> = {
     income: 'Receita',

@@ -3,7 +3,7 @@ import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import type { Credit } from '@/lib/domain/types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { getMonthKey } from '@/lib/domain/financial/dates';
-import { calculateNetSpending, getIncomeTotalFromLedger } from '@/lib/domain/financial/ledger-impact';
+import { calculateMonthlyAvailableCashImpact, calculateNetSpending, getIncomeTotalFromLedger } from '@/lib/domain/financial/ledger-impact';
 import type { LoanPaymentRecord } from '@/lib/domain/financial/loan-payments';
 import { sumLoanPaymentsInMonth } from '@/lib/domain/financial/loan-payments';
 import {
@@ -41,7 +41,8 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
   const occurred = filterOccurredInCalendarMonth(input.transactions, reference);
 
   const incomeReceived = getIncomeTotalFromLedger(occurred, period);
-  const registeredExpenses = calculateNetSpending(occurred, period);
+  const cashImpact = calculateMonthlyAvailableCashImpact(occurred, period);
+  const consumptionSpending = calculateNetSpending(occurred, period);
 
   const goalReserved = input.goalContributions
     .filter((row) => (row.kind ?? 'contribution') === 'contribution')
@@ -92,13 +93,16 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
   return calculateMonthlyAvailableBreakdown(
     {
       incomeReceived,
-      registeredExpenses,
+      registeredExpenses: cashImpact.accountExpenses,
+      creditCardPayments: cashImpact.creditCardPayments,
+      creditCardPurchases: cashImpact.creditCardPurchases,
       goalReserved,
       futureObligations,
       loanPaymentsPaid: monthlyTotal,
       loanAmortizationsPaid: amortizationTotal,
       financialCharges: interestTotal,
       referenceDate: reference,
+      consumptionSpending,
     },
     obligations,
   );

@@ -141,7 +141,8 @@
     "Cartões — saldo disponível (limite − dívida) + alerta limite excedido na lista Créditos",
     "Despesas recorrentes — Marcar como pago com recurring_id, movimento real e dedup no orçamento",
     "Home — card Disponível este mês sem clipping; Créditos — botões empilhados sem texto cortado",
-    "Migrations remotas aplicadas — credit_card types, goal_withdrawals/loan_payments, recurring_id"
+    "Migrations remotas aplicadas — credit_card types, goal_withdrawals/loan_payments, recurring_id",
+    "Orçamento mensal — compras no cartão excluídas do disponível; pagamentos de cartão e despesas em conta reduzem; consumptionSpending separado para análises"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
