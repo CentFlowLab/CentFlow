@@ -32,6 +32,11 @@ test('calculateAvailableCredit — limite menos dívida', () => {
   assert.equal(calculateAvailableCredit(card), 1800);
 });
 
+test('calculateAvailableCredit — limite excedido devolve 0 (alerta na UI)', () => {
+  const overLimit = { ...card, outstandingBalance: 2100, originalAmount: 2000 };
+  assert.equal(calculateAvailableCredit(overLimit), 0);
+});
+
 test('calculateCreditUtilization — percentagem', () => {
   assert.equal(calculateCreditUtilization(card), 10);
 });

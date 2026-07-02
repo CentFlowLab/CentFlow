@@ -4,6 +4,11 @@ import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
 import { Button, Card, Text } from '@/components/ui';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
+import {
+  calculateAvailableCredit,
+  calculateCreditUtilization,
+} from '@/lib/domain/financial/credit-cards';
+import { subtractMoney } from '@/lib/domain/financial/money';
 import type { Credit } from '@/lib/domain/types';
 import { getPersonalizedCreditsEmptyCopy } from '@/lib/onboarding/personalization';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -16,6 +21,8 @@ type CreditsSectionProps = {
   onLearnMore?: () => void;
   onDelete?: (credit: Credit) => void;
   onRegisterPayment?: (credit: Credit) => void;
+  onRegisterMonthlyPayment?: (credit: Credit) => void;
+  onRegisterAmortization?: (credit: Credit) => void;
   /** 'card' apresenta os itens como cartões de crédito (limite + utilização). */
   variant?: 'loan' | 'card';
 };
@@ -28,12 +35,6 @@ function getRepaidProgress(credit: Credit): number | null {
   return Math.min(1, repaid / credit.originalAmount);
 }
 
-/** Percentagem de utilização do cartão (saldo / limite). */
-function getUsageProgress(credit: Credit): number | null {
-  if (!credit.originalAmount || credit.originalAmount <= 0) return null;
-  return Math.min(1, Math.max(0, credit.outstandingBalance / credit.originalAmount));
-}
-
 export function CreditsSection({
   credits,
   onCreate,
@@ -41,6 +42,8 @@ export function CreditsSection({
   onLearnMore,
   onDelete,
   onRegisterPayment,
+  onRegisterMonthlyPayment,
+  onRegisterAmortization,
   variant = 'loan',
 }: CreditsSectionProps) {
   const isCardVariant = variant === 'card';
@@ -121,13 +124,38 @@ export function CreditsSection({
                       </Text>
                     ) : null}
                     <Text variant="caption" color="textSecondary">
-                      Saldo: {formatCurrency(credit.outstandingBalance)}
-                      {credit.originalAmount
-                        ? `  /  Limite: ${formatCurrency(credit.originalAmount)}`
-                        : ''}
+                      Saldo usado: {formatCurrency(credit.outstandingBalance)}
                     </Text>
                     {(() => {
-                      const usage = getUsageProgress(credit);
+                      const available = calculateAvailableCredit(credit);
+                      const limit = credit.originalAmount;
+                      const isOverLimit =
+                        limit != null && limit > 0 && credit.outstandingBalance > limit;
+
+                      if (available === null) return null;
+
+                      if (isOverLimit) {
+                        const excess = subtractMoney(credit.outstandingBalance, limit!);
+                        return (
+                          <Text variant="caption" color="danger">
+                            Limite excedido em {formatCurrency(excess)}
+                          </Text>
+                        );
+                      }
+
+                      return (
+                        <Text variant="bodyMedium" color="primary">
+                          Disponível: {formatCurrency(available)}
+                        </Text>
+                      );
+                    })()}
+                    {credit.originalAmount ? (
+                      <Text variant="caption" color="textMuted">
+                        Limite: {formatCurrency(credit.originalAmount)}
+                      </Text>
+                    ) : null}
+                    {(() => {
+                      const usage = calculateCreditUtilization(credit);
                       if (usage === null) return null;
                       return (
                         <View style={styles.progressBlock}>
@@ -135,13 +163,13 @@ export function CreditsSection({
                             <View
                               style={[
                                 styles.progressFill,
-                                usage >= 0.8 && styles.progressFillHigh,
-                                { width: `${Math.round(usage * 100)}%` },
+                                usage >= 80 && styles.progressFillHigh,
+                                { width: `${Math.round(usage)}%` },
                               ]}
                             />
                           </View>
                           <Text variant="caption" color="textSecondary">
-                            {Math.round(usage * 100)}% do limite utilizado
+                            {Math.round(usage)}% do limite utilizado
                           </Text>
                         </View>
                       );
@@ -188,14 +216,36 @@ export function CreditsSection({
                     ) : null}
                   </>
                 )}
-                {onRegisterPayment ? (
+                {isCardVariant && onRegisterPayment ? (
                   <Button
-                    label={isCardVariant ? 'Pagar cartão' : 'Registar pagamento'}
+                    label="Pagar cartão"
                     variant="secondary"
                     size="sm"
                     onPress={() => onRegisterPayment(credit)}
                     style={styles.payButton}
                   />
+                ) : null}
+                {!isCardVariant && (onRegisterMonthlyPayment || onRegisterAmortization) ? (
+                  <View style={styles.loanActions}>
+                    {onRegisterMonthlyPayment ? (
+                      <Button
+                        label="Registar mensalidade"
+                        variant="secondary"
+                        size="sm"
+                        onPress={() => onRegisterMonthlyPayment(credit)}
+                        style={styles.loanButton}
+                      />
+                    ) : null}
+                    {onRegisterAmortization ? (
+                      <Button
+                        label="Amortizar crédito"
+                        variant="secondary"
+                        size="sm"
+                        onPress={() => onRegisterAmortization(credit)}
+                        style={styles.loanButton}
+                      />
+                    ) : null}
+                  </View>
                 ) : null}
               </Card>
             </Pressable>
@@ -241,5 +291,15 @@ const styles = StyleSheet.create({
   payButton: {
     alignSelf: 'flex-start',
     marginTop: spacing.xs,
+  },
+  loanActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  loanButton: {
+    flexGrow: 1,
+    flexBasis: '45%',
   },
 });
