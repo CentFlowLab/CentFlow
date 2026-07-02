@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T12:23:20.843Z -->
-<!-- Git: 34e9368 (2026-07-02T12:54:12+01:00) -->
+<!-- Última geração: 2026-07-02T12:40:07.168Z -->
+<!-- Git: 3878d84 (2026-07-02T13:23:36+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)** |
-| Última geração | 2026-07-02T12:23:20.843Z |
+| Última geração | 2026-07-02T12:40:07.168Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `34e9368` (2026-07-02T12:54:12+01:00) |
+| Git commit | `3878d84` (2026-07-02T13:23:36+01:00) |
 
 ---
 
