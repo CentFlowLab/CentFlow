@@ -163,6 +163,36 @@ export function calculateNetSpending(
   );
 }
 
+/** Gastos de consumo no mês — despesas em contas elegíveis + compras no cartão. */
+export function calculateConsumptionSpending(
+  transactions: TransactionLike[],
+  period: FinancialPeriod,
+  budgetAccountIds?: Set<string>,
+): number {
+  let total = 0;
+
+  for (const tx of filterTransactionsByPeriod(transactions as Transaction[], period)) {
+    const kind = resolveTransactionKind(tx);
+    const amount = tx.amount ?? 0;
+
+    if (kind === 'credit_card_purchase') {
+      total = addMoney(total, amount);
+      continue;
+    }
+
+    if (kind === 'expense') {
+      if (
+        !budgetAccountIds ||
+        (tx.accountId != null && budgetAccountIds.has(tx.accountId))
+      ) {
+        total = addMoney(total, amount);
+      }
+    }
+  }
+
+  return roundMoney(total);
+}
+
 export function calculateMonthlyBudget(
   transactions: TransactionLike[],
   period: FinancialPeriod,

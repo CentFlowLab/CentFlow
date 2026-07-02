@@ -49,9 +49,9 @@ lib/
 └── utils/          helpers genéricos
 ```
 
-## Evolução planeado: `lib/domain/financial/`
+## Evolução: `lib/domain/financial/`
 
-Consolidar tudo o que é “dinheiro” num único sítio (movimentos, subscrições, activos, objetivos, receipts). Ver [decisions.md](./decisions.md).
+Domínio financeiro consolidado (movimentos, contas, orçamento, cartões, créditos, sugestões). Ver [financial-domain.md](./financial-domain.md).
 
 ## Segurança
 

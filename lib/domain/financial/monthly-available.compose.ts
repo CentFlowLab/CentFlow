@@ -13,8 +13,8 @@ import {
 import { enrichAccountsWithBalances } from '@/lib/domain/financial/accounts';
 import { getMonthKey } from '@/lib/domain/financial/dates';
 import {
+  calculateConsumptionSpending,
   calculateMonthlyAvailableCashImpact,
-  calculateNetSpending,
   getIncomeTotalFromLedger,
 } from '@/lib/domain/financial/ledger-impact';
 import type { LoanPaymentRecord } from '@/lib/domain/financial/loan-payments';
@@ -67,7 +67,11 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
 
   const incomeReceived = getIncomeTotalFromLedger(occurred, period, budgetAccountIds);
   const cashImpact = calculateMonthlyAvailableCashImpact(occurred, period, budgetAccountIds);
-  const consumptionSpending = calculateNetSpending(occurred, period);
+  const consumptionSpending = calculateConsumptionSpending(
+    occurred,
+    period,
+    budgetAccountIds,
+  );
   const { movedOutOfBudget, movedIntoBudget } = calculateBudgetTransferFlow(
     occurred,
     budgetAccountIds,

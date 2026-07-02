@@ -1,4 +1,8 @@
 ci-artifacts/
 .expo-export-test/
+.expo/
+dist/
+build-log*.txt
+eas-build-output.txt
 *.ipa
 *.apk

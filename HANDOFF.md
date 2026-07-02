@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T12:40:07.168Z -->
-<!-- Git: 3878d84 (2026-07-02T13:23:36+01:00) -->
+<!-- Última geração: 2026-07-02T12:53:04.274Z -->
+<!-- Git: 0c4301a (2026-07-02T13:40:14+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)** |
-| Última geração | 2026-07-02T12:40:07.168Z |
+| Fase atual | **Fase 22 — Auditoria beta pública (ledger, sugestões reais, hygiene repo)** |
+| Última geração | 2026-07-02T12:53:04.274Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `3878d84` (2026-07-02T13:23:36+01:00) |
+| Git commit | `0c4301a` (2026-07-02T13:40:14+01:00) |
 
 ---
 
@@ -537,6 +537,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       goals.ts
       index.ts
       insights.ts
+      ledger-audit.test.ts
       ledger-impact.test.ts
       ledger-impact.ts
       liabilities.ts
@@ -559,6 +560,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       spending-calendar.ts
       subscription-payments.test.ts
       subscription-payments.ts
+      suggestions.test.ts
+      suggestions.ts
       transaction-kind.ts
       transactions.test.ts
       transactions.ts
@@ -754,7 +757,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)
+## Fase atual: Fase 22 — Auditoria beta pública (ledger, sugestões reais, hygiene repo)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -898,6 +901,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Migrations remotas aplicadas — credit_card types, goal_withdrawals/loan_payments, recurring_id
 - Orçamento mensal — compras no cartão excluídas do disponível; pagamentos de cartão e despesas em conta reduzem; consumptionSpending separado para análises
 - Orçamento vs património — budget_enabled em contas; investimentos/poupança fora do disponível mensal; transferências orçamento↔investimento
+- Auditoria beta — motor sugestões financeiras lib/domain/financial/suggestions.ts (TAEG vs investimento, cenários 10/20/30%, disclaimer)
+- Auditoria beta — testes ledger-audit + suggestions; consumptionSpending filtrado por contas orçamento
+- Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

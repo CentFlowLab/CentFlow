@@ -46,7 +46,7 @@ export default function AppearanceScreen() {
     <SettingsScreenLayout title="Aparência" subtitle="Tema visual da aplicação">
       <SettingsHero
         icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
-        title="Tema actual"
+        title="Tema atual"
         description="Dark Premium é o visual activo da CentFlow."
       />
 

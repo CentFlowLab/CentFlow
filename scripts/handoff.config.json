@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)",
+  "currentPhase": "Fase 22 — Auditoria beta pública (ledger, sugestões reais, hygiene repo)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -143,7 +143,10 @@
     "Home — card Disponível este mês sem clipping; Créditos — botões empilhados sem texto cortado",
     "Migrations remotas aplicadas — credit_card types, goal_withdrawals/loan_payments, recurring_id",
     "Orçamento mensal — compras no cartão excluídas do disponível; pagamentos de cartão e despesas em conta reduzem; consumptionSpending separado para análises",
-    "Orçamento vs património — budget_enabled em contas; investimentos/poupança fora do disponível mensal; transferências orçamento↔investimento"
+    "Orçamento vs património — budget_enabled em contas; investimentos/poupança fora do disponível mensal; transferências orçamento↔investimento",
+    "Auditoria beta — motor sugestões financeiras lib/domain/financial/suggestions.ts (TAEG vs investimento, cenários 10/20/30%, disclaimer)",
+    "Auditoria beta — testes ledger-audit + suggestions; consumptionSpending filtrado por contas orçamento",
+    "Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

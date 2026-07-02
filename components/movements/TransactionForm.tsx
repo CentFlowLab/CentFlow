@@ -29,7 +29,7 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
   }
 
   function handleTypeChange(type: CashTransactionType) {
-    onChange({ ...values, type, category: '' });
+    onChange({ ...values, type, category: '', accountId: undefined });
   }
 
   return (

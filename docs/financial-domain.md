@@ -23,6 +23,10 @@ Fonte única de verdade para cálculos financeiros. Vive em `lib/domain/financia
 | `savings.ts` | Taxa de poupança |
 | `score.ts` | CentFlow Score + explicação transparente |
 | `insights.ts` | Helpers para insights acionáveis |
+| `suggestions.ts` | Sugestões financeiras determinísticas (Home) |
+| `budget-accounts.ts` | Contas elegíveis para orçamento mensal |
+| `monthly-available.ts` | Fórmula «Disponível este mês» |
+| `ledger-impact.ts` | Impacto por tipo de movimento |
 | `projections.ts` | Projeção de património com movimentos futuros |
 
 ## Compatibilidade
@@ -44,6 +48,41 @@ Ficheiros legados re-exportam o domínio (não duplicam lógica):
 4. **Património na Home (modelo simplificado)** usa saldo de movimentos ocorridos; objetivos não duplicam património.
 5. **Património consolidado** = contas + poupanças reservadas (objetivos) + inventário − créditos.
 6. **Taxa de poupança** = `(rendimento − despesa) / rendimento`; rendimento zero → estado seguro sem divisão.
+
+## Orçamento mensal (`budget_enabled`)
+
+**Disponível este mês ≠ património.**
+
+- Só entram contas com `budget_enabled = true` (por defeito: à ordem e carteira).
+- Investimentos e poupança fora do orçamento contam no património, não no disponível.
+- Compras no cartão entram nos gastos de consumo mas **não** reduzem o disponível agora.
+- Pagamentos de cartão/crédito saem de conta elegível e reduzem o disponível.
+- Transferência orçamento → investimento reduz disponível; investimento → orçamento aumenta.
+- Contribuições a objetivos reservam dinheiro no orçamento sem alterar património total.
+
+Fórmula: `calculateMonthlyAvailableBreakdown()` + compositor `monthly-available.compose.ts`.
+
+## Ledger — impacto por operação
+
+| Operação | Conta | Orçamento | Gasto consumo | Dívida |
+|----------|-------|-----------|---------------|--------|
+| Receita (conta orçamento) | + | + | — | — |
+| Despesa conta | − | − | sim | — |
+| Compra cartão | — | — | sim | + |
+| Pagamento cartão | − | − | — | − |
+| Transferência orç. → invest. | − origem | − | — | — |
+| Objetivo (contribuição) | − | − reserva | — | — |
+| Mensalidade crédito | − | − | juros = despesa financeira | − capital |
+| Amortização extra | − | − | — | − |
+
+## Sugestões financeiras
+
+Motor em `lib/domain/financial/suggestions.ts`:
+
+- Regras determinísticas sobre dados reais (contas, créditos, disponível mensal).
+- Exemplo: TAEG do crédito > rendimento estimado do investimento → cenários de amortização a 10/20/30%.
+- Nunca sugere usar 100% do dinheiro; inclui disclaimer legal.
+- Integração: `lib/api/services/home.service.ts` → cartões na Home.
 
 ## Exemplo
 

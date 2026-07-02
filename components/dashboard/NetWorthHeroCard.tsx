@@ -101,7 +101,7 @@ export function NetWorthHeroCard({
               Saldo total
             </Text>
             <Text variant="caption" color="textSecondary">
-              Património líquido actual
+              Património líquido atual
             </Text>
           </View>
           <View style={[styles.trendBadge, { borderColor: changeColor }]}>

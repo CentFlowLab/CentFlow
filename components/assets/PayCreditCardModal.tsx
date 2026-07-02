@@ -138,7 +138,7 @@ export function PayCreditCardModal({ visible, credit, onClose }: PayCreditCardMo
         <Card variant="outlined" style={styles.summaryCard}>
           <Text variant="label">{activeCredit.name}</Text>
           <Text variant="caption" color="textSecondary">
-            Dívida actual: {formatCurrency(calculateCreditCardBalance(activeCredit))}
+            Dívida atual: {formatCurrency(calculateCreditCardBalance(activeCredit))}
           </Text>
         </Card>
 
