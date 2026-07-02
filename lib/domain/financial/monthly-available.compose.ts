@@ -13,6 +13,7 @@ import {
 import { filterOccurredInCalendarMonth } from '@/lib/domain/financial/transactions';
 import { incomeCountsForBudgetMonth } from '@/lib/domain/monthly-budget-movements';
 import { isCardCredit } from '@/lib/credit/credit-type.utils';
+import { collectPaidSubscriptionIds } from '@/lib/domain/financial/subscription-payments';
 
 function isDueThisMonth(dueDate: string | undefined, monthKey: string, asOf: Date): boolean {
   if (!dueDate) return true;
@@ -50,10 +51,17 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
   const { monthlyTotal, amortizationTotal, interestTotal, paidCreditIds } =
     sumLoanPaymentsInMonth(input.loanPayments, monthKey);
 
+  const paidSubscriptionIds = collectPaidSubscriptionIds(
+    input.subscriptions,
+    occurred,
+    reference,
+  );
+
   const obligations: MonthlyAvailableObligation[] = [];
 
   for (const subscription of input.subscriptions) {
     if (subscription.amount <= 0) continue;
+    if (paidSubscriptionIds.has(subscription.id)) continue;
     if (!isDueThisMonth(subscription.renewsAt, monthKey, reference)) continue;
     obligations.push({
       id: subscription.id,

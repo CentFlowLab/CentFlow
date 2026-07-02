@@ -628,6 +628,7 @@ export type Database = {
           destination_account_id: string | null
           credit_id: string | null
           related_transaction_id: string | null
+          recurring_id: string | null
           id: string
           receipt_id: string | null
           transaction_date: string
@@ -646,6 +647,7 @@ export type Database = {
           destination_account_id?: string | null
           credit_id?: string | null
           related_transaction_id?: string | null
+          recurring_id?: string | null
           id?: string
           receipt_id?: string | null
           transaction_date?: string
@@ -664,6 +666,7 @@ export type Database = {
           destination_account_id?: string | null
           credit_id?: string | null
           related_transaction_id?: string | null
+          recurring_id?: string | null
           id?: string
           receipt_id?: string | null
           transaction_date?: string

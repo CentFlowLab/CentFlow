@@ -138,7 +138,9 @@
     "Orçamento mensal transparente — calculateMonthlyAvailableBreakdown() + fórmula no modal (Home e sheet partilham hook)",
     "Objetivos reservados — contribuição reduz disponível sem despesa; retirada (GoalWithdrawModal) sem receita",
     "Créditos empréstimo — mensalidade vs amortização (loan_payments, RegisterLoan* modals, domínio loan-payments)",
-    "Cartões — saldo disponível (limite − dívida) + alerta limite excedido na lista Créditos"
+    "Cartões — saldo disponível (limite − dívida) + alerta limite excedido na lista Créditos",
+    "Despesas recorrentes — Marcar como pago com recurring_id, movimento real e dedup no orçamento",
+    "Home — card Disponível este mês sem clipping; Créditos — botões empilhados sem texto cortado"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
@@ -154,7 +156,8 @@
     "OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual",
     "Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA",
     "Migration credit_card types aplicada no remoto (20240702100000)",
-    "Migration goal_withdrawals + loan_payments aplicada no remoto (20240703100000)"
+    "Migration goal_withdrawals + loan_payments aplicada no remoto (20240703100000)",
+    "Migration recurring_id em transactions aplicada no remoto (20240704100000)"
   ],
   "outputFile": "HANDOFF.md"
 }

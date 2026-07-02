@@ -4,6 +4,7 @@ export { RegisterCreditPaymentModal } from './RegisterCreditPaymentModal';
 export { CreditPaymentReminderGate } from './CreditPaymentReminderGate';
 export { SubscriptionFormModal } from './SubscriptionFormModal';
 export { CreditsSection } from './CreditsSection';
+export { MarkSubscriptionPaidModal } from './MarkSubscriptionPaidModal';
 export { SubscriptionsSection } from './SubscriptionsSection';
 export { AddAssetModal, InventoryFormModal } from './InventoryFormModal';
 export { GoalContributeModal } from './GoalContributeModal';

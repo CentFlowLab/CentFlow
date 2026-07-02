@@ -50,6 +50,8 @@ export interface Transaction {
   creditId?: string | null;
   /** Movimento original associado (ex.: reembolso de uma compra). */
   relatedTransactionId?: string | null;
+  /** Despesa recorrente associada (subscrição). */
+  recurringId?: string | null;
   /** Mês financeiro (YYYY-MM) — receitas podem contar num mês diferente da data. */
   budgetMonth?: string | null;
 }
@@ -64,6 +66,7 @@ export interface CreateTransactionInput {
   destinationAccountId?: string | null;
   creditId?: string | null;
   relatedTransactionId?: string | null;
+  recurringId?: string | null;
   budgetMonth?: string | null;
   /** Upload + OCR inline (fluxo legado sem confirmação) */
   receipt?: ReceiptDraft;
@@ -105,5 +108,6 @@ export type UpdateTransactionInput = {
   destinationAccountId?: string | null;
   creditId?: string | null;
   relatedTransactionId?: string | null;
+  recurringId?: string | null;
   budgetMonth?: string | null;
 };

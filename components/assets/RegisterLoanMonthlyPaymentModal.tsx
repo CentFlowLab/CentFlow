@@ -12,6 +12,7 @@ import {
   calculateLoanPaymentBreakdown,
   calculateMonthlyLoanPaymentImpact,
 } from '@/lib/domain/financial/loan-payments';
+import { traceLoanModalOpened } from '@/lib/doctor/recurring-payment-trace';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import type { Credit } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
@@ -42,6 +43,7 @@ export function RegisterLoanMonthlyPaymentModal({
 
   useEffect(() => {
     if (!visible || !credit) return;
+    traceLoanModalOpened('loan_monthly_payment_opened', { creditId: credit.id });
     const suggested = credit.nextPaymentAmount ?? credit.monthlyPayment;
     setAmount(suggested ? String(suggested) : '');
     setPrincipal('');

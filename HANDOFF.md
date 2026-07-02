@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T07:43:59.265Z -->
-<!-- Git: 94afcfc (2026-07-02T00:48:30+01:00) -->
+<!-- Última geração: 2026-07-02T08:40:30.052Z -->
+<!-- Git: f69dc53 (2026-07-02T08:44:34+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)** |
-| Última geração | 2026-07-02T07:43:59.265Z |
+| Última geração | 2026-07-02T08:40:30.052Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `94afcfc` (2026-07-02T00:48:30+01:00) |
+| Git commit | `f69dc53` (2026-07-02T08:44:34+01:00) |
 
 ---
 
@@ -366,6 +366,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useHomeScreenData.ts
     useLiabilities.ts
     useLoanPayments.ts
+    useMarkSubscriptionPaid.ts
     useNetWorth.ts
     useOnboardingAnswers.ts
     usePatrimonyAllocation.ts
@@ -503,6 +504,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     movement-flow-trace.ts
     quick-expense-link-trace.ts
     quick-expense-trace.ts
+    recurring-payment-trace.ts
     transfer-flow-trace.ts
   domain/
     __tests__/
@@ -552,6 +554,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       score.test.ts
       score.ts
       spending-calendar.ts
+      subscription-payments.test.ts
+      subscription-payments.ts
       transaction-kind.ts
       transactions.test.ts
       transactions.ts
@@ -886,6 +890,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Objetivos reservados — contribuição reduz disponível sem despesa; retirada (GoalWithdrawModal) sem receita
 - Créditos empréstimo — mensalidade vs amortização (loan_payments, RegisterLoan* modals, domínio loan-payments)
 - Cartões — saldo disponível (limite − dívida) + alerta limite excedido na lista Créditos
+- Despesas recorrentes — Marcar como pago com recurring_id, movimento real e dedup no orçamento
+- Home — card Disponível este mês sem clipping; Créditos — botões empilhados sem texto cortado
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
@@ -902,6 +908,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA
 - Migration credit_card types aplicada no remoto (20240702100000)
 - Migration goal_withdrawals + loan_payments aplicada no remoto (20240703100000)
+- Migration recurring_id em transactions aplicada no remoto (20240704100000)
 
 ---
 

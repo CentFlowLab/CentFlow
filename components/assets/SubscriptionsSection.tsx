@@ -3,8 +3,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { MOVEMENTS_EMPTY_CONFIG } from '@/components/movements/movements.config';
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { SwipeableAssetRow } from '@/components/assets/SwipeableAssetRow';
-import { Card, Text } from '@/components/ui';
+import { Button, Card, Text } from '@/components/ui';
+import { useTransactions } from '@/hooks/queries/useTransactions';
 import type { Subscription } from '@/lib/domain/assets.types';
+import {
+  getSubscriptionPaymentUiState,
+} from '@/lib/domain/financial/subscription-payments';
 import { subscriptionToMonthlyAmount } from '@/lib/subscriptions/subscription-utils';
 import { getRenewalStatus } from '@/lib/subscriptions/renewal.utils';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -16,6 +20,7 @@ type SubscriptionsSectionProps = {
   onEdit?: (subscription: Subscription) => void;
   onLearnMore?: () => void;
   onDelete?: (subscription: Subscription) => void;
+  onMarkPaid?: (subscription: Subscription) => void;
 };
 
 export function SubscriptionsSection({
@@ -24,7 +29,10 @@ export function SubscriptionsSection({
   onEdit,
   onLearnMore,
   onDelete,
+  onMarkPaid,
 }: SubscriptionsSectionProps) {
+  const { data: transactions = [] } = useTransactions('all');
+
   if (subscriptions.length === 0) {
     return (
       <View style={styles.container}>
@@ -71,13 +79,16 @@ export function SubscriptionsSection({
 
       <View style={styles.list}>
         {subscriptions.map((subscription) => {
-          const status = getRenewalStatus(subscription.renewsAt);
+          const renewalStatus = getRenewalStatus(subscription.renewsAt);
+          const paymentUi = getSubscriptionPaymentUiState(subscription, transactions);
           const statusColor =
-            status.tone === 'danger'
-              ? colors.danger
-              : status.tone === 'warning'
-                ? colors.warning
-                : colors.success;
+            paymentUi.status === 'paid'
+              ? colors.success
+              : renewalStatus.tone === 'danger'
+                ? colors.danger
+                : renewalStatus.tone === 'warning'
+                  ? colors.warning
+                  : colors.textSecondary;
 
           return (
             <SwipeableAssetRow
@@ -92,7 +103,7 @@ export function SubscriptionsSection({
                     </Text>
                     <View style={[styles.statusBadge, { borderColor: statusColor }]}>
                       <Text variant="caption" style={{ color: statusColor, fontWeight: '600' }}>
-                        {status.label}
+                        {paymentUi.status === 'paid' ? 'Pago' : renewalStatus.label}
                       </Text>
                     </View>
                   </View>
@@ -102,7 +113,11 @@ export function SubscriptionsSection({
                       /{intervalLabel(subscription.billingInterval)}
                     </Text>
                   </View>
-                  {subscription.renewsAt ? (
+                  {paymentUi.paidThisCycle && subscription.renewsAt ? (
+                    <Text variant="caption" color="textSecondary">
+                      Próxima renovação: {formatDateShort(subscription.renewsAt)}
+                    </Text>
+                  ) : subscription.renewsAt ? (
                     <Text variant="caption" color="textSecondary">
                       Renova {formatDateShort(subscription.renewsAt)}
                     </Text>
@@ -111,6 +126,17 @@ export function SubscriptionsSection({
                       Sem data de renovação definida
                     </Text>
                   )}
+                  {onMarkPaid ? (
+                    <Button
+                      label={paymentUi.actionLabel}
+                      variant={paymentUi.status === 'overdue' ? 'primary' : 'secondary'}
+                      size="md"
+                      fullWidth
+                      disabled={paymentUi.disabled}
+                      onPress={() => onMarkPaid(subscription)}
+                      style={styles.payButton}
+                    />
+                  ) : null}
                 </Card>
               </Pressable>
             </SwipeableAssetRow>
@@ -147,7 +173,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   itemCard: {
-    gap: spacing.xs,
+    gap: spacing.sm,
     padding: spacing.md,
   },
   itemHeader: {
@@ -170,5 +196,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
     backgroundColor: colors.backgroundElevated,
+  },
+  payButton: {
+    marginTop: spacing.xs,
   },
 });

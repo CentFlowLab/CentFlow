@@ -9,6 +9,7 @@ import { useCreateLoanPayment } from '@/hooks/queries/useLoanPayments';
 import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { calculateDebtAmortizationImpact } from '@/lib/domain/financial/loan-payments';
+import { traceLoanModalOpened } from '@/lib/doctor/recurring-payment-trace';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
 import type { Credit } from '@/lib/domain/types';
 import { spacing } from '@/lib/theme';
@@ -36,7 +37,8 @@ export function RegisterLoanAmortizationModal({
   const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !credit) return;
+    traceLoanModalOpened('loan_extra_payment_opened', { creditId: credit.id });
     setAmount('');
     setDate(todayInputDate());
     setNote('');

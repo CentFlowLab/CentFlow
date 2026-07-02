@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { SubscriptionFormModal, SubscriptionsSection } from '@/components/assets';
+import { SubscriptionFormModal, SubscriptionsSection, MarkSubscriptionPaidModal } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { TransferAccountModal } from '@/components/accounts';
@@ -64,6 +64,8 @@ export default function MovimentosScreen() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [subscriptionFormVisible, setSubscriptionFormVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
+  const [markPaidSubscription, setMarkPaidSubscription] = useState<Subscription | null>(null);
+  const [markPaidVisible, setMarkPaidVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [transferVisible, setTransferVisible] = useState(false);
   const [payCardVisible, setPayCardVisible] = useState(false);
@@ -403,6 +405,10 @@ export default function MovimentosScreen() {
                 onEdit={(subscription) => openSubscriptionForm(subscription)}
                 onLearnMore={handleLearnMore}
                 onDelete={(item) => deleteSubscription.mutate(item.id)}
+                onMarkPaid={(subscription) => {
+                  setMarkPaidSubscription(subscription);
+                  setMarkPaidVisible(true);
+                }}
               />
             </FeatureAreaGate>
           </ScrollView>
@@ -443,6 +449,15 @@ export default function MovimentosScreen() {
         visible={subscriptionFormVisible}
         subscription={editingSubscription}
         onClose={closeSubscriptionForm}
+      />
+
+      <MarkSubscriptionPaidModal
+        visible={markPaidVisible}
+        subscription={markPaidSubscription}
+        onClose={() => {
+          setMarkPaidVisible(false);
+          setMarkPaidSubscription(null);
+        }}
       />
 
       <PendingSubscriptionModal

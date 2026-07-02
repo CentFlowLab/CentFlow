@@ -60,6 +60,8 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     relatedTransactionId:
       (row as TransactionRow & { related_transaction_id?: string | null }).related_transaction_id ??
       undefined,
+    recurringId:
+      (row as TransactionRow & { recurring_id?: string | null }).recurring_id ?? undefined,
     budgetMonth: (row as TransactionRow).budget_month ?? undefined,
   };
 }
@@ -153,6 +155,7 @@ export function toTransactionInsert(
           destination_account_id: input.destinationAccountId ?? null,
           credit_id: input.creditId ?? null,
           related_transaction_id: input.relatedTransactionId ?? null,
+          recurring_id: input.recurringId ?? null,
         }
       : {}),
   };
@@ -181,6 +184,7 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
           destination_account_id: input.destinationAccountId ?? null,
           credit_id: input.creditId ?? null,
           related_transaction_id: input.relatedTransactionId ?? null,
+          recurring_id: input.recurringId ?? null,
         }
       : {}),
   };

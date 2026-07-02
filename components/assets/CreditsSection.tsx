@@ -27,7 +27,6 @@ type CreditsSectionProps = {
   variant?: 'loan' | 'card';
 };
 
-/** Percentagem amortizada (0–1) com base no montante original. */
 function getRepaidProgress(credit: Credit): number | null {
   if (!credit.originalAmount || credit.originalAmount <= 0) return null;
   const repaid = credit.originalAmount - credit.outstandingBalance;
@@ -113,142 +112,151 @@ export function CreditsSection({
             key={credit.id}
             label={credit.name}
             onDelete={() => onDelete?.(credit)}>
-            <Pressable onPress={() => onEdit?.(credit)} disabled={!onEdit}>
-              <Card variant="elevated" style={styles.itemCard}>
-                <Text variant="bodyMedium">{credit.name}</Text>
-                {isCardVariant ? (
-                  <>
-                    {credit.lender ? (
-                      <Text variant="caption" color="textMuted">
-                        {credit.lender}
+            <Card variant="elevated" style={styles.itemCard}>
+              <Pressable onPress={() => onEdit?.(credit)} disabled={!onEdit}>
+                <View style={styles.itemBody}>
+                  <Text variant="bodyMedium">{credit.name}</Text>
+                  {isCardVariant ? (
+                    <>
+                      {credit.lender ? (
+                        <Text variant="caption" color="textMuted">
+                          {credit.lender}
+                        </Text>
+                      ) : null}
+                      <Text variant="caption" color="textSecondary">
+                        Saldo usado: {formatCurrency(credit.outstandingBalance)}
                       </Text>
-                    ) : null}
-                    <Text variant="caption" color="textSecondary">
-                      Saldo usado: {formatCurrency(credit.outstandingBalance)}
-                    </Text>
-                    {(() => {
-                      const available = calculateAvailableCredit(credit);
-                      const limit = credit.originalAmount;
-                      const isOverLimit =
-                        limit != null && limit > 0 && credit.outstandingBalance > limit;
+                      {(() => {
+                        const available = calculateAvailableCredit(credit);
+                        const limit = credit.originalAmount;
+                        const isOverLimit =
+                          limit != null && limit > 0 && credit.outstandingBalance > limit;
 
-                      if (available === null) return null;
+                        if (available === null) return null;
 
-                      if (isOverLimit) {
-                        const excess = subtractMoney(credit.outstandingBalance, limit!);
+                        if (isOverLimit) {
+                          const excess = subtractMoney(credit.outstandingBalance, limit!);
+                          return (
+                            <Text variant="caption" color="danger">
+                              Limite excedido em {formatCurrency(excess)}
+                            </Text>
+                          );
+                        }
+
                         return (
-                          <Text variant="caption" color="danger">
-                            Limite excedido em {formatCurrency(excess)}
+                          <Text variant="bodyMedium" color="primary">
+                            Disponível: {formatCurrency(available)}
                           </Text>
                         );
-                      }
-
-                      return (
-                        <Text variant="bodyMedium" color="primary">
-                          Disponível: {formatCurrency(available)}
+                      })()}
+                      {credit.originalAmount ? (
+                        <Text variant="caption" color="textMuted">
+                          Limite: {formatCurrency(credit.originalAmount)}
                         </Text>
-                      );
-                    })()}
-                    {credit.originalAmount ? (
+                      ) : null}
+                      {(() => {
+                        const usage = calculateCreditUtilization(credit);
+                        if (usage === null) return null;
+                        return (
+                          <View style={styles.progressBlock}>
+                            <View style={styles.progressTrack}>
+                              <View
+                                style={[
+                                  styles.progressFill,
+                                  usage >= 80 && styles.progressFillHigh,
+                                  { width: `${Math.round(usage)}%` },
+                                ]}
+                              />
+                            </View>
+                            <Text variant="caption" color="textSecondary">
+                              {Math.round(usage)}% do limite utilizado
+                            </Text>
+                          </View>
+                        );
+                      })()}
+                      {credit.nextPaymentDate ? (
+                        <Text variant="caption" color="textSecondary">
+                          Vencimento: {formatDateShort(credit.nextPaymentDate)}
+                        </Text>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
                       <Text variant="caption" color="textMuted">
-                        Limite: {formatCurrency(credit.originalAmount)}
+                        Saldo em dívida: {formatCurrency(credit.outstandingBalance)}
                       </Text>
-                    ) : null}
-                    {(() => {
-                      const usage = calculateCreditUtilization(credit);
-                      if (usage === null) return null;
-                      return (
-                        <View style={styles.progressBlock}>
-                          <View style={styles.progressTrack}>
-                            <View
-                              style={[
-                                styles.progressFill,
-                                usage >= 80 && styles.progressFillHigh,
-                                { width: `${Math.round(usage)}%` },
-                              ]}
-                            />
+                      {(() => {
+                        const progress = getRepaidProgress(credit);
+                        if (progress === null) return null;
+                        return (
+                          <View style={styles.progressBlock}>
+                            <View style={styles.progressTrack}>
+                              <View
+                                style={[
+                                  styles.progressFill,
+                                  { width: `${Math.round(progress * 100)}%` },
+                                ]}
+                              />
+                            </View>
+                            <Text variant="caption" color="textSecondary">
+                              {Math.round(progress * 100)}% pago de{' '}
+                              {formatCurrency(credit.originalAmount!)}
+                            </Text>
                           </View>
-                          <Text variant="caption" color="textSecondary">
-                            {Math.round(usage)}% do limite utilizado
-                          </Text>
-                        </View>
-                      );
-                    })()}
-                    {credit.nextPaymentDate ? (
-                      <Text variant="caption" color="textSecondary">
-                        Vencimento: {formatDateShort(credit.nextPaymentDate)}
-                      </Text>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    <Text variant="caption" color="textMuted">
-                      Saldo: {formatCurrency(credit.outstandingBalance)}
-                    </Text>
-                    {(() => {
-                      const progress = getRepaidProgress(credit);
-                      if (progress === null) return null;
-                      return (
-                        <View style={styles.progressBlock}>
-                          <View style={styles.progressTrack}>
-                            <View
-                              style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]}
-                            />
-                          </View>
-                          <Text variant="caption" color="textSecondary">
-                            {Math.round(progress * 100)}% pago de{' '}
-                            {formatCurrency(credit.originalAmount!)}
-                          </Text>
-                        </View>
-                      );
-                    })()}
-                    {credit.interestRateAnnual !== undefined ? (
-                      <Text variant="caption" color="textSecondary">
-                        TAEG: {credit.interestRateAnnual.toFixed(2)}%
-                      </Text>
-                    ) : null}
-                    {credit.nextPaymentDate || credit.nextPaymentAmount ? (
-                      <Text variant="caption" color="textSecondary">
-                        Próximo:{' '}
-                        {credit.nextPaymentAmount ? formatCurrency(credit.nextPaymentAmount) : '—'}
-                        {credit.nextPaymentDate ? ` · ${formatDateShort(credit.nextPaymentDate)}` : ''}
-                      </Text>
-                    ) : null}
-                  </>
-                )}
-                {isCardVariant && onRegisterPayment ? (
-                  <Button
-                    label="Pagar cartão"
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => onRegisterPayment(credit)}
-                    style={styles.payButton}
-                  />
-                ) : null}
-                {!isCardVariant && (onRegisterMonthlyPayment || onRegisterAmortization) ? (
-                  <View style={styles.loanActions}>
-                    {onRegisterMonthlyPayment ? (
-                      <Button
-                        label="Registar mensalidade"
-                        variant="secondary"
-                        size="sm"
-                        onPress={() => onRegisterMonthlyPayment(credit)}
-                        style={styles.loanButton}
-                      />
-                    ) : null}
-                    {onRegisterAmortization ? (
-                      <Button
-                        label="Amortizar crédito"
-                        variant="secondary"
-                        size="sm"
-                        onPress={() => onRegisterAmortization(credit)}
-                        style={styles.loanButton}
-                      />
-                    ) : null}
-                  </View>
-                ) : null}
-              </Card>
-            </Pressable>
+                        );
+                      })()}
+                      {credit.interestRateAnnual !== undefined ? (
+                        <Text variant="caption" color="textSecondary">
+                          TAEG: {credit.interestRateAnnual.toFixed(2)}%
+                        </Text>
+                      ) : null}
+                      {credit.nextPaymentDate || credit.nextPaymentAmount ? (
+                        <Text variant="caption" color="textSecondary">
+                          Próxima mensalidade:{' '}
+                          {credit.nextPaymentAmount ? formatCurrency(credit.nextPaymentAmount) : '—'}
+                          {credit.nextPaymentDate
+                            ? ` · ${formatDateShort(credit.nextPaymentDate)}`
+                            : ''}
+                        </Text>
+                      ) : null}
+                    </>
+                  )}
+                </View>
+              </Pressable>
+
+              {isCardVariant && onRegisterPayment ? (
+                <Button
+                  label="Pagar cartão"
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  onPress={() => onRegisterPayment(credit)}
+                />
+              ) : null}
+
+              {!isCardVariant && (onRegisterMonthlyPayment || onRegisterAmortization) ? (
+                <View style={styles.loanActions}>
+                  {onRegisterMonthlyPayment ? (
+                    <Button
+                      label="Registar mensalidade"
+                      variant="secondary"
+                      size="md"
+                      fullWidth
+                      onPress={() => onRegisterMonthlyPayment(credit)}
+                    />
+                  ) : null}
+                  {onRegisterAmortization ? (
+                    <Button
+                      label="Amortizar crédito"
+                      variant="secondary"
+                      size="md"
+                      fullWidth
+                      onPress={() => onRegisterAmortization(credit)}
+                    />
+                  ) : null}
+                </View>
+              ) : null}
+            </Card>
           </SwipeableAssetRow>
         ))}
       </View>
@@ -268,6 +276,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   itemCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  itemBody: {
     gap: spacing.xs,
   },
   progressBlock: {
@@ -288,18 +300,7 @@ const styles = StyleSheet.create({
   progressFillHigh: {
     backgroundColor: colors.danger,
   },
-  payButton: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.xs,
-  },
   loanActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  loanButton: {
-    flexGrow: 1,
-    flexBasis: '45%',
   },
 });

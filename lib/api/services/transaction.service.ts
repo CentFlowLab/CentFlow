@@ -178,6 +178,7 @@ export async function createTransaction(
     destinationAccountId: input.destinationAccountId,
     creditId: input.creditId,
     budgetMonth: input.budgetMonth,
+    recurringId: input.recurringId,
   };
 
   let transaction: Transaction;
