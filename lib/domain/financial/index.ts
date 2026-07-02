@@ -28,6 +28,7 @@ export * from './metrics';
 export * from './calendar';
 export * from './opportunities';
 export * from './financial-doctor';
+export * from './simulator';
 
 export * from './budget';
 export * from './cashflow';

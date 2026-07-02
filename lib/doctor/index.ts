@@ -46,4 +46,6 @@ export {
   TRANSFER_FLOW_SOURCE,
 } from './transfer-flow-trace';
 
+export { traceSimulationCreated } from './simulation-trace';
+
 export const DOCTOR_SOURCE = 'centflow-doctor';

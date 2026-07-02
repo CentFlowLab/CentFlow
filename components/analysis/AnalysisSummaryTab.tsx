@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { AnalysisMetricCard } from '@/components/analysis/AnalysisMetricCard';
 import { InsightsSection } from '@/components/analysis/InsightsSection';
 import { TrendsSummaryCard } from '@/components/analysis/TrendsSummaryCard';
+import { DecisionSimulatorSection } from '@/components/simulator';
 import { Card, Text } from '@/components/ui';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
 import type { AnalysisData } from '@/lib/domain/analysis.types';
@@ -67,6 +68,8 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
       </Card>
 
       <InsightsSection insights={topInsights} />
+
+      <DecisionSimulatorSection />
     </View>
   );
 }

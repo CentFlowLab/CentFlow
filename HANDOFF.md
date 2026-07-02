@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T17:29:35.624Z -->
-<!-- Git: 683acc9 (2026-07-02T18:09:28+01:00) -->
+<!-- Última geração: 2026-07-02T17:59:28.467Z -->
+<!-- Git: 3c25988 (2026-07-02T18:29:48+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 23 — Financial Core Engine v2 (single source of truth)** |
-| Última geração | 2026-07-02T17:29:35.624Z |
+| Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
+| Última geração | 2026-07-02T17:59:28.467Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `683acc9` (2026-07-02T18:09:28+01:00) |
+| Git commit | `3c25988` (2026-07-02T18:29:48+01:00) |
 
 ---
 
@@ -323,6 +323,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     SettingsScreenLayout.tsx
     SettingsToggleRow.tsx
     index.ts
+  simulator/
+    DecisionSimulatorHost.tsx
+    DecisionSimulatorModal.tsx
+    DecisionSimulatorSection.tsx
+    index.ts
   ui/
     BottomActionSheet.tsx
     Button.tsx
@@ -507,6 +512,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     quick-expense-link-trace.ts
     quick-expense-trace.ts
     recurring-payment-trace.ts
+    simulation-trace.ts
     transfer-flow-trace.ts
   domain/
     __tests__/
@@ -576,6 +582,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       score-explain.ts
       score.test.ts
       score.ts
+      simulator.test.ts
+      simulator.ts
+      simulator.types.ts
       spending-calendar.ts
       subscription-payments.test.ts
       subscription-payments.ts
@@ -714,6 +723,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     securityLogger.ts
     sessionSecurity.ts
     versionGuard.ts
+  simulator/
+    simulator-bridge.ts
   storage/
     liabilities-storage.ts
     local-flags.ts
@@ -779,7 +790,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 23 — Financial Core Engine v2 (single source of truth)
+## Fase atual: Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -928,6 +939,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)
 - UX premium — datas DD/MM consistentes, FormSheetFooter, layout/formSpacing tokens, cards movimentos 3 linhas
 - Financial Core v2 — calculateFinancialState(), módulos puros, eventos, calendário, métricas, oportunidades, doctor, useFinancialState
+- Decision Simulator — simulateFinancialDecision(), 10 cenários, UI Análises, CTAs Simular impacto, Doctor trace
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

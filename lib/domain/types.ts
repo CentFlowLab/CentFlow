@@ -117,6 +117,8 @@ export interface Suggestion {
   type: 'goal' | 'savings' | 'investment' | 'general';
   /** Rota explícita — evita inferir destino só pelo type. */
   ctaRoute?: string;
+  /** Abre simulador em vez de navegar — nunca executa a acção. */
+  simulateAction?: boolean;
 }
 
 /** Input bruto para cálculo de património — reutilizável em Análises e Ativos. */

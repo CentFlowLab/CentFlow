@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 23 — Financial Core Engine v2 (single source of truth)",
+  "currentPhase": "Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -148,7 +148,8 @@
     "Auditoria beta — testes ledger-audit + suggestions; consumptionSpending filtrado por contas orçamento",
     "Auditoria beta — README raiz, docs financial-domain/architecture; .easignore dist/logs; UX actual→atual (strings visíveis)",
     "UX premium — datas DD/MM consistentes, FormSheetFooter, layout/formSpacing tokens, cards movimentos 3 linhas",
-    "Financial Core v2 — calculateFinancialState(), módulos puros, eventos, calendário, métricas, oportunidades, doctor, useFinancialState"
+    "Financial Core v2 — calculateFinancialState(), módulos puros, eventos, calendário, métricas, oportunidades, doctor, useFinancialState",
+    "Decision Simulator — simulateFinancialDecision(), 10 cenários, UI Análises, CTAs Simular impacto, Doctor trace"
   ],
   "pending": [
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",

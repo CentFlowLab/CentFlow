@@ -207,8 +207,8 @@ export function buildFinancialSuggestions(
       scenarios,
       disclaimer: FINANCIAL_SUGGESTION_DISCLAIMER,
       type: 'investment',
-      actionLabel: 'Ver créditos',
-      ctaRoute: '/(tabs)/precos',
+      actionLabel: 'Simular amortização',
+      ctaRoute: '/(tabs)/analises?simulate=amortize',
       priority: 100,
     });
   }
@@ -222,8 +222,8 @@ export function buildFinancialSuggestions(
       scenarios: [],
       disclaimer: FINANCIAL_SUGGESTION_DISCLAIMER,
       type: 'savings',
-      actionLabel: 'Ver detalhes',
-      ctaRoute: '/(tabs)/index',
+      actionLabel: 'Simular impacto',
+      ctaRoute: '/(tabs)/analises?simulate=budget',
       priority: 90,
     });
   }
@@ -243,8 +243,8 @@ export function buildFinancialSuggestions(
       scenarios: [],
       disclaimer: FINANCIAL_SUGGESTION_DISCLAIMER,
       type: 'general',
-      actionLabel: 'Simular crédito',
-      ctaRoute: '/(tabs)/precos',
+      actionLabel: 'Simular amortização',
+      ctaRoute: '/(tabs)/analises?simulate=amortize',
       priority: 50,
     });
   }
@@ -271,9 +271,10 @@ export function mapFinancialSuggestionsToHome(
       id: item.id,
       title: item.title,
       description,
-      actionLabel: item.actionLabel,
+      actionLabel: item.actionLabel ?? 'Simular impacto',
       type: item.type,
       ctaRoute: item.ctaRoute,
+      simulateAction: item.id.startsWith('fin-'),
     };
   });
 }

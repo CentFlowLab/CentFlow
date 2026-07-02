@@ -2,7 +2,10 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
+import { useFinancialState } from '@/hooks/useFinancialState';
+import { buildScenarioFromSuggestionId } from '@/lib/domain/financial/simulator';
 import { openSuggestionRoute } from '@/lib/navigation/dashboard-routes';
+import { openDecisionSimulator } from '@/lib/simulator/simulator-bridge';
 import type { Suggestion } from '@/lib/domain';
 import { colors, spacing } from '@/lib/theme';
 
@@ -18,9 +21,27 @@ type SuggestionCardProps = {
 };
 
 export function SuggestionCard({ suggestion }: SuggestionCardProps) {
+  const { state } = useFinancialState();
+
+  function handlePress() {
+    if (suggestion.simulateAction && state) {
+      const scenario = buildScenarioFromSuggestionId(suggestion.id, state);
+      if (scenario) {
+        openDecisionSimulator({ scenario });
+        return;
+      }
+      openDecisionSimulator({ presetType: 'amortize_credit' });
+      return;
+    }
+    openSuggestionRoute(suggestion);
+  }
+
+  const actionLabel =
+    suggestion.simulateAction ? suggestion.actionLabel ?? 'Simular impacto' : suggestion.actionLabel;
+
   return (
     <Pressable
-      onPress={() => openSuggestionRoute(suggestion)}
+      onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={suggestion.title}>
       <Card variant="elevated" style={styles.card}>
@@ -38,9 +59,9 @@ export function SuggestionCard({ suggestion }: SuggestionCardProps) {
           <Text variant="caption" color="textSecondary">
             {suggestion.description}
           </Text>
-          {suggestion.actionLabel ? (
+          {actionLabel ? (
             <Text variant="caption" color="primary" style={styles.action}>
-              {suggestion.actionLabel} →
+              {actionLabel} →
             </Text>
           ) : null}
         </View>
