@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useGoalContributions } from '@/hooks/queries/useGoalContributions';
 import { useLoanPayments } from '@/hooks/queries/useLoanPayments';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
@@ -27,12 +28,14 @@ export type MonthlySpendable = MonthlyAvailableBreakdown & {
 
 export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySpendable {
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
+  const { data: accounts = [], isLoading: accountsLoading } = useAccountsWithBalances();
   const { data: liabilities, isLoading: liabLoading } = useLiabilities();
   const { data: goalContributions = [], isLoading: goalsLoading } = useGoalContributions();
   const { data: loanPayments = [], isLoading: loanLoading } = useLoanPayments();
 
   return useMemo(() => {
     const breakdown = buildMonthlyAvailableBreakdown({
+      accounts,
       transactions,
       goalContributions,
       credits: liabilities?.credits ?? [],
@@ -65,15 +68,17 @@ export function useMonthlySpendable(referenceDate: Date = new Date()): MonthlySp
       futureExpense: 0,
       upcomingSubscriptions,
       upcomingInstallments,
-      isLoading: txLoading || liabLoading || goalsLoading || loanLoading,
+      isLoading: txLoading || accountsLoading || liabLoading || goalsLoading || loanLoading,
     };
   }, [
     transactions,
     liabilities,
     goalContributions,
     loanPayments,
+    accounts,
     referenceDate,
     txLoading,
+    accountsLoading,
     liabLoading,
     goalsLoading,
     loanLoading,

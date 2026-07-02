@@ -10,6 +10,8 @@ export type BankAccount = {
   initialBalance: number;
   isActive: boolean;
   currency: string;
+  /** Se true, saldo entra no orçamento mensal (Disponível este mês). */
+  budgetEnabled?: boolean;
   /** Saldo calculado (inicial + movimentos ligados). */
   balance?: number;
 };

@@ -76,8 +76,19 @@ test('subscrição paga não duplica obrigação futura no disponível', () => {
     },
   ];
 
+  const moeyAccount = {
+    id: 'acc-moey',
+    name: 'Moey',
+    type: 'checking' as const,
+    initialBalance: 1000,
+    isActive: true,
+    currency: 'EUR',
+    budgetEnabled: true,
+  };
+
   const breakdown = buildMonthlyAvailableBreakdown({
-    transactions: txs,
+    accounts: [moeyAccount],
+    transactions: txs.map((tx) => ({ ...tx, accountId: 'acc-moey' })),
     goalContributions: [],
     credits: [],
     subscriptions: [vodafone],
@@ -85,18 +96,24 @@ test('subscrição paga não duplica obrigação futura no disponível', () => {
     referenceDate: julyReference,
   });
 
-  // 1000 receita − 28 despesa (sem obrigação duplicada) = 972
-  const withIncome = {
-    ...breakdown,
-    available: breakdown.available + 1000,
-  };
   assert.equal(breakdown.components.registeredExpenses, 28);
   assert.equal(breakdown.components.futureObligations, 0);
-  assert.equal(withIncome.available, 972);
+  assert.equal(breakdown.available, 972);
 });
 
 test('subscrição pendente conta como obrigação futura', () => {
+  const moeyAccount = {
+    id: 'acc-moey',
+    name: 'Moey',
+    type: 'checking' as const,
+    initialBalance: 1000,
+    isActive: true,
+    currency: 'EUR',
+    budgetEnabled: true,
+  };
+
   const breakdown = buildMonthlyAvailableBreakdown({
+    accounts: [moeyAccount],
     transactions: [],
     goalContributions: [],
     credits: [],
@@ -106,8 +123,7 @@ test('subscrição pendente conta como obrigação futura', () => {
   });
 
   assert.equal(breakdown.components.futureObligations, 28);
-  // Sem receitas: −28; com 1000€ receita seria 972
-  assert.equal(1000 - breakdown.components.futureObligations, 972);
+  assert.equal(breakdown.available, 972);
 });
 
 test('collectPaidSubscriptionIds — ignora subscrições por pagar', () => {

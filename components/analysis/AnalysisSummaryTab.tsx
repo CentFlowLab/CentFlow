@@ -5,6 +5,7 @@ import { AnalysisMetricCard } from '@/components/analysis/AnalysisMetricCard';
 import { InsightsSection } from '@/components/analysis/InsightsSection';
 import { TrendsSummaryCard } from '@/components/analysis/TrendsSummaryCard';
 import { Card, Text } from '@/components/ui';
+import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
 import type { AnalysisData } from '@/lib/domain/analysis.types';
 import { calculateSavingsRate } from '@/lib/domain/financial/savings';
 import { spacing } from '@/lib/theme';
@@ -15,6 +16,7 @@ type AnalysisSummaryTabProps = {
 };
 
 export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
+  const spendable = useMonthlySpendable();
   const savings = useMemo(
     () => calculateSavingsRate(data.trends.totalIncome, data.trends.totalExpenses),
     [data.trends.totalIncome, data.trends.totalExpenses],
@@ -49,6 +51,21 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
         </Text>
       </Card>
 
+      <Card variant="outlined" style={styles.budgetContextCard}>
+        <Text variant="caption" color="textMuted">
+          Orçamento vs património
+        </Text>
+        <Text variant="bodyMedium">
+          Gastos do mês: {formatCurrency(spendable.consumptionSpending)} (inclui cartão)
+        </Text>
+        <Text variant="bodyMedium">
+          Disponível para gastar: {formatCurrency(spendable.available)}
+        </Text>
+        <Text variant="caption" color="textSecondary">
+          Investimentos e poupança entram no património, não no orçamento mensal.
+        </Text>
+      </Card>
+
       <InsightsSection insights={topInsights} />
     </View>
   );
@@ -60,6 +77,9 @@ const styles = StyleSheet.create({
   },
   metricsRow: {
     gap: spacing.sm,
+  },
+  budgetContextCard: {
+    gap: spacing.xs,
   },
   savingsCard: {
     gap: spacing.xs,

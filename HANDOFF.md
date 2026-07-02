@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T11:54:05.599Z -->
-<!-- Git: 7127fd6 (2026-07-02T11:42:58+01:00) -->
+<!-- Última geração: 2026-07-02T12:23:20.843Z -->
+<!-- Git: 34e9368 (2026-07-02T12:54:12+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 21 — Orçamento transparente + objetivos reservados + créditos (mensalidade vs amortização)** |
-| Última geração | 2026-07-02T11:54:05.599Z |
+| Última geração | 2026-07-02T12:23:20.843Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `7127fd6` (2026-07-02T11:42:58+01:00) |
+| Git commit | `34e9368` (2026-07-02T12:54:12+01:00) |
 
 ---
 
@@ -525,6 +525,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       accounts.test.ts
       accounts.ts
       assistant.ts
+      budget-accounts.test.ts
+      budget-accounts.ts
       centflow-score.ts
       credit-cards.test.ts
       credit-cards.ts
@@ -895,6 +897,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Home — card Disponível este mês sem clipping; Créditos — botões empilhados sem texto cortado
 - Migrations remotas aplicadas — credit_card types, goal_withdrawals/loan_payments, recurring_id
 - Orçamento mensal — compras no cartão excluídas do disponível; pagamentos de cartão e despesas em conta reduzem; consumptionSpending separado para análises
+- Orçamento vs património — budget_enabled em contas; investimentos/poupança fora do disponível mensal; transferências orçamento↔investimento
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

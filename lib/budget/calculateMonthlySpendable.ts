@@ -29,7 +29,11 @@ export interface SpendableCreditInstallment {
   dueDate?: string | Date;
 }
 
-export type SpendableWarningCode = 'LOW_BALANCE' | 'NEGATIVE_PROJECTED' | 'OVER_BUDGET';
+export type SpendableWarningCode =
+  | 'LOW_BALANCE'
+  | 'NEGATIVE_PROJECTED'
+  | 'OVER_BUDGET'
+  | 'NO_BUDGET_ACCOUNTS';
 
 export interface SpendableWarning {
   code: SpendableWarningCode;

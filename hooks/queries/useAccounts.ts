@@ -66,6 +66,7 @@ export function useSaveAccount() {
         initialBalance: input.initialBalance,
         isActive: input.isActive ?? true,
         currency: input.currency ?? 'EUR',
+        budgetEnabled: input.budgetEnabled,
       });
     },
     onSuccess: () => {

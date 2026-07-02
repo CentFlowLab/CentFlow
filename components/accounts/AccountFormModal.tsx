@@ -10,6 +10,7 @@ import {
   type AccountType,
   type BankAccount,
 } from '@/lib/domain/account.types';
+import { defaultBudgetEnabledForType } from '@/lib/domain/financial/budget-accounts';
 import { formHasAnyText } from '@/lib/forms';
 import { colors, radius, spacing } from '@/lib/theme';
 
@@ -29,6 +30,7 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
   const [institution, setInstitution] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [budgetEnabled, setBudgetEnabled] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const baselineRef = useRef({
@@ -37,6 +39,7 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
     institution: '',
     initialBalance: '',
     isActive: true,
+    budgetEnabled: true,
   });
 
   useEffect(() => {
@@ -49,12 +52,14 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
         institution: account.institution ?? '',
         initialBalance: String(account.initialBalance),
         isActive: account.isActive,
+        budgetEnabled: account.budgetEnabled ?? defaultBudgetEnabledForType(account.type),
       };
       setName(next.name);
       setType(next.type);
       setInstitution(next.institution);
       setInitialBalance(next.initialBalance);
       setIsActive(next.isActive);
+      setBudgetEnabled(next.budgetEnabled);
       baselineRef.current = next;
     } else {
       const empty = {
@@ -63,12 +68,14 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
         institution: '',
         initialBalance: '',
         isActive: true,
+        budgetEnabled: true,
       };
       setName(empty.name);
       setType(empty.type);
       setInstitution(empty.institution);
       setInitialBalance(empty.initialBalance);
       setIsActive(empty.isActive);
+      setBudgetEnabled(empty.budgetEnabled);
       baselineRef.current = empty;
     }
 
@@ -85,11 +92,17 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
         type !== baselineRef.current.type ||
         institution !== baselineRef.current.institution ||
         initialBalance !== baselineRef.current.initialBalance ||
-        isActive !== baselineRef.current.isActive
+        isActive !== baselineRef.current.isActive ||
+        budgetEnabled !== baselineRef.current.budgetEnabled
       );
     }
     return formHasAnyText(name, institution, initialBalance);
-  }, [visible, account, name, type, institution, initialBalance, isActive]);
+  }, [visible, account, name, type, institution, initialBalance, isActive, budgetEnabled]);
+
+  function handleTypeChange(nextType: AccountType) {
+    setType(nextType);
+    setBudgetEnabled(defaultBudgetEnabledForType(nextType));
+  }
 
   async function handleSave() {
     if (!name.trim()) {
@@ -111,6 +124,7 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
         institution: institution.trim() || undefined,
         initialBalance: balanceValue,
         isActive,
+        budgetEnabled,
         currency: account?.currency ?? 'EUR',
       });
       onClose();
@@ -154,7 +168,7 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
             return (
               <Pressable
                 key={option.key}
-                onPress={() => setType(option.key)}
+                onPress={() => handleTypeChange(option.key)}
                 style={[styles.typeChip, active && styles.typeChipActive]}>
                 <Text variant="caption" style={active ? styles.typeChipTextActive : undefined}>
                   {option.label}
@@ -178,6 +192,27 @@ export function AccountFormModal({ visible, onClose, account = null }: AccountFo
           keyboardType="decimal-pad"
           placeholder="0,00"
         />
+
+        <Pressable
+          onPress={() => setBudgetEnabled((value) => !value)}
+          style={styles.activeRow}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: budgetEnabled }}>
+          <View style={styles.budgetToggleCopy}>
+            <Text variant="body">Usar no orçamento mensal</Text>
+            <Text variant="caption" color="textMuted">
+              Só activa para contas que usas para pagar despesas do mês.
+            </Text>
+            {type === 'investment' && !budgetEnabled ? (
+              <Text variant="caption" color="textMuted">
+                Investimentos contam no património, mas não no dinheiro disponível para gastar.
+              </Text>
+            ) : null}
+          </View>
+          <Text variant="caption" color={budgetEnabled ? 'success' : 'textMuted'}>
+            {budgetEnabled ? 'Sim' : 'Não'}
+          </Text>
+        </Pressable>
 
         <Pressable
           onPress={() => setIsActive((value) => !value)}
@@ -246,5 +281,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  budgetToggleCopy: {
+    flex: 1,
+    gap: spacing.xs,
   },
 });

@@ -1,4 +1,5 @@
 import type { BankAccount } from '@/lib/domain/account.types';
+import { defaultBudgetEnabledForType } from '@/lib/domain/financial/budget-accounts';
 import { logAppError } from '@/lib/diagnostics/app-log';
 
 import type { TablesInsert } from './database.types';
@@ -16,6 +17,7 @@ type AccountRow = {
   initial_balance: number;
   is_active: boolean;
   currency: string;
+  budget_enabled?: boolean | null;
 };
 
 const UUID_RE =
@@ -30,6 +32,10 @@ function resolveInstitution(row: AccountRow): string | undefined {
 }
 
 function mapAccountRow(row: AccountRow): BankAccount {
+  const budgetEnabled =
+    row.budget_enabled === null || row.budget_enabled === undefined
+      ? undefined
+      : row.budget_enabled;
   return {
     id: row.id,
     name: row.name,
@@ -40,6 +46,7 @@ function mapAccountRow(row: AccountRow): BankAccount {
     initialBalance: Number(row.initial_balance),
     isActive: row.is_active,
     currency: row.currency ?? 'EUR',
+    budgetEnabled,
   };
 }
 
@@ -59,6 +66,7 @@ function buildAccountPayload(
     initial_balance: input.initialBalance,
     is_active: input.isActive,
     currency: input.currency ?? 'EUR',
+    budget_enabled: input.budgetEnabled ?? defaultBudgetEnabledForType(input.type),
   };
 }
 
@@ -110,6 +118,11 @@ export async function createAccount(
     ({ data, error } = await supabase.from('accounts').insert(bankOnly).select('*').single());
   }
 
+  if (error?.message?.includes('budget_enabled')) {
+    const { budget_enabled, ...legacyPayload } = payload;
+    ({ data, error } = await supabase.from('accounts').insert(legacyPayload).select('*').single());
+  }
+
   if (error) {
     logAccountError('create', error);
     throw new Error(error.message);
@@ -134,6 +147,8 @@ export async function updateAccount(account: BankAccount): Promise<BankAccount> 
       initial_balance: account.initialBalance,
       is_active: account.isActive,
       currency: account.currency ?? 'EUR',
+      budget_enabled:
+        account.budgetEnabled ?? defaultBudgetEnabledForType(account.type),
     })
     .eq('id', account.id)
     .select('*')

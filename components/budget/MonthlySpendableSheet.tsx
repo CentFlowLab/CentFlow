@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { DraggableBottomSheet } from '@/components/layout';
 import { Card, Text } from '@/components/ui';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
+import { getAccountTypeLabel } from '@/lib/domain/account.types';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -42,6 +43,36 @@ function BreakdownRow({
   );
 }
 
+function AccountListBlock({
+  title,
+  accounts,
+  muted,
+}: {
+  title: string;
+  accounts: Array<{ name: string; balance: number; type: string }>;
+  muted?: boolean;
+}) {
+  if (accounts.length === 0) return null;
+  return (
+    <View style={styles.accountBlock}>
+      <Text variant="label" color="textMuted">
+        {title}
+      </Text>
+      {accounts.map((account) => (
+        <View key={account.name} style={styles.statRow}>
+          <Text variant="caption" color={muted ? 'textMuted' : 'textSecondary'}>
+            {account.name}
+            {muted ? ` — ${getAccountTypeLabel(account.type as never)}` : ''}
+          </Text>
+          <Text variant="bodyMedium" color={muted ? 'textSecondary' : 'text'}>
+            {formatCurrency(account.balance)}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableSheetProps) {
   const reference = new Date();
   const spendable = useMonthlySpendable(reference);
@@ -65,7 +96,7 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
           <View>
             <Text variant="h2">Disponível até ao fim do mês</Text>
             <Text variant="caption" color="textMuted">
-              Dinheiro nas contas para gastar — não inclui compras no cartão
+              Dinheiro em contas de gasto corrente — investimentos e poupança ficam fora
             </Text>
           </View>
           <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
@@ -96,8 +127,37 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
       </Card>
 
       <Card variant="outlined" style={styles.detailCard}>
+        <AccountListBlock title="Contas incluídas no orçamento" accounts={spendable.budgetAccountsIncluded} />
+        <AccountListBlock
+          title="Fora do orçamento"
+          accounts={spendable.budgetAccountsExcluded}
+          muted
+        />
+      </Card>
+
+      <Card variant="outlined" style={styles.detailCard}>
         <Text variant="label" color="textMuted" style={styles.sectionLabel}>
           Como calculámos
+        </Text>
+        <BreakdownRow
+          label="Saldo em contas do orçamento"
+          value={components.budgetAccountBalance}
+          tone="success"
+        />
+        <BreakdownRow
+          label="Obrigações futuras"
+          value={components.futureObligations}
+          prefix="− "
+        />
+        <View style={styles.divider} />
+        <View style={styles.statRow}>
+          <Text variant="bodyMedium">= Disponível este mês</Text>
+          <Text variant="bodyMedium" style={{ color: remainingTone }}>
+            {formatCurrency(spendable.available)}
+          </Text>
+        </View>
+        <Text variant="label" color="textMuted" style={styles.sectionLabel}>
+          Actividade deste mês (já reflectida no saldo)
         </Text>
         <BreakdownRow label="Receitas recebidas" value={components.incomeReceived} tone="success" />
         <BreakdownRow
@@ -116,11 +176,6 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
           prefix="− "
         />
         <BreakdownRow
-          label="Obrigações futuras"
-          value={components.futureObligations}
-          prefix="− "
-        />
-        <BreakdownRow
           label="Mensalidades pagas"
           value={components.loanPaymentsPaid}
           prefix="− "
@@ -130,6 +185,21 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
           value={components.loanAmortizationsPaid}
           prefix="− "
         />
+        {components.movedOutOfBudget > 0 ? (
+          <BreakdownRow
+            label="Movido para fora do orçamento"
+            value={components.movedOutOfBudget}
+            prefix="− "
+          />
+        ) : null}
+        {components.movedIntoBudget > 0 ? (
+          <BreakdownRow
+            label="Movido para orçamento"
+            value={components.movedIntoBudget}
+            tone="success"
+            prefix="+ "
+          />
+        ) : null}
         {components.creditCardPurchases > 0 ? (
           <View style={styles.infoBlock}>
             <View style={styles.statRow}>
@@ -148,16 +218,9 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
         ) : null}
         {components.creditCardPayments > 0 ? (
           <Text variant="caption" color="textMuted">
-            Pagamentos de cartão reduzem o dinheiro disponível porque saem de uma conta.
+            Pagamentos de cartão reduzem o saldo porque saem de uma conta elegível.
           </Text>
         ) : null}
-        <View style={styles.divider} />
-        <View style={styles.statRow}>
-          <Text variant="bodyMedium">= Disponível</Text>
-          <Text variant="bodyMedium" style={{ color: remainingTone }}>
-            {formatCurrency(spendable.available)}
-          </Text>
-        </View>
       </Card>
 
       <Card variant="outlined" style={styles.notesCard}>
@@ -222,6 +285,10 @@ const styles = StyleSheet.create({
   detailCard: {
     gap: spacing.sm,
   },
+  accountBlock: {
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
   infoBlock: {
     gap: spacing.xs,
     marginTop: spacing.xs,
@@ -230,6 +297,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   sectionLabel: {
+    marginTop: spacing.sm,
     marginBottom: spacing.xs,
   },
   statRow: {

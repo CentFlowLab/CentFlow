@@ -6,6 +6,10 @@ import { ASSETS_EMPTY_CONFIG } from '@/components/assets/assets.config';
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
 import { Card, Text } from '@/components/ui';
 import type { BankAccount } from '@/lib/domain/account.types';
+import {
+  partitionAccountsByBudget,
+  sumBudgetAccountBalances,
+} from '@/lib/domain/financial/budget-accounts';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -26,6 +30,14 @@ export function AccountsSection({
   onLearnMore,
   onTransfer,
 }: AccountsSectionProps) {
+  const activeAccounts = accounts.filter((account) => account.isActive);
+  const { outOfBudget } = partitionAccountsByBudget(activeAccounts);
+  const budgetTotal = sumBudgetAccountBalances(activeAccounts);
+  const outOfBudgetTotal = outOfBudget.reduce(
+    (sum, account) => sum + (account.balance ?? account.initialBalance),
+    0,
+  );
+
   if (accounts.length === 0) {
     return (
       <AssetsEmptyState
@@ -45,6 +57,22 @@ export function AccountsSection({
         <Text variant="h3" color="primary">
           {formatCurrency(totalBalance)}
         </Text>
+        <View style={styles.budgetSplit}>
+          <View style={styles.budgetRow}>
+            <Text variant="caption" color="textSecondary">
+              No orçamento mensal
+            </Text>
+            <Text variant="bodyMedium">{formatCurrency(budgetTotal)}</Text>
+          </View>
+          <View style={styles.budgetRow}>
+            <Text variant="caption" color="textSecondary">
+              Fora do orçamento
+            </Text>
+            <Text variant="bodyMedium" color="textMuted">
+              {formatCurrency(outOfBudgetTotal)}
+            </Text>
+          </View>
+        </View>
       </Card>
 
       <View style={styles.list}>
@@ -91,6 +119,18 @@ const styles = StyleSheet.create({
   summaryCard: {
     gap: spacing.xs,
     backgroundColor: colors.backgroundElevated,
+  },
+  budgetSplit: {
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  budgetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   list: {
     gap: spacing.sm,

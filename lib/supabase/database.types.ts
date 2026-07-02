@@ -218,6 +218,7 @@ export type Database = {
       accounts: {
         Row: {
           bank: string | null
+          budget_enabled: boolean | null
           color: string | null
           created_at: string
           currency: string
@@ -233,6 +234,7 @@ export type Database = {
         }
         Insert: {
           bank?: string | null
+          budget_enabled?: boolean | null
           color?: string | null
           created_at?: string
           currency?: string
@@ -248,6 +250,7 @@ export type Database = {
         }
         Update: {
           bank?: string | null
+          budget_enabled?: boolean | null
           color?: string | null
           created_at?: string
           currency?: string

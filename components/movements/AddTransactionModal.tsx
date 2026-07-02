@@ -297,8 +297,14 @@ export function AddTransactionModal({
   function handleMovementKindChange(next: MovementFormKind) {
     traceMovementStep('field_change', { field: 'movementKind', value: next });
     setMovementKind(next);
-    if (next === 'income') setType('income');
-    if (next === 'expense') setType('expense');
+    if (next === 'income') {
+      setType('income');
+      setPaymentMethod(undefined);
+    }
+    if (next === 'expense') {
+      setType('expense');
+      setAccountId(undefined);
+    }
     if (next === 'transfer') {
       onRequestTransfer?.();
       onClose();

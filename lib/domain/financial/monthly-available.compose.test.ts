@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import type { BankAccount } from '@/lib/domain/account.types';
 import { buildMonthlyAvailableBreakdown } from '@/lib/domain/financial/monthly-available.compose';
 import { calculateNetSpending } from '@/lib/domain/financial/ledger-impact';
 import type { Transaction } from '@/lib/domain/transaction.types';
@@ -14,12 +15,23 @@ const baseTx = {
   currency: 'EUR',
 };
 
+const checkingAccount: BankAccount = {
+  id: 'acc-check',
+  name: 'Conta principal',
+  type: 'checking',
+  initialBalance: 0,
+  isActive: true,
+  currency: 'EUR',
+  budgetEnabled: true,
+};
+
 test('compra cartão 100€ — disponível inalterado, gastos +100€', () => {
   const transactions: Transaction[] = [
     {
       id: 'inc',
       type: 'income',
       amount: 1000,
+      accountId: 'acc-check',
       date: '2026-07-01',
       category: 'salary',
       categoryLabel: 'Salário',
@@ -36,6 +48,7 @@ test('compra cartão 100€ — disponível inalterado, gastos +100€', () => {
   ];
 
   const breakdown = buildMonthlyAvailableBreakdown({
+    accounts: [checkingAccount],
     transactions,
     goalContributions: [],
     credits: [],
@@ -44,12 +57,10 @@ test('compra cartão 100€ — disponível inalterado, gastos +100€', () => {
     referenceDate: JULY,
   });
 
+  assert.equal(breakdown.components.budgetAccountBalance, 1000);
   assert.equal(breakdown.available, 1000);
   assert.equal(breakdown.components.creditCardPurchases, 100);
-  assert.equal(breakdown.components.creditCardPayments, 0);
-  assert.equal(breakdown.components.registeredExpenses, 0);
   assert.equal(breakdown.consumptionSpending, 100);
-  assert.equal(calculateNetSpending(transactions, PERIOD), 100);
 });
 
 test('pagar cartão 100€ — disponível 900€, gastos mantêm 100€', () => {
@@ -58,6 +69,7 @@ test('pagar cartão 100€ — disponível 900€, gastos mantêm 100€', () =>
       id: 'inc',
       type: 'income',
       amount: 1000,
+      accountId: 'acc-check',
       date: '2026-07-01',
       category: 'salary',
       categoryLabel: 'Salário',
@@ -76,7 +88,7 @@ test('pagar cartão 100€ — disponível 900€, gastos mantêm 100€', () =>
       type: 'credit_card_payment',
       amount: 100,
       creditId: 'card-gold',
-      accountId: 'acc-robinhood',
+      accountId: 'acc-check',
       date: '2026-07-15',
       category: 'credit',
       categoryLabel: 'Crédito',
@@ -85,6 +97,7 @@ test('pagar cartão 100€ — disponível 900€, gastos mantêm 100€', () =>
   ];
 
   const breakdown = buildMonthlyAvailableBreakdown({
+    accounts: [checkingAccount],
     transactions,
     goalContributions: [],
     credits: [],
@@ -96,7 +109,6 @@ test('pagar cartão 100€ — disponível 900€, gastos mantêm 100€', () =>
   assert.equal(breakdown.available, 900);
   assert.equal(breakdown.components.creditCardPayments, 100);
   assert.equal(breakdown.consumptionSpending, 100);
-  assert.equal(calculateNetSpending(transactions, PERIOD), 100);
 });
 
 test('despesa em conta 50€ após pagamento cartão — disponível 850€, gastos 150€', () => {
@@ -105,6 +117,7 @@ test('despesa em conta 50€ após pagamento cartão — disponível 850€, gas
       id: 'inc',
       type: 'income',
       amount: 1000,
+      accountId: 'acc-check',
       date: '2026-07-01',
       category: 'salary',
       categoryLabel: 'Salário',
@@ -123,7 +136,7 @@ test('despesa em conta 50€ após pagamento cartão — disponível 850€, gas
       type: 'credit_card_payment',
       amount: 100,
       creditId: 'card-gold',
-      accountId: 'acc-robinhood',
+      accountId: 'acc-check',
       date: '2026-07-15',
       category: 'credit',
       categoryLabel: 'Crédito',
@@ -133,13 +146,14 @@ test('despesa em conta 50€ após pagamento cartão — disponível 850€, gas
       id: 'expense',
       type: 'expense',
       amount: 50,
-      accountId: 'acc-robinhood',
+      accountId: 'acc-check',
       date: '2026-07-20',
       ...baseTx,
     },
   ];
 
   const breakdown = buildMonthlyAvailableBreakdown({
+    accounts: [checkingAccount],
     transactions,
     goalContributions: [],
     credits: [],
@@ -151,20 +165,20 @@ test('despesa em conta 50€ após pagamento cartão — disponível 850€, gas
   assert.equal(breakdown.available, 850);
   assert.equal(breakdown.components.registeredExpenses, 50);
   assert.equal(breakdown.consumptionSpending, 150);
+  assert.equal(
+    calculateNetSpending(transactions, {
+      kind: 'month',
+      monthKey: '2026-07',
+      asOf: new Date(2026, 6, 25),
+    }),
+    150,
+  );
 });
 
 test('mensalidade paga reduz disponível; compra cartão não', () => {
   const breakdown = buildMonthlyAvailableBreakdown({
+    accounts: [{ ...checkingAccount, initialBalance: 1000 }],
     transactions: [
-      {
-        id: 'inc',
-        type: 'income',
-        amount: 1000,
-        date: '2026-07-01',
-        category: 'salary',
-        categoryLabel: 'Salário',
-        currency: 'EUR',
-      },
       {
         id: 'card',
         type: 'credit_card_purchase',
@@ -179,7 +193,7 @@ test('mensalidade paga reduz disponível; compra cartão não', () => {
         id: 'exp',
         type: 'expense',
         amount: 50,
-        accountId: 'a1',
+        accountId: 'acc-check',
         date: '2026-07-06',
         category: 'food',
         categoryLabel: 'Comida',

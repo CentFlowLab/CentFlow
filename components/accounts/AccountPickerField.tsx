@@ -14,22 +14,22 @@ type AccountPickerFieldProps = {
   onCreateAccount?: () => void;
 };
 
-function labelsForType(type: TransactionType | undefined) {
+function labelsForType(type: TransactionType | undefined, accountName?: string) {
   if (type === 'income') {
     return {
       label: 'Conta de destino',
-      placeholder: 'Onde entrou o dinheiro',
+      hint: accountName ? `Vai entrar em ${accountName}` : 'Onde entrou o dinheiro',
     };
   }
   if (type === 'expense') {
     return {
       label: 'Conta de origem',
-      placeholder: 'De onde saiu o dinheiro',
+      hint: accountName ? `Vai sair de ${accountName}` : 'De onde saiu o dinheiro',
     };
   }
   return {
     label: 'Conta',
-    placeholder: 'Escolhe uma conta',
+    hint: accountName ? accountName : 'Escolhe uma conta',
   };
 }
 
@@ -41,10 +41,11 @@ export function AccountPickerField({
 }: AccountPickerFieldProps) {
   const { data: accounts = [] } = useAccountsWithBalances();
   const activeAccounts = accounts.filter((account) => account.isActive);
-  const copy = labelsForType(transactionType);
 
   const soleAccountId = activeAccounts.length === 1 ? activeAccounts[0]?.id : undefined;
   const effectiveValue = value ?? soleAccountId;
+  const selectedAccount = activeAccounts.find((account) => account.id === effectiveValue);
+  const copy = labelsForType(transactionType, selectedAccount?.name);
 
   useEffect(() => {
     if (!soleAccountId || value) return;
@@ -77,7 +78,7 @@ export function AccountPickerField({
     <View style={styles.container}>
       <Text variant="label">{copy.label}</Text>
       <Text variant="caption" color="textMuted">
-        {copy.placeholder}
+        {copy.hint}
       </Text>
       <ScrollView
         horizontal

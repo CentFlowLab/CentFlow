@@ -1,9 +1,22 @@
+import type { BankAccount } from '@/lib/domain/account.types';
 import type { Subscription } from '@/lib/domain/assets.types';
 import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import type { Credit } from '@/lib/domain/types';
 import type { Transaction } from '@/lib/domain/transaction.types';
+import {
+  calculateBudgetTransferFlow,
+  getBudgetAccountIds,
+  partitionAccountsByBudget,
+  sumBudgetAccountBalances,
+  toBudgetAccountSnapshots,
+} from '@/lib/domain/financial/budget-accounts';
+import { enrichAccountsWithBalances } from '@/lib/domain/financial/accounts';
 import { getMonthKey } from '@/lib/domain/financial/dates';
-import { calculateMonthlyAvailableCashImpact, calculateNetSpending, getIncomeTotalFromLedger } from '@/lib/domain/financial/ledger-impact';
+import {
+  calculateMonthlyAvailableCashImpact,
+  calculateNetSpending,
+  getIncomeTotalFromLedger,
+} from '@/lib/domain/financial/ledger-impact';
 import type { LoanPaymentRecord } from '@/lib/domain/financial/loan-payments';
 import { sumLoanPaymentsInMonth } from '@/lib/domain/financial/loan-payments';
 import {
@@ -25,6 +38,7 @@ function isDueThisMonth(dueDate: string | undefined, monthKey: string, asOf: Dat
 }
 
 export type BuildMonthlyAvailableInput = {
+  accounts: BankAccount[];
   transactions: Transaction[];
   goalContributions: GoalContribution[];
   credits: Credit[];
@@ -38,19 +52,40 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
   const monthKey = getMonthKey(reference);
   const period = { kind: 'month' as const, monthKey, asOf: reference };
 
+  const accountsWithBalances = enrichAccountsWithBalances(
+    input.accounts,
+    input.transactions,
+    input.goalContributions,
+    input.loanPayments,
+  );
+
+  const { inBudget, outOfBudget } = partitionAccountsByBudget(accountsWithBalances);
+  const budgetAccountIds = getBudgetAccountIds(accountsWithBalances);
+  const budgetAccountBalance = sumBudgetAccountBalances(accountsWithBalances);
+
   const occurred = filterOccurredInCalendarMonth(input.transactions, reference);
 
-  const incomeReceived = getIncomeTotalFromLedger(occurred, period);
-  const cashImpact = calculateMonthlyAvailableCashImpact(occurred, period);
+  const incomeReceived = getIncomeTotalFromLedger(occurred, period, budgetAccountIds);
+  const cashImpact = calculateMonthlyAvailableCashImpact(occurred, period, budgetAccountIds);
   const consumptionSpending = calculateNetSpending(occurred, period);
+  const { movedOutOfBudget, movedIntoBudget } = calculateBudgetTransferFlow(
+    occurred,
+    budgetAccountIds,
+    period,
+  );
 
   const goalReserved = input.goalContributions
     .filter((row) => (row.kind ?? 'contribution') === 'contribution')
     .filter((row) => row.createdAt.startsWith(monthKey))
+    .filter((row) => row.accountId != null && budgetAccountIds.has(row.accountId))
     .reduce((sum, row) => sum + row.amount, 0);
 
+  const budgetLoanPayments = input.loanPayments.filter(
+    (row) => row.accountId != null && budgetAccountIds.has(row.accountId),
+  );
+
   const { monthlyTotal, amortizationTotal, interestTotal, paidCreditIds } =
-    sumLoanPaymentsInMonth(input.loanPayments, monthKey);
+    sumLoanPaymentsInMonth(budgetLoanPayments, monthKey);
 
   const paidSubscriptionIds = collectPaidSubscriptionIds(
     input.subscriptions,
@@ -92,6 +127,7 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
 
   return calculateMonthlyAvailableBreakdown(
     {
+      budgetAccountBalance,
       incomeReceived,
       registeredExpenses: cashImpact.accountExpenses,
       creditCardPayments: cashImpact.creditCardPayments,
@@ -101,18 +137,30 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
       loanPaymentsPaid: monthlyTotal,
       loanAmortizationsPaid: amortizationTotal,
       financialCharges: interestTotal,
+      movedOutOfBudget,
+      movedIntoBudget,
       referenceDate: reference,
       consumptionSpending,
     },
     obligations,
+    {
+      included: toBudgetAccountSnapshots(inBudget),
+      excluded: toBudgetAccountSnapshots(outOfBudget),
+    },
   );
 }
 
 export function sumIncomeReceived(
   transactions: Transaction[],
   referenceDate: Date,
+  budgetAccountIds?: Set<string>,
 ): number {
   return transactions
     .filter((tx) => incomeCountsForBudgetMonth(tx, referenceDate))
+    .filter(
+      (tx) =>
+        !budgetAccountIds ||
+        (tx.accountId != null && budgetAccountIds.has(tx.accountId)),
+    )
     .reduce((sum, tx) => sum + tx.amount, 0);
 }

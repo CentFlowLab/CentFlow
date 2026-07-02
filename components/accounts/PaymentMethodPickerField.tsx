@@ -80,7 +80,7 @@ export function PaymentMethodPickerField({
       ? `Vai aumentar a dívida do cartão ${cardName}`
       : value?.kind === 'account' && accountName
         ? `Vai sair de ${accountName}`
-        : 'Compras no cartão contam como despesa agora. O pagamento do cartão apenas liquida a dívida.';
+        : 'Escolhe conta ou cartão. Compras no cartão não reduzem o saldo da conta agora.';
 
   return (
     <View style={styles.container}>

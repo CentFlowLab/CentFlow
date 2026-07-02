@@ -198,10 +198,16 @@ export function getExpenseTotalFromLedger(
 export function getIncomeTotalFromLedger(
   transactions: TransactionLike[],
   period: FinancialPeriod,
+  budgetAccountIds?: Set<string>,
 ): number {
   return roundMoney(
     filterTransactionsByPeriod(transactions as Transaction[], period)
       .filter(countsAsBudgetIncome)
+      .filter(
+        (tx) =>
+          !budgetAccountIds ||
+          (tx.accountId != null && budgetAccountIds.has(tx.accountId)),
+      )
       .reduce((sum, tx) => addMoney(sum, tx.amount), 0),
   );
 }
@@ -210,6 +216,7 @@ export function getIncomeTotalFromLedger(
 export function calculateMonthlyAvailableCashImpact(
   transactions: TransactionLike[],
   period: FinancialPeriod,
+  budgetAccountIds?: Set<string>,
 ): {
   accountExpenses: number;
   creditCardPayments: number;
@@ -225,13 +232,23 @@ export function calculateMonthlyAvailableCashImpact(
 
     switch (kind) {
       case 'expense':
-        accountExpenses = addMoney(accountExpenses, amount);
+        if (
+          !budgetAccountIds ||
+          (tx.accountId != null && budgetAccountIds.has(tx.accountId))
+        ) {
+          accountExpenses = addMoney(accountExpenses, amount);
+        }
         break;
       case 'credit_card_purchase':
         creditCardPurchases = addMoney(creditCardPurchases, amount);
         break;
       case 'credit_card_payment':
-        creditCardPayments = addMoney(creditCardPayments, amount);
+        if (
+          !budgetAccountIds ||
+          (tx.accountId != null && budgetAccountIds.has(tx.accountId))
+        ) {
+          creditCardPayments = addMoney(creditCardPayments, amount);
+        }
         break;
       default:
         break;
