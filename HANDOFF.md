@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-02T18:18:23.113Z -->
-<!-- Git: af854ad (2026-07-02T19:00:00+01:00) -->
+<!-- Última geração: 2026-07-03T21:27:05.096Z -->
+<!-- Git: c6038f7 (2026-07-02T19:18:39+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-02T18:18:23.113Z |
+| Última geração | 2026-07-03T21:27:05.096Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `af854ad` (2026-07-02T19:00:00+01:00) |
+| Git commit | `c6038f7` (2026-07-02T19:18:39+01:00) |
 
 ---
 
@@ -258,6 +258,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AddTransactionModal.tsx
     CategoryField.tsx
     ConfirmReceiptModal.tsx
+    EditCategorySheet.tsx
     EditTransactionModal.tsx
     ImportCsvModal.tsx
     MovementFilterChips.tsx
@@ -466,6 +467,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     calculateMonthlySpendable.test.ts
     calculateMonthlySpendable.ts
     monthly-spendable-month-boundary.test.ts
+  categories/
+    emoji-map.test.ts
+    emoji-map.ts
   config/
     app-variant.ts
     data-mode.ts
@@ -612,6 +616,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     net-worth-projection.test.ts
     net-worth.service.test.ts
     net-worth.service.ts
+    payment-method.ts
     receipt-confirmation.schema.ts
     receipt-confirmation.ts
     receipt-items.schema.ts
@@ -761,6 +766,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     layout.ts
     spacing.ts
     typography.ts
+  transactions/
+    __tests__/
+      filter.test.ts
   types/
     analysis.api.ts
     dashboard.api.ts

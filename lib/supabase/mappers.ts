@@ -1,4 +1,9 @@
 import { getCategoryLabel } from '@/lib/data/transaction-categories';
+import {
+  countsAsBudgetExpense,
+  countsAsBudgetIncome,
+  resolveTransactionKind,
+} from '@/lib/domain/financial/transaction-kind';
 import type {
   ReceiptConfirmationInput,
   ReceiptDraft,
@@ -204,7 +209,12 @@ export function filterTransactions(
   filter: TransactionFilter,
 ): Transaction[] {
   if (filter === 'all') return transactions;
-  return transactions.filter((t) => t.type === filter);
+  return transactions.filter((tx) => {
+    if (filter === 'expense') return countsAsBudgetExpense(tx);
+    if (filter === 'income') return countsAsBudgetIncome(tx);
+    if (filter === 'transfer') return resolveTransactionKind(tx) === 'transfer';
+    return false;
+  });
 }
 
 export type AuthCredentials = LoginCredentials | RegisterCredentials;

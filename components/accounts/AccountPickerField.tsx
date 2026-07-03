@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
@@ -42,13 +42,15 @@ export function AccountPickerField({
   const { data: accounts = [] } = useAccountsWithBalances();
   const activeAccounts = accounts.filter((account) => account.isActive);
 
+  const autoAssignedRef = useRef(false);
   const soleAccountId = activeAccounts.length === 1 ? activeAccounts[0]?.id : undefined;
-  const effectiveValue = value ?? soleAccountId;
+  const effectiveValue = value ?? (autoAssignedRef.current ? undefined : soleAccountId);
   const selectedAccount = activeAccounts.find((account) => account.id === effectiveValue);
   const copy = labelsForType(transactionType, selectedAccount?.name);
 
   useEffect(() => {
-    if (!soleAccountId || value) return;
+    if (!soleAccountId || value !== undefined || autoAssignedRef.current) return;
+    autoAssignedRef.current = true;
     onChange(soleAccountId);
   }, [soleAccountId, value, onChange]);
 
@@ -80,12 +82,25 @@ export function AccountPickerField({
       <Text variant="caption" color="textMuted">
         {copy.hint}
       </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chips}
-        keyboardShouldPersistTaps="handled">
-        {activeAccounts.map((account) => {
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}
+            keyboardShouldPersistTaps="handled">
+            <Pressable
+              onPress={() => {
+                autoAssignedRef.current = true;
+                onChange(undefined);
+              }}
+              style={[styles.chip, !effectiveValue && styles.chipActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: !effectiveValue }}
+              accessibilityLabel="Sem conta">
+              <Text variant="caption" style={!effectiveValue ? styles.chipTextActive : undefined}>
+                Sem conta
+              </Text>
+            </Pressable>
+            {activeAccounts.map((account) => {
           const selected = effectiveValue === account.id;
           return (
             <Pressable

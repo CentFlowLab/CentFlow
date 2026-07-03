@@ -210,6 +210,53 @@ export async function deleteTransaction(transactionId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function countTransactionsByCategory(category: string): Promise<number> {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error('Utilizador não autenticado');
+
+  const { count, error } = await supabase
+    .from('transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('category', category);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function reassignTransactionsCategory(
+  fromCategory: string,
+  toCategory: string,
+): Promise<number> {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error('Utilizador não autenticado');
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .update({ category: toCategory })
+    .eq('user_id', user.id)
+    .eq('category', fromCategory)
+    .select('id');
+
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}
+
+export async function renameTransactionsCategory(
+  fromCategory: string,
+  toCategory: string,
+): Promise<number> {
+  return reassignTransactionsCategory(fromCategory, toCategory);
+}
+
 export async function createTransactionsBulk(
   inputs: CreateTransactionInput[],
 ): Promise<Transaction[]> {

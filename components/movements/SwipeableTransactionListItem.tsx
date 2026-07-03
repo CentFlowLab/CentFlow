@@ -90,7 +90,9 @@ export function SwipeableTransactionListItem({
       : isCardRefund
         ? 'Reembolso cartão'
         : isCardExpense
-          ? `${transaction.categoryLabel} · Cartão`
+          ? cardName
+            ? `${transaction.categoryLabel} · ${cardName}`
+            : transaction.categoryLabel
           : fromName
             ? `${transaction.categoryLabel} · ${fromName}`
             : transaction.categoryLabel;

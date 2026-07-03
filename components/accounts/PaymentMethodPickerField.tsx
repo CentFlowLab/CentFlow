@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
@@ -9,12 +9,13 @@ import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
-export type PaymentMethodKind = 'account' | 'card';
+export type {
+  PaymentMethodKind,
+  PaymentMethodSelection,
+} from '@/lib/domain/payment-method';
+export { paymentSelectionToFields } from '@/lib/domain/payment-method';
 
-export type PaymentMethodSelection =
-  | { kind: 'account'; id: string }
-  | { kind: 'card'; id: string }
-  | undefined;
+import type { PaymentMethodKind, PaymentMethodSelection } from '@/lib/domain/payment-method';
 
 type PaymentMethodPickerFieldProps = {
   value?: PaymentMethodSelection;
@@ -23,15 +24,6 @@ type PaymentMethodPickerFieldProps = {
   /** Limita seleção a um tipo (ex.: reembolso só no cartão). */
   restrictTo?: PaymentMethodKind;
 };
-
-export function paymentSelectionToFields(selection: PaymentMethodSelection): {
-  accountId: string | null;
-  creditId: string | null;
-} {
-  if (!selection) return { accountId: null, creditId: null };
-  if (selection.kind === 'account') return { accountId: selection.id, creditId: null };
-  return { accountId: null, creditId: selection.id };
-}
 
 export function PaymentMethodPickerField({
   value,
@@ -53,6 +45,7 @@ export function PaymentMethodPickerField({
       (activeAccounts.length > 0 ? 'account' : cards.length > 0 ? 'card' : 'account'),
   );
 
+  const autoAssignedRef = useRef(false);
   const soleAccountId = activeAccounts.length === 1 ? activeAccounts[0]?.id : undefined;
 
   useEffect(() => {
@@ -60,7 +53,8 @@ export function PaymentMethodPickerField({
       setMode(value.kind);
       return;
     }
-    if (mode === 'account' && soleAccountId) {
+    if (mode === 'account' && soleAccountId && !autoAssignedRef.current) {
+      autoAssignedRef.current = true;
       onChange({ kind: 'account', id: soleAccountId });
     }
   }, [value, mode, soleAccountId, onChange]);
@@ -141,6 +135,19 @@ export function PaymentMethodPickerField({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chips}
             keyboardShouldPersistTaps="handled">
+            <Pressable
+              onPress={() => {
+                autoAssignedRef.current = true;
+                onChange(undefined);
+              }}
+              style={[styles.chip, !value && styles.chipActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: !value }}
+              accessibilityLabel="Sem conta">
+              <Text variant="caption" style={!value ? styles.chipTextActive : undefined}>
+                Sem conta
+              </Text>
+            </Pressable>
             {activeAccounts.map((account) => {
               const selected = selectedAccount === account.id;
               return (

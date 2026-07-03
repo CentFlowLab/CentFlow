@@ -332,3 +332,47 @@ async function resolveTransactionUserId(): Promise<string | null> {
   } = await supabase.auth.getUser();
   return user?.id ?? null;
 }
+
+export async function countTransactionsByCategory(category: string): Promise<number> {
+  if (isMockAuthEnabled()) {
+    const all = await fetchMockTransactions('all');
+    return all.filter((tx) => tx.category === category).length;
+  }
+  if (isSupabaseEnabled()) {
+    return supabaseTransactions.countTransactionsByCategory(category);
+  }
+  return 0;
+}
+
+export async function reassignTransactionsCategory(
+  fromCategory: string,
+  toCategory: string,
+): Promise<number> {
+  if (isMockAuthEnabled()) {
+    const all = await fetchMockTransactions('all');
+    const matches = all.filter((tx) => tx.category === fromCategory);
+    for (const tx of matches) {
+      await updateMockTransaction(tx.id, {
+        type: tx.type,
+        amount: tx.amount,
+        category: toCategory,
+        description: tx.description,
+        date: tx.date,
+        accountId: tx.accountId ?? null,
+        creditId: tx.creditId ?? null,
+      });
+    }
+    return matches.length;
+  }
+  if (isSupabaseEnabled()) {
+    return supabaseTransactions.reassignTransactionsCategory(fromCategory, toCategory);
+  }
+  return 0;
+}
+
+export async function renameTransactionsCategory(
+  fromCategory: string,
+  toCategory: string,
+): Promise<number> {
+  return reassignTransactionsCategory(fromCategory, toCategory);
+}

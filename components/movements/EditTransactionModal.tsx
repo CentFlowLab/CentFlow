@@ -68,22 +68,32 @@ export function EditTransactionModal({
 
   const isDirty = useMemo(() => {
     if (!visible || !transaction) return false;
-    return formFieldsDiffer(
-      {
-        amount: values.amount,
-        category: values.category,
-        description: values.description,
-        date: values.date,
-        accountId: values.accountId ?? '',
-      },
-      {
-        amount: baselineRef.current.amount,
-        category: baselineRef.current.category,
-        description: baselineRef.current.description,
-        date: baselineRef.current.date,
-        accountId: baselineRef.current.accountId ?? '',
-      },
-    ) || values.type !== baselineRef.current.type;
+    const paymentKey = values.paymentMethod
+      ? `${values.paymentMethod.kind}:${values.paymentMethod.id}`
+      : '';
+    const baselinePaymentKey = baselineRef.current.paymentMethod
+      ? `${baselineRef.current.paymentMethod.kind}:${baselineRef.current.paymentMethod.id}`
+      : '';
+    return (
+      formFieldsDiffer(
+        {
+          amount: values.amount,
+          category: values.category,
+          description: values.description,
+          date: values.date,
+          accountId: values.accountId ?? '',
+        },
+        {
+          amount: baselineRef.current.amount,
+          category: baselineRef.current.category,
+          description: baselineRef.current.description,
+          date: baselineRef.current.date,
+          accountId: baselineRef.current.accountId ?? '',
+        },
+      ) ||
+      values.type !== baselineRef.current.type ||
+      paymentKey !== baselinePaymentKey
+    );
   }, [visible, transaction, values]);
 
   if (!transaction) return null;

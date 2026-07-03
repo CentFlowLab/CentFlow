@@ -1,10 +1,11 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { DraggableBottomSheet } from '@/components/layout';
 import { Text } from '@/components/ui';
-import { useCustomCategories } from '@/hooks/useCustomCategories';
+import { useCustomCategories, type CustomCategory } from '@/hooks/useCustomCategories';
+import { getAutoEmoji, resolveCategoryEmoji } from '@/lib/categories/emoji-map';
 import {
   CUSTOM_CATEGORY_ICON,
   getCategoryGroups,
@@ -13,6 +14,8 @@ import {
 } from '@/lib/data/transaction-categories';
 import type { CashTransactionType } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
+
+import { EditCategorySheet } from './EditCategorySheet';
 
 type CategoryFieldProps = {
   type: CashTransactionType;
@@ -29,21 +32,32 @@ function normalize(text: string): string {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
+function findCustomCategory(
+  categories: CustomCategory[],
+  value: string,
+): CustomCategory | undefined {
+  return categories.find((c) => c.name.toLowerCase() === value.toLowerCase());
+}
+
 /** Linha do formulário que mostra a categoria escolhida e abre o seletor. */
 export function CategoryField({ type, value, onChange, label = 'Categoria', error }: CategoryFieldProps) {
   const [pickerVisible, setPickerVisible] = useState(false);
   const { customCategories } = useCustomCategories(type);
 
-  const selected = useMemo<{ label: string; icon: SymbolViewProps['name'] } | null>(() => {
+  const selected = useMemo<{ label: string; icon?: SymbolViewProps['name']; emoji?: string } | null>(() => {
     if (!value) return null;
     for (const group of getCategoryGroups(type)) {
       const found = group.items.find((item) => item.id === value);
       if (found) return { label: found.label, icon: found.icon };
     }
-    if (customCategories.some((c) => c.toLowerCase() === value.toLowerCase())) {
-      return { label: value, icon: CUSTOM_CATEGORY_ICON };
+    const custom = findCustomCategory(customCategories, value);
+    if (custom) {
+      return { label: custom.name, emoji: resolveCategoryEmoji(custom.name, custom.emoji) };
     }
-    return { label: value, icon: CUSTOM_CATEGORY_ICON };
+    return {
+      label: value,
+      emoji: resolveCategoryEmoji(value),
+    };
   }, [value, type, customCategories]);
 
   return (
@@ -58,7 +72,13 @@ export function CategoryField({ type, value, onChange, label = 'Categoria', erro
         accessibilityLabel={selected ? `Categoria: ${selected.label}` : 'Escolher categoria'}>
         {selected ? (
           <>
-            <SymbolView name={selected.icon} tintColor={colors.primary} size={22} />
+            {selected.emoji ? (
+              <Text style={styles.emojiIcon}>{selected.emoji}</Text>
+            ) : selected.icon ? (
+              <SymbolView name={selected.icon} tintColor={colors.primary} size={22} />
+            ) : (
+              <SymbolView name={CUSTOM_CATEGORY_ICON} tintColor={colors.primary} size={22} />
+            )}
             <Text variant="bodyMedium" style={styles.rowLabel}>
               {selected.label}
             </Text>
@@ -106,22 +126,30 @@ function CategoryRow({
   item,
   selected,
   onPress,
+  onLongPress,
 }: {
-  item: TransactionCategory;
+  item: TransactionCategory & { emoji?: string; isCustom?: boolean };
   selected: boolean;
   onPress: () => void;
+  onLongPress?: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={400}
       style={({ pressed }) => [styles.itemRow, pressed && styles.rowPressed]}
       accessibilityRole="button"
       accessibilityLabel={item.label}>
-      <SymbolView
-        name={item.icon}
-        tintColor={selected ? colors.primary : colors.textSecondary}
-        size={22}
-      />
+      {item.emoji ? (
+        <Text style={styles.rowEmoji}>{item.emoji}</Text>
+      ) : (
+        <SymbolView
+          name={item.icon}
+          tintColor={selected ? colors.primary : colors.textSecondary}
+          size={22}
+        />
+      )}
       <Text variant="bodyMedium" color={selected ? 'primary' : undefined} style={styles.rowLabel}>
         {item.label}
       </Text>
@@ -138,19 +166,29 @@ function CategoryRow({
 
 function CategoryPickerSheet({ visible, type, value, onClose, onSelect }: CategoryPickerSheetProps) {
   const [query, setQuery] = useState('');
-  const { customCategories, addCustomCategory } = useCustomCategories(type);
+  const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
+  const {
+    customCategories,
+    addCustomCategory,
+    updateCustomCategory,
+    deleteCustomCategory,
+    getUsageCount,
+  } = useCustomCategories(type);
 
   const trimmedQuery = query.trim();
   const normalizedQuery = normalize(trimmedQuery);
+  const suggestedEmoji = trimmedQuery ? getAutoEmoji(trimmedQuery) : null;
 
   const customGroup = useMemo<CategoryGroup | null>(() => {
     if (customCategories.length === 0) return null;
     return {
       title: 'As minhas categorias',
-      items: customCategories.map((labelText) => ({
-        id: labelText,
-        label: labelText,
+      items: customCategories.map((category) => ({
+        id: category.name,
+        label: category.name,
         icon: CUSTOM_CATEGORY_ICON,
+        emoji: resolveCategoryEmoji(category.name, category.emoji),
+        isCustom: true,
       })),
     };
   }, [customCategories]);
@@ -174,76 +212,149 @@ function CategoryPickerSheet({ visible, type, value, onClose, onSelect }: Catego
 
   async function handleUseCustom() {
     if (!trimmedQuery) return;
-    await addCustomCategory(trimmedQuery);
+    await addCustomCategory(trimmedQuery, {
+      emoji: suggestedEmoji ?? undefined,
+    });
     onSelect(trimmedQuery);
     setQuery('');
   }
 
+  function handleCustomLongPress(category: CustomCategory) {
+    if (Platform.OS === 'web') {
+      const action = globalThis.prompt?.(
+        `Categoria «${category.name}»\nEscreve: editar | eliminar`,
+      );
+      if (action?.toLowerCase() === 'editar') setEditingCategory(category);
+      if (action?.toLowerCase() === 'eliminar') void confirmDelete(category);
+      return;
+    }
+
+    Alert.alert(category.name, undefined, [
+      { text: 'Editar', onPress: () => setEditingCategory(category) },
+      { text: 'Eliminar', style: 'destructive', onPress: () => void confirmDelete(category) },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  }
+
+  async function confirmDelete(category: CustomCategory) {
+    const count = await getUsageCount(category.name);
+    const message =
+      count > 0
+        ? `Tens ${count} movimento${count === 1 ? '' : 's'} com esta categoria. Ao eliminar, passam para «Outros». Continuar?`
+        : 'Tens a certeza que queres eliminar esta categoria?';
+
+    if (Platform.OS === 'web') {
+      if (typeof globalThis.confirm === 'function' && globalThis.confirm(message)) {
+        await deleteCustomCategory(category.name);
+        if (value.toLowerCase() === category.name.toLowerCase()) onSelect('other');
+      }
+      return;
+    }
+
+    Alert.alert('Eliminar categoria', message, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteCustomCategory(category.name);
+          if (value.toLowerCase() === category.name.toLowerCase()) onSelect('other');
+        },
+      },
+    ]);
+  }
+
   return (
-    <DraggableBottomSheet
-      visible={visible}
-      onClose={() => {
-        setQuery('');
-        onClose();
-      }}
-      maxHeight="88%"
-      scrollContentStyle={styles.sheetContent}
-      header={() => (
-        <View style={styles.sheetHeader}>
-          <Text variant="h3">Categoria</Text>
-          <View style={styles.searchRow}>
-            <SymbolView
-              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
-              tintColor={colors.textMuted}
-              size={18}
-            />
-            <TextInput
-              style={styles.searchInput}
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Procurar categoria..."
-              placeholderTextColor={colors.textMuted}
-              autoFocus
-              autoCorrect={false}
-              returnKeyType="search"
-            />
-          </View>
-        </View>
-      )}>
-      {hasResults ? (
-        groups.map((group) => (
-          <View key={group.title} style={styles.group}>
-            <Text variant="label" color="textMuted" style={styles.groupTitle}>
-              {group.title.toUpperCase()}
-            </Text>
-            {group.items.map((item) => (
-              <CategoryRow
-                key={`${group.title}-${item.id}`}
-                item={item}
-                selected={item.id === value}
-                onPress={() => onSelect(item.id)}
+    <>
+      <DraggableBottomSheet
+        visible={visible}
+        onClose={() => {
+          setQuery('');
+          onClose();
+        }}
+        maxHeight="88%"
+        scrollContentStyle={styles.sheetContent}
+        header={() => (
+          <View style={styles.sheetHeader}>
+            <Text variant="h3">Categoria</Text>
+            <View style={styles.searchRow}>
+              <SymbolView
+                name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+                tintColor={colors.textMuted}
+                size={18}
               />
-            ))}
+              <TextInput
+                style={styles.searchInput}
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Procurar categoria..."
+                placeholderTextColor={colors.textMuted}
+                autoFocus
+                autoCorrect={false}
+                returnKeyType="search"
+              />
+              {suggestedEmoji && trimmedQuery ? (
+                <Text style={styles.searchEmojiHint}>{suggestedEmoji}</Text>
+              ) : null}
+            </View>
           </View>
-        ))
-      ) : (
-        <View style={styles.emptyState}>
-          <Text variant="bodyMedium" color="textSecondary">
-            Sem resultados para «{trimmedQuery}»
-          </Text>
-          <Pressable
-            onPress={handleUseCustom}
-            style={({ pressed }) => [styles.customCta, pressed && styles.rowPressed]}
-            accessibilityRole="button"
-            accessibilityLabel={`Usar ${trimmedQuery} como categoria personalizada`}>
-            <SymbolView name={CUSTOM_CATEGORY_ICON} tintColor={colors.primary} size={20} />
-            <Text variant="bodyMedium" color="primary" style={styles.rowLabel}>
-              Usar «{trimmedQuery}» como categoria personalizada
+        )}>
+        {hasResults ? (
+          groups.map((group) => (
+            <View key={group.title} style={styles.group}>
+              <Text variant="label" color="textMuted" style={styles.groupTitle}>
+                {group.title.toUpperCase()}
+              </Text>
+              {group.items.map((item) => {
+                const custom = group.title === 'As minhas categorias'
+                  ? findCustomCategory(customCategories, item.id)
+                  : undefined;
+                return (
+                  <CategoryRow
+                    key={`${group.title}-${item.id}`}
+                    item={item as TransactionCategory & { emoji?: string; isCustom?: boolean }}
+                    selected={item.id === value}
+                    onPress={() => onSelect(item.id)}
+                    onLongPress={
+                      custom ? () => handleCustomLongPress(custom) : undefined
+                    }
+                  />
+                );
+              })}
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text variant="bodyMedium" color="textSecondary">
+              Sem resultados para «{trimmedQuery}»
             </Text>
-          </Pressable>
-        </View>
-      )}
-    </DraggableBottomSheet>
+            <Pressable
+              onPress={handleUseCustom}
+              style={({ pressed }) => [styles.customCta, pressed && styles.rowPressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Usar ${trimmedQuery} como categoria personalizada`}>
+              <Text style={styles.ctaEmoji}>{suggestedEmoji ?? '🏷️'}</Text>
+              <Text variant="bodyMedium" color="primary" style={styles.rowLabel}>
+                Usar «{trimmedQuery}» como categoria personalizada
+              </Text>
+            </Pressable>
+          </View>
+        )}
+      </DraggableBottomSheet>
+
+      <EditCategorySheet
+        visible={Boolean(editingCategory)}
+        category={editingCategory}
+        onClose={() => setEditingCategory(null)}
+        onSave={async (patch) => {
+          if (!editingCategory) return;
+          await updateCustomCategory(editingCategory.name, patch);
+          if (value.toLowerCase() === editingCategory.name.toLowerCase()) {
+            onSelect(patch.name);
+          }
+        }}
+      />
+    </>
   );
 }
 
@@ -271,6 +382,16 @@ const styles = StyleSheet.create({
   rowLabel: {
     flex: 1,
   },
+  emojiIcon: {
+    fontSize: 22,
+    width: 24,
+    textAlign: 'center',
+  },
+  rowEmoji: {
+    fontSize: 22,
+    width: 24,
+    textAlign: 'center',
+  },
   sheetHeader: {
     gap: spacing.md,
     marginBottom: spacing.md,
@@ -291,6 +412,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
     paddingVertical: 0,
+  },
+  searchEmojiHint: {
+    fontSize: 20,
   },
   sheetContent: {
     paddingBottom: spacing['2xl'],
@@ -324,5 +448,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary,
     backgroundColor: colors.primaryMuted,
+  },
+  ctaEmoji: {
+    fontSize: 20,
   },
 });

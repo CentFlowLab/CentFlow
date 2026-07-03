@@ -1,4 +1,9 @@
 import { getCategoryLabel } from '@/lib/data/transaction-categories';
+import {
+  countsAsBudgetExpense,
+  countsAsBudgetIncome,
+  resolveTransactionKind,
+} from '@/lib/domain/financial/transaction-kind';
 import type { Subscription } from '@/lib/domain/assets.types';
 import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
 
@@ -57,7 +62,12 @@ export function filterTransactionsBySearch(
   let result = transactions;
 
   if (options.typeFilter !== 'all') {
-    result = result.filter((tx) => tx.type === options.typeFilter);
+    result = result.filter((tx) => {
+      if (options.typeFilter === 'expense') return countsAsBudgetExpense(tx);
+      if (options.typeFilter === 'income') return countsAsBudgetIncome(tx);
+      if (options.typeFilter === 'transfer') return resolveTransactionKind(tx) === 'transfer';
+      return false;
+    });
   }
 
   if (!query) return result;
