@@ -220,7 +220,6 @@ export function getCategoriesForType(type: TransactionType): TransactionCategory
 export function getCategoryLabel(categoryId: string, type: TransactionType): string {
   if (type === 'transfer') return 'Transferência';
   if (type === 'credit_payment' || type === 'credit_card_payment') return 'Pagamento de cartão';
-  if (type === 'credit_card_purchase') return 'Compra no cartão';
   if (type === 'credit_card_refund') return 'Reembolso no cartão';
   if (type === 'balance_adjustment') return 'Ajuste de saldo';
   const catalogType = type === 'income' ? 'income' : 'expense';

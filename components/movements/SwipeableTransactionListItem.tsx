@@ -5,9 +5,15 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Card, Text } from '@/components/ui';
 import { getCategoryById } from '@/lib/data/transaction-categories';
 import { resolveTransactionKind } from '@/lib/domain/financial/transaction-kind';
+import {
+  buildMovementSubtitle,
+  getDisplayCategoryLabel,
+  getMovementBadgeLabel,
+  resolveMovementSourceName,
+} from '@/lib/domain/transaction-display';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { colors, radius, spacing } from '@/lib/theme';
-import { formatCurrency, formatTransactionDateLabel } from '@/lib/utils/format';
+import { formatCurrency } from '@/lib/utils/format';
 
 const ACTION_ICON_COLOR = '#FFFFFF';
 
@@ -39,10 +45,11 @@ export function SwipeableTransactionListItem({
       ? colors.success
       : colors.danger;
   const prefix = isNonCashMovement ? '' : isIncome ? '+' : '−';
-  const category = getCategoryById(
-    transaction.category,
-    isCreditPayment || isCardExpense || isCardRefund ? 'expense' : transaction.type,
-  );
+
+  const categoryCatalogType =
+    isCreditPayment || isCardExpense || isCardRefund ? 'expense' : transaction.type;
+  const category = getCategoryById(transaction.category, categoryCatalogType);
+
   const transferIcon = {
     ios: 'arrow.left.arrow.right',
     android: 'swap_horiz',
@@ -63,50 +70,34 @@ export function SwipeableTransactionListItem({
           web: 'more_horiz',
         };
 
+  const sourceName = resolveMovementSourceName(transaction, accountById, creditById);
+  const displayCategory = getDisplayCategoryLabel(transaction);
   const fromName = transaction.accountId ? accountById[transaction.accountId] : undefined;
   const toName = transaction.destinationAccountId
     ? accountById[transaction.destinationAccountId]
     : undefined;
-  const cardName = transaction.creditId ? creditById[transaction.creditId] : undefined;
 
   const title = isTransfer
     ? fromName && toName
       ? `${fromName} → ${toName}`
       : transaction.description?.trim() || 'Transferência entre contas'
     : isCreditPayment
-      ? cardName && fromName
-        ? `${fromName} → ${cardName}`
+      ? fromName && sourceName
+        ? `${fromName} → ${sourceName}`
         : transaction.description?.trim() || 'Pagamento de cartão'
-      : isCardRefund && cardName
-        ? `${transaction.description?.trim() || 'Reembolso'} · ${cardName}`
-      : isCardExpense && cardName
-        ? `${transaction.description?.trim() || transaction.categoryLabel} · ${cardName}`
-        : transaction.description?.trim() || transaction.categoryLabel;
-
-  const categoryLine = isTransfer
-    ? 'Transferência'
-    : isCreditPayment
-      ? 'Pagamento cartão'
       : isCardRefund
-        ? 'Reembolso cartão'
+        ? `${transaction.description?.trim() || displayCategory}${sourceName ? ` · ${sourceName}` : ''}`
         : isCardExpense
-          ? cardName
-            ? `${transaction.categoryLabel} · ${cardName}`
-            : transaction.categoryLabel
-          : fromName
-            ? `${transaction.categoryLabel} · ${fromName}`
-            : transaction.categoryLabel;
+          ? transaction.description?.trim() || displayCategory
+          : transaction.description?.trim() || displayCategory;
 
-  const dateLine = formatTransactionDateLabel(transaction.date);
-  const badgeLabel = isTransfer
-    ? 'Transferência'
-    : isCreditPayment
-      ? 'Pagamento cartão'
-      : isCardExpense
-        ? 'Cartão'
-        : transaction.recurringId
-          ? 'Recorrente'
-          : null;
+  const subtitle = buildMovementSubtitle(transaction, {
+    accountById,
+    creditById,
+    includeReceipt: hasReceipt(transaction),
+  });
+
+  const badgeLabel = getMovementBadgeLabel(transaction, accountById, creditById);
 
   function confirmDelete() {
     const message = `Tens a certeza que queres eliminar "${title}"? Esta ação não pode ser desfeita.`;
@@ -195,19 +186,15 @@ export function SwipeableTransactionListItem({
           <Text variant="bodyMedium" numberOfLines={1}>
             {title}
           </Text>
-          <Text variant="caption" color="textMuted" numberOfLines={1}>
-            {categoryLine}
-            {hasReceipt(transaction) ? ' · Talão' : ''}
-          </Text>
-          <Text variant="caption" color="textMuted" numberOfLines={1}>
-            {dateLine}
+          <Text variant="caption" color="textMuted" numberOfLines={2}>
+            {subtitle}
           </Text>
         </View>
 
         <View style={styles.trailing}>
           {badgeLabel ? (
             <View style={styles.transferBadge}>
-              <Text variant="caption" color="primary" style={styles.badgeText}>
+              <Text variant="caption" color="primary" style={styles.badgeText} numberOfLines={1}>
                 {badgeLabel}
               </Text>
             </View>
@@ -315,12 +302,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     minWidth: 88,
+    maxWidth: 120,
   },
   transferBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.sm,
     backgroundColor: colors.primaryMuted,
+    maxWidth: 120,
   },
   badgeText: {
     fontWeight: '600',

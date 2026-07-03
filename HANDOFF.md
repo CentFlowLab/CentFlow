@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-03T21:27:05.096Z -->
-<!-- Git: c6038f7 (2026-07-02T19:18:39+01:00) -->
+<!-- Última geração: 2026-07-03T21:55:47.819Z -->
+<!-- Git: 19ef042 (2026-07-03T22:27:50+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-03T21:27:05.096Z |
+| Última geração | 2026-07-03T21:55:47.819Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `c6038f7` (2026-07-02T19:18:39+01:00) |
+| Git commit | `19ef042` (2026-07-03T22:27:50+01:00) |
 
 ---
 
@@ -622,6 +622,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     receipt-items.schema.ts
     receipt.types.ts
     transaction-date.utils.ts
+    transaction-display.test.ts
+    transaction-display.ts
     transaction-form.ts
     transaction-grouping.ts
     transaction-search.test.ts
