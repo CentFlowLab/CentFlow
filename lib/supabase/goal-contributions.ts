@@ -1,9 +1,13 @@
 import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import { traceGoalContribution } from '@/lib/doctor/goal-contribution-trace';
 
+import { calculateAccountBalance } from '@/lib/domain/financial/accounts';
+import { validateGoalContribution } from '@/lib/domain/financial/goals';
+
 import type { TablesInsert } from './database.types';
 
 import { getSupabaseClient } from './client';
+import { mapTransactionRow } from './mappers';
 
 type GoalContributionRow = {
   id: string;
@@ -70,6 +74,39 @@ export async function createGoalContribution(input: {
     .single();
 
   if (goalError || !goal) throw new Error('Objetivo não encontrado');
+
+  const [{ data: accountRow, error: accountError }, { data: txRows }, { data: contributionRows }] =
+    await Promise.all([
+      supabase
+        .from('accounts')
+        .select('id, initial_balance')
+        .eq('id', input.accountId)
+        .single(),
+      supabase.from('transactions').select('*').eq('user_id', userId),
+      supabase.from('goal_contributions').select('*').eq('user_id', userId),
+    ]);
+
+  if (accountError || !accountRow) throw new Error('Conta não encontrada');
+
+  const transactions = (txRows ?? []).map((row) => mapTransactionRow(row));
+  const goalContributions = (contributionRows ?? []).map((row) => mapRow(row as GoalContributionRow));
+  const accountBalance = calculateAccountBalance({
+    account: {
+      id: accountRow.id,
+      initialBalance: Number(accountRow.initial_balance),
+    },
+    transactions,
+    goalContributions,
+  });
+
+  const validation = validateGoalContribution({
+    amount: input.amount,
+    accountBalance,
+  });
+  if (!validation.ok) {
+    traceGoalContribution('validation_fail', { reason: validation.reason }, 'warn');
+    throw new Error(validation.reason);
+  }
 
   const payload: TablesInsert<'goal_contributions'> = {
     user_id: userId,

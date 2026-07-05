@@ -46,7 +46,7 @@ export function generateAnalysisInsights(input: InsightInput): AnalysisInsight[]
         id: 'savings-rate-positive',
         type: 'achievement',
         title: 'Taxa de poupança positiva',
-        description: `Poupaste ${formatPercent(savingsRate, 0, false)} das receitas ${period}. Considera transferir para um objetivo.`,
+        description: `Poupaste ${formatPercent(savingsRate, 0, false)} das receitas ${period}. Aloca a margem a um objetivo com um toque.`,
         actionLabel: 'Ver objetivos',
         actionRoute: '/(tabs)/ativos?tab=objetivos',
       });

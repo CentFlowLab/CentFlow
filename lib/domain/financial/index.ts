@@ -39,3 +39,5 @@ export * from './assets';
 export * from './investments';
 export * from './subscriptions';
 export * from './analytics';
+export * from './category-budgets';
+export * from './savings-allocation';

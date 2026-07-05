@@ -15,7 +15,7 @@ import {
   HomePersonalizedInsightCard,
   HomePostOnboardingWelcomeCard,
 } from '@/components/dashboard';
-import { MonthlySpendableCard, MonthlySpendableSheet, CategoryBudgetAlertsCard } from '@/components/budget';
+import { MonthlySpendableCard, MonthlySpendableSheet, CategoryBudgetAlertsCard, AllocateToGoalCard } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal } from '@/components/movements';
 import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
@@ -183,6 +183,7 @@ export default function InicioScreen() {
       <>
         <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
         <CategoryBudgetAlertsCard key="budget-alerts" />
+        <AllocateToGoalCard key="allocate-goal" />
       </>
     ),
     assets: hasActivity ? (
