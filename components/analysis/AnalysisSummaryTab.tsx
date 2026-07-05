@@ -5,7 +5,6 @@ import { FinancialActionsCard } from '@/components/budget';
 import { AnalysisMetricCard } from '@/components/analysis/AnalysisMetricCard';
 import { InsightsSection } from '@/components/analysis/InsightsSection';
 import { TrendsSummaryCard } from '@/components/analysis/TrendsSummaryCard';
-import { DecisionSimulatorSection } from '@/components/simulator';
 import { Card, Text } from '@/components/ui';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
 import type { AnalysisData } from '@/lib/domain/analysis.types';
@@ -71,8 +70,6 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
       <FinancialActionsCard maxActions={4} title="Próximos passos" />
 
       <InsightsSection insights={topInsights} />
-
-      <DecisionSimulatorSection />
     </View>
   );
 }

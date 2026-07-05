@@ -14,7 +14,7 @@ import {
 } from '@/lib/domain/financial/transfers';
 import { traceTransferError, traceTransferStep } from '@/lib/doctor/transfer-flow-trace';
 import { colors, spacing } from '@/lib/theme';
-import { formatCurrency, formatInputDate } from '@/lib/utils/format';
+import { formatCurrency, toIsoDateString } from '@/lib/utils/format';
 
 type TransferAccountModalProps = {
   visible: boolean;
@@ -114,7 +114,7 @@ export function TransferAccountModal({ visible, onClose }: TransferAccountModalP
         amount: parsedAmount,
         category: 'other',
         description: note.trim() || 'Transferência entre contas',
-        date: formatInputDate(new Date()),
+        date: toIsoDateString(new Date()),
         accountId: fromAccountId,
         destinationAccountId: toAccountId,
       });

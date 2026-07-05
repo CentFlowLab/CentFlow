@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-05T16:34:04.953Z -->
-<!-- Git: ecb8108 (2026-07-05T17:20:16+01:00) -->
+<!-- Última geração: 2026-07-05T20:20:00.341Z -->
+<!-- Git: dda59f8 (2026-07-05T17:34:29+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-05T16:34:04.953Z |
+| Última geração | 2026-07-05T20:20:00.341Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `ecb8108` (2026-07-05T17:20:16+01:00) |
+| Git commit | `dda59f8` (2026-07-05T17:34:29+01:00) |
 
 ---
 

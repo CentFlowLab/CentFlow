@@ -20,8 +20,21 @@ import type {
 } from '@/lib/domain/transaction.types';
 import type { LoginCredentials, RegisterCredentials, User } from '@/lib/auth/types';
 import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
+import { inputDateToIso } from '@/lib/utils/format';
 
 import type { OcrResultRow, ReceiptRow, TransactionRow } from './database.types';
+
+const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/** Garante YYYY-MM-DD na leitura/gravação — evita ambiguidade DD-MM vs MM-DD. */
+function normalizeTransactionDate(raw: string): string {
+  const trimmed = raw.trim();
+  const fromInput = inputDateToIso(trimmed);
+  if (fromInput) return fromInput;
+  const isoMatch = trimmed.match(ISO_DATE_RE);
+  if (isoMatch) return isoMatch[0];
+  return trimmed.slice(0, 10);
+}
 
 function getInitials(name: string): string {
   return name
@@ -54,7 +67,7 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     category: row.category,
     categoryLabel: getCategoryLabel(row.category, type),
     description: row.description ?? undefined,
-    date: row.transaction_date,
+    date: normalizeTransactionDate(row.transaction_date),
     currency: row.currency ?? 'EUR',
     receiptId: row.receipt_id,
     receiptUrl: null,
@@ -151,7 +164,7 @@ export function toTransactionInsert(
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
-    transaction_date: input.date,
+    transaction_date: normalizeTransactionDate(input.date),
     currency: 'EUR',
     receipt_id: input.receiptId ?? null,
     ...(ACCOUNTS_FEATURE_ENABLED
@@ -172,7 +185,7 @@ export function toConfirmationTransactionPatch(input: ReceiptConfirmationInput) 
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
-    transaction_date: input.date,
+    transaction_date: normalizeTransactionDate(input.date),
   };
 }
 
@@ -182,7 +195,7 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
     amount: input.amount,
     category: input.category,
     description: input.description?.trim() || null,
-    transaction_date: input.date,
+    transaction_date: normalizeTransactionDate(input.date),
     ...(ACCOUNTS_FEATURE_ENABLED
       ? {
           account_id: input.accountId ?? null,
