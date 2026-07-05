@@ -1,7 +1,8 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { SubscriptionFormModal, SubscriptionsSection, MarkSubscriptionPaidModal } from '@/components/assets';
@@ -42,6 +43,10 @@ import {
   groupTransactionsByDay,
   summarizeCurrentMonth,
 } from '@/lib/domain/transaction-grouping';
+import {
+  flattenTransactionSections,
+  type MovementListRow,
+} from '@/lib/lists/flatten-transaction-sections';
 import {
   buildRecurringNameList,
   filterTransactionsBySearch,
@@ -123,6 +128,10 @@ export default function MovimentosScreen() {
     : getContextualNoTransactionsMessage(onboardingAnswers ?? null, filter);
   const isEmpty = !isLoading && !isError && transactions.length === 0;
   const sections = useMemo(() => groupTransactionsByDay(transactions), [transactions]);
+  const movementRows = useMemo(
+    () => flattenTransactionSections(sections),
+    [sections],
+  );
   const monthSummary = useMemo(
     () => summarizeCurrentMonth(data ?? []),
     [data],
@@ -300,32 +309,33 @@ export default function MovimentosScreen() {
               />
             </View>
           ) : (
-            <SectionList
-              sections={sections}
-              keyExtractor={(item) => item.id}
-              stickySectionHeadersEnabled={false}
-              renderItem={({ item }) => (
-                <SwipeableTransactionListItem
-                  transaction={item}
-                  accountById={accountById}
-                  creditById={creditById}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              )}
-              renderSectionHeader={({ section }) => (
-                <View style={styles.sectionHeader}>
-                  <Text variant="label" color="textSecondary">
-                    {section.title}
-                  </Text>
-                  <Text
-                    variant="caption"
-                    color={section.dayTotal >= 0 ? 'success' : 'textMuted'}>
-                    {section.dayTotal > 0 ? '+' : ''}
-                    {formatCurrency(section.dayTotal)}
-                  </Text>
-                </View>
-              )}
+            <FlashList
+              data={movementRows}
+              keyExtractor={(item) => item.key}
+              getItemType={(item) => item.kind}
+              renderItem={({ item }: { item: MovementListRow }) =>
+                item.kind === 'header' ? (
+                  <View style={styles.sectionHeader}>
+                    <Text variant="label" color="textSecondary">
+                      {item.title}
+                    </Text>
+                    <Text
+                      variant="caption"
+                      color={item.dayTotal >= 0 ? 'success' : 'textMuted'}>
+                      {item.dayTotal > 0 ? '+' : ''}
+                      {formatCurrency(item.dayTotal)}
+                    </Text>
+                  </View>
+                ) : (
+                  <SwipeableTransactionListItem
+                    transaction={item.transaction}
+                    accountById={accountById}
+                    creditById={creditById}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                )
+              }
               ListHeaderComponent={
                 isEmpty ? null : (
                   <View style={styles.monthSummary}>

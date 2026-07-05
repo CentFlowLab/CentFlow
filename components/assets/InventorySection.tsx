@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
@@ -17,6 +18,9 @@ type InventorySectionProps = {
   onEdit?: (item: InventoryItem) => void;
   onLearnMore?: () => void;
   onDelete?: (item: InventoryItem) => void;
+  contentBottomPadding?: number;
+  refreshing?: boolean;
+  onRefresh?: () => void | Promise<unknown>;
 };
 
 export function InventorySection({
@@ -24,6 +28,9 @@ export function InventorySection({
   onEdit,
   onLearnMore,
   onDelete,
+  contentBottomPadding = 0,
+  refreshing = false,
+  onRefresh,
 }: InventorySectionProps) {
   const { data: answers } = useOnboardingAnswers();
   const personalized = getPersonalizedEmptyStateCopy('inventario', answers ?? null);
@@ -51,25 +58,38 @@ export function InventorySection({
 
   return (
     <View style={styles.container}>
-      <Card variant="outlined" style={styles.summaryCard}>
-        <Text variant="caption" color="textMuted">
-          Valor total estimado
-        </Text>
-        <Text variant="h3" color="success">
-          {formatCurrency(totalValue)}
-        </Text>
-      </Card>
-
-      <View style={styles.list}>
-        {inventory.map((item) => (
+      <FlashList
+        data={inventory}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
+          ) : undefined
+        }
+        ListHeaderComponent={
+          <Card variant="outlined" style={styles.summaryCard}>
+            <Text variant="caption" color="textMuted">
+              Valor total estimado
+            </Text>
+            <Text variant="h3" color="success">
+              {formatCurrency(totalValue)}
+            </Text>
+          </Card>
+        }
+        contentContainerStyle={{ paddingBottom: contentBottomPadding }}
+        renderItem={({ item }) => (
           <SwipeableAssetRow
-            key={item.id}
             label={item.name}
             onDelete={() => onDelete?.(item)}>
             <InventoryListItem item={item} onPress={onEdit} />
           </SwipeableAssetRow>
-        ))}
-      </View>
+        )}
+      />
     </View>
   );
 }
@@ -83,8 +103,5 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginBottom: spacing.lg,
     backgroundColor: colors.backgroundElevated,
-  },
-  list: {
-    flex: 1,
   },
 });

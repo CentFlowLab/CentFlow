@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-03T21:55:47.819Z -->
-<!-- Git: 19ef042 (2026-07-03T22:27:50+01:00) -->
+<!-- Última geração: 2026-07-05T15:47:36.555Z -->
+<!-- Git: 813d966 (2026-07-03T22:55:48+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-03T21:55:47.819Z |
+| Última geração | 2026-07-05T15:47:36.555Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `19ef042` (2026-07-03T22:27:50+01:00) |
+| Git commit | `813d966` (2026-07-03T22:55:48+01:00) |
 
 ---
 
@@ -662,6 +662,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     tab-bar-metrics.ts
   liabilities/
     liabilities.service.ts
+  lists/
+    flatten-transaction-sections.test.ts
+    flatten-transaction-sections.ts
   migrations/
     index.ts
     migrationRunner.ts
@@ -950,6 +953,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - UX premium — datas DD/MM consistentes, FormSheetFooter, layout/formSpacing tokens, cards movimentos 3 linhas
 - Financial Core v2 — calculateFinancialState(), módulos puros, eventos, calendário, métricas, oportunidades, doctor, useFinancialState
 - Decision Simulator — simulateFinancialDecision(), 10 cenários, UI Análises, CTAs Simular impacto, Doctor trace
+- Performance listas — FlashList em Movimentos e Inventário; teste flatten 500 movimentos; Análises já lazy por tab
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

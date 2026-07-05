@@ -231,6 +231,32 @@ export default function AtivosScreen() {
             retryLoading={isRefetching}
           />
         </View>
+      ) : activeTab === 'inventario' ? (
+        <View style={styles.flex}>
+          <ScreenContainer scrollable={false} applyBottomSafeInset={false}>
+            <View style={styles.overviewSection}>
+              <AssetsOverviewCard
+                counts={counts}
+                activeTab={activeTab}
+                onTabPress={setActiveTab}
+              />
+            </View>
+
+            <FeatureAreaGate feature="wealth">
+              <InventorySection
+                inventory={assets.inventory}
+                onEdit={openEditInventory}
+                onLearnMore={handleLearnMore}
+                onDelete={(item) => deleteInventory.mutate(item.id)}
+                contentBottomPadding={contentBottomPadding}
+                refreshing={isRefetching}
+                onRefresh={() => refetch()}
+              />
+            </FeatureAreaGate>
+
+            <RefetchingIndicator visible={isRefetching && !isLoading} />
+          </ScreenContainer>
+        </View>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -275,17 +301,6 @@ export default function AtivosScreen() {
                   onPrimaryAction={openCreateWarranty}
                   onScanReceipt={() => router.push('/(tabs)/movimentos?action=receipt')}
                   onDelete={(warranty) => deleteWarranty.mutate(warranty.id)}
-                />
-              </FeatureAreaGate>
-            ) : null}
-
-            {activeTab === 'inventario' ? (
-              <FeatureAreaGate feature="wealth">
-                <InventorySection
-                  inventory={assets.inventory}
-                  onEdit={openEditInventory}
-                  onLearnMore={handleLearnMore}
-                  onDelete={(item) => deleteInventory.mutate(item.id)}
                 />
               </FeatureAreaGate>
             ) : null}
@@ -388,6 +403,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: spacing.lg,
