@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { CategoryBudgetProgressRow, EditCategoryBudgetSheet } from '@/components/budget';
 import { DonutChart, type DonutSegment } from '@/components/charts';
 import { Card, Text } from '@/components/ui';
+import type { CategoryBudgetStatus } from '@/lib/domain/category-budget.types';
 import type { SpendingCategorySlice } from '@/lib/domain/analysis.types';
 import { getSpendingChartColors } from '@/lib/domain/analysis.compose';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
@@ -11,12 +13,38 @@ import { colors, radius, spacing } from '@/lib/theme';
 type SpendingCategoryCardProps = {
   categories: SpendingCategorySlice[];
   periodLabel: string;
+  budgetStatuses?: CategoryBudgetStatus[];
+  showBudgetLimits?: boolean;
 };
 
-export function SpendingCategoryCard({ categories, periodLabel }: SpendingCategoryCardProps) {
+export function SpendingCategoryCard({
+  categories,
+  periodLabel,
+  budgetStatuses = [],
+  showBudgetLimits = false,
+}: SpendingCategoryCardProps) {
   const palette = getSpendingChartColors();
   const total = categories.reduce((sum, item) => sum + item.amount, 0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+
+  const budgetByCategory = useMemo(
+    () => new Map(budgetStatuses.map((item) => [item.category, item])),
+    [budgetStatuses],
+  );
+
+  const budgetAlerts = useMemo(
+    () =>
+      showBudgetLimits
+        ? budgetStatuses.filter((item) => item.level !== 'ok').slice(0, 4)
+        : [],
+    [budgetStatuses, showBudgetLimits],
+  );
+
+  const editingStatus = useMemo(
+    () => budgetStatuses.find((item) => item.category === editingCategory) ?? null,
+    [budgetStatuses, editingCategory],
+  );
 
   const selected = categories.find((item) => item.key === selectedKey) ?? null;
   const selectedPercent =
@@ -45,6 +73,7 @@ export function SpendingCategoryCard({ categories, periodLabel }: SpendingCatego
   }
 
   return (
+    <>
     <Card variant="elevated" style={styles.card}>
       <Text variant="h3" style={styles.title}>
         Gastos por categoria
@@ -67,6 +96,7 @@ export function SpendingCategoryCard({ categories, periodLabel }: SpendingCatego
             const percent = total > 0 ? (item.amount / total) * 100 : 0;
             const color = palette[index % palette.length];
             const isSelected = item.key === selectedKey;
+            const budget = budgetByCategory.get(item.key);
 
             return (
               <Pressable
@@ -82,6 +112,9 @@ export function SpendingCategoryCard({ categories, periodLabel }: SpendingCatego
                   </Text>
                   <Text variant="caption" color="textMuted">
                     {formatCurrency(item.amount)} · {formatPercent(percent, 0, false)}
+                    {showBudgetLimits && budget
+                      ? ` · limite ${formatCurrency(budget.monthlyLimit)}`
+                      : ''}
                   </Text>
                 </View>
               </Pressable>
@@ -100,7 +133,30 @@ export function SpendingCategoryCard({ categories, periodLabel }: SpendingCatego
           Toca numa categoria para a destacar.
         </Text>
       )}
+
+      {showBudgetLimits && budgetAlerts.length > 0 ? (
+        <View style={styles.budgetBlock}>
+          <Text variant="label" color="textSecondary" style={styles.budgetTitle}>
+            Limites este mês
+          </Text>
+          {budgetAlerts.map((status) => (
+            <CategoryBudgetProgressRow
+              key={status.category}
+              status={status}
+              compact
+              onPress={() => setEditingCategory(status.category)}
+            />
+          ))}
+        </View>
+      ) : null}
     </Card>
+
+    <EditCategoryBudgetSheet
+      visible={editingStatus !== null}
+      status={editingStatus}
+      onClose={() => setEditingCategory(null)}
+    />
+    </>
   );
 }
 
@@ -148,5 +204,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     paddingVertical: spacing['2xl'],
+  },
+  budgetBlock: {
+    marginTop: spacing.lg,
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  budgetTitle: {
+    marginBottom: spacing.xs,
   },
 });

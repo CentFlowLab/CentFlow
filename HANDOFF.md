@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-05T16:02:21.548Z -->
-<!-- Git: e5e2e81 (2026-07-05T16:47:59+01:00) -->
+<!-- Última geração: 2026-07-05T16:12:12.922Z -->
+<!-- Git: f0a3aac (2026-07-05T17:02:28+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-05T16:02:21.548Z |
+| Última geração | 2026-07-05T16:12:12.922Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `e5e2e81` (2026-07-05T16:47:59+01:00) |
+| Git commit | `f0a3aac` (2026-07-05T17:02:28+01:00) |
 
 ---
 
@@ -201,6 +201,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     GoogleSignInButton.tsx
     index.ts
   budget/
+    CategoryBudgetAlertsCard.tsx
+    CategoryBudgetProgressRow.tsx
+    EditCategoryBudgetSheet.tsx
     MonthlySpendableCard.tsx
     MonthlySpendableSheet.tsx
     index.ts
@@ -964,9 +967,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Decision Simulator — simulateFinancialDecision(), 10 cenários, UI Análises, CTAs Simular impacto, Doctor trace
 - Performance listas — FlashList em Movimentos e Inventário; teste flatten 500 movimentos; Análises já lazy por tab
 - Motor poupança Fase A (1–3) — category_budgets, sugestão média 3 meses, hooks TanStack Query, seed automático, validateGoalContribution
+- Motor poupança Fase A (4) — UI alertas orçamento 80/100% na Home e Análises Gastos + sheet editar limite
 
 ### 🔲 Pendente
-- Motor poupança Fase A (4–6) — UI alertas 80/100%, CTA alocar objetivo, subscrições revista/cancel URL, action-engine na Home/Análises
+- Motor poupança Fase A (5–6) — CTA alocar objetivo, subscrições revista/cancel URL, action-engine na Home/Análises
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
 - Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)

@@ -15,7 +15,7 @@ import {
   HomePersonalizedInsightCard,
   HomePostOnboardingWelcomeCard,
 } from '@/components/dashboard';
-import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
+import { MonthlySpendableCard, MonthlySpendableSheet, CategoryBudgetAlertsCard } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal } from '@/components/movements';
 import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
@@ -180,7 +180,10 @@ export default function InicioScreen() {
 
   const homeSections: Record<HomeSectionId, ReactNode> = {
     spendable: (
-      <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
+      <>
+        <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
+        <CategoryBudgetAlertsCard key="budget-alerts" />
+      </>
     ),
     assets: hasActivity ? (
       <HomeAssetsSummaryCard key="assets" summary={assetsSummary} hints={assetsHints} />

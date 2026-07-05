@@ -5,6 +5,7 @@ import { AnalysisExpandableSection } from '@/components/analysis/AnalysisExpanda
 import { SpendingCalendarCard } from '@/components/analysis/SpendingCalendarCard';
 import { SpendingCategoryCard } from '@/components/analysis/SpendingCategoryCard';
 import { SpendingTrendBars } from '@/components/analysis/SpendingTrendBars';
+import { useCategoryBudgetStatus } from '@/hooks/queries/useCategoryBudgets';
 import {
   computeSpendingBuckets,
   computeSpendingByCategory,
@@ -21,6 +22,8 @@ type AnalysisSpendingTabProps = {
 
 export function AnalysisSpendingTab({ transactions, period }: AnalysisSpendingTabProps) {
   const periodOption = getPeriodOption(period);
+  const { statuses: budgetStatuses } = useCategoryBudgetStatus();
+  const showBudgetLimits = period === 'month';
   const monthKey = useMemo(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -39,7 +42,12 @@ export function AnalysisSpendingTab({ transactions, period }: AnalysisSpendingTa
     <View style={styles.container}>
       <SpendingCalendarCard transactions={transactions} monthKey={monthKey} />
 
-      <SpendingCategoryCard categories={periodCategories} periodLabel={periodOption.label} />
+      <SpendingCategoryCard
+        categories={periodCategories}
+        periodLabel={periodOption.label}
+        budgetStatuses={budgetStatuses}
+        showBudgetLimits={showBudgetLimits}
+      />
 
       <AnalysisExpandableSection title="Tendências" subtitle={periodOption.label}>
         <SpendingTrendBars buckets={spendingBuckets} periodLabel={periodOption.label} />
