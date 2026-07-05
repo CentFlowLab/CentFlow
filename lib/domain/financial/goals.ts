@@ -122,3 +122,21 @@ export function getGoalProgress(goal: Goal): {
     isComplete: progress.isComplete,
   };
 }
+
+export type GoalContributionValidation =
+  | { ok: true }
+  | { ok: false; reason: string };
+
+/** Valida alocação a objetivo — usar no domínio e no serviço antes do insert. */
+export function validateGoalContribution(input: {
+  amount: number;
+  accountBalance: number;
+}): GoalContributionValidation {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    return { ok: false, reason: 'Indica um valor válido.' };
+  }
+  if (input.amount > input.accountBalance) {
+    return { ok: false, reason: 'Saldo insuficiente na conta.' };
+  }
+  return { ok: true };
+}

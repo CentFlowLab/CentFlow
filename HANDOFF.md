@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-05T15:47:36.555Z -->
-<!-- Git: 813d966 (2026-07-03T22:55:48+01:00) -->
+<!-- Última geração: 2026-07-05T16:02:21.548Z -->
+<!-- Git: e5e2e81 (2026-07-05T16:47:59+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-05T15:47:36.555Z |
+| Última geração | 2026-07-05T16:02:21.548Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `813d966` (2026-07-03T22:55:48+01:00) |
+| Git commit | `e5e2e81` (2026-07-05T16:47:59+01:00) |
 
 ---
 
@@ -365,6 +365,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useActiveSessions.ts
     useAnalysisData.ts
     useAssets.ts
+    useCategoryBudgets.ts
     useDashboard.ts
     useDashboardData.ts
     useEmailEvents.ts
@@ -470,6 +471,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   categories/
     emoji-map.test.ts
     emoji-map.ts
+  category-budgets/
+    category-budgets.service.ts
   config/
     app-variant.ts
     data-mode.ts
@@ -490,6 +493,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     read-csv-file.ts
   data/
     analysis.mocks.ts
+    category-budgets-storage.ts
     custom-categories-storage.ts
     mocks.ts
     prices.mocks.ts
@@ -531,6 +535,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     attention-items.test.ts
     attention-items.ts
     budget-month.ts
+    category-budget.types.ts
     dashboard.compose.ts
     date-input.schema.ts
     financial/
@@ -544,6 +549,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       budget.ts
       calendar.ts
       cashflow.ts
+      category-budgets.test.ts
+      category-budgets.ts
       centflow-score.ts
       credit-cards.test.ts
       credit-cards.ts
@@ -559,6 +566,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       financial-state.ts
       financial-state.types.ts
       forecast.ts
+      goals-contribution-validation.test.ts
       goals.test.ts
       goals.ts
       index.ts
@@ -752,6 +760,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     app-config.ts
     assets.ts
     auth.ts
+    category-budgets.ts
     client.ts
     config.ts
     database.types.ts
@@ -954,8 +963,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Financial Core v2 — calculateFinancialState(), módulos puros, eventos, calendário, métricas, oportunidades, doctor, useFinancialState
 - Decision Simulator — simulateFinancialDecision(), 10 cenários, UI Análises, CTAs Simular impacto, Doctor trace
 - Performance listas — FlashList em Movimentos e Inventário; teste flatten 500 movimentos; Análises já lazy por tab
+- Motor poupança Fase A (1–3) — category_budgets, sugestão média 3 meses, hooks TanStack Query, seed automático, validateGoalContribution
 
 ### 🔲 Pendente
+- Motor poupança Fase A (4–6) — UI alertas 80/100%, CTA alocar objetivo, subscrições revista/cancel URL, action-engine na Home/Análises
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
 - Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)

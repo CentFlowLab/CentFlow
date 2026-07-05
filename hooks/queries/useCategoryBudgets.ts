@@ -1,0 +1,96 @@
+import { useEffect, useMemo, useRef } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { queryKeys } from '@/lib/api/keys';
+import {
+  fetchCategoryBudgetsForUser,
+  seedSuggestedCategoryBudgetsForUser,
+  upsertCategoryBudgetForUser,
+} from '@/lib/category-budgets/category-budgets.service';
+import type { CategoryBudgetSource } from '@/lib/domain/category-budget.types';
+import { calculateCategoryBudgetStatus } from '@/lib/domain/financial/category-budgets';
+import type { Transaction } from '@/lib/domain/transaction.types';
+import { useAuth } from '@/lib/auth';
+
+import { useTransactions } from './useTransactions';
+
+export function useCategoryBudgets() {
+  const { user, isAuthenticated } = useAuth();
+  const userId = user?.id ?? '';
+  const { data: transactions = [] } = useTransactions('all');
+  const seedStartedRef = useRef(false);
+
+  const query = useQuery({
+    queryKey: queryKeys.categoryBudgets(userId),
+    queryFn: () => fetchCategoryBudgetsForUser(userId),
+    enabled: isAuthenticated && Boolean(userId),
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const seedMutation = useSeedSuggestedCategoryBudgets();
+
+  useEffect(() => {
+    if (!query.isSuccess || seedStartedRef.current) return;
+    if ((query.data?.length ?? 0) > 0) return;
+    if (transactions.length === 0) return;
+    if (seedMutation.isPending) return;
+
+    seedStartedRef.current = true;
+    seedMutation.mutate(transactions);
+  }, [query.isSuccess, query.data, transactions, seedMutation.isPending, seedMutation]);
+
+  return query;
+}
+
+export function useUpsertCategoryBudget() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
+
+  return useMutation({
+    mutationFn: (input: {
+      category: string;
+      monthlyLimit: number;
+      source?: CategoryBudgetSource;
+    }) => upsertCategoryBudgetForUser(userId, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets(userId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.home });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
+    },
+  });
+}
+
+export function useSeedSuggestedCategoryBudgets() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
+
+  return useMutation({
+    mutationFn: (transactions: Transaction[]) =>
+      seedSuggestedCategoryBudgetsForUser(userId, transactions),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets(userId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.home });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
+    },
+  });
+}
+
+export function useCategoryBudgetStatus(asOf?: Date) {
+  const { data: budgets = [], isLoading, isError, error } = useCategoryBudgets();
+  const { data: transactions = [] } = useTransactions('all');
+
+  const statuses = useMemo(
+    () => calculateCategoryBudgetStatus(budgets, transactions, asOf ?? new Date()),
+    [budgets, transactions, asOf],
+  );
+
+  return {
+    budgets,
+    statuses,
+    isLoading,
+    isError,
+    error,
+  };
+}

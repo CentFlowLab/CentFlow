@@ -15,6 +15,7 @@ export type Subscription = {
   renewsAt?: string;
   category?: string;
   notes?: string;
+  lastReviewedAt?: string;
 };
 
 export type Goal = {

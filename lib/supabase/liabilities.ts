@@ -34,6 +34,7 @@ type SubscriptionRow = {
   renews_at: string | null;
   category: string | null;
   notes: string | null;
+  last_reviewed_at: string | null;
 };
 
 const UUID_RE =
@@ -78,6 +79,7 @@ function mapSubscriptionRow(row: SubscriptionRow): Subscription {
     renewsAt: row.renews_at ?? undefined,
     category: row.category ?? undefined,
     notes: row.notes ?? undefined,
+    lastReviewedAt: row.last_reviewed_at ?? undefined,
   };
 }
 
@@ -127,6 +129,7 @@ function subscriptionToInsert(
     renews_at: subscription.renewsAt ?? null,
     category: subscription.category ?? null,
     notes: subscription.notes ?? null,
+    last_reviewed_at: subscription.lastReviewedAt ?? null,
   };
 }
 
