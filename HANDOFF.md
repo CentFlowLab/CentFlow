@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-05T16:20:04.918Z -->
-<!-- Git: ced1b2b (2026-07-05T17:12:27+01:00) -->
+<!-- Última geração: 2026-07-05T16:34:04.953Z -->
+<!-- Git: ecb8108 (2026-07-05T17:20:16+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-05T16:20:04.918Z |
+| Última geração | 2026-07-05T16:34:04.953Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `ced1b2b` (2026-07-05T17:12:27+01:00) |
+| Git commit | `ecb8108` (2026-07-05T17:20:16+01:00) |
 
 ---
 
@@ -205,6 +205,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     CategoryBudgetAlertsCard.tsx
     CategoryBudgetProgressRow.tsx
     EditCategoryBudgetSheet.tsx
+    FinancialActionsCard.tsx
     MonthlySpendableCard.tsx
     MonthlySpendableSheet.tsx
     index.ts
@@ -379,6 +380,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useLiabilities.ts
     useLoanPayments.ts
     useMarkSubscriptionPaid.ts
+    useMarkSubscriptionReviewed.ts
     useNetWorth.ts
     useOnboardingAnswers.ts
     usePatrimonyAllocation.ts
@@ -391,6 +393,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useCustomCategories.ts
   useDiagnosticScreen.ts
   useFeatureAreas.ts
+  useFinancialActions.ts
   useFinancialState.ts
   useFormDismiss.ts
   useImportCsv.ts
@@ -546,6 +549,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     financial/
       accounts.test.ts
       accounts.ts
+      action-engine.test.ts
+      action-engine.ts
       analytics.ts
       assets.ts
       assistant.ts
@@ -607,6 +612,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       spending-calendar.ts
       subscription-payments.test.ts
       subscription-payments.ts
+      subscription-review.ts
       subscriptions.ts
       suggestions.test.ts
       suggestions.ts
@@ -756,6 +762,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     pending-subscriptions.storage.ts
     secure-store-key.ts
   subscriptions/
+    cancel-url-map.ts
     detect-subscriptions.test.ts
     detect-subscriptions.ts
     renewal.constants.ts
@@ -973,9 +980,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Motor poupança Fase A (1–3) — category_budgets, sugestão média 3 meses, hooks TanStack Query, seed automático, validateGoalContribution
 - Motor poupança Fase A (4) — UI alertas orçamento 80/100% na Home e Análises Gastos + sheet editar limite
 - Motor poupança Fase A (5) — CTA alocar ao objetivo (margem disponível, transferência real goal_contributions, Home + Análises Resumo)
+- Motor poupança Fase A (6) — subscrições revista/cancel URL, action-engine (FinancialActionsCard Home + Análises, SubscriptionsSection)
 
 ### 🔲 Pendente
-- Motor poupança Fase A (6) — subscrições revista/cancel URL, action-engine na Home/Análises
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
 - Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
 - Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)

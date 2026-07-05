@@ -121,6 +121,7 @@ export function useSaveSubscription() {
         renewsAt: input.renewsAt,
         category: input.category,
         notes: input.notes,
+        lastReviewedAt: input.lastReviewedAt,
       };
 
       return saveSubscriptionForUser(userId, subscription);

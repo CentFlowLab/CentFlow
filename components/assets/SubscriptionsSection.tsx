@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { MOVEMENTS_EMPTY_CONFIG } from '@/components/movements/movements.config';
 import { AssetsEmptyState } from '@/components/assets/AssetsEmptyState';
@@ -9,7 +9,9 @@ import type { Subscription } from '@/lib/domain/assets.types';
 import {
   getSubscriptionPaymentUiState,
 } from '@/lib/domain/financial/subscription-payments';
+import { daysSinceSubscriptionReview } from '@/lib/domain/financial/subscription-review';
 import { subscriptionToMonthlyAmount } from '@/lib/subscriptions/subscription-utils';
+import { resolveSubscriptionCancelUrl } from '@/lib/subscriptions/cancel-url-map';
 import { getRenewalStatus } from '@/lib/subscriptions/renewal.utils';
 import { colors, radius, spacing } from '@/lib/theme';
 import { formatCurrency, formatDateShort } from '@/lib/utils/format';
@@ -21,6 +23,7 @@ type SubscriptionsSectionProps = {
   onLearnMore?: () => void;
   onDelete?: (subscription: Subscription) => void;
   onMarkPaid?: (subscription: Subscription) => void;
+  onMarkReviewed?: (subscription: Subscription) => void;
 };
 
 export function SubscriptionsSection({
@@ -30,6 +33,7 @@ export function SubscriptionsSection({
   onLearnMore,
   onDelete,
   onMarkPaid,
+  onMarkReviewed,
 }: SubscriptionsSectionProps) {
   const { data: transactions = [] } = useTransactions('all');
 
@@ -81,6 +85,8 @@ export function SubscriptionsSection({
         {subscriptions.map((subscription) => {
           const renewalStatus = getRenewalStatus(subscription.renewsAt);
           const paymentUi = getSubscriptionPaymentUiState(subscription, transactions);
+          const cancelUrl = resolveSubscriptionCancelUrl(subscription.name);
+          const daysSinceReview = daysSinceSubscriptionReview(subscription);
           const statusColor =
             paymentUi.status === 'paid'
               ? colors.success
@@ -126,6 +132,15 @@ export function SubscriptionsSection({
                       Sem data de renovação definida
                     </Text>
                   )}
+                  {subscription.lastReviewedAt ? (
+                    <Text variant="caption" color="textMuted">
+                      Revista {formatDateShort(subscription.lastReviewedAt)}
+                    </Text>
+                  ) : daysSinceReview === null ? (
+                    <Text variant="caption" color="warning">
+                      Ainda não revista
+                    </Text>
+                  ) : null}
                   {onMarkPaid ? (
                     <Button
                       label={paymentUi.actionLabel}
@@ -137,6 +152,26 @@ export function SubscriptionsSection({
                       style={styles.payButton}
                     />
                   ) : null}
+                  <View style={styles.secondaryActions}>
+                    {onMarkReviewed ? (
+                      <Button
+                        label="Marcar como revista"
+                        variant="ghost"
+                        size="md"
+                        onPress={() => onMarkReviewed(subscription)}
+                        style={styles.secondaryButton}
+                      />
+                    ) : null}
+                    {cancelUrl ? (
+                      <Button
+                        label="Cancelar serviço"
+                        variant="ghost"
+                        size="md"
+                        onPress={() => void Linking.openURL(cancelUrl)}
+                        style={styles.secondaryButton}
+                      />
+                    ) : null}
+                  </View>
                 </Card>
               </Pressable>
             </SwipeableAssetRow>
@@ -199,5 +234,14 @@ const styles = StyleSheet.create({
   },
   payButton: {
     marginTop: spacing.xs,
+  },
+  secondaryActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  secondaryButton: {
+    flexGrow: 1,
   },
 });

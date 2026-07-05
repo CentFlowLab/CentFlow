@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AllocateToGoalCard } from '@/components/budget';
+import { FinancialActionsCard } from '@/components/budget';
 import { AnalysisMetricCard } from '@/components/analysis/AnalysisMetricCard';
 import { InsightsSection } from '@/components/analysis/InsightsSection';
 import { TrendsSummaryCard } from '@/components/analysis/TrendsSummaryCard';
@@ -68,7 +68,7 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
         </Text>
       </Card>
 
-      <AllocateToGoalCard />
+      <FinancialActionsCard maxActions={4} title="Próximos passos" />
 
       <InsightsSection insights={topInsights} />
 

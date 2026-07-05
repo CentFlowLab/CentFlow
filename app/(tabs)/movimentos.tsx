@@ -26,6 +26,7 @@ import { EmptyState, ErrorState, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
+import { useMarkSubscriptionReviewed } from '@/hooks/queries/useMarkSubscriptionReviewed';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
@@ -52,6 +53,7 @@ import {
   filterTransactionsBySearch,
 } from '@/lib/domain/transaction-search';
 import { getContextualNoTransactionsMessage } from '@/lib/onboarding/personalization';
+import { getApiErrorMessage } from '@/lib/api/errors';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -100,6 +102,7 @@ export default function MovimentosScreen() {
   const deleteMutation = useDeleteTransaction();
   const { showToast } = useToast();
   const deleteSubscription = useDeleteSubscription();
+  const markSubscriptionReviewed = useMarkSubscriptionReviewed();
   const saveSubscription = useSaveSubscription();
   const {
     activeDetection,
@@ -418,6 +421,16 @@ export default function MovimentosScreen() {
                 onMarkPaid={(subscription) => {
                   setMarkPaidSubscription(subscription);
                   setMarkPaidVisible(true);
+                }}
+                onMarkReviewed={(subscription) => {
+                  markSubscriptionReviewed.mutate(subscription, {
+                    onSuccess: () => {
+                      showToast(`«${subscription.name}» marcada como revista.`, 'success');
+                    },
+                    onError: (err) => {
+                      showToast(getApiErrorMessage(err, 'a revisão'), 'error');
+                    },
+                  });
                 }}
               />
             </FeatureAreaGate>
