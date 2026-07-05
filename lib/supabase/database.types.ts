@@ -738,6 +738,7 @@ export type Database = {
           email_tips_insights: boolean
           email_warranty_alerts: boolean
           email_weekly_digest: boolean
+          prioritize_debt_amortization: boolean
           push_notifications: boolean
           region: string
           theme_id: string
@@ -756,6 +757,7 @@ export type Database = {
           email_tips_insights?: boolean
           email_warranty_alerts?: boolean
           email_weekly_digest?: boolean
+          prioritize_debt_amortization?: boolean
           push_notifications?: boolean
           region?: string
           theme_id?: string
@@ -774,6 +776,7 @@ export type Database = {
           email_tips_insights?: boolean
           email_warranty_alerts?: boolean
           email_weekly_digest?: boolean
+          prioritize_debt_amortization?: boolean
           push_notifications?: boolean
           region?: string
           theme_id?: string

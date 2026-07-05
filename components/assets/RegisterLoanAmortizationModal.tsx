@@ -18,12 +18,14 @@ import { formatCurrency, todayInputDate } from '@/lib/utils/format';
 type RegisterLoanAmortizationModalProps = {
   visible: boolean;
   credit: Credit | null;
+  initialAmount?: number;
   onClose: () => void;
 };
 
 export function RegisterLoanAmortizationModal({
   visible,
   credit,
+  initialAmount,
   onClose,
 }: RegisterLoanAmortizationModalProps) {
   const { showToast } = useToast();
@@ -39,12 +41,12 @@ export function RegisterLoanAmortizationModal({
   useEffect(() => {
     if (!visible || !credit) return;
     traceLoanModalOpened('loan_extra_payment_opened', { creditId: credit.id });
-    setAmount('');
+    setAmount(initialAmount ? String(initialAmount) : '');
     setDate(todayInputDate());
     setNote('');
     setAccountId(undefined);
     setApiError(null);
-  }, [visible, credit?.id]);
+  }, [visible, credit?.id, initialAmount]);
 
   const parsedAmount = useMemo(() => parseGoalAmount(amount), [amount]);
   const fromAccount = accounts.find((a) => a.id === accountId);

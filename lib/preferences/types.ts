@@ -20,6 +20,8 @@ export type UserPreferences = {
   region: UserRegion;
   themeId: ThemeId;
   biometricsEnabled: boolean;
+  /** Quando true, sugestões favorecem amortizar dívida em vez de alocar a objetivos. */
+  prioritizeDebtAmortization: boolean;
 };
 
 export type UpdateProfileInput = {

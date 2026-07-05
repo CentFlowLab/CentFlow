@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-05T20:20:00.341Z -->
-<!-- Git: dda59f8 (2026-07-05T17:34:29+01:00) -->
+<!-- Última geração: 2026-07-05T20:56:15.394Z -->
+<!-- Git: 5d1a1c9 (2026-07-05T21:20:00+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)** |
-| Última geração | 2026-07-05T20:20:00.341Z |
+| Fase atual | **Fase 25 — Margem de poupança real (motor de acções financeiras)** |
+| Última geração | 2026-07-05T20:56:15.394Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `dda59f8` (2026-07-05T17:34:29+01:00) |
+| Git commit | `5d1a1c9` (2026-07-05T21:20:00+01:00) |
 
 ---
 
@@ -155,6 +155,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     diagnostics.tsx
     export-data.tsx
     export-pdf.tsx
+    financial-suggestions.tsx
     index.tsx
     notifications.tsx
     personal-data.tsx
@@ -208,6 +209,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     FinancialActionsCard.tsx
     MonthlySpendableCard.tsx
     MonthlySpendableSheet.tsx
+    SavingsMarginBreakdownLines.tsx
     index.ts
   charts/
     DonutChart.tsx
@@ -568,6 +570,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       credits.ts
       dates.test.ts
       dates.ts
+      debt-amortization-action.test.ts
+      debt-amortization-action.ts
+      debt-priority.test.ts
+      debt-priority.ts
       domain-types.ts
       events.ts
       explain.ts
@@ -601,6 +607,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       projections.ts
       savings-allocation.test.ts
       savings-allocation.ts
+      savings-margin.test.ts
+      savings-margin.ts
       savings.test.ts
       savings.ts
       score-explain.ts
@@ -826,7 +834,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 24 — Decision Simulator Engine (cenários sem alterar dados reais)
+## Fase atual: Fase 25 — Margem de poupança real (motor de acções financeiras)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -981,6 +989,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Motor poupança Fase A (4) — UI alertas orçamento 80/100% na Home e Análises Gastos + sheet editar limite
 - Motor poupança Fase A (5) — CTA alocar ao objetivo (margem disponível, transferência real goal_contributions, Home + Análises Resumo)
 - Motor poupança Fase A (6) — subscrições revista/cancel URL, action-engine (FinancialActionsCard Home + Análises, SubscriptionsSection)
+- Motor poupança Fase B — margem real (mediana variável + projeção + tecto 90%), amortização dívida prioritária, toggle Definições
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)

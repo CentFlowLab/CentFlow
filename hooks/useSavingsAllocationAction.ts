@@ -4,10 +4,14 @@ import { Alert } from 'react-native';
 import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useCreateGoalContribution } from '@/hooks/queries/useGoalContributions';
+import { useLiabilities } from '@/hooks/queries/useLiabilities';
+import { useTransactions } from '@/hooks/queries/useTransactions';
+import { useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import {
   buildSavingsAllocationAction,
   type SavingsAllocationAction,
 } from '@/lib/domain/financial/savings-allocation';
+import { calculateRealSavingsMargin } from '@/lib/domain/financial/savings-margin';
 import { validateGoalContribution } from '@/lib/domain/financial/goals';
 import { useMonthlySpendable } from '@/hooks/useMonthlySpendable';
 import { getApiErrorMessage } from '@/lib/api/errors';
@@ -17,17 +21,32 @@ export function useSavingsAllocationAction(options?: { onSuccess?: () => void })
   const spendable = useMonthlySpendable();
   const { data: assets } = useAssets();
   const { data: accounts = [] } = useAccountsWithBalances();
+  const { data: transactions = [] } = useTransactions('all');
+  const { data: preferences } = useUserPreferences();
+  const { data: liabilities } = useLiabilities();
   const contribute = useCreateGoalContribution();
 
-  const action = useMemo(
-    () =>
-      buildSavingsAllocationAction({
-        availableThisMonth: spendable.available,
-        goals: assets?.goals ?? [],
-        accounts,
-      }),
-    [spendable.available, assets?.goals, accounts],
+  const margin = useMemo(
+    () => calculateRealSavingsMargin(spendable.available, transactions),
+    [spendable.available, transactions],
   );
+
+  const action = useMemo(() => {
+    if (preferences?.prioritizeDebtAmortization && (liabilities?.credits ?? []).some((c) => c.outstandingBalance > 0)) {
+      return null;
+    }
+    return buildSavingsAllocationAction({
+      margin,
+      goals: assets?.goals ?? [],
+      accounts,
+    });
+  }, [
+    margin,
+    assets?.goals,
+    accounts,
+    preferences?.prioritizeDebtAmortization,
+    liabilities?.credits,
+  ]);
 
   const executeAllocation = useCallback(
     async (allocation: SavingsAllocationAction) => {
@@ -79,6 +98,7 @@ export function useSavingsAllocationAction(options?: { onSuccess?: () => void })
 
   return {
     action,
+    margin,
     confirmAndAllocate,
     executeAllocation,
     isPending: contribute.isPending,

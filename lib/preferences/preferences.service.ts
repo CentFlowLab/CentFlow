@@ -21,6 +21,7 @@ type PreferencesRow = {
   region: UserPreferences['region'];
   theme_id: UserPreferences['themeId'];
   biometrics_enabled: boolean;
+  prioritize_debt_amortization?: boolean;
 };
 
 function mapRow(row: PreferencesRow): UserPreferences {
@@ -38,6 +39,7 @@ function mapRow(row: PreferencesRow): UserPreferences {
     region: normalizeCountryCode(row.region),
     themeId: row.theme_id,
     biometricsEnabled: row.biometrics_enabled,
+    prioritizeDebtAmortization: row.prioritize_debt_amortization ?? true,
   };
 }
 
@@ -74,6 +76,9 @@ function toRow(userId: string, prefs: Partial<UserPreferences>) {
     ...(prefs.themeId !== undefined && { theme_id: prefs.themeId }),
     ...(prefs.biometricsEnabled !== undefined && {
       biometrics_enabled: prefs.biometricsEnabled,
+    }),
+    ...(prefs.prioritizeDebtAmortization !== undefined && {
+      prioritize_debt_amortization: prefs.prioritizeDebtAmortization,
     }),
   };
 }

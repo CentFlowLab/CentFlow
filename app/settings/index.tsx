@@ -34,6 +34,11 @@ const MENU_SECTIONS: Array<{
         route: '/settings/notifications',
       },
       {
+        icon: { ios: 'lightbulb.fill', android: 'lightbulb', web: 'lightbulb' },
+        label: 'Sugestões financeiras',
+        route: '/settings/financial-suggestions',
+      },
+      {
         icon: { ios: 'paintbrush.fill', android: 'palette', web: 'palette' },
         label: 'Aparência',
         route: '/settings/appearance',

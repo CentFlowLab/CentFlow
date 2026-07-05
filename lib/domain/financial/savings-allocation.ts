@@ -4,6 +4,7 @@ import type { Goal } from '@/lib/domain/assets.types';
 import { isBudgetAccount } from './budget-accounts';
 import { roundMoney } from './money';
 import { validateGoalContribution } from './goals';
+import type { RealSavingsMarginBreakdown } from './savings-margin';
 
 export type SavingsAllocationAction = {
   goalId: string;
@@ -11,11 +12,11 @@ export type SavingsAllocationAction = {
   accountId: string;
   accountName: string;
   amount: number;
-  availableThisMonth: number;
+  margin: RealSavingsMarginBreakdown;
 };
 
 export type BuildSavingsAllocationInput = {
-  availableThisMonth: number;
+  margin: RealSavingsMarginBreakdown;
   goals: Goal[];
   accounts: BankAccount[];
   minAmount?: number;
@@ -32,13 +33,13 @@ function accountBalance(account: BankAccount): number {
   return account.balance ?? account.initialBalance;
 }
 
-/** Sugere alocação quando há margem de poupança e saldo suficiente na conta de origem. */
+/** Sugere alocação com base na margem real (já com tecto de 90%). */
 export function buildSavingsAllocationAction(
   input: BuildSavingsAllocationInput,
 ): SavingsAllocationAction | null {
   const minAmount = input.minAmount ?? DEFAULT_MIN_AMOUNT;
-  const available = roundMoney(input.availableThisMonth);
-  if (available < minAmount) return null;
+  const budget = input.margin.cappedActionBudget;
+  if (budget < minAmount) return null;
 
   const openGoals = input.goals.filter(
     (goal) => goal.target > 0 && goal.current < goal.target,
@@ -52,9 +53,7 @@ export function buildSavingsAllocationAction(
   })[0];
 
   const remaining = roundMoney(goal.target - goal.current);
-  const cappedByBudget = Math.min(remaining, available);
-  const softCap = roundAllocationAmount(available * 0.5);
-  const amount = roundAllocationAmount(Math.min(cappedByBudget, softCap > 0 ? softCap : cappedByBudget));
+  const amount = Math.min(roundAllocationAmount(Math.min(remaining, budget)), budget);
 
   if (amount < minAmount) return null;
 
@@ -76,6 +75,6 @@ export function buildSavingsAllocationAction(
     accountId: account.id,
     accountName: account.name,
     amount,
-    availableThisMonth: available,
+    margin: input.margin,
   };
 }

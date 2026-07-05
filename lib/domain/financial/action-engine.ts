@@ -1,20 +1,30 @@
 import type { BankAccount } from '@/lib/domain/account.types';
 import type { Goal, Subscription } from '@/lib/domain/assets.types';
 import type { CategoryBudgetStatus } from '@/lib/domain/category-budget.types';
+import type { Credit } from '@/lib/domain/types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
 import { compareCategoryPeriods } from './insights';
 import { getCurrentMonthRange, getPreviousMonthRange, type FinancialPeriod } from './dates';
 import { pickSubscriptionsNeedingReview } from './subscription-review';
 import {
+  buildDebtAmortizationAction,
+  type DebtAmortizationAction,
+} from './debt-amortization-action';
+import {
   buildSavingsAllocationAction,
   type SavingsAllocationAction,
 } from './savings-allocation';
+import {
+  calculateRealSavingsMargin,
+  type RealSavingsMarginBreakdown,
+} from './savings-margin';
 
 export type FinancialActionKind =
   | 'budget_alert'
   | 'category_mom'
   | 'allocate_goal'
+  | 'debt_amortization'
   | 'subscription_review';
 
 export type FinancialAction =
@@ -44,6 +54,14 @@ export type FinancialAction =
     }
   | {
       id: string;
+      kind: 'debt_amortization';
+      priority: number;
+      title: string;
+      description: string;
+      payload: DebtAmortizationAction;
+    }
+  | {
+      id: string;
       kind: 'subscription_review';
       priority: number;
       title: string;
@@ -64,7 +82,10 @@ export type BuildFinancialActionsInput = {
   subscriptions: Subscription[];
   goals: Goal[];
   accounts: BankAccount[];
+  credits: Credit[];
   availableThisMonth: number;
+  prioritizeDebtAmortization: boolean;
+  margin?: RealSavingsMarginBreakdown;
   maxActions?: number;
   momDeltaThresholdPercent?: number;
 };
@@ -131,9 +152,37 @@ function buildMomActions(
     }));
 }
 
-function buildAllocateAction(input: BuildFinancialActionsInput): FinancialAction | null {
+function buildDebtAction(input: BuildFinancialActionsInput): FinancialAction | null {
+  const margin =
+    input.margin ??
+    calculateRealSavingsMargin(input.availableThisMonth, input.transactions, input.asOf);
+
+  const debt = buildDebtAmortizationAction({
+    margin,
+    credits: input.credits,
+    accounts: input.accounts,
+    prioritizeDebt: input.prioritizeDebtAmortization,
+  });
+  if (!debt) return null;
+
+  const targetLabel = debt.isCard ? 'cartão' : 'crédito';
+
+  return {
+    id: `debt-${debt.creditId}`,
+    kind: 'debt_amortization',
+    priority: 72,
+    title: 'Margem real para reduzir dívida',
+    description: `Podes amortizar ${debt.amount.toFixed(0)} € no ${targetLabel} «${debt.creditName}».`,
+    payload: debt,
+  };
+}
+
+function buildAllocateAction(
+  input: BuildFinancialActionsInput,
+  margin: RealSavingsMarginBreakdown,
+): FinancialAction | null {
   const allocation = buildSavingsAllocationAction({
-    availableThisMonth: input.availableThisMonth,
+    margin,
     goals: input.goals,
     accounts: input.accounts,
   });
@@ -180,18 +229,26 @@ function buildSubscriptionReviewActions(
   });
 }
 
-/** Orquestra alertas de orçamento, MoM, alocação e revisão de subscrições. */
+/** Orquestra alertas de orçamento, MoM, amortização/alocação e revisão de subscrições. */
 export function buildFinancialActions(input: BuildFinancialActionsInput): FinancialAction[] {
   const asOf = input.asOf ?? new Date();
   const threshold = input.momDeltaThresholdPercent ?? DEFAULT_MOM_THRESHOLD;
+  const margin =
+    input.margin ??
+    calculateRealSavingsMargin(input.availableThisMonth, input.transactions, asOf);
 
   const actions: FinancialAction[] = [
     ...buildBudgetActions(input.budgetStatuses),
     ...buildMomActions(input.transactions, asOf, threshold),
   ];
 
-  const allocate = buildAllocateAction(input);
-  if (allocate) actions.push(allocate);
+  const debt = buildDebtAction({ ...input, margin, asOf });
+  if (debt) {
+    actions.push(debt);
+  } else {
+    const allocate = buildAllocateAction(input, margin);
+    if (allocate) actions.push(allocate);
+  }
 
   actions.push(...buildSubscriptionReviewActions(input.subscriptions, asOf));
 
@@ -199,3 +256,5 @@ export function buildFinancialActions(input: BuildFinancialActionsInput): Financ
     .sort((a, b) => b.priority - a.priority)
     .slice(0, input.maxActions ?? actions.length);
 }
+
+export { calculateRealSavingsMargin, type RealSavingsMarginBreakdown };

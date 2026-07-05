@@ -5,6 +5,7 @@ import type { BankAccount } from '@/lib/domain/account.types';
 import type { Goal } from '@/lib/domain/assets.types';
 
 import { buildSavingsAllocationAction } from './savings-allocation';
+import { calculateRealSavingsMargin } from './savings-margin';
 
 function account(partial: Partial<BankAccount> & Pick<BankAccount, 'id'>): BankAccount {
   return {
@@ -26,9 +27,14 @@ function goal(partial: Partial<Goal> & Pick<Goal, 'id'>): Goal {
   };
 }
 
-test('buildSavingsAllocationAction — margem e saldo suficientes', () => {
+function margin(available: number) {
+  return calculateRealSavingsMargin(available, [], new Date('2026-07-05T12:00:00'));
+}
+
+test('buildSavingsAllocationAction — margem real e saldo suficientes', () => {
+  const m = margin(200);
   const action = buildSavingsAllocationAction({
-    availableThisMonth: 200,
+    margin: m,
     goals: [goal({ id: 'g1', name: 'Fundo', target: 1000, current: 200 })],
     accounts: [account({ id: 'a1', name: 'Moey', initialBalance: 500, balance: 500 })],
   });
@@ -36,12 +42,12 @@ test('buildSavingsAllocationAction — margem e saldo suficientes', () => {
   assert.ok(action);
   assert.equal(action.goalId, 'g1');
   assert.equal(action.accountId, 'a1');
-  assert.equal(action.amount, 100);
+  assert.equal(action.amount, 180);
 });
 
 test('buildSavingsAllocationAction — bloqueia sem saldo na conta', () => {
   const action = buildSavingsAllocationAction({
-    availableThisMonth: 200,
+    margin: margin(200),
     goals: [goal({ id: 'g1', target: 1000, current: 0 })],
     accounts: [account({ id: 'a1', initialBalance: 5, balance: 5 })],
   });
@@ -51,7 +57,7 @@ test('buildSavingsAllocationAction — bloqueia sem saldo na conta', () => {
 
 test('buildSavingsAllocationAction — bloqueia sem margem disponível', () => {
   const action = buildSavingsAllocationAction({
-    availableThisMonth: 0,
+    margin: margin(0),
     goals: [goal({ id: 'g1', target: 1000, current: 0 })],
     accounts: [account({ id: 'a1', initialBalance: 500, balance: 500 })],
   });
@@ -61,7 +67,7 @@ test('buildSavingsAllocationAction — bloqueia sem margem disponível', () => {
 
 test('buildSavingsAllocationAction — ignora contas fora do orçamento', () => {
   const action = buildSavingsAllocationAction({
-    availableThisMonth: 100,
+    margin: margin(100),
     goals: [goal({ id: 'g1', target: 500, current: 0 })],
     accounts: [
       account({

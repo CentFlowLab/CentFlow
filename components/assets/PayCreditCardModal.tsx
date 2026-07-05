@@ -23,10 +23,16 @@ import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 type PayCreditCardModalProps = {
   visible: boolean;
   credit: Credit | null;
+  initialAmount?: number;
   onClose: () => void;
 };
 
-export function PayCreditCardModal({ visible, credit, onClose }: PayCreditCardModalProps) {
+export function PayCreditCardModal({
+  visible,
+  credit,
+  initialAmount,
+  onClose,
+}: PayCreditCardModalProps) {
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const createTransaction = useCreateTransaction();
@@ -47,13 +53,16 @@ export function PayCreditCardModal({ visible, credit, onClose }: PayCreditCardMo
 
   useEffect(() => {
     if (!visible) return;
-    const suggested = activeCredit?.nextPaymentAmount ?? activeCredit?.outstandingBalance;
+    const suggested =
+      initialAmount ??
+      activeCredit?.nextPaymentAmount ??
+      activeCredit?.outstandingBalance;
     setAmount(suggested ? String(suggested) : '');
     setDate(todayInputDate());
     setNote('');
     setApiError(null);
     setAccountId(undefined);
-  }, [visible, activeCredit?.id]);
+  }, [visible, activeCredit?.id, initialAmount]);
 
   const parsedAmount = useMemo(() => {
     if (!amount.trim()) return Number.NaN;

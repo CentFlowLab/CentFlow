@@ -2,14 +2,20 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
+import {
+  PayCreditCardModal,
+  RegisterLoanAmortizationModal,
+} from '@/components/assets';
 import { CategoryBudgetProgressRow } from '@/components/budget/CategoryBudgetProgressRow';
 import { EditCategoryBudgetSheet } from '@/components/budget/EditCategoryBudgetSheet';
+import { SavingsMarginBreakdownLines } from '@/components/budget/SavingsMarginBreakdownLines';
 import { Button, Card, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useMarkSubscriptionReviewed } from '@/hooks/queries/useMarkSubscriptionReviewed';
 import { useSavingsAllocationAction } from '@/hooks/useSavingsAllocationAction';
 import { useFinancialActions, type FinancialAction } from '@/hooks/useFinancialActions';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
+import type { Credit } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/format';
 import { getApiErrorMessage } from '@/lib/api/errors';
@@ -30,6 +36,10 @@ export function FinancialActionsCard({
   const { data: liabilities } = useLiabilities();
   const markReviewed = useMarkSubscriptionReviewed();
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [debtCredit, setDebtCredit] = useState<Credit | null>(null);
+  const [debtAmount, setDebtAmount] = useState<number | undefined>();
+  const [cardPaymentVisible, setCardPaymentVisible] = useState(false);
+  const [loanAmortizationVisible, setLoanAmortizationVisible] = useState(false);
   const { confirmAndAllocate, isPending: allocatePending } = useSavingsAllocationAction({
     onSuccess: () => {
       showToast('Valor alocado ao objetivo.', 'success');
@@ -45,6 +55,29 @@ export function FinancialActionsCard({
   }, [actions, editingCategory]);
 
   if (actions.length === 0) return null;
+
+  function openDebtAction(action: Extract<FinancialAction, { kind: 'debt_amortization' }>) {
+    const credit = liabilities?.credits.find((item) => item.id === action.payload.creditId);
+    if (!credit) {
+      showToast('Crédito não encontrado.', 'error');
+      return;
+    }
+    setDebtCredit(credit);
+    setDebtAmount(action.payload.amount);
+    if (action.payload.isCard) {
+      setCardPaymentVisible(true);
+    } else {
+      setLoanAmortizationVisible(true);
+    }
+  }
+
+  function closeDebtModals() {
+    setCardPaymentVisible(false);
+    setLoanAmortizationVisible(false);
+    setDebtCredit(null);
+    setDebtAmount(undefined);
+    onSuccess?.();
+  }
 
   async function handleMarkReviewed(action: Extract<FinancialAction, { kind: 'subscription_review' }>) {
     const subscription = liabilities?.subscriptions.find(
@@ -110,6 +143,26 @@ export function FinancialActionsCard({
           </View>
         );
 
+      case 'debt_amortization':
+        return (
+          <View key={action.id} style={styles.actionBlock}>
+            <Text variant="bodyMedium">{action.title}</Text>
+            <Text variant="caption" color="textMuted">
+              {action.description}
+            </Text>
+            <SavingsMarginBreakdownLines
+              margin={action.payload.margin}
+              suggestedAmount={action.payload.amount}
+            />
+            <Button
+              label={`Amortizar ${formatCurrency(action.payload.amount)}`}
+              variant="success"
+              size="md"
+              onPress={() => openDebtAction(action)}
+            />
+          </View>
+        );
+
       case 'allocate_goal':
         return (
           <View key={action.id} style={styles.actionBlock}>
@@ -117,6 +170,10 @@ export function FinancialActionsCard({
             <Text variant="caption" color="textMuted">
               {action.description}
             </Text>
+            <SavingsMarginBreakdownLines
+              margin={action.payload.margin}
+              suggestedAmount={action.payload.amount}
+            />
             <Button
               label={`Alocar ${formatCurrency(action.payload.amount)} ao objetivo`}
               variant="success"
@@ -182,6 +239,19 @@ export function FinancialActionsCard({
         visible={editingStatus !== null}
         status={editingStatus}
         onClose={() => setEditingCategory(null)}
+      />
+
+      <PayCreditCardModal
+        visible={cardPaymentVisible}
+        credit={debtCredit}
+        initialAmount={debtAmount}
+        onClose={closeDebtModals}
+      />
+      <RegisterLoanAmortizationModal
+        visible={loanAmortizationVisible}
+        credit={debtCredit}
+        initialAmount={debtAmount}
+        onClose={closeDebtModals}
       />
     </>
   );

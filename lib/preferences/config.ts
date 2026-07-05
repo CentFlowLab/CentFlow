@@ -20,6 +20,7 @@ export const DEFAULT_PREFERENCES = {
   region: 'PT',
   themeId: 'dark-premium' as ThemeId,
   biometricsEnabled: false,
+  prioritizeDebtAmortization: true,
 };
 
 export const THEME_OPTIONS: Array<{

@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Text } from '@/components/ui';
+import { SavingsMarginBreakdownLines } from '@/components/budget/SavingsMarginBreakdownLines';
 import { useToast } from '@/components/ui/Toast';
 import { useSavingsAllocationAction } from '@/hooks/useSavingsAllocationAction';
 import { colors, spacing } from '@/lib/theme';
@@ -13,7 +14,7 @@ type AllocateToGoalCardProps = {
 
 export function AllocateToGoalCard({ onSuccess }: AllocateToGoalCardProps) {
   const { showToast } = useToast();
-  const { action, confirmAndAllocate, isPending } = useSavingsAllocationAction({
+  const { action, margin, confirmAndAllocate, isPending } = useSavingsAllocationAction({
     onSuccess: () => {
       if (action) {
         showToast(
@@ -45,10 +46,12 @@ export function AllocateToGoalCard({ onSuccess }: AllocateToGoalCardProps) {
         <View style={styles.headerText}>
           <Text variant="h3">Margem de poupança</Text>
           <Text variant="caption" color="textMuted">
-            Disponível {formatCurrency(action.availableThisMonth)} este mês
+            Margem real estimada {formatCurrency(margin.rawMargin)}
           </Text>
         </View>
       </View>
+
+      <SavingsMarginBreakdownLines margin={margin} suggestedAmount={action.amount} />
 
       <Text variant="body" color="textSecondary">
         Podes reservar {formatCurrency(action.amount)} para «{action.goalName}» a partir de{' '}

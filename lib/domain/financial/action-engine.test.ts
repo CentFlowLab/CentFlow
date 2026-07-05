@@ -73,7 +73,9 @@ test('buildFinancialActions — prioriza orçamento e subscrição', () => {
     subscriptions,
     goals: [],
     accounts: [],
+    credits: [],
     availableThisMonth: 0,
+    prioritizeDebtAmortization: true,
     maxActions: 3,
   });
 
