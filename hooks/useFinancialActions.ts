@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { captureDomainCalculationError } from '@/lib/sentry';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useCategoryBudgetStatus } from '@/hooks/queries/useCategoryBudgets';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
@@ -28,14 +29,18 @@ export function useFinancialActions(options?: UseFinancialActionsOptions) {
 
   const asOf = options?.asOf ?? new Date();
 
-  const margin = useMemo(
-    () => calculateRealSavingsMargin(spendable.available, transactions, asOf),
-    [spendable.available, transactions, asOf],
-  );
+  const margin = useMemo(() => {
+    try {
+      return calculateRealSavingsMargin(spendable.available, transactions, asOf);
+    } catch (error) {
+      captureDomainCalculationError('savings_engine', error);
+      return calculateRealSavingsMargin(0, [], asOf);
+    }
+  }, [spendable.available, transactions, asOf]);
 
-  const actions = useMemo(
-    () =>
-      buildFinancialActions({
+  const actions = useMemo(() => {
+    try {
+      return buildFinancialActions({
         asOf,
         budgetStatuses: statuses,
         transactions,
@@ -46,8 +51,12 @@ export function useFinancialActions(options?: UseFinancialActionsOptions) {
         prioritizeDebtAmortization: preferences?.prioritizeDebtAmortization ?? true,
         margin,
         maxActions: options?.maxActions,
-      }),
-    [
+      });
+    } catch (error) {
+      captureDomainCalculationError('debt_amortization', error);
+      return [];
+    }
+  }, [
       asOf,
       options?.maxActions,
       statuses,

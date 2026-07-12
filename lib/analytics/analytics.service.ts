@@ -15,6 +15,8 @@
  * The service is intentionally dependency-free so it can be swapped without touching call sites.
  */
 
+import { hashUserIdForSentry, setSentryUserFromHash } from '@/lib/sentry';
+
 import { AnalyticsEvents, type AnalyticsEvent, type AnalyticsPayloads } from './events';
 
 // Module-level user context (simple & effective for RN apps)
@@ -27,12 +29,13 @@ let currentUserId: string | null = null;
 export function identify(userId: string | null): void {
   currentUserId = userId;
 
-  // In a real provider you would call:
-  // posthog.identify(userId);
-  // or posthog.alias(...) etc.
+  void (async () => {
+    const hash = userId ? await hashUserIdForSentry(userId) : null;
+    setSentryUserFromHash(hash);
+  })();
 
   if (__DEV__) {
-    console.log('[Analytics] identify', { userId });
+    console.log('[Analytics] identify', { userId: userId ? '[hash]' : null });
   }
 }
 
@@ -94,6 +97,7 @@ export function track<E extends AnalyticsEvent>(
  */
 export function resetAnalytics(): void {
   currentUserId = null;
+  setSentryUserFromHash(null);
   if (__DEV__) {
     console.log('[Analytics] reset');
   }

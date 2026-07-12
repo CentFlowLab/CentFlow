@@ -1,0 +1,206 @@
+# =============================================================================
+# CentFlow — Auto-fix de erros detetados pelo Sentry
+# =============================================================================
+#
+# Fluxo:
+#   Sentry → GitHub Issue (label auto-detected-error)
+#   → este workflow → Claude Code → branch fix/auto-{n} → PR (sem merge)
+#
+# Salvaguardas:
+#   - Não corre se a issue tiver requires-manual-review (lógica financeira)
+#   - Máximo 5 execuções por dia (rate limit)
+#   - Nunca faz merge automático
+#
+# Secrets obrigatórios:
+#   ANTHROPIC_API_KEY — API key Anthropic para Claude Code Action
+# =============================================================================
+
+name: Auto-fix detected errors
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: auto-fix-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  guard:
+    name: Validate trigger
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      issue_number: ${{ github.event.issue.number }}
+    steps:
+      - name: Check labels
+        id: check
+        run: |
+          LABEL="${{ github.event.label.name }}"
+          if [ "$LABEL" != "auto-detected-error" ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Label ignorada: $LABEL"
+            exit 0
+          fi
+
+          LABELS='${{ toJson(github.event.issue.labels.*.name) }}'
+          if echo "$LABELS" | grep -q 'requires-manual-review'; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Issue com requires-manual-review — auto-fix bloqueado."
+            exit 0
+          fi
+
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+
+  rate-limit:
+    name: Daily rate limit
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.limit.outputs.allowed }}
+    steps:
+      - name: Date key
+        id: date
+        run: echo "today=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore daily counter
+        uses: actions/cache/restore@v4
+        with:
+          path: .auto-fix-rate
+          key: auto-fix-rate-${{ steps.date.outputs.today }}
+
+      - name: Check and increment counter
+        id: limit
+        run: |
+          set -euo pipefail
+          TODAY=$(date -u +%Y-%m-%d)
+          mkdir -p .auto-fix-rate
+          FILE=".auto-fix-rate/${TODAY}.count"
+          COUNT=0
+          if [ -f "$FILE" ]; then
+            COUNT=$(cat "$FILE")
+          fi
+          if [ "$COUNT" -ge 5 ]; then
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Rate limit atingido (5/dia). Auto-fix adiado."
+            exit 0
+          fi
+          echo $((COUNT + 1)) > "$FILE"
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+          echo "Execução $((COUNT + 1))/5 hoje."
+
+      - name: Save daily counter
+        if: steps.limit.outputs.allowed == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .auto-fix-rate
+          key: auto-fix-rate-${{ steps.date.outputs.today }}
+
+  auto-fix:
+    name: Claude auto-fix
+    needs: [guard, rate-limit]
+    if: needs.guard.outputs.should_run == 'true' && needs.rate-limit.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ISSUE_NUMBER: ${{ needs.guard.outputs.issue_number }}
+      FIX_BRANCH: fix/auto-${{ needs.guard.outputs.issue_number }}
+
+    steps:
+      - name: Ensure GitHub labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "auto-detected-error" --color "d73a4a" \
+            --description "Erro detetado automaticamente pelo Sentry" 2>/dev/null || true
+          gh label create "requires-manual-review" --color "fbca04" \
+            --description "Lógica financeira sensível — revisão humana obrigatória" 2>/dev/null || true
+          gh label create "auto-fix-pr" --color "0e8a16" \
+            --description "PR criado pelo agente de auto-fix" 2>/dev/null || true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code auto-fix
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ env.ISSUE_NUMBER }}
+            FIX BRANCH: ${{ env.FIX_BRANCH }}
+
+            És um agente de correção automática para a app financeira CentFlow (Expo SDK 56, Expo Router, TanStack Query, Supabase).
+
+            ## Tarefa
+            1. Lê a issue #${{ env.ISSUE_NUMBER }} com `gh issue view` e comentários.
+            2. Analisa o stack trace e contexto (ecrã, acção, componente).
+            3. Localiza a causa provável no código — prioriza `/lib/domain`, `/lib/projections`, `/lib/data` e serviços Supabase/Open Banking. Só toca em UI se o erro for claramente visual.
+            4. Escreve um teste que reproduza o bug em `lib/**/*.test.ts` (tsx --test), sempre que aplicável, ANTES de corrigir.
+            5. Implementa a correção MÍNIMA necessária — sem refactors não relacionados.
+            6. Se alterares lógica de cálculo financeiro (poupança, amortização de dívida, projeções de cashflow, saldo), adiciona comentário no código explicando a mudança e o porquê.
+            7. Corre `npm test` para validar.
+            8. Cria branch `${{ env.FIX_BRANCH }}`, commit, push e abre PR com `gh pr create`.
+            9. NUNCA fazes merge — o PR espera sempre aprovação humana do Manu.
+
+            ## Restrições
+            - Stack: Expo SDK 56, Expo Router, TanStack Query, Supabase, Reanimated 3
+            - Estrutura: /app, /lib, /components (sem /src)
+            - Não acedas a secrets Supabase ou GoCardless
+            - Não captures nem envies dados financeiros reais
+
+            ## Saída esperada
+            - Branch `${{ env.FIX_BRANCH }}` com fix + teste
+            - PR aberto (sem merge)
+            - Resumo curto do diagnóstico para comentar na issue
+
+          claude_args: |
+            --allowedTools "Edit,Write,Read,Bash,Glob,Grep,Bash(npm test:*),Bash(npm run test:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(git checkout:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*)"
+
+      - name: Comment on issue with PR link
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR_URL=$(gh pr list --head "${{ env.FIX_BRANCH }}" --json url --jq '.[0].url' 2>/dev/null || true)
+          if [ -n "$PR_URL" ]; then
+            gh issue comment "${{ env.ISSUE_NUMBER }}" --body "$(cat <<EOF
+          🤖 **Auto-fix concluído**
+
+          Foi criado um PR para revisão humana (sem merge automático):
+          $PR_URL
+
+          Branch: \`${{ env.FIX_BRANCH }}\`
+
+          > O Manu deve rever e aprovar manualmente antes de merge para \`main\`.
+          EOF
+          )"
+            gh issue edit "${{ env.ISSUE_NUMBER }}" --add-label "auto-fix-pr" 2>/dev/null || true
+          else
+            gh issue comment "${{ env.ISSUE_NUMBER }}" --body "⚠️ O agente de auto-fix não conseguiu criar PR. Ver logs do workflow."
+          fi
+
+  rate-limit-notify:
+    name: Notify rate limit
+    needs: [guard, rate-limit]
+    if: needs.guard.outputs.should_run == 'true' && needs.rate-limit.outputs.allowed != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment rate limit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment "${{ needs.guard.outputs.issue_number }}" --body "⏳ Rate limit de auto-fix atingido (máx. 5/dia). A issue mantém-se aberta para revisão manual."

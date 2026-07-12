@@ -58,6 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const session = await authService.restoreSession();
         if (mounted && session) {
           setUser(session.user);
+          identify(session.user?.id ?? null);
         }
       } catch (error) {
         if (__DEV__) {

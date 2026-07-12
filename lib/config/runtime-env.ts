@@ -12,6 +12,7 @@ type RuntimeExtra = {
   supabaseUrl?: string;
   supabaseAnonKey?: string;
   mockAuth?: string;
+  sentryDsn?: string;
 };
 
 function readExtra(): RuntimeExtra {
@@ -83,6 +84,12 @@ export function getRuntimePublicEnv(name: string): string {
         extra.mockAuth?.trim() ||
         process.env.EXPO_PUBLIC_MOCK_AUTH?.trim() ||
         realDataFallback(name)
+      );
+    case 'EXPO_PUBLIC_SENTRY_DSN':
+      return (
+        extra.sentryDsn?.trim() ||
+        process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ||
+        ''
       );
     default:
       return process.env[name]?.trim() || '';

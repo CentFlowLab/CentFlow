@@ -13,6 +13,8 @@ export type AppLogEntry = {
   context?: Record<string, unknown>;
 };
 
+import { captureAppError } from '@/lib/sentry/capture';
+
 import { withDiagnosticContext, getDiagnosticRuntimeContext } from './runtime-context';
 
 const MAX_ENTRIES = 250;
@@ -145,13 +147,21 @@ export function logAppError(
   context?: Record<string, unknown>,
 ): AppLogEntry {
   const err = error instanceof Error ? error : new Error(formatArg(error));
-  return pushEntry({
+  const entry = pushEntry({
     level: 'error',
     source,
     message: err.message || 'Erro desconhecido',
     stack: err.stack,
     context: withDiagnosticContext(context),
   });
+
+  captureAppError(err, {
+    source,
+    severity: entry.severity,
+    extra: entry.context,
+  });
+
+  return entry;
 }
 
 function captureConsoleStack(): string | undefined {

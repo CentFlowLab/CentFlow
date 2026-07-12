@@ -1,3 +1,4 @@
+import '@/lib/sentry/bootstrap';
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -70,7 +71,19 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 
-export default function RootLayout() {
+function wrapWithSentry(Component: typeof RootLayout) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Sentry = require('@sentry/react-native') as typeof import('@sentry/react-native');
+    return Sentry.wrap(Component);
+  } catch {
+    return Component;
+  }
+}
+
+export default wrapWithSentry(RootLayout);
+
+function RootLayout() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <StartupShell>

@@ -44,6 +44,8 @@ const mockAuth =
   process.env.EXPO_PUBLIC_MOCK_AUTH?.trim() ||
   (isBeta || isProduction ? 'false' : '');
 
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() || '';
+
 const updateChannel =
   process.env.EAS_UPDATE_CHANNEL?.trim() ||
   process.env.EXPO_PUBLIC_EAS_UPDATE_CHANNEL?.trim() ||
@@ -56,6 +58,17 @@ module.exports = {
     plugins: [
       ...(appJson.expo.plugins ?? []),
       '@react-native-community/datetimepicker',
+      ...(process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
+        ? [
+            [
+              '@sentry/react-native/expo',
+              {
+                organization: process.env.SENTRY_ORG,
+                project: process.env.SENTRY_PROJECT,
+              },
+            ],
+          ]
+        : []),
     ],
     updates: {
       ...appJson.expo.updates,
@@ -70,6 +83,7 @@ module.exports = {
       supabaseUrl,
       supabaseAnonKey,
       mockAuth,
+      sentryDsn,
     },
   },
 };

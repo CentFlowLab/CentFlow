@@ -1,5 +1,7 @@
 import * as Linking from 'expo-linking';
 
+import { logAppError } from '@/lib/diagnostics';
+
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 import type {
@@ -34,11 +36,21 @@ function mapConnection(row: Record<string, unknown>): BankConnection {
 }
 
 async function invokeGoCardless<T>(body: Record<string, unknown>): Promise<T> {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase.functions.invoke(GOCARDLESS_FUNCTION, { body });
-  if (error) throw new Error(error.message);
-  if (data?.error) throw new Error(String(data.error));
-  return data as T;
+  const action = String(body.action ?? 'unknown');
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.functions.invoke(GOCARDLESS_FUNCTION, { body });
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(String(data.error));
+    return data as T;
+  } catch (error) {
+    logAppError('gocardless', error, {
+      component: 'open-banking',
+      action: `gocardless:${action}`,
+      integration: 'gocardless',
+    });
+    throw error instanceof Error ? error : new Error('Falha Open Banking');
+  }
 }
 
 export function getOpenBankingRedirectUrl(): string {
@@ -91,6 +103,11 @@ export async function syncBankConnection(connectionId: string): Promise<SyncConn
     });
     return { ok: true, imported: data.imported, skipped: data.skipped };
   } catch (error) {
+    logAppError('gocardless-sync', error, {
+      component: 'open-banking',
+      action: 'sync_connection',
+      connectionId,
+    });
     return {
       ok: false,
       error: error instanceof Error ? error.message : 'Falha na sincronização',

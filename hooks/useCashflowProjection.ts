@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { captureDomainCalculationError } from '@/lib/sentry';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useGoalContributions } from '@/hooks/queries/useGoalContributions';
 import { useLoanPayments } from '@/hooks/queries/useLoanPayments';
@@ -34,15 +35,20 @@ export function useCashflowProjection(
   const projection = useMemo(() => {
     if (isLoading) return null;
 
-    return buildCashflowProjection({
-      horizon,
-      transactions,
-      subscriptions: liabilities?.subscriptions ?? assets?.subscriptions ?? [],
-      credits: liabilities?.credits ?? assets?.credits ?? [],
-      goalContributions,
-      loanPayments,
-      prioritizeDebtAmortization: preferences?.prioritizeDebtAmortization ?? true,
-    });
+    try {
+      return buildCashflowProjection({
+        horizon,
+        transactions,
+        subscriptions: liabilities?.subscriptions ?? assets?.subscriptions ?? [],
+        credits: liabilities?.credits ?? assets?.credits ?? [],
+        goalContributions,
+        loanPayments,
+        prioritizeDebtAmortization: preferences?.prioritizeDebtAmortization ?? true,
+      });
+    } catch (error) {
+      captureDomainCalculationError('cashflow_projection', error, { horizon });
+      return null;
+    }
   }, [
     assets,
     goalContributions,
