@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import type { User } from '@/lib/auth/types';
 
 import { DEFAULT_PREFERENCES } from './config';
+import { normalizeThemeId } from '@/lib/theme/themes';
 import type { UserPreferences } from './types';
 
 const PREFS_KEY_PREFIX = 'centflow_prefs_';
@@ -20,7 +21,8 @@ export async function loadStoredPreferences(userId: string): Promise<UserPrefere
   try {
     const raw = await SecureStore.getItemAsync(prefsKey(userId));
     if (!raw) return { ...DEFAULT_PREFERENCES };
-    return { ...DEFAULT_PREFERENCES, ...JSON.parse(raw) };
+    const merged = { ...DEFAULT_PREFERENCES, ...JSON.parse(raw) } as UserPreferences;
+    return { ...merged, themeId: normalizeThemeId(merged.themeId) };
   } catch {
     return { ...DEFAULT_PREFERENCES };
   }

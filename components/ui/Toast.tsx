@@ -11,7 +11,8 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { radius, spacing, useTheme, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 type ToastTone = 'success' | 'error' | 'info';
 
@@ -28,6 +29,9 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const staticStyles = useMemo(() => staticToastStyles, []);
+  const themedStyles = useThemedStyles(createThemedStyles);
   const [toast, setToast] = useState<ToastState | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,7 +75,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         <Animated.View
           pointerEvents="none"
           style={[
-            styles.toast,
+            staticStyles.toast,
             {
               top: insets.top + spacing.md,
               opacity,
@@ -83,7 +87,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <Text
             variant="bodyMedium"
             color={toast.tone === 'info' ? 'text' : undefined}
-            style={toast.tone === 'info' ? undefined : styles.inverseText}>
+            style={toast.tone === 'info' ? undefined : themedStyles.inverseText}>
             {toast.message}
           </Text>
         </Animated.View>
@@ -100,7 +104,7 @@ export function useToast() {
   return context;
 }
 
-const styles = StyleSheet.create({
+const staticToastStyles = StyleSheet.create({
   toast: {
     position: 'absolute',
     left: spacing.lg,
@@ -116,7 +120,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },
-  inverseText: {
-    color: colors.textInverse,
-  },
 });
+
+function createThemedStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    inverseText: {
+      color: colors.textInverse,
+    },
+  });
+}

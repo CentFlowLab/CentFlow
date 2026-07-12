@@ -1,6 +1,8 @@
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
 
+import { normalizeThemeId } from '@/lib/theme/themes';
+
 import { DEFAULT_PREFERENCES } from './config';
 import { normalizeCountryCode } from './locale.data';
 import { loadStoredPreferences, saveStoredPreferences } from './storage';
@@ -37,7 +39,7 @@ function mapRow(row: PreferencesRow): UserPreferences {
     emailCreditPayments: row.email_credit_payments ?? true,
     emailTipsInsights: row.email_tips_insights ?? true,
     region: normalizeCountryCode(row.region),
-    themeId: row.theme_id,
+    themeId: normalizeThemeId(row.theme_id),
     biometricsEnabled: row.biometrics_enabled,
     prioritizeDebtAmortization: row.prioritize_debt_amortization ?? true,
   };

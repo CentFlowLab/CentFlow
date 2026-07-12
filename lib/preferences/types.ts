@@ -4,7 +4,7 @@ export type SupportedCurrency = string;
 /** Código ISO 3166-1 alpha-2 (ex.: PT, BR). */
 export type UserRegion = string;
 
-export type ThemeId = 'dark-premium' | 'dark-classic';
+export type ThemeId = 'classic' | 'midnight-indigo' | 'warm-graphite' | 'deep-emerald';
 
 export type UserPreferences = {
   pushNotifications: boolean;

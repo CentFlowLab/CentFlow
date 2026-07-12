@@ -1,4 +1,7 @@
-import type { ThemeId, UserPreferences } from './types';
+import { DEFAULT_THEME_ID, THEME_DEFINITIONS } from '@/lib/theme/themes';
+import type { ThemeId } from '@/lib/theme/types';
+
+import type { UserPreferences } from './types';
 import {
   getCountryLabel,
   getCurrencyLabel,
@@ -18,33 +21,18 @@ export const DEFAULT_PREFERENCES = {
   emailCreditPayments: true,
   emailTipsInsights: true,
   region: 'PT',
-  themeId: 'dark-premium' as ThemeId,
+  themeId: DEFAULT_THEME_ID as ThemeId,
   biometricsEnabled: false,
   prioritizeDebtAmortization: true,
 };
 
-export const THEME_OPTIONS: Array<{
-  id: ThemeId;
-  name: string;
-  description: string;
-  available: boolean;
-  preview: readonly [string, string, string];
-}> = [
-  {
-    id: 'dark-premium',
-    name: 'Dark Premium',
-    description: 'Teal e gold — tema actual da CentFlow',
-    available: true,
-    preview: ['#0A1214', '#122023', '#2DD4BF'],
-  },
-  {
-    id: 'dark-classic',
-    name: 'Dark Classic',
-    description: 'Em breve — tons mais neutros',
-    available: false,
-    preview: ['#0B0B0F', '#17171C', '#8B8B9A'],
-  },
-];
+export const THEME_OPTIONS = THEME_DEFINITIONS.map((theme) => ({
+  id: theme.id,
+  name: theme.name,
+  description: theme.description,
+  previewBackground: theme.previewBackground,
+  previewAccent: theme.previewAccent,
+}));
 
 export function getLocaleForRegion(region: string): string {
   return getLocaleForCountry(normalizeCountryCode(region));

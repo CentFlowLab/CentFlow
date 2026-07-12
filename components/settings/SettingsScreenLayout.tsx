@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/layout';
 import { Text } from '@/components/ui';
-import { colors, spacing } from '@/lib/theme';
+import { spacing, useTheme, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 type SettingsScreenLayoutProps = {
   title: string;
@@ -20,6 +21,7 @@ export function SettingsScreenLayout({
   children,
 }: SettingsScreenLayoutProps) {
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <View style={styles.screen}>
@@ -54,6 +56,9 @@ type SettingsHeroProps = {
 };
 
 export function SettingsHero({ icon, title, description }: SettingsHeroProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.hero}>
       <View style={styles.heroIcon}>
@@ -69,32 +74,34 @@ export function SettingsHero({ icon, title, description }: SettingsHeroProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
-  },
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      gap: spacing.lg,
+    },
+    hero: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    heroIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primaryMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+  });
+}

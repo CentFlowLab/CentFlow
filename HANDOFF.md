@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-12T03:10:43.520Z -->
-<!-- Git: c33c534 (2026-07-05T21:56:46+01:00) -->
+<!-- Última geração: 2026-07-12T03:15:48.065Z -->
+<!-- Git: 71c01c3 (2026-07-12T04:10:57+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Fase 26 — Contas ocultas na UI (saldo global por transações)** |
-| Última geração | 2026-07-12T03:10:43.520Z |
+| Última geração | 2026-07-12T03:15:48.065Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `c33c534` (2026-07-05T21:56:46+01:00) |
+| Git commit | `71c01c3` (2026-07-12T04:10:57+01:00) |
 
 ---
 
@@ -797,11 +797,16 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     receipts.ts
     transactions.ts
   theme/
+    ThemeProvider.tsx
     colors.ts
     index.ts
     layout.ts
     spacing.ts
+    theme-store.ts
+    themes.ts
+    types.ts
     typography.ts
+    useThemedStyles.ts
   transactions/
     __tests__/
       filter.test.ts

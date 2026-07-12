@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import {
   DarkTheme,
   Stack,
-  ThemeProvider,
+  ThemeProvider as NavigationThemeProvider,
   type ErrorBoundaryProps,
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -22,25 +22,30 @@ import { queryClient } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { logAppError } from '@/lib/diagnostics';
 import { PreferencesProvider } from '@/lib/preferences/PreferencesProvider';
-import { colors } from '@/lib/theme';
+import { AppThemeProvider, useTheme } from '@/lib/theme';
 export const unstable_settings = {
   initialRouteName: 'index',
 };
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const CentFlowTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: colors.primary,
-    background: colors.background,
-    card: colors.surface,
-    text: colors.text,
-    border: colors.border,
-    notification: colors.accent,
-  },
-};
+function NavigationThemeBridge({ children }: { children: React.ReactNode }) {
+  const { colors: palette } = useTheme();
+  const navigationTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      primary: palette.primary,
+      background: palette.background,
+      card: palette.surface,
+      text: palette.text,
+      border: palette.border,
+      notification: palette.accent,
+    },
+  };
+
+  return <NavigationThemeProvider value={navigationTheme}>{children}</NavigationThemeProvider>;
+}
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   logAppError('error-boundary', error);
@@ -71,9 +76,10 @@ export default function RootLayout() {
       <StartupShell>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <ToastProvider>
               <PreferencesProvider>
-                <ThemeProvider value={CentFlowTheme}>
+                <AppThemeProvider>
+                  <ToastProvider>
+                  <NavigationThemeBridge>
                   <StatusBar style="light" />
                   <DiagnosticsBootstrap />
                   <AndroidNavigationBarEffect />
@@ -85,9 +91,10 @@ export default function RootLayout() {
                     </BiometricGate>
                   </AppSecurityBootstrap>
                   <DiagnosticOverlay />
-                </ThemeProvider>
+                  </NavigationThemeBridge>
+                  </ToastProvider>
+                </AppThemeProvider>
               </PreferencesProvider>
-            </ToastProvider>
           </AuthProvider>
         </QueryClientProvider>
       </StartupShell>
@@ -97,6 +104,7 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { isAuthenticated, isLoading, startupError, retryBootstrap } = useAuth();
+  const { colors } = useTheme();
 
   useEffect(() => {
     void SplashScreen.hideAsync().catch(() => {});

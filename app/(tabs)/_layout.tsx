@@ -17,7 +17,8 @@ import { TabIcon } from '@/components/icons/TabIcon';
 import { TabBarAnalisesIcon } from '@/components/layout';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
-import { colors, spacing, typography } from '@/lib/theme';
+import { spacing, typography, useTheme, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 export default function TabLayout() {
   return <TabLayoutInner />;
@@ -26,6 +27,8 @@ export default function TabLayout() {
 function TabLayoutInner() {
   const keyboardVisible = useKeyboardVisible();
   const { contentHeight } = useTabBarMetrics();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <>
@@ -172,6 +175,8 @@ function TabLayoutInner() {
 
 function TabBarAnalisesButton(props: PressableProps) {
   const { style, children, ...rest } = props;
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <Pressable
@@ -197,6 +202,8 @@ function TabBarAnalisesButton(props: PressableProps) {
 
 function TabBarButtonAndroid(props: PressableProps) {
   const { style, children, ...rest } = props;
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <Pressable
@@ -226,54 +233,56 @@ function renderPressableChildren(
   return typeof children === 'function' ? children(state) : children;
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.tabBar,
-    borderTopColor: colors.tabBarBorder,
-    borderTopWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  tabBarHidden: {
-    display: 'none',
-    height: 0,
-    overflow: 'hidden',
-  },
-  tabBarItem: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  analisesTabItem: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-    overflow: 'visible',
-  },
-  tabLabel: {
-    marginTop: 2,
-  },
-  analisesTabButton: {
-    flex: 1,
-    alignSelf: 'stretch',
-    overflow: 'visible',
-  },
-  analisesTabContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'visible',
-  },
-  tabButton: {
-    flex: 1,
-    alignSelf: 'stretch',
-    overflow: 'hidden',
-  },
-  tabButtonContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    tabBar: {
+      backgroundColor: colors.tabBar,
+      borderTopColor: colors.tabBarBorder,
+      borderTopWidth: 0,
+      elevation: 0,
+      shadowOpacity: 0,
+    },
+    tabBarHidden: {
+      display: 'none',
+      height: 0,
+      overflow: 'hidden',
+    },
+    tabBarItem: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: spacing.xs,
+    },
+    analisesTabItem: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: spacing.xs,
+      overflow: 'visible',
+    },
+    tabLabel: {
+      marginTop: 2,
+    },
+    analisesTabButton: {
+      flex: 1,
+      alignSelf: 'stretch',
+      overflow: 'visible',
+    },
+    analisesTabContent: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'visible',
+    },
+    tabButton: {
+      flex: 1,
+      alignSelf: 'stretch',
+      overflow: 'hidden',
+    },
+    tabButtonContent: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
+}

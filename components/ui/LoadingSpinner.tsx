@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, spacing } from '@/lib/theme';
+import { spacing, useTheme } from '@/lib/theme';
 
 import { Text } from './Text';
 
@@ -17,6 +17,8 @@ export function LoadingSpinner({
   fullScreen = false,
   style,
 }: LoadingSpinnerProps) {
+  const { colors } = useTheme();
+
   return (
     <View style={[styles.container, fullScreen && styles.fullScreen, style]}>
       <ActivityIndicator color={colors.primary} size={size} />

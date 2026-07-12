@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/lib/theme';
+import { radius, spacing, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 import { Button } from './Button';
 import { Text } from './Text';
@@ -26,6 +27,8 @@ export function EmptyState({
   onSecondaryAction,
   compact = false,
 }: EmptyStateProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={[styles.container, compact && styles.containerCompact]}>
       <View style={[styles.iconWrapper, compact && styles.iconWrapperCompact]}>{icon}</View>
@@ -54,45 +57,47 @@ export function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing['3xl'],
-    paddingVertical: spacing['4xl'],
-    gap: spacing.md,
-  },
-  containerCompact: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-    gap: spacing.sm,
-  },
-  iconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  iconWrapperCompact: {
-    width: 56,
-    height: 56,
-    marginBottom: spacing.xs,
-  },
-  title: {
-    maxWidth: 280,
-  },
-  description: {
-    maxWidth: 300,
-    lineHeight: 22,
-  },
-  actions: {
-    width: '100%',
-    maxWidth: 280,
-    marginTop: spacing.lg,
-    gap: spacing.sm,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing['3xl'],
+      paddingVertical: spacing['4xl'],
+      gap: spacing.md,
+    },
+    containerCompact: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.xl,
+      gap: spacing.sm,
+    },
+    iconWrapper: {
+      width: 72,
+      height: 72,
+      borderRadius: radius.xl,
+      backgroundColor: colors.primaryMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    iconWrapperCompact: {
+      width: 56,
+      height: 56,
+      marginBottom: spacing.xs,
+    },
+    title: {
+      maxWidth: 280,
+    },
+    description: {
+      maxWidth: 300,
+      lineHeight: 22,
+    },
+    actions: {
+      width: '100%',
+      maxWidth: 280,
+      marginTop: spacing.lg,
+      gap: spacing.sm,
+    },
+  });
+}

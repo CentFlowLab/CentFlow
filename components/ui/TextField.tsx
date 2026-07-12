@@ -11,7 +11,8 @@ import { useBottomSheetScroll } from '@/components/layout/BottomSheetScrollConte
 import { logAppError } from '@/lib/diagnostics';
 import type { OcrConfidenceLevel } from '@/lib/receipt/ocr-confidence';
 import { getOcrFieldTone } from '@/lib/receipt/ocr-confidence';
-import { colors, layout, radius, spacing } from '@/lib/theme';
+import { layout, radius, spacing, useTheme, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 import { Text } from './Text';
 
@@ -46,6 +47,8 @@ export function TextField({
   onChangeText,
   ...props
 }: TextFieldProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const level = ocrConfidenceLevel ?? 'unknown';
   const ocrTone = ocrHighlighted ? getOcrFieldTone(level) : null;
   const sheetScroll = useBottomSheetScroll();
@@ -138,50 +141,52 @@ export function TextField({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    gap: spacing.sm,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  label: {
-    fontWeight: '500',
-  },
-  ocrBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-  },
-  ocrBadgeText: {
-    fontWeight: '700',
-    fontSize: 10,
-  },
-  editedBadge: {
-    backgroundColor: colors.surfaceHighlight,
-  },
-  editedBadgeText: {
-    fontWeight: '600',
-    fontSize: 10,
-    color: colors.textMuted,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    fontSize: 15,
-    color: colors.text,
-    minHeight: layout.inputHeight,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  error: {
-    marginTop: spacing.xs,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    wrapper: {
+      gap: spacing.sm,
+    },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    label: {
+      fontWeight: '500',
+    },
+    ocrBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.sm,
+    },
+    ocrBadgeText: {
+      fontWeight: '700',
+      fontSize: 10,
+    },
+    editedBadge: {
+      backgroundColor: colors.surfaceHighlight,
+    },
+    editedBadgeText: {
+      fontWeight: '600',
+      fontSize: 10,
+      color: colors.textMuted,
+    },
+    input: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      fontSize: 15,
+      color: colors.text,
+      minHeight: layout.inputHeight,
+    },
+    inputError: {
+      borderColor: colors.danger,
+    },
+    error: {
+      marginTop: spacing.xs,
+    },
+  });
+}

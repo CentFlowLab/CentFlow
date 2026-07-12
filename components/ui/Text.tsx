@@ -1,8 +1,12 @@
-import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
+import { Text as RNText, TextProps as RNTextProps } from 'react-native';
 
-import { colors, typography, TypographyKey } from '@/lib/theme';
+import { typography, TypographyKey, useTheme } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
-type TextColorKey = Exclude<keyof typeof colors, 'gradientPrimary' | 'gradientAccent' | 'gradientSurface'>;
+type TextColorKey = Exclude<
+  keyof ThemeColors,
+  'gradientPrimary' | 'gradientAccent' | 'gradientSurface'
+>;
 
 type TextProps = RNTextProps & {
   variant?: TypographyKey;
@@ -10,11 +14,11 @@ type TextProps = RNTextProps & {
   align?: 'left' | 'center' | 'right';
 };
 
-function resolveTextColor(color: TextProps['color']): string {
-  if (!color) return colors.text;
-  if (color in colors) {
-    const value = colors[color as keyof typeof colors];
-    return typeof value === 'string' ? value : colors.text;
+function resolveTextColor(color: TextProps['color'], palette: ThemeColors): string {
+  if (!color) return palette.text;
+  if (color in palette) {
+    const value = palette[color as keyof ThemeColors];
+    return typeof value === 'string' ? value : palette.text;
   }
   return color;
 }
@@ -26,7 +30,8 @@ export function Text({
   style,
   ...props
 }: TextProps) {
-  const textColor = resolveTextColor(color);
+  const { colors } = useTheme();
+  const textColor = resolveTextColor(color, colors);
 
   return (
     <RNText

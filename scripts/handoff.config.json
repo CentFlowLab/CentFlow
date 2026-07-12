@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 26 — Contas ocultas na UI (saldo global por transações)",
+  "currentPhase": "Fase 27 — Skins de tema seleccionáveis (4 paletas)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -156,9 +156,11 @@
     "Motor poupança Fase A (5) — CTA alocar ao objetivo (margem disponível, transferência real goal_contributions, Home + Análises Resumo)",
     "Motor poupança Fase A (6) — subscrições revista/cancel URL, action-engine (FinancialActionsCard Home + Análises, SubscriptionsSection)",
     "Motor poupança Fase B — margem real (mediana variável + projeção + tecto 90%), amortização dívida prioritária, toggle Definições",
-    "Contas ocultas na UI — ACCOUNTS_FEATURE_ENABLED=false, saldo global (sumGlobalCashBalance), formulários sem picker de conta, tab Contas removida de Ativos"
+    "Contas ocultas na UI — ACCOUNTS_FEATURE_ENABLED=false, saldo global (sumGlobalCashBalance), formulários sem picker de conta, tab Contas removida de Ativos",
+    "Skins de tema — 4 paletas (Classic, Midnight Indigo, Warm Graphite, Deep Emerald), tokens em lib/theme, ThemeProvider + useTheme/useThemedStyles, persistência Supabase (theme_id) + SecureStore, seletor visual em Definições → Aparência"
   ],
   "pending": [
+    "Migrar ecrãs restantes para useThemedStyles (StyleSheets estáticos com colors.* ainda congelam no primeiro tema)",
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
     "Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)",
     "Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)",

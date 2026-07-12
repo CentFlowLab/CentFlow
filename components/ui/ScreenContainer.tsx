@@ -1,7 +1,8 @@
 import { ScrollView, StyleSheet, View, ViewProps } from 'react-native';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, spacing } from '@/lib/theme';
+import { spacing, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 type ScreenContainerProps = ViewProps & {
   scrollable?: boolean;
@@ -23,6 +24,7 @@ export function ScreenContainer({
   children,
   ...props
 }: ScreenContainerProps) {
+  const styles = useThemedStyles(createStyles);
   const { navigationBarInset, contentBottomPadding } = useResponsiveLayout();
 
   const bottomPadding = edges.includes('bottom')
@@ -57,18 +59,20 @@ export function ScreenContainer({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flexGrow: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  padded: {
-    paddingHorizontal: spacing.lg,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flexGrow: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    padded: {
+      paddingHorizontal: spacing.lg,
+    },
+  });
+}

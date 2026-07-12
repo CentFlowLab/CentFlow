@@ -1,7 +1,7 @@
 import { View, type ViewStyle } from 'react-native';
 
 import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
-import { colors } from '@/lib/theme';
+import { useTheme } from '@/lib/theme';
 
 // Bundled pelo expo-router — evita dependência extra.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -25,6 +25,7 @@ type CentFlowTabBarProps = {
  */
 export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const { hidden, ...rest } = props;
+  const { colors } = useTheme();
   const { contentHeight, bottomInset, totalHeight } = useTabBarMetrics();
 
   if (hidden) {

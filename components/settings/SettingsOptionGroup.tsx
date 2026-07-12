@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { radius, spacing, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 type SettingsOptionGroupProps<T extends string> = {
   title: string;
@@ -18,6 +19,8 @@ export function SettingsOptionGroup<T extends string>({
   onChange,
   disabled,
 }: SettingsOptionGroupProps<T>) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.group}>
       <Text variant="label" color="textMuted">
@@ -47,26 +50,28 @@ export function SettingsOptionGroup<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  group: {
-    gap: spacing.sm,
-  },
-  options: {
-    gap: spacing.sm,
-  },
-  option: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  optionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryMuted,
-  },
-  optionDisabled: {
-    opacity: 0.6,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    group: {
+      gap: spacing.sm,
+    },
+    options: {
+      gap: spacing.sm,
+    },
+    option: {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    optionSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primaryMuted,
+    },
+    optionDisabled: {
+      opacity: 0.6,
+    },
+  });
+}

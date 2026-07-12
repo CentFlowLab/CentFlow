@@ -1,7 +1,8 @@
 import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, spacing } from '@/lib/theme';
+import { spacing, useTheme, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 import {
   getScreenErrorContent,
   type ScreenErrorContext,
@@ -34,6 +35,8 @@ export function ErrorState({
   compact = false,
   style,
 }: ErrorStateProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const content = getScreenErrorContent(error, context);
 
   return (
@@ -71,37 +74,39 @@ export function ErrorState({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing['3xl'],
-    paddingVertical: spacing['4xl'],
-    gap: spacing.md,
-  },
-  compact: {
-    paddingVertical: spacing['2xl'],
-  },
-  iconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    backgroundColor: colors.dangerMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  title: {
-    maxWidth: 300,
-  },
-  description: {
-    maxWidth: 320,
-    lineHeight: 22,
-  },
-  retryButton: {
-    width: '100%',
-    maxWidth: 280,
-    marginTop: spacing.lg,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing['3xl'],
+      paddingVertical: spacing['4xl'],
+      gap: spacing.md,
+    },
+    compact: {
+      paddingVertical: spacing['2xl'],
+    },
+    iconWrapper: {
+      width: 72,
+      height: 72,
+      borderRadius: 20,
+      backgroundColor: colors.dangerMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    title: {
+      maxWidth: 300,
+    },
+    description: {
+      maxWidth: 320,
+      lineHeight: 22,
+    },
+    retryButton: {
+      width: '100%',
+      maxWidth: 280,
+      marginTop: spacing.lg,
+    },
+  });
+}

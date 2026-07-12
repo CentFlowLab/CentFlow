@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,7 +10,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, layout, radius, spacing } from '@/lib/theme';
+import { layout, radius, spacing, useTheme, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 import { Text } from './Text';
 
@@ -25,20 +27,22 @@ type ButtonProps = Omit<PressableProps, 'style' | 'children'> & {
   style?: StyleProp<ViewStyle>;
 };
 
-const variantStyles: Record<
+function getVariantStyles(colors: ThemeColors): Record<
   ButtonVariant,
   { bg: string; text: string; border?: string }
-> = {
-  primary: { bg: colors.primary, text: colors.textInverse },
-  secondary: {
-    bg: colors.surfaceElevated,
-    text: colors.text,
-    border: colors.borderStrong,
-  },
-  ghost: { bg: 'transparent', text: colors.primary },
-  danger: { bg: colors.dangerMuted, text: colors.danger },
-  success: { bg: colors.success, text: colors.textInverse },
-};
+> {
+  return {
+    primary: { bg: colors.primary, text: colors.textInverse },
+    secondary: {
+      bg: colors.surfaceElevated,
+      text: colors.text,
+      border: colors.borderStrong,
+    },
+    ghost: { bg: 'transparent', text: colors.primary },
+    danger: { bg: colors.dangerMuted, text: colors.danger },
+    success: { bg: colors.success, text: colors.textInverse },
+  };
+}
 
 export function Button({
   label,
@@ -51,6 +55,9 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const variantStyles = useMemo(() => getVariantStyles(colors), [colors]);
   const isDisabled = disabled || loading;
   const variantStyle = variantStyles[variant];
   const height = layout.buttonHeight[size];
@@ -132,24 +139,26 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    overflow: 'hidden',
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  gradient: {
-    overflow: 'hidden',
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
-  },
-  label: {
-    fontWeight: '600',
-  },
-});
+function createStyles(_colors: ThemeColors) {
+  return StyleSheet.create({
+    base: {
+      overflow: 'hidden',
+    },
+    fullWidth: {
+      width: '100%',
+    },
+    gradient: {
+      overflow: 'hidden',
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.xl,
+    },
+    label: {
+      fontWeight: '600',
+    },
+  });
+}

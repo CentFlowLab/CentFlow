@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui';
-import { colors, radius, spacing } from '@/lib/theme';
+import { radius, spacing, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 import { UserAvatarButton } from './UserAvatarButton';
 
@@ -42,6 +43,7 @@ export function AppHeader({
   secondaryAction,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(createStyles);
   const isDetail = variant === 'detail';
 
   function handleBack() {
@@ -117,74 +119,76 @@ export function AppHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.background,
-    minHeight: 52,
-  },
-  left: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: 40,
-  },
-  leading: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  textGroup: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 2,
-  },
-  brand: {
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    fontSize: 11,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionButton: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.full,
-    backgroundColor: colors.primaryMuted,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      backgroundColor: colors.background,
+      minHeight: 52,
+    },
+    left: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: 40,
+    },
+    leading: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    textGroup: {
+      flex: 1,
+      justifyContent: 'center',
+      gap: 2,
+    },
+    brand: {
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      fontSize: 11,
+    },
+    actions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    iconButton: {
+      width: 38,
+      height: 38,
+      borderRadius: radius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    actionButton: {
+      width: 38,
+      height: 38,
+      borderRadius: radius.full,
+      backgroundColor: colors.primaryMuted,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pressed: {
+      opacity: 0.85,
+      transform: [{ scale: 0.96 }],
+    },
+  });
+}

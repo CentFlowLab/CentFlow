@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View, ViewProps } from 'react-native';
 
-import { colors, radius, spacing } from '@/lib/theme';
+import { radius, spacing, useThemedStyles } from '@/lib/theme';
+import type { ThemeColors } from '@/lib/theme/types';
 
 type CardProps = ViewProps & {
   variant?: 'default' | 'elevated' | 'outlined';
@@ -16,6 +17,7 @@ export function Card({
   children,
   ...props
 }: CardProps) {
+  const styles = useThemedStyles(createStyles);
   const paddingValue = typeof padding === 'number' ? padding : spacing[padding];
 
   const cardStyle = [
@@ -44,27 +46,29 @@ export function Card({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  elevated: {
-    backgroundColor: colors.surfaceElevated,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 3,
-  },
-  outlined: {
-    backgroundColor: colors.backgroundElevated,
-  },
-  pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    base: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    elevated: {
+      backgroundColor: colors.surfaceElevated,
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.14,
+      shadowRadius: 18,
+      elevation: 3,
+    },
+    outlined: {
+      backgroundColor: colors.backgroundElevated,
+    },
+    pressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.99 }],
+    },
+  });
+}

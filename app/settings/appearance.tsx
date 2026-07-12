@@ -9,26 +9,25 @@ import { useToast } from '@/components/ui/Toast';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { THEME_OPTIONS } from '@/lib/preferences/config';
 import type { ThemeId } from '@/lib/preferences/types';
-import { colors, radius, spacing } from '@/lib/theme';
+import { useTheme, useThemedStyles } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
 
 export default function AppearanceScreen() {
   const { data: preferences, isLoading } = useUserPreferences();
   const updatePreferences = useUpdatePreferences();
   const { showToast } = useToast();
-
-  const activeTheme = THEME_OPTIONS.find((item) => item.id === preferences?.themeId) ?? THEME_OPTIONS[0];
-  const upcomingThemes = THEME_OPTIONS.filter((item) => !item.available);
+  const { themeId: activeThemeId } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   async function handleSelectTheme(themeId: ThemeId) {
+    if (themeId === activeThemeId) return;
+
     const theme = THEME_OPTIONS.find((item) => item.id === themeId);
-    if (!theme?.available) {
-      showToast('Este tema estará disponível em breve.', 'info');
-      return;
-    }
+    if (!theme) return;
 
     try {
       await updatePreferences.mutateAsync({ themeId });
-      showToast(`Tema "${theme.name}" activo.`, 'success');
+      showToast(`Tema «${theme.name}» activo.`, 'success');
     } catch {
       showToast('Não foi possível guardar o tema.', 'error');
     }
@@ -43,103 +42,127 @@ export default function AppearanceScreen() {
   }
 
   return (
-    <SettingsScreenLayout title="Aparência" subtitle="Tema visual da aplicação">
+    <SettingsScreenLayout title="Aparência" subtitle="Escolhe o visual da CentFlow">
       <SettingsHero
         icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
-        title="Tema atual"
-        description="Dark Premium é o visual activo da CentFlow."
+        title="Temas"
+        description="Quatro skins escuras premium — só a paleta muda, a hierarquia visual mantém-se."
       />
 
-      <Pressable
-        onPress={() => handleSelectTheme(activeTheme.id)}
-        style={({ pressed }) => [pressed && styles.pressed]}>
-        <Card variant="elevated" style={[styles.themeCard, styles.themeCardActive]}>
-          <View style={styles.themeHeader}>
-            <Text variant="bodyMedium">{activeTheme.name}</Text>
-            <View style={styles.activeBadge}>
-              <Text variant="caption" color="primary">
-                Activo
-              </Text>
-            </View>
-          </View>
-          <Text variant="caption" color="textMuted">
-            {activeTheme.description}
-          </Text>
-          <View style={styles.previewRow}>
-            {activeTheme.preview.map((color, index) => (
-              <View
-                key={`${activeTheme.id}-${index}`}
-                style={[styles.previewSwatch, { backgroundColor: color }]}
-              />
-            ))}
-          </View>
-        </Card>
-      </Pressable>
+      <View style={styles.grid}>
+        {THEME_OPTIONS.map((theme) => {
+          const isActive = theme.id === activeThemeId;
+          return (
+            <Pressable
+              key={theme.id}
+              onPress={() => void handleSelectTheme(theme.id)}
+              style={({ pressed }) => [styles.themePressable, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={`Tema ${theme.name}`}>
+              <Card
+                variant={isActive ? 'elevated' : 'outlined'}
+                style={[styles.themeCard, isActive && styles.themeCardActive]}
+                padding="md">
+                <View
+                  style={[
+                    styles.preview,
+                    { backgroundColor: theme.previewBackground },
+                  ]}>
+                  <View
+                    style={[styles.previewAccentBar, { backgroundColor: theme.previewAccent }]}
+                  />
+                  <View style={styles.previewDots}>
+                    <View
+                      style={[styles.previewDot, { backgroundColor: theme.previewAccent }]}
+                    />
+                    <View style={[styles.previewLine, { backgroundColor: theme.previewAccent }]}
+                    />
+                  </View>
+                </View>
 
-      {upcomingThemes.length > 0 ? (
-        <View style={styles.upcomingBlock}>
-          <Text variant="label" color="textMuted">
-            Em breve
-          </Text>
-          {upcomingThemes.map((theme) => (
-            <Card key={theme.id} variant="outlined" style={styles.upcomingCard}>
-              <View style={styles.upcomingRow}>
-                <Text variant="caption" color="textSecondary">
-                  {theme.name}
-                </Text>
+                <View style={styles.themeMeta}>
+                  <Text variant="bodyMedium">{theme.name}</Text>
+                  {isActive ? (
+                    <View style={[styles.activeBadge, { backgroundColor: `${theme.previewAccent}22` }]}>
+                      <Text variant="caption" style={{ color: theme.previewAccent }}>
+                        Activo
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text variant="caption" color="textMuted">
                   {theme.description}
                 </Text>
-              </View>
-            </Card>
-          ))}
-        </View>
-      ) : null}
+              </Card>
+            </Pressable>
+          );
+        })}
+      </View>
     </SettingsScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
-  themeCard: {
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  themeCardActive: {
-    borderColor: colors.primary,
-  },
-  themeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  activeBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.primaryMuted,
-  },
-  previewRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  previewSwatch: {
-    flex: 1,
-    height: 28,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  upcomingBlock: {
-    gap: spacing.sm,
-  },
-  upcomingCard: {
-    paddingVertical: spacing.sm,
-  },
-  upcomingRow: {
-    gap: spacing.xs,
-  },
-  pressed: {
-    opacity: 0.9,
-  },
-});
+function createStyles(colors: import('@/lib/theme/types').ThemeColors) {
+  return StyleSheet.create({
+    grid: {
+      gap: spacing.md,
+    },
+    themePressable: {
+      borderRadius: 16,
+    },
+    themeCard: {
+      gap: spacing.sm,
+    },
+    themeCardActive: {
+      borderColor: colors.primary,
+      borderWidth: 1.5,
+    },
+    preview: {
+      height: 72,
+      borderRadius: 12,
+      padding: spacing.sm,
+      justifyContent: 'space-between',
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    previewAccentBar: {
+      height: 4,
+      width: '36%',
+      borderRadius: 999,
+      opacity: 0.95,
+    },
+    previewDots: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    previewDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      opacity: 0.9,
+    },
+    previewLine: {
+      flex: 1,
+      height: 6,
+      borderRadius: 999,
+      opacity: 0.35,
+    },
+    themeMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+    },
+    activeBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: 999,
+    },
+    pressed: {
+      opacity: 0.92,
+    },
+  });
+}
