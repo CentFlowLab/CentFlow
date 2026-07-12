@@ -18,6 +18,7 @@ type RuleToggle = {
     | 'recommendationSurplusAllocation'
     | 'recommendationCategoryMedian'
     | 'recommendationEmergencyFund'
+    | 'recommendationHabitInsight'
   >;
   label: string;
   description: string;
@@ -43,6 +44,11 @@ const RULE_TOGGLES: RuleToggle[] = [
     key: 'recommendationEmergencyFund',
     label: 'Fundo de emergência',
     description: 'Prioriza poupança de emergência quando o disponível cobre poucas despesas fixas',
+  },
+  {
+    key: 'recommendationHabitInsight',
+    label: 'Padrões de gasto habituais',
+    description: 'Contexto neutro quando um gasto semanal habitual difere do valor típico (sem alertas push)',
   },
 ];
 

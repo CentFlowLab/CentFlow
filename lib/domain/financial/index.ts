@@ -76,3 +76,11 @@ export {
   DEFAULT_RECOMMENDATION_RULE_SETTINGS,
   filterConsecutiveRecommendationDuplicates,
 } from './recommendations';
+export {
+  detectSpendingHabits,
+  findHabitDeviations,
+  buildHabitDeviationMessage,
+  hasEnoughHistoryForHabits,
+  type SpendingHabit,
+  type HabitDeviation,
+} from './habits';

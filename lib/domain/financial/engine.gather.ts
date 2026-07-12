@@ -44,6 +44,9 @@ function resolveRecommendationRules(
     emergency_fund:
       preferences.recommendationEmergencyFund ??
       DEFAULT_RECOMMENDATION_RULE_SETTINGS.emergency_fund,
+    habit_insight:
+      preferences.recommendationHabitInsight ??
+      DEFAULT_RECOMMENDATION_RULE_SETTINGS.habit_insight,
   };
 }
 

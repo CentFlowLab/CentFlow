@@ -11,12 +11,14 @@ type RecommendationsSheetProps = {
   visible: boolean;
   onClose: () => void;
   recommendations: Recommendation[];
+  onIgnoreHabit?: (habitId: string) => void;
 };
 
 export function RecommendationsSheet({
   visible,
   onClose,
   recommendations,
+  onIgnoreHabit,
 }: RecommendationsSheetProps) {
   return (
     <DraggableBottomSheet
@@ -43,7 +45,11 @@ export function RecommendationsSheet({
       {recommendations.length > 0 ? (
         <View style={styles.list}>
           {recommendations.map((item) => (
-            <RecommendationCard key={item.id} recommendation={item} />
+            <RecommendationCard
+              key={item.id}
+              recommendation={item}
+              onIgnoreHabit={item.habitId ? onIgnoreHabit : undefined}
+            />
           ))}
         </View>
       ) : (

@@ -54,6 +54,7 @@ function mapRow(row: PreferencesRow): UserPreferences {
     recommendationSurplusAllocation: DEFAULT_PREFERENCES.recommendationSurplusAllocation,
     recommendationCategoryMedian: DEFAULT_PREFERENCES.recommendationCategoryMedian,
     recommendationEmergencyFund: DEFAULT_PREFERENCES.recommendationEmergencyFund,
+    recommendationHabitInsight: DEFAULT_PREFERENCES.recommendationHabitInsight,
   };
 }
 
@@ -165,6 +166,8 @@ export async function fetchUserPreferences(userId: string): Promise<UserPreferen
         local.recommendationCategoryMedian ?? remote.recommendationCategoryMedian,
       recommendationEmergencyFund:
         local.recommendationEmergencyFund ?? remote.recommendationEmergencyFund,
+      recommendationHabitInsight:
+        local.recommendationHabitInsight ?? remote.recommendationHabitInsight,
     };
   } catch {
     return local;
@@ -187,6 +190,9 @@ export async function updateUserPreferences(
     }),
     ...(patch.recommendationEmergencyFund !== undefined && {
       recommendationEmergencyFund: patch.recommendationEmergencyFund,
+    }),
+    ...(patch.recommendationHabitInsight !== undefined && {
+      recommendationHabitInsight: patch.recommendationHabitInsight,
     }),
   };
 

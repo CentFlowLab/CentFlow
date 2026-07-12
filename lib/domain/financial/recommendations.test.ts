@@ -202,11 +202,102 @@ test('generateRecommendations — regra desactivada não aparece', () => {
     {
       transactions: [],
       asOf: AS_OF,
-      settings: { emergency_fund: false, debt_vs_investment: false, surplus_allocation: false, category_above_median: false },
+      settings: { emergency_fund: false, debt_vs_investment: false, surplus_allocation: false, category_above_median: false, habit_insight: false },
     },
   );
 
   assert.equal(recs.length, 0);
+});
+
+test('generateRecommendations — insight de hábito com prioridade baixa', () => {
+  const fridays = [
+    '2026-04-24',
+    '2026-05-01',
+    '2026-05-08',
+    '2026-05-15',
+    '2026-05-22',
+    '2026-05-29',
+    '2026-06-05',
+  ];
+
+  const transactions = [
+    ...fridays.slice(0, 6).map((date, index) => ({
+      id: `f-${index}`,
+      type: 'expense' as const,
+      amount: 18,
+      category: 'restaurant',
+      categoryLabel: 'Restaurante',
+      description: 'Burger spot',
+      date,
+      currency: 'EUR',
+    })),
+    {
+      id: 'f-high',
+      type: 'expense' as const,
+      amount: 34,
+      category: 'restaurant',
+      categoryLabel: 'Restaurante',
+      description: 'Burger spot',
+      date: '2026-06-05',
+      currency: 'EUR',
+    },
+    {
+      id: 'fill-1',
+      type: 'expense' as const,
+      amount: 12,
+      category: 'food',
+      categoryLabel: 'Alimentação',
+      date: '2026-04-01',
+      currency: 'EUR',
+    },
+    {
+      id: 'fill-2',
+      type: 'expense' as const,
+      amount: 15,
+      category: 'food',
+      categoryLabel: 'Alimentação',
+      date: '2026-04-20',
+      currency: 'EUR',
+    },
+    {
+      id: 'fill-3',
+      type: 'expense' as const,
+      amount: 20,
+      category: 'transport',
+      categoryLabel: 'Transportes',
+      date: '2026-05-05',
+      currency: 'EUR',
+    },
+    {
+      id: 'fill-4',
+      type: 'expense' as const,
+      amount: 11,
+      category: 'food',
+      categoryLabel: 'Alimentação',
+      date: '2026-05-20',
+      currency: 'EUR',
+    },
+    {
+      id: 'fill-5',
+      type: 'expense' as const,
+      amount: 9,
+      category: 'food',
+      categoryLabel: 'Alimentação',
+      date: '2026-03-28',
+      currency: 'EUR',
+    },
+  ];
+
+  const recs = generateRecommendations(baseState(), {
+    transactions,
+    asOf: AS_OF,
+  });
+
+  const habitRec = recs.find((item) => item.ruleId === 'habit_insight');
+  assert.ok(habitRec);
+  assert.equal(habitRec.priority, 'baixa');
+  assert.match(habitRec.explanation, /Normalmente gastas/);
+  assert.doesNotMatch(habitRec.explanation, /demais|devias|evitar/i);
 });
 
 test('mergeRecommendationFiredRecords — actualiza timestamp das visíveis', () => {

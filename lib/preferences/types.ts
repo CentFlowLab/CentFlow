@@ -31,6 +31,7 @@ export type UserPreferences = {
   recommendationSurplusAllocation: boolean;
   recommendationCategoryMedian: boolean;
   recommendationEmergencyFund: boolean;
+  recommendationHabitInsight: boolean;
 };
 
 export type UpdateProfileInput = {

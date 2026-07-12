@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { RecommendationCard } from '@/components/dashboard/RecommendationCard';
 import { RecommendationsSheet } from '@/components/dashboard/RecommendationsSheet';
 import { SectionHeader, Text } from '@/components/ui';
 import { useFinancialRecommendations } from '@/hooks/useFinancialRecommendations';
+import { useAuth } from '@/lib/auth';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
+import { ignoreSpendingHabit } from '@/lib/storage/ignored-habits.storage';
 import { spacing } from '@/lib/theme';
 
 type RecommendationsCardProps = {
@@ -14,9 +18,18 @@ type RecommendationsCardProps = {
 export function RecommendationsCard({ maxVisible = 3 }: RecommendationsCardProps) {
   const recommendations = useFinancialRecommendations();
   const [sheetVisible, setSheetVisible] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const userId = user?.id ?? '';
 
   const visible = recommendations.slice(0, maxVisible);
   if (visible.length === 0) return null;
+
+  async function handleIgnoreHabit(habitId: string) {
+    if (!userId) return;
+    await ignoreSpendingHabit(userId, habitId);
+    scheduleFinancialRecalculation(queryClient, userId, { type: 'manual_refresh' });
+  }
 
   return (
     <View style={styles.wrap}>
@@ -38,13 +51,18 @@ export function RecommendationsCard({ maxVisible = 3 }: RecommendationsCardProps
       </View>
 
       {visible.map((item) => (
-        <RecommendationCard key={item.id} recommendation={item} />
+        <RecommendationCard
+          key={item.id}
+          recommendation={item}
+          onIgnoreHabit={item.habitId ? handleIgnoreHabit : undefined}
+        />
       ))}
 
       <RecommendationsSheet
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
         recommendations={recommendations}
+        onIgnoreHabit={handleIgnoreHabit}
       />
     </View>
   );

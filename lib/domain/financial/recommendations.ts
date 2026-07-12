@@ -22,8 +22,7 @@ import { countsAsBudgetExpense } from './transaction-kind';
 import { groupTransactionsByCategory } from './transactions';
 import { formatMoney, roundMoney } from './money';
 import { sumMonthlyDebtPayments } from './liabilities';
-import type { FinancialState } from './financial-state.types';
-import type { RecommendationFiredRecord } from '@/lib/storage/recommendation-fired.storage';
+import { buildHabitDeviationMessage, buildHabitDeviationTitle, detectSpendingHabits, findHabitDeviations } from './habits';
 
 export type RecommendationPriority = 'alta' | 'média' | 'baixa';
 
@@ -31,7 +30,8 @@ export type RecommendationRuleId =
   | 'debt_vs_investment'
   | 'surplus_allocation'
   | 'category_above_median'
-  | 'emergency_fund';
+  | 'emergency_fund'
+  | 'habit_insight';
 
 export type RecommendationRuleSettings = Record<RecommendationRuleId, boolean>;
 
@@ -40,6 +40,7 @@ export const DEFAULT_RECOMMENDATION_RULE_SETTINGS: RecommendationRuleSettings = 
   surplus_allocation: true,
   category_above_median: true,
   emergency_fund: true,
+  habit_insight: true,
 };
 
 export type Recommendation = {
@@ -51,6 +52,8 @@ export type Recommendation = {
   suggestedAction: string;
   fingerprint: string;
   ctaRoute?: string;
+  /** Padrão de hábito associado — permite ignorar falsos positivos. */
+  habitId?: string;
 };
 
 export type GenerateRecommendationsContext = {
@@ -60,6 +63,7 @@ export type GenerateRecommendationsContext = {
   asOf?: Date;
   prioritizeDebtAmortization?: boolean;
   categoryMedianThreshold?: number;
+  ignoredHabitIds?: string[];
 };
 
 const MIN_DEBT_RATE_SPREAD = 2;
@@ -334,6 +338,36 @@ function buildEmergencyFundRecommendations(
   ];
 }
 
+function buildHabitInsightRecommendations(
+  context: GenerateRecommendationsContext,
+  settings: RecommendationRuleSettings,
+): Recommendation[] {
+  if (!settings.habit_insight) return [];
+
+  const asOf = context.asOf ?? new Date();
+  const transactions = context.transactions ?? [];
+  const habits = detectSpendingHabits(transactions, {
+    asOf,
+    ignoredHabitIds: context.ignoredHabitIds,
+  });
+  const deviations = findHabitDeviations(transactions, habits, { asOf });
+
+  return deviations.map(({ habit, transactionId, actualAmount }) => {
+    const fingerprint = `${habit.id}|${actualAmount}|${transactionId}`;
+    return {
+      id: `rec-habit-${habit.id}`,
+      ruleId: 'habit_insight',
+      priority: 'baixa',
+      title: buildHabitDeviationTitle(habit),
+      explanation: buildHabitDeviationMessage(habit, actualAmount),
+      suggestedAction: 'Ver movimentos desta semana',
+      fingerprint,
+      ctaRoute: '/(tabs)/movimentos',
+      habitId: habit.id,
+    };
+  });
+}
+
 function startOfDay(date: Date): Date {
   const copy = new Date(date);
   copy.setHours(0, 0, 0, 0);
@@ -397,6 +431,7 @@ export function generateRecommendations(
     ...buildSurplusAllocationRecommendations(financialState, { ...context, transactions }, settings),
     ...buildCategoryMedianRecommendations(financialState, { ...context, transactions }, settings),
     ...buildEmergencyFundRecommendations(financialState, settings),
+    ...buildHabitInsightRecommendations({ ...context, transactions }, settings),
   ];
 
   const priorityRank: Record<RecommendationPriority, number> = {

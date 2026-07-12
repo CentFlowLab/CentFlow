@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 38 — Open Banking automático (cron + push + consentimento)",
+  "currentPhase": "Fase 39 — Padrões de gasto habituais (insights contextuais)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -177,7 +177,8 @@
     "Assistente conversacional — Edge Function financial-assistant (classificação + formatação Anthropic, números do motor)",
     "Assistente conversacional — executeAssistantQuery + simulateDecision no client, histórico Supabase, ecrã /assistant",
     "Open Banking automático — cron GitHub Actions 6h, sync_all com throttle GoCardless, dedupe external_id, motor financeiro pós-import",
-    "Open Banking automático — push resumo importações + baixa confiança, aviso consentimento 7 dias, dashboard sync por conta"
+    "Open Banking automático — push resumo importações + baixa confiança, aviso consentimento 7 dias, dashboard sync por conta",
+    "Padrões de gasto habituais — detectSpendingHabits (dia da semana + merchant), insight neutro nas recomendações (prioridade baixa), ignorar falso positivo"
   ],
   "pending": [
     "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",

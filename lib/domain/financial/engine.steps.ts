@@ -253,10 +253,12 @@ export const recalculateHomeSummary: FinancialEngineStepRunner = (ctx) => {
 export const recalculateRecommendations: FinancialEngineStepRunner = async (ctx) => {
   const [
     { readRecommendationFiredRecords, writeRecommendationFiredRecords },
+    { loadIgnoredSpendingHabits },
     { calculateFinancialState },
     { generateRecommendations, mergeRecommendationFiredRecords },
   ] = await Promise.all([
     import('@/lib/storage/recommendation-fired.storage'),
+    import('@/lib/storage/ignored-habits.storage'),
     import('./financial-state'),
     import('./recommendations'),
   ]);
@@ -273,7 +275,11 @@ export const recalculateRecommendations: FinancialEngineStepRunner = async (ctx)
     today: ctx.asOf,
   });
 
-  const lastFired = await readRecommendationFiredRecords(ctx.userId);
+  const [lastFired, ignoredHabitIds] = await Promise.all([
+    readRecommendationFiredRecords(ctx.userId),
+    loadIgnoredSpendingHabits(ctx.userId),
+  ]);
+
   const recommendations = generateRecommendations(state, {
     transactions: ctx.input.transactions,
     settings: ctx.input.recommendationRules,
@@ -281,6 +287,7 @@ export const recalculateRecommendations: FinancialEngineStepRunner = async (ctx)
     asOf: ctx.asOf,
     prioritizeDebtAmortization: ctx.input.prioritizeDebtAmortization,
     categoryMedianThreshold: ctx.input.categorySpendAlertThreshold,
+    ignoredHabitIds,
   });
 
   const merged = mergeRecommendationFiredRecords(recommendations, lastFired, ctx.asOf);

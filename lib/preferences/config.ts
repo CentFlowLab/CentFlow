@@ -32,6 +32,7 @@ export const DEFAULT_PREFERENCES = {
   recommendationSurplusAllocation: true,
   recommendationCategoryMedian: true,
   recommendationEmergencyFund: true,
+  recommendationHabitInsight: true,
 };
 
 export const THEME_OPTIONS = THEME_DEFINITIONS.map((theme) => ({
