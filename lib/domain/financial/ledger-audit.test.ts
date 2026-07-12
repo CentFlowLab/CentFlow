@@ -139,7 +139,17 @@ test('amortização baixa dívida e orçamento, não é gasto de consumo', () =>
 
   const breakdown = buildMonthlyAvailableBreakdown({
     accounts: [budgetAccount('acc-1', 1000)],
-    transactions: [],
+    transactions: [
+      {
+        id: 'inc',
+        type: 'income',
+        amount: 1000,
+        date: '2026-07-01',
+        category: 'salary',
+        categoryLabel: 'Salário',
+        currency: 'EUR',
+      },
+    ],
     goalContributions: [],
     credits: [credit],
     subscriptions: [],
@@ -161,7 +171,7 @@ test('amortização baixa dívida e orçamento, não é gasto de consumo', () =>
   assert.equal(breakdown.consumptionSpending, 0);
 });
 
-test('orçamento não inclui investimentos', () => {
+test('orçamento global ignora saldos iniciais de contas', () => {
   const accounts: BankAccount[] = [
     {
       id: 'inv',
@@ -185,7 +195,6 @@ test('orçamento não inclui investimentos', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.available, 500);
-  assert.equal(breakdown.budgetAccountsExcluded.length, 1);
-  assert.equal(breakdown.budgetAccountsExcluded[0]?.name, 'Robinhood');
+  assert.equal(breakdown.available, 0);
+  assert.equal(breakdown.budgetAccountsIncluded.length, 0);
 });

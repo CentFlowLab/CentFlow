@@ -37,26 +37,24 @@ function tx(
 }
 
 test('calculateFinancialState — receita aumenta disponível e cashflow', () => {
-  const accounts = [account({ id: 'a1', initialBalance: 500, budgetEnabled: true })];
   const transactions = [
     tx({ id: '1', type: 'income', amount: 1000, date: '2026-06-10', accountId: 'a1' }),
     tx({ id: '2', type: 'expense', amount: 50, date: '2026-06-12', accountId: 'a1' }),
   ];
 
   const state = calculateFinancialState({
-    accounts,
+    accounts: [],
     transactions,
     today: AS_OF,
   });
 
   assert.equal(state.cashFlow.monthlyIncome, 1000);
   assert.equal(state.cashFlow.monthlyExpenses, 50);
-  assert.equal(state.availableThisMonth, 1450);
+  assert.equal(state.availableThisMonth, 950);
   assert.ok(state.budgetExplanation.lines.length > 0);
 });
 
 test('calculateFinancialState — compra cartão não baixa orçamento', () => {
-  const accounts = [account({ id: 'a1', initialBalance: 1000, budgetEnabled: true })];
   const credit: Credit = {
     id: 'c1',
     name: 'Visa',
@@ -68,6 +66,7 @@ test('calculateFinancialState — compra cartão não baixa orçamento', () => {
   };
 
   const transactions = [
+    tx({ id: '0', type: 'income', amount: 1000, date: '2026-06-01', accountId: 'a1' }),
     tx({
       id: '1',
       type: 'credit_card_purchase',
@@ -78,7 +77,7 @@ test('calculateFinancialState — compra cartão não baixa orçamento', () => {
   ];
 
   const state = calculateFinancialState({
-    accounts,
+    accounts: [],
     credits: [credit],
     transactions,
     today: AS_OF,
@@ -89,8 +88,7 @@ test('calculateFinancialState — compra cartão não baixa orçamento', () => {
   assert.equal(state.creditCards[0]?.debt, 200);
 });
 
-test('calculateFinancialState — pagamento cartão baixa conta e orçamento', () => {
-  const accounts = [account({ id: 'a1', initialBalance: 1000, budgetEnabled: true })];
+test('calculateFinancialState — pagamento cartão baixa orçamento', () => {
   const credit: Credit = {
     id: 'c1',
     name: 'Visa',
@@ -102,6 +100,7 @@ test('calculateFinancialState — pagamento cartão baixa conta e orçamento', (
   };
 
   const transactions = [
+    tx({ id: '0', type: 'income', amount: 1000, date: '2026-06-01', accountId: 'a1' }),
     tx({
       id: '1',
       type: 'credit_card_payment',
@@ -113,7 +112,7 @@ test('calculateFinancialState — pagamento cartão baixa conta e orçamento', (
   ];
 
   const state = calculateFinancialState({
-    accounts,
+    accounts: [],
     credits: [credit],
     transactions,
     today: AS_OF,

@@ -88,7 +88,18 @@ test('subscrição paga não duplica obrigação futura no disponível', () => {
 
   const breakdown = buildMonthlyAvailableBreakdown({
     accounts: [moeyAccount],
-    transactions: txs.map((tx) => ({ ...tx, accountId: 'acc-moey' })),
+    transactions: [
+      {
+        id: 'inc',
+        type: 'income',
+        amount: 1000,
+        date: '2026-07-01',
+        category: 'salary',
+        categoryLabel: 'Salário',
+        currency: 'EUR',
+      },
+      ...txs.map((tx) => ({ ...tx, accountId: 'acc-moey' })),
+    ],
     goalContributions: [],
     credits: [],
     subscriptions: [vodafone],
@@ -114,7 +125,17 @@ test('subscrição pendente conta como obrigação futura', () => {
 
   const breakdown = buildMonthlyAvailableBreakdown({
     accounts: [moeyAccount],
-    transactions: [],
+    transactions: [
+      {
+        id: 'inc',
+        type: 'income',
+        amount: 1000,
+        date: '2026-07-01',
+        category: 'salary',
+        categoryLabel: 'Salário',
+        currency: 'EUR',
+      },
+    ],
     goalContributions: [],
     credits: [],
     subscriptions: [vodafone],

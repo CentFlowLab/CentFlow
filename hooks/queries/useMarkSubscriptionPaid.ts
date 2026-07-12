@@ -18,7 +18,7 @@ export type MarkSubscriptionPaidInput = {
   subscription: Subscription;
   amount: number;
   date: string;
-  paymentMethod: PaymentMethodSelection;
+  paymentMethod?: PaymentMethodSelection;
   note?: string;
 };
 
@@ -30,7 +30,6 @@ export function useMarkSubscriptionPaid() {
   return useMutation({
     mutationFn: async (input: MarkSubscriptionPaidInput) => {
       if (!userId) throw new Error('Sessão expirada.');
-      if (!input.paymentMethod) throw new Error('Escolhe como pagaste.');
 
       traceRecurringPayment('recurring_payment_mark_paid', {
         subscriptionId: input.subscription.id,
@@ -42,8 +41,11 @@ export function useMarkSubscriptionPaid() {
         throw new Error('Esta despesa recorrente já está paga neste ciclo.');
       }
 
-      const { accountId, creditId } = paymentSelectionToFields(input.paymentMethod);
-      const txType = input.paymentMethod.kind === 'card' ? 'credit_card_purchase' : 'expense';
+      const { accountId, creditId } = input.paymentMethod
+        ? paymentSelectionToFields(input.paymentMethod)
+        : { accountId: null, creditId: null };
+      const txType =
+        input.paymentMethod?.kind === 'card' ? 'credit_card_purchase' : 'expense';
 
       traceRecurringPayment('recurring_payment_validation', {
         subscriptionId: input.subscription.id,

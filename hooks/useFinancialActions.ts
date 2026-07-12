@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 
-import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useCategoryBudgetStatus } from '@/hooks/queries/useCategoryBudgets';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
@@ -25,7 +24,6 @@ export function useFinancialActions(options?: UseFinancialActionsOptions) {
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
   const { data: liabilities, isLoading: liabilitiesLoading } = useLiabilities();
   const { data: assets, isLoading: assetsLoading } = useAssets();
-  const { data: accounts = [], isLoading: accountsLoading } = useAccountsWithBalances();
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences();
 
   const asOf = options?.asOf ?? new Date();
@@ -43,7 +41,6 @@ export function useFinancialActions(options?: UseFinancialActionsOptions) {
         transactions,
         subscriptions: liabilities?.subscriptions ?? assets?.subscriptions ?? [],
         goals: assets?.goals ?? [],
-        accounts,
         credits: liabilities?.credits ?? [],
         availableThisMonth: spendable.available,
         prioritizeDebtAmortization: preferences?.prioritizeDebtAmortization ?? true,
@@ -59,7 +56,6 @@ export function useFinancialActions(options?: UseFinancialActionsOptions) {
       liabilities?.credits,
       assets?.subscriptions,
       assets?.goals,
-      accounts,
       spendable.available,
       preferences?.prioritizeDebtAmortization,
       margin,
@@ -74,7 +70,6 @@ export function useFinancialActions(options?: UseFinancialActionsOptions) {
       txLoading ||
       liabilitiesLoading ||
       assetsLoading ||
-      accountsLoading ||
       prefsLoading,
   };
 }

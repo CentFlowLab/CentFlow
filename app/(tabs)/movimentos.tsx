@@ -8,7 +8,6 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { SubscriptionFormModal, SubscriptionsSection, MarkSubscriptionPaidModal } from '@/components/assets';
 import { FeatureAreaGate } from '@/components/features';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
-import { TransferAccountModal } from '@/components/accounts';
 import { PayCreditCardModal } from '@/components/assets/PayCreditCardModal';
 import {
   AddTransactionModal,
@@ -24,7 +23,6 @@ import {
 } from '@/components/movements';
 import { EmptyState, ErrorState, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
-import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
 import { useMarkSubscriptionReviewed } from '@/hooks/queries/useMarkSubscriptionReviewed';
 import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
@@ -74,22 +72,16 @@ export default function MovimentosScreen() {
   const [markPaidSubscription, setMarkPaidSubscription] = useState<Subscription | null>(null);
   const [markPaidVisible, setMarkPaidVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [transferVisible, setTransferVisible] = useState(false);
   const [payCardVisible, setPayCardVisible] = useState(false);
   const [refundVisible, setRefundVisible] = useState(false);
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions('all');
-  const { data: accounts = [] } = useAccountsWithBalances();
   const {
     data: liabilities,
     refetch: refetchLiabilities,
     isRefetching: isRefetchingLiabilities,
   } = useLiabilities();
-  const accountById = useMemo(
-    () => Object.fromEntries(accounts.map((account) => [account.id, account.name])),
-    [accounts],
-  );
   const creditById = useMemo(
     () =>
       Object.fromEntries(
@@ -332,7 +324,6 @@ export default function MovimentosScreen() {
                 ) : (
                   <SwipeableTransactionListItem
                     transaction={item.transaction}
-                    accountById={accountById}
                     creditById={creditById}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
@@ -443,12 +434,9 @@ export default function MovimentosScreen() {
         onClose={closeAddModal}
         startWithReceiptPicker={startWithReceiptPicker}
         presetFilter={filter}
-        onRequestTransfer={() => setTransferVisible(true)}
         onRequestCardPayment={() => setPayCardVisible(true)}
         onRequestRefund={() => setRefundVisible(true)}
       />
-
-      <TransferAccountModal visible={transferVisible} onClose={() => setTransferVisible(false)} />
 
       <PayCreditCardModal
         visible={payCardVisible}

@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
-import { AccountPickerField } from '@/components/accounts/AccountPickerField';
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateLoanPayment } from '@/hooks/queries/useLoanPayments';
-import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { calculateDebtAmortizationImpact } from '@/lib/domain/financial/loan-payments';
 import { traceLoanModalOpened } from '@/lib/doctor/recurring-payment-trace';
@@ -30,9 +28,7 @@ export function RegisterLoanAmortizationModal({
 }: RegisterLoanAmortizationModalProps) {
   const { showToast } = useToast();
   const createPayment = useCreateLoanPayment();
-  const { data: accounts = [] } = useAccountsWithBalances();
 
-  const [accountId, setAccountId] = useState<string | undefined>();
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(todayInputDate());
   const [note, setNote] = useState('');
@@ -44,29 +40,22 @@ export function RegisterLoanAmortizationModal({
     setAmount(initialAmount ? String(initialAmount) : '');
     setDate(todayInputDate());
     setNote('');
-    setAccountId(undefined);
     setApiError(null);
   }, [visible, credit?.id, initialAmount]);
 
   const parsedAmount = useMemo(() => parseGoalAmount(amount), [amount]);
-  const fromAccount = accounts.find((a) => a.id === accountId);
-  const fromBalance = fromAccount?.balance ?? fromAccount?.initialBalance ?? 0;
 
   const impact = useMemo(() => {
     if (!credit || Number.isNaN(parsedAmount) || parsedAmount <= 0) return null;
-    return calculateDebtAmortizationImpact({ credit, accountId: accountId ?? '', amount: parsedAmount });
-  }, [credit, parsedAmount, accountId]);
+    return calculateDebtAmortizationImpact({ credit, accountId: '', amount: parsedAmount });
+  }, [credit, parsedAmount]);
 
   async function handleConfirm() {
-    if (!credit || !accountId) return;
+    if (!credit) return;
     setApiError(null);
 
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
       setApiError('Indica um valor válido.');
-      return;
-    }
-    if (parsedAmount > fromBalance) {
-      setApiError('Saldo insuficiente na conta.');
       return;
     }
     if (parsedAmount > credit.outstandingBalance) {
@@ -78,7 +67,6 @@ export function RegisterLoanAmortizationModal({
       await createPayment.mutateAsync({
         credit,
         creditId: credit.id,
-        accountId,
         type: 'extra_principal_payment',
         amount: parsedAmount,
         principalAmount: parsedAmount,
@@ -103,19 +91,14 @@ export function RegisterLoanAmortizationModal({
         </Text>
 
         <TextField label="Valor a amortizar (€)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
-        <AccountPickerField value={accountId} onChange={setAccountId} transactionType="expense" />
         <DatePickerField label="Data" value={date} onChange={setDate} />
         <TextField label="Nota (opcional)" value={note} onChangeText={setNote} />
 
-        {impact && fromAccount ? (
+        {impact ? (
           <Card variant="outlined" style={styles.preview}>
             <Text variant="caption" color="textMuted">
               Dívida baixa de {formatCurrency(credit.outstandingBalance)} para{' '}
               {formatCurrency(impact.newCreditBalance)}.
-            </Text>
-            <Text variant="caption" color="textMuted">
-              {fromAccount.name} baixa de {formatCurrency(fromBalance)} para{' '}
-              {formatCurrency(fromBalance + impact.accountDelta)}.
             </Text>
           </Card>
         ) : null}

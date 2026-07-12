@@ -3,10 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AccountFormModal, TransferAccountModal } from '@/components/accounts';
 import {
   ASSETS_EMPTY_CONFIG,
-  AccountsSection,
   AssetsOverviewCard,
   GoalContributeModal,
   GoalFormModal,
@@ -26,12 +24,10 @@ import {
   useDeleteInventoryItem,
   useDeleteWarranty,
 } from '@/hooks/queries/useAssets';
-import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { QuickAddScreenContext } from '@/lib/navigation/quick-add-context';
 import type { AssetsTab, Goal, Warranty } from '@/lib/domain/assets.types';
-import type { BankAccount } from '@/lib/domain/account.types';
 import type { InventoryItem } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 
@@ -47,19 +43,10 @@ export default function AtivosScreen() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [inventoryFormVisible, setInventoryFormVisible] = useState(false);
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
-  const [accountFormVisible, setAccountFormVisible] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
-  const [transferVisible, setTransferVisible] = useState(false);
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
   const [withdrawGoal, setWithdrawGoal] = useState<Goal | null>(null);
 
   const { data, refetch, isRefetching, isLoading, isError, error } = useAssets();
-  const {
-    data: accounts = [],
-    totalBalance,
-    refetch: refetchAccounts,
-    isRefetching: isRefetchingAccounts,
-  } = useAccountsWithBalances();
   const { contentBottomPadding } = useResponsiveLayout();
   const deleteGoal = useDeleteGoal();
   const deleteWarranty = useDeleteWarranty();
@@ -78,9 +65,9 @@ export default function AtivosScreen() {
       goals: assets.goals.length,
       warranties: assets.warranties.length,
       inventory: assets.inventory.length,
-      accounts: accounts.length,
+      accounts: 0,
     }),
-    [assets, accounts.length],
+    [assets],
   );
 
   function handleLearnMore() {
@@ -89,7 +76,7 @@ export default function AtivosScreen() {
   }
 
   useEffect(() => {
-    if (tab === 'objetivos' || tab === 'garantias' || tab === 'inventario' || tab === 'contas') {
+    if (tab === 'objetivos' || tab === 'garantias' || tab === 'inventario') {
       setActiveTab(tab);
     }
   }, [tab]);
@@ -116,13 +103,6 @@ export default function AtivosScreen() {
       setActiveTab('inventario');
       setEditingInventory(null);
       setInventoryFormVisible(true);
-      return;
-    }
-
-    if (action === 'new-account') {
-      setActiveTab('contas');
-      setEditingAccount(null);
-      setAccountFormVisible(true);
     }
   }, [action]);
 
@@ -171,25 +151,8 @@ export default function AtivosScreen() {
     setEditingInventory(null);
   }
 
-  function openCreateAccount() {
-    setEditingAccount(null);
-    setAccountFormVisible(true);
-  }
-
-  function openEditAccount(account: BankAccount) {
-    setEditingAccount(account);
-    setAccountFormVisible(true);
-  }
-
-  function closeAccountForm() {
-    setAccountFormVisible(false);
-    setEditingAccount(null);
-  }
-
   const assetsQuickAddContext: QuickAddScreenContext =
-    activeTab === 'contas'
-      ? 'ativos_contas'
-      : activeTab === 'garantias'
+    activeTab === 'garantias'
       ? 'ativos_garantias'
       : activeTab === 'inventario'
         ? 'ativos_inventario'
@@ -199,7 +162,6 @@ export default function AtivosScreen() {
     onGoal: openCreateGoal,
     onWarranty: openCreateWarranty,
     onAsset: openCreateInventory,
-    onAccount: openCreateAccount,
   });
 
   return (
@@ -262,8 +224,8 @@ export default function AtivosScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={isRefetching || isRefetchingAccounts}
-              onRefresh={() => Promise.all([refetch(), refetchAccounts()])}
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
               tintColor={colors.primary}
             />
           }
@@ -305,18 +267,7 @@ export default function AtivosScreen() {
               </FeatureAreaGate>
             ) : null}
 
-            {activeTab === 'contas' ? (
-              <AccountsSection
-                accounts={accounts}
-                totalBalance={totalBalance}
-                onCreate={openCreateAccount}
-                onEdit={openEditAccount}
-                onLearnMore={handleLearnMore}
-                onTransfer={() => setTransferVisible(true)}
-              />
-            ) : null}
-
-            <RefetchingIndicator visible={(isRefetching || isRefetchingAccounts) && !isLoading} />
+            <RefetchingIndicator visible={isRefetching && !isLoading} />
           </ScreenContainer>
         </ScrollView>
       )}
@@ -356,11 +307,6 @@ export default function AtivosScreen() {
         visible={Boolean(contributeGoal)}
         goal={contributeGoal}
         onClose={() => setContributeGoal(null)}
-        onCreateAccount={() => {
-          setContributeGoal(null);
-          setActiveTab('contas');
-          openCreateAccount();
-        }}
       />
 
       <GoalWithdrawModal
@@ -380,14 +326,6 @@ export default function AtivosScreen() {
         item={editingInventory}
         onClose={closeInventoryForm}
       />
-
-      <AccountFormModal
-        visible={accountFormVisible}
-        account={editingAccount}
-        onClose={closeAccountForm}
-      />
-
-      <TransferAccountModal visible={transferVisible} onClose={() => setTransferVisible(false)} />
 
       <QuickAddMenuSheet
         visible={quickAdd.sheetVisible}

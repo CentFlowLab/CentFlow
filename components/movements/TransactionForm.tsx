@@ -1,14 +1,10 @@
 import { StyleSheet, View } from 'react-native';
 
-import {
-  AccountPickerField,
-  PaymentMethodPickerField,
-} from '@/components/accounts';
 import { SegmentedControl } from '@/components/layout';
 import { DatePickerField, TextField } from '@/components/ui';
 import type { TransactionFormValues } from '@/lib/domain/transaction-form';
 import type { CashTransactionType } from '@/lib/domain/transaction.types';
-import { formSpacing, spacing } from '@/lib/theme';
+import { formSpacing } from '@/lib/theme';
 
 import { CategoryField } from './CategoryField';
 
@@ -79,21 +75,6 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
         onChange={(date) => update('date', date)}
         error={errors?.date}
       />
-
-      <View style={styles.accountSection}>
-        {values.type === 'expense' ? (
-          <PaymentMethodPickerField
-            value={values.paymentMethod}
-            onChange={(paymentMethod) => update('paymentMethod', paymentMethod)}
-          />
-        ) : (
-          <AccountPickerField
-            value={values.accountId}
-            onChange={(accountId) => update('accountId', accountId)}
-            transactionType={values.type}
-          />
-        )}
-      </View>
     </View>
   );
 }
@@ -101,9 +82,5 @@ export function TransactionForm({ values, onChange, errors }: TransactionFormPro
 const styles = StyleSheet.create({
   form: {
     gap: formSpacing.fieldGap,
-  },
-  accountSection: {
-    marginTop: spacing.sm,
-    paddingBottom: spacing.xs,
   },
 });

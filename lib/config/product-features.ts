@@ -1,6 +1,7 @@
 /** Flags de produto — activar funcionalidades quando backend/migrations estão prontos. */
 
-export const ACCOUNTS_FEATURE_ENABLED = true;
+/** UI de contas bancárias oculta — tabela `accounts` mantém-se na BD. */
+export const ACCOUNTS_FEATURE_ENABLED = false;
 
 /** Coluna merchant em transacções (requer migration 20240624000000). */
 export const MERCHANT_COLUMN_ENABLED = false;

@@ -1,4 +1,3 @@
-import type { BankAccount } from '@/lib/domain/account.types';
 import type { Goal, Subscription } from '@/lib/domain/assets.types';
 import type { CategoryBudgetStatus } from '@/lib/domain/category-budget.types';
 import type { Credit } from '@/lib/domain/types';
@@ -81,7 +80,6 @@ export type BuildFinancialActionsInput = {
   transactions: Transaction[];
   subscriptions: Subscription[];
   goals: Goal[];
-  accounts: BankAccount[];
   credits: Credit[];
   availableThisMonth: number;
   prioritizeDebtAmortization: boolean;
@@ -160,7 +158,6 @@ function buildDebtAction(input: BuildFinancialActionsInput): FinancialAction | n
   const debt = buildDebtAmortizationAction({
     margin,
     credits: input.credits,
-    accounts: input.accounts,
     prioritizeDebt: input.prioritizeDebtAmortization,
   });
   if (!debt) return null;
@@ -184,7 +181,6 @@ function buildAllocateAction(
   const allocation = buildSavingsAllocationAction({
     margin,
     goals: input.goals,
-    accounts: input.accounts,
   });
   if (!allocation) return null;
 

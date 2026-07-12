@@ -54,7 +54,7 @@ export async function fetchGoalContributions(): Promise<GoalContribution[]> {
 
 export async function createGoalContribution(input: {
   goalId: string;
-  accountId: string;
+  accountId?: string;
   amount: number;
   note?: string;
 }): Promise<GoalContribution> {
@@ -75,43 +75,50 @@ export async function createGoalContribution(input: {
 
   if (goalError || !goal) throw new Error('Objetivo não encontrado');
 
-  const [{ data: accountRow, error: accountError }, { data: txRows }, { data: contributionRows }] =
-    await Promise.all([
-      supabase
-        .from('accounts')
-        .select('id, initial_balance')
-        .eq('id', input.accountId)
-        .single(),
-      supabase.from('transactions').select('*').eq('user_id', userId),
-      supabase.from('goal_contributions').select('*').eq('user_id', userId),
-    ]);
+  if (input.accountId) {
+    const [{ data: accountRow, error: accountError }, { data: txRows }, { data: contributionRows }] =
+      await Promise.all([
+        supabase
+          .from('accounts')
+          .select('id, initial_balance')
+          .eq('id', input.accountId)
+          .single(),
+        supabase.from('transactions').select('*').eq('user_id', userId),
+        supabase.from('goal_contributions').select('*').eq('user_id', userId),
+      ]);
 
-  if (accountError || !accountRow) throw new Error('Conta não encontrada');
+    if (accountError || !accountRow) throw new Error('Conta não encontrada');
 
-  const transactions = (txRows ?? []).map((row) => mapTransactionRow(row));
-  const goalContributions = (contributionRows ?? []).map((row) => mapRow(row as GoalContributionRow));
-  const accountBalance = calculateAccountBalance({
-    account: {
-      id: accountRow.id,
-      initialBalance: Number(accountRow.initial_balance),
-    },
-    transactions,
-    goalContributions,
-  });
+    const transactions = (txRows ?? []).map((row) => mapTransactionRow(row));
+    const goalContributions = (contributionRows ?? []).map((row) => mapRow(row as GoalContributionRow));
+    const accountBalance = calculateAccountBalance({
+      account: {
+        id: accountRow.id,
+        initialBalance: Number(accountRow.initial_balance),
+      },
+      transactions,
+      goalContributions,
+    });
 
-  const validation = validateGoalContribution({
-    amount: input.amount,
-    accountBalance,
-  });
-  if (!validation.ok) {
-    traceGoalContribution('validation_fail', { reason: validation.reason }, 'warn');
-    throw new Error(validation.reason);
+    const validation = validateGoalContribution({
+      amount: input.amount,
+      accountBalance,
+    });
+    if (!validation.ok) {
+      traceGoalContribution('validation_fail', { reason: validation.reason }, 'warn');
+      throw new Error(validation.reason);
+    }
+  } else {
+    const validation = validateGoalContribution({ amount: input.amount, accountBalance: Infinity });
+    if (!validation.ok) {
+      throw new Error(validation.reason);
+    }
   }
 
   const payload: TablesInsert<'goal_contributions'> = {
     user_id: userId,
     goal_id: input.goalId,
-    account_id: input.accountId,
+    account_id: input.accountId ?? null,
     amount: input.amount,
     kind: 'contribution',
     note: input.note ?? null,
@@ -145,7 +152,7 @@ export async function createGoalContribution(input: {
 
 export async function createGoalWithdrawal(input: {
   goalId: string;
-  accountId: string;
+  accountId?: string;
   amount: number;
   note?: string;
 }): Promise<GoalContribution> {
@@ -172,7 +179,7 @@ export async function createGoalWithdrawal(input: {
   const payload: TablesInsert<'goal_contributions'> = {
     user_id: userId,
     goal_id: input.goalId,
-    account_id: input.accountId,
+    account_id: input.accountId ?? null,
     amount: input.amount,
     kind: 'withdrawal',
     note: input.note ?? null,

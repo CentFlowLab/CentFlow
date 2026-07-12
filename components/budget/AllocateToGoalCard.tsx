@@ -54,8 +54,7 @@ export function AllocateToGoalCard({ onSuccess }: AllocateToGoalCardProps) {
       <SavingsMarginBreakdownLines margin={margin} suggestedAmount={action.amount} />
 
       <Text variant="body" color="textSecondary">
-        Podes reservar {formatCurrency(action.amount)} para «{action.goalName}» a partir de{' '}
-        {action.accountName}.
+        Podes reservar {formatCurrency(action.amount)} para «{action.goalName}».
       </Text>
 
       <Button

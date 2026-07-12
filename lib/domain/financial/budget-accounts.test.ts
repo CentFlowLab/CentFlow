@@ -65,7 +65,7 @@ test('2. investimento budget_enabled false não entra', () => {
   assert.equal(isBudgetAccount(robinhood), false);
 });
 
-test('3. Robinhood 7011,72€ não aumenta disponível mensal', () => {
+test('3. saldo global parte de zero sem transações', () => {
   const breakdown = buildMonthlyAvailableBreakdown({
     accounts: scenarioAccounts,
     transactions: [],
@@ -76,13 +76,12 @@ test('3. Robinhood 7011,72€ não aumenta disponível mensal', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 1071);
-  assert.equal(breakdown.available, 1071);
-  assert.equal(breakdown.budgetAccountsExcluded.length, 1);
-  assert.equal(breakdown.budgetAccountsExcluded[0]?.name, 'Robinhood');
+  assert.equal(breakdown.components.budgetAccountBalance, 0);
+  assert.equal(breakdown.available, 0);
+  assert.equal(breakdown.budgetAccountsIncluded.length, 0);
 });
 
-test('4. transferência Moey → Robinhood reduz disponível, não consumo', () => {
+test('4. transferência não altera disponível global', () => {
   const txs: Transaction[] = [
     {
       id: 't1',
@@ -107,73 +106,12 @@ test('4. transferência Moey → Robinhood reduz disponível, não consumo', () 
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 971);
-  assert.equal(breakdown.available, 971);
-  assert.equal(breakdown.components.movedOutOfBudget, 100);
+  assert.equal(breakdown.components.budgetAccountBalance, 0);
+  assert.equal(breakdown.available, 0);
   assert.equal(breakdown.consumptionSpending, 0);
 });
 
-test('5. transferência Robinhood → Moey aumenta disponível, não receita', () => {
-  const txs: Transaction[] = [
-    {
-      id: 't2',
-      type: 'transfer',
-      amount: 50,
-      accountId: 'acc-rh',
-      destinationAccountId: 'acc-moey',
-      date: '2026-07-12',
-      category: 'transfer',
-      categoryLabel: 'Transferência',
-      currency: 'EUR',
-    },
-  ];
-
-  const breakdown = buildMonthlyAvailableBreakdown({
-    accounts: scenarioAccounts,
-    transactions: txs,
-    goalContributions: [],
-    credits: [],
-    subscriptions: [],
-    loanPayments: [],
-    referenceDate: JULY,
-  });
-
-  assert.equal(breakdown.components.budgetAccountBalance, 1121);
-  assert.equal(breakdown.available, 1121);
-  assert.equal(breakdown.components.incomeReceived, 0);
-  assert.equal(breakdown.components.movedIntoBudget, 50);
-});
-
-test('6. despesa em conta elegível reduz disponível', () => {
-  const txs: Transaction[] = [
-    {
-      id: 'exp',
-      type: 'expense',
-      amount: 50,
-      accountId: 'acc-moey',
-      date: '2026-07-08',
-      category: 'food',
-      categoryLabel: 'Comida',
-      currency: 'EUR',
-    },
-  ];
-
-  const breakdown = buildMonthlyAvailableBreakdown({
-    accounts: scenarioAccounts,
-    transactions: txs,
-    goalContributions: [],
-    credits: [],
-    subscriptions: [],
-    loanPayments: [],
-    referenceDate: JULY,
-  });
-
-  assert.equal(breakdown.components.budgetAccountBalance, 1021);
-  assert.equal(breakdown.available, 1021);
-  assert.equal(breakdown.components.registeredExpenses, 50);
-});
-
-test('7. receita em conta elegível aumenta disponível', () => {
+test('5. receita global aumenta disponível', () => {
   const txs: Transaction[] = [
     {
       id: 'inc',
@@ -197,12 +135,50 @@ test('7. receita em conta elegível aumenta disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 1271);
-  assert.equal(breakdown.available, 1271);
+  assert.equal(breakdown.components.budgetAccountBalance, 200);
+  assert.equal(breakdown.available, 200);
   assert.equal(breakdown.components.incomeReceived, 200);
 });
 
-test('8. receita em Robinhood não aumenta orçamento, aumenta património', () => {
+test('6. despesa global reduz disponível', () => {
+  const txs: Transaction[] = [
+    {
+      id: 'inc',
+      type: 'income',
+      amount: 250,
+      date: '2026-07-01',
+      category: 'salary',
+      categoryLabel: 'Salário',
+      currency: 'EUR',
+    },
+    {
+      id: 'exp',
+      type: 'expense',
+      amount: 50,
+      accountId: 'acc-moey',
+      date: '2026-07-08',
+      category: 'food',
+      categoryLabel: 'Comida',
+      currency: 'EUR',
+    },
+  ];
+
+  const breakdown = buildMonthlyAvailableBreakdown({
+    accounts: scenarioAccounts,
+    transactions: txs,
+    goalContributions: [],
+    credits: [],
+    subscriptions: [],
+    loanPayments: [],
+    referenceDate: JULY,
+  });
+
+  assert.equal(breakdown.components.budgetAccountBalance, 200);
+  assert.equal(breakdown.available, 200);
+  assert.equal(breakdown.components.registeredExpenses, 50);
+});
+
+test('7. receita em qualquer origem conta globalmente', () => {
   const txs: Transaction[] = [
     {
       id: 'inc-rh',
@@ -216,7 +192,6 @@ test('8. receita em Robinhood não aumenta orçamento, aumenta património', () 
     },
   ];
 
-  const enriched = enrichAccountsWithBalances(scenarioAccounts, txs);
   const breakdown = buildMonthlyAvailableBreakdown({
     accounts: scenarioAccounts,
     transactions: txs,
@@ -227,24 +202,21 @@ test('8. receita em Robinhood não aumenta orçamento, aumenta património', () 
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 1071);
-  assert.equal(breakdown.components.incomeReceived, 0);
-  const nw = calculateNetWorth({
-    accounts: enriched.map((a) => ({
-      id: a.id,
-      name: a.name,
-      balance: a.balance ?? a.initialBalance,
-      currency: a.currency,
-    })),
-    inventory: [],
-    investments: [],
-    credits: [],
-  });
-  assert.equal(nw.netWorth, 8582.72);
+  assert.equal(breakdown.components.budgetAccountBalance, 500);
+  assert.equal(breakdown.components.incomeReceived, 500);
 });
 
-test('9. compra com cartão não reduz disponível', () => {
+test('8. compra com cartão não reduz disponível', () => {
   const txs: Transaction[] = [
+    {
+      id: 'inc',
+      type: 'income',
+      amount: 1000,
+      date: '2026-07-01',
+      category: 'salary',
+      categoryLabel: 'Salário',
+      currency: 'EUR',
+    },
     {
       id: 'card',
       type: 'credit_card_purchase',
@@ -267,12 +239,21 @@ test('9. compra com cartão não reduz disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.available, 1071);
+  assert.equal(breakdown.available, 1000);
   assert.equal(breakdown.consumptionSpending, 100);
 });
 
-test('10. pagamento de cartão reduz disponível', () => {
+test('9. pagamento de cartão reduz disponível', () => {
   const txs: Transaction[] = [
+    {
+      id: 'inc',
+      type: 'income',
+      amount: 1000,
+      date: '2026-07-01',
+      category: 'salary',
+      categoryLabel: 'Salário',
+      currency: 'EUR',
+    },
     {
       id: 'pay',
       type: 'credit_card_payment',
@@ -296,14 +277,24 @@ test('10. pagamento de cartão reduz disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 991);
-  assert.equal(breakdown.available, 991);
+  assert.equal(breakdown.components.budgetAccountBalance, 920);
+  assert.equal(breakdown.available, 920);
 });
 
-test('11. contribuição para objetivo reduz disponível', () => {
+test('10. contribuição para objetivo reduz disponível', () => {
   const breakdown = buildMonthlyAvailableBreakdown({
     accounts: scenarioAccounts,
-    transactions: [],
+    transactions: [
+      {
+        id: 'inc',
+        type: 'income',
+        amount: 1000,
+        date: '2026-07-01',
+        category: 'salary',
+        categoryLabel: 'Salário',
+        currency: 'EUR',
+      },
+    ],
     goalContributions: [
       {
         id: 'gc1',
@@ -319,11 +310,11 @@ test('11. contribuição para objetivo reduz disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 971);
+  assert.equal(breakdown.components.budgetAccountBalance, 900);
   assert.equal(breakdown.components.goalReserved, 100);
 });
 
-test('12. objetivo não reduz património', () => {
+test('11. objetivo não reduz património', () => {
   const enriched = enrichAccountsWithBalances(scenarioAccounts, [], [
     {
       id: 'gc1',

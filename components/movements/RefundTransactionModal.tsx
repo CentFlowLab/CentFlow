@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  AccountPickerField,
   PaymentMethodPickerField,
   paymentSelectionToFields,
   type PaymentMethodSelection,
@@ -51,7 +50,6 @@ export function RefundTransactionModal({
   const [category, setCategory] = useState('refund');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayInputDate());
-  const [accountId, setAccountId] = useState<string | undefined>();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodSelection>();
   const [relatedTransactionId, setRelatedTransactionId] = useState<string | undefined>();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -77,12 +75,11 @@ export function RefundTransactionModal({
     setDescription('');
     setDate(todayInputDate());
     setCategory('refund');
-    setDestination('card');
-    setAccountId(undefined);
+    setDestination(cards.length > 0 ? 'card' : 'account');
     setPaymentMethod(undefined);
     setRelatedTransactionId(undefined);
     setApiError(null);
-  }, [visible]);
+  }, [visible, cards.length]);
 
   async function handleSave() {
     setApiError(null);
@@ -90,7 +87,7 @@ export function RefundTransactionModal({
     const paymentFields =
       destination === 'card'
         ? paymentSelectionToFields(paymentMethod)
-        : { accountId: accountId ?? null, creditId: null };
+        : { accountId: null, creditId: null };
 
     const submitType =
       destination === 'card' ? ('credit_card_refund' as const) : ('income' as const);
@@ -134,20 +131,22 @@ export function RefundTransactionModal({
           normal.
         </Text>
 
-        <View style={styles.destinationRow}>
-          <Button
-            label="Cartão de crédito"
-            variant={destination === 'card' ? 'primary' : 'secondary'}
-            size="sm"
-            onPress={() => setDestination('card')}
-          />
-          <Button
-            label="Conta"
-            variant={destination === 'account' ? 'primary' : 'secondary'}
-            size="sm"
-            onPress={() => setDestination('account')}
-          />
-        </View>
+        {cards.length > 0 ? (
+          <View style={styles.destinationRow}>
+            <Button
+              label="Cartão de crédito"
+              variant={destination === 'card' ? 'primary' : 'secondary'}
+              size="sm"
+              onPress={() => setDestination('card')}
+            />
+            <Button
+              label="Receita"
+              variant={destination === 'account' ? 'primary' : 'secondary'}
+              size="sm"
+              onPress={() => setDestination('account')}
+            />
+          </View>
+        ) : null}
 
         <TextField
           label="Valor"
@@ -164,7 +163,9 @@ export function RefundTransactionModal({
             restrictTo="card"
           />
         ) : (
-          <AccountPickerField value={accountId} onChange={setAccountId} transactionType="income" />
+          <Text variant="caption" color="textMuted">
+            O reembolso entra como receita no saldo global.
+          </Text>
         )}
 
         <CategoryField

@@ -19,7 +19,6 @@ import type {
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import type { LoginCredentials, RegisterCredentials, User } from '@/lib/auth/types';
-import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import { inputDateToIso } from '@/lib/utils/format';
 
 import type { OcrResultRow, ReceiptRow, TransactionRow } from './database.types';
@@ -167,15 +166,11 @@ export function toTransactionInsert(
     transaction_date: normalizeTransactionDate(input.date),
     currency: 'EUR',
     receipt_id: input.receiptId ?? null,
-    ...(ACCOUNTS_FEATURE_ENABLED
-      ? {
-          account_id: input.accountId ?? null,
-          destination_account_id: input.destinationAccountId ?? null,
-          credit_id: input.creditId ?? null,
-          related_transaction_id: input.relatedTransactionId ?? null,
-          recurring_id: input.recurringId ?? null,
-        }
-      : {}),
+    account_id: input.accountId ?? null,
+    destination_account_id: input.destinationAccountId ?? null,
+    credit_id: input.creditId ?? null,
+    related_transaction_id: input.relatedTransactionId ?? null,
+    recurring_id: input.recurringId ?? null,
   };
 }
 
@@ -196,15 +191,11 @@ export function toTransactionUpdatePatch(input: UpdateTransactionInput) {
     category: input.category,
     description: input.description?.trim() || null,
     transaction_date: normalizeTransactionDate(input.date),
-    ...(ACCOUNTS_FEATURE_ENABLED
-      ? {
-          account_id: input.accountId ?? null,
-          destination_account_id: input.destinationAccountId ?? null,
-          credit_id: input.creditId ?? null,
-          related_transaction_id: input.relatedTransactionId ?? null,
-          recurring_id: input.recurringId ?? null,
-        }
-      : {}),
+    account_id: input.accountId ?? null,
+    destination_account_id: input.destinationAccountId ?? null,
+    credit_id: input.creditId ?? null,
+    related_transaction_id: input.relatedTransactionId ?? null,
+    recurring_id: input.recurringId ?? null,
   };
 }
 

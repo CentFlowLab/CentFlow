@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { AccountPickerField, PaymentMethodPickerField, paymentSelectionToFields, type PaymentMethodSelection } from '@/components/accounts';
 import { DraggableBottomSheet, SegmentedControl } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
@@ -53,7 +52,6 @@ type AddTransactionModalProps = {
   /** Filtro activo em Movimentos — define tipo inicial e se mostra selector. */
   presetFilter?: TransactionModalPreset;
   onImportCsv?: () => void;
-  onRequestTransfer?: () => void;
   onRequestCardPayment?: () => void;
   onRequestRefund?: () => void;
 };
@@ -66,9 +64,6 @@ const TYPE_SEGMENTS = [
 const MOVEMENT_KIND_SEGMENTS: Array<{ key: MovementFormKind; label: string }> = [
   { key: 'expense', label: 'Despesa' },
   { key: 'income', label: 'Receita' },
-  { key: 'transfer', label: 'Transferência' },
-  { key: 'credit_card_payment', label: 'Pagamento cartão' },
-  { key: 'refund', label: 'Reembolso' },
 ];
 
 function parseAmount(value: string): number {
@@ -82,7 +77,6 @@ export function AddTransactionModal({
   startWithReceiptPicker = false,
   presetFilter = 'all',
   onImportCsv,
-  onRequestTransfer,
   onRequestCardPayment,
   onRequestRefund,
 }: AddTransactionModalProps) {
@@ -113,8 +107,6 @@ export function AddTransactionModal({
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(todayInputDate());
-  const [accountId, setAccountId] = useState<string | undefined>();
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodSelection>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -140,8 +132,6 @@ export function AddTransactionModal({
     setCategory(defaultCategory);
     setDescription('');
     setDate(todayInputDate());
-    setAccountId(undefined);
-    setPaymentMethod(undefined);
     setErrors({});
     setApiError(null);
     setProcessedReceipt(null);
@@ -281,42 +271,18 @@ export function AddTransactionModal({
   }
 
   function resolveSubmitType(): import('@/lib/domain/transaction.types').TransactionType {
-    if (movementKind === 'expense') {
-      if (paymentMethod?.kind === 'card') return 'credit_card_purchase';
-      return 'expense';
-    }
     return movementKind === 'income' ? 'income' : 'expense';
   }
 
   function resolvePaymentFields() {
-    if (movementKind === 'expense') return paymentSelectionToFields(paymentMethod);
-    if (movementKind === 'income') return { accountId: accountId ?? null, creditId: null };
     return { accountId: null, creditId: null };
   }
 
   function handleMovementKindChange(next: MovementFormKind) {
     traceMovementStep('field_change', { field: 'movementKind', value: next });
     setMovementKind(next);
-    if (next === 'income') {
-      setType('income');
-      setPaymentMethod(undefined);
-    }
-    if (next === 'expense') {
-      setType('expense');
-      setAccountId(undefined);
-    }
-    if (next === 'transfer') {
-      onRequestTransfer?.();
-      onClose();
-    }
-    if (next === 'credit_card_payment') {
-      onRequestCardPayment?.();
-      onClose();
-    }
-    if (next === 'refund') {
-      onRequestRefund?.();
-      onClose();
-    }
+    if (next === 'income') setType('income');
+    if (next === 'expense') setType('expense');
   }
 
   async function handleSaveManual() {
@@ -695,13 +661,6 @@ export function AddTransactionModal({
               error={errors.date}
             />
 
-            <View style={styles.accountSection}>
-              {movementKind === 'expense' ? (
-                <PaymentMethodPickerField value={paymentMethod} onChange={setPaymentMethod} />
-              ) : movementKind === 'income' ? (
-                <AccountPickerField value={accountId} onChange={setAccountId} transactionType="income" />
-              ) : null}
-            </View>
           </>
         ) : (
           <Card variant="outlined" style={styles.hintCard}>

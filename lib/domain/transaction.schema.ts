@@ -28,15 +28,12 @@ export const createTransactionSchema = z
         return Boolean(data.creditId) && !data.accountId;
       }
       if (data.type === 'credit_card_payment' || data.type === 'credit_payment') {
-        return Boolean(data.accountId) && Boolean(data.creditId);
-      }
-      if (data.type === 'expense') {
-        return Boolean(data.accountId) || Boolean(data.creditId);
+        return Boolean(data.creditId);
       }
       return !(data.accountId && data.creditId);
     },
     {
-      message: 'Escolhe conta ou cartão conforme o tipo de movimento.',
+      message: 'Movimento inválido — verifica cartão ou conta.',
       path: ['accountId'],
     },
   );
@@ -67,12 +64,12 @@ export const updateTransactionSchema = z
         return Boolean(data.creditId) && !data.accountId;
       }
       if (data.type === 'credit_card_payment' || data.type === 'credit_payment') {
-        return Boolean(data.accountId) && Boolean(data.creditId);
+        return Boolean(data.creditId);
       }
       return !(data.accountId && data.creditId);
     },
     {
-      message: 'Escolhe conta ou cartão conforme o tipo de movimento.',
+      message: 'Movimento inválido — verifica cartão ou conta.',
       path: ['accountId'],
     },
   );

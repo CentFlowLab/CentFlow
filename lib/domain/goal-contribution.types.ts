@@ -12,14 +12,14 @@ export type GoalContribution = {
 
 export type CreateGoalContributionInput = {
   goalId: string;
-  accountId: string;
+  accountId?: string;
   amount: number;
   note?: string;
 };
 
 export type CreateGoalWithdrawalInput = {
   goalId: string;
-  accountId: string;
+  accountId?: string;
   amount: number;
   note?: string;
 };

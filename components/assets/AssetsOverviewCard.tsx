@@ -46,13 +46,6 @@ const OVERVIEW_ITEMS: Array<{
     color: colors.success,
     bg: colors.successMuted,
   },
-  {
-    key: 'contas',
-    label: 'Contas',
-    icon: { ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' },
-    color: colors.warning,
-    bg: colors.accentMuted,
-  },
 ];
 
 export function AssetsOverviewCard({

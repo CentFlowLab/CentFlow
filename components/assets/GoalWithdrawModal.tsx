@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { AccountPickerField } from '@/components/accounts/AccountPickerField';
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateGoalWithdrawal } from '@/hooks/queries/useGoalContributions';
-import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import type { Goal } from '@/lib/domain/assets.types';
 import { parseGoalAmount } from '@/lib/domain/goal-form.utils';
-import { colors, spacing } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
 import { formatCurrency, todayInputDate } from '@/lib/utils/format';
 
 type GoalWithdrawModalProps = {
@@ -22,9 +20,7 @@ type GoalWithdrawModalProps = {
 export function GoalWithdrawModal({ visible, goal, onClose }: GoalWithdrawModalProps) {
   const { showToast } = useToast();
   const withdraw = useCreateGoalWithdrawal();
-  const { data: accounts = [] } = useAccountsWithBalances();
 
-  const [accountId, setAccountId] = useState<string | undefined>();
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(todayInputDate());
@@ -35,7 +31,6 @@ export function GoalWithdrawModal({ visible, goal, onClose }: GoalWithdrawModalP
     setAmount('');
     setNote('');
     setDate(todayInputDate());
-    setAccountId(undefined);
     setApiError(null);
   }, [visible, goal?.id]);
 
@@ -44,18 +39,12 @@ export function GoalWithdrawModal({ visible, goal, onClose }: GoalWithdrawModalP
     return parseGoalAmount(amount);
   }, [amount]);
 
-  const destAccount = accounts.find((a) => a.id === accountId);
-
   async function handleSave() {
     if (!goal) return;
     setApiError(null);
 
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
       setApiError('Indica um valor válido.');
-      return;
-    }
-    if (!accountId) {
-      setApiError('Escolhe a conta de destino.');
       return;
     }
     if (parsedAmount > goal.current) {
@@ -66,15 +55,13 @@ export function GoalWithdrawModal({ visible, goal, onClose }: GoalWithdrawModalP
     try {
       await withdraw.mutateAsync({
         goalId: goal.id,
-        accountId,
         amount: parsedAmount,
         note: note.trim() || undefined,
       });
-      showToast(`${formatCurrency(parsedAmount)} transferidos para a conta.`, 'success');
+      showToast(`${formatCurrency(parsedAmount)} retirados do objetivo.`, 'success');
       onClose();
     } catch (error) {
       setApiError(getApiErrorMessage(error, 'o levantamento'));
-      showToast('Não foi possível retirar do objetivo.', 'error');
     }
   }
 
@@ -85,8 +72,7 @@ export function GoalWithdrawModal({ visible, goal, onClose }: GoalWithdrawModalP
       <ScrollView contentContainerStyle={styles.content}>
         <Text variant="h2">Retirar do objetivo</Text>
         <Text variant="caption" color="textSecondary">
-          O dinheiro volta para a conta escolhida. Não conta como receita nem altera o património
-          líquido.
+          Reduz o valor guardado no objetivo. Não conta como receita.
         </Text>
 
         <Card variant="outlined" style={styles.summary}>
@@ -104,12 +90,6 @@ export function GoalWithdrawModal({ visible, goal, onClose }: GoalWithdrawModalP
           placeholder="0,00"
         />
 
-        <AccountPickerField
-          value={accountId}
-          onChange={setAccountId}
-          transactionType="income"
-        />
-
         <TextField
           label="Nota (opcional)"
           value={note}
@@ -118,13 +98,6 @@ export function GoalWithdrawModal({ visible, goal, onClose }: GoalWithdrawModalP
         />
 
         <DatePickerField label="Data" value={date} onChange={setDate} />
-
-        {destAccount && !Number.isNaN(parsedAmount) && parsedAmount > 0 ? (
-          <Text variant="caption" color="textMuted">
-            {destAccount.name} passará a{' '}
-            {formatCurrency((destAccount.balance ?? destAccount.initialBalance) + parsedAmount)}
-          </Text>
-        ) : null}
 
         {apiError ? (
           <Text variant="caption" color="danger">

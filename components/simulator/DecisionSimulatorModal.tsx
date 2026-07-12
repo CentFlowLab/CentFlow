@@ -96,20 +96,24 @@ export function DecisionSimulatorModal({
       case 'amortize_credit': {
         const credit = state.credits.find((row) => !isCardCredit(row.creditType));
         const account =
-          state.accounts.find((row) => row.type === 'investment') ??
+          state.accounts.find((row) => row.id === 'global-cash') ??
           state.accounts.find((row) => row.budgetEnabledResolved);
         if (!credit || !account) return null;
         return { type: 'amortize_credit', creditId: credit.id, accountId: account.id, amount: parsedAmount };
       }
       case 'pay_credit_card': {
         const card = state.creditCards[0];
-        const account = state.accounts.find((row) => row.budgetEnabledResolved);
+        const account =
+          state.accounts.find((row) => row.id === 'global-cash') ??
+          state.accounts.find((row) => row.budgetEnabledResolved);
         if (!card || !account) return null;
         return { type: 'pay_credit_card', creditId: card.credit.id, accountId: account.id, amount: parsedAmount };
       }
       case 'contribute_goal': {
         const goal = state.goalProgress[0];
-        const account = state.accounts.find((row) => row.budgetEnabledResolved);
+        const account =
+          state.accounts.find((row) => row.id === 'global-cash') ??
+          state.accounts.find((row) => row.budgetEnabledResolved);
         if (!goal || !account) return null;
         return { type: 'contribute_goal', goalId: goal.id, accountId: account.id, amount: parsedAmount };
       }

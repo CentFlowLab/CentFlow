@@ -1,10 +1,9 @@
-import { isCardCredit } from '@/lib/credit/credit-type.utils';
 import type { BankAccount } from '@/lib/domain/account.types';
 import type { Credit } from '@/lib/domain/types';
 
-import { isBudgetAccount } from './budget-accounts';
 import { pickPriorityDebtTarget, resolveDebtEffectiveAnnualRate } from './debt-priority';
 import { roundMoney } from './money';
+import { isCardCredit } from '@/lib/credit/credit-type.utils';
 import type { RealSavingsMarginBreakdown } from './savings-margin';
 
 export type DebtAmortizationAction = {
@@ -20,7 +19,7 @@ export type DebtAmortizationAction = {
 export type BuildDebtAmortizationInput = {
   margin: RealSavingsMarginBreakdown;
   credits: Credit[];
-  accounts: BankAccount[];
+  accounts?: BankAccount[];
   prioritizeDebt: boolean;
   minAmount?: number;
 };
@@ -30,10 +29,6 @@ const DEFAULT_MIN_AMOUNT = 10;
 function roundAllocationAmount(amount: number): number {
   if (amount <= 0) return 0;
   return Math.ceil(amount / 5) * 5;
-}
-
-function accountBalance(account: BankAccount): number {
-  return account.balance ?? account.initialBalance;
 }
 
 /** Sugere amortização quando a prioridade de dívida está activa e há margem real. */
@@ -52,12 +47,6 @@ export function buildDebtAmortizationAction(
   const cappedByDebt = Math.min(target.outstandingBalance, budget);
   const amount = Math.min(roundAllocationAmount(cappedByDebt), budget);
   if (amount < minAmount) return null;
-
-  const eligibleAccounts = input.accounts
-    .filter((account) => account.isActive && isBudgetAccount(account))
-    .filter((account) => accountBalance(account) >= amount);
-
-  if (eligibleAccounts.length === 0) return null;
 
   return {
     creditId: target.id,

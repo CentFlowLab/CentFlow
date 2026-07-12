@@ -7,7 +7,6 @@ import type {
   GoalContribution,
 } from '@/lib/domain/goal-contribution.types';
 import { useAuth } from '@/lib/auth';
-import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import { isSupabaseEnabled, supabaseGoalContributions } from '@/lib/supabase';
 
 export function useGoalContributions() {
@@ -16,7 +15,7 @@ export function useGoalContributions() {
   return useQuery<GoalContribution[]>({
     queryKey: queryKeys.goalContributions,
     queryFn: () => supabaseGoalContributions.fetchGoalContributions(),
-    enabled: isAuthenticated && ACCOUNTS_FEATURE_ENABLED && isSupabaseEnabled(),
+    enabled: isAuthenticated && isSupabaseEnabled(),
     staleTime: 1000 * 60 * 2,
   });
 }

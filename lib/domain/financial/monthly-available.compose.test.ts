@@ -177,8 +177,17 @@ test('despesa em conta 50€ após pagamento cartão — disponível 850€, gas
 
 test('mensalidade paga reduz disponível; compra cartão não', () => {
   const breakdown = buildMonthlyAvailableBreakdown({
-    accounts: [{ ...checkingAccount, initialBalance: 1000 }],
+    accounts: [],
     transactions: [
+      {
+        id: 'inc',
+        type: 'income',
+        amount: 1000,
+        date: '2026-07-01',
+        category: 'salary',
+        categoryLabel: 'Salário',
+        currency: 'EUR',
+      },
       {
         id: 'card',
         type: 'credit_card_purchase',
@@ -193,7 +202,6 @@ test('mensalidade paga reduz disponível; compra cartão não', () => {
         id: 'exp',
         type: 'expense',
         amount: 50,
-        accountId: 'acc-check',
         date: '2026-07-06',
         category: 'food',
         categoryLabel: 'Comida',

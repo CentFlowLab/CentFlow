@@ -7,8 +7,10 @@ import {
   isWithinPeriod,
   parseIsoDate,
 } from './dates';
-import { addMoney, roundMoney } from './money';
+import { addMoney, roundMoney, subtractMoney } from './money';
+import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import type { CategoryTotal, FinancialTransaction, MerchantTotal } from './domain-types';
+import type { LoanPaymentRecord } from './loan-payments';
 import {
   calculateBudgetImpact,
   calculateNetSpending,
@@ -23,9 +25,10 @@ export function isRealCashflowTransaction(tx: Pick<FinancialTransaction, 'type' 
 
 export function transactionCashDelta(tx: Pick<FinancialTransaction, 'type' | 'amount' | 'creditId'>): number {
   const kind = resolveTransactionKind(tx);
-  if (kind === 'transfer' || kind === 'credit_card_payment' || kind === 'credit_card_refund') {
+  if (kind === 'transfer' || kind === 'credit_card_refund') {
     return 0;
   }
+  if (kind === 'credit_card_payment') return -tx.amount;
   if (kind === 'credit_card_purchase') return 0;
   return kind === 'income' ? tx.amount : -tx.amount;
 }
@@ -171,6 +174,47 @@ export function sumTransactionCashBalance(
       return addMoney(sum, transactionCashDelta(tx));
     }, 0),
   );
+}
+
+/** Saldo de caixa global — transações + contribuições a objetivos + pagamentos de crédito. */
+export function sumGlobalCashBalance(
+  transactions: FinancialTransaction[],
+  options?: {
+    goalContributions?: GoalContribution[];
+    loanPayments?: LoanPaymentRecord[];
+    scope?: TransactionCashScope;
+    asOf?: Date;
+  },
+): number {
+  const scope = options?.scope ?? 'occurred';
+  const asOf = options?.asOf ?? new Date();
+  let balance = sumTransactionCashBalance(transactions, scope, asOf);
+
+  if (scope === 'occurred' || scope === 'all') {
+    for (const row of options?.goalContributions ?? []) {
+      const date = row.createdAt.slice(0, 10);
+      const inScope =
+        scope === 'all' ||
+        (scope === 'occurred' && isTransactionOccurred(date, asOf));
+      if (!inScope) continue;
+      const kind = row.kind ?? 'contribution';
+      balance =
+        kind === 'withdrawal'
+          ? addMoney(balance, row.amount)
+          : subtractMoney(balance, row.amount);
+    }
+
+    for (const row of options?.loanPayments ?? []) {
+      const date = row.paidAt.slice(0, 10);
+      const inScope =
+        scope === 'all' ||
+        (scope === 'occurred' && isTransactionOccurred(date, asOf));
+      if (!inScope) continue;
+      balance = subtractMoney(balance, row.amount);
+    }
+  }
+
+  return roundMoney(balance);
 }
 
 /** Movimentos ocorridos no mês civil de referência (receitas e despesas). */

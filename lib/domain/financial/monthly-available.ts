@@ -129,12 +129,6 @@ export function calculateMonthlyAvailableBreakdown(
   );
 
   const warnings: SpendableWarning[] = [];
-  if (accountSnapshots.included.length === 0) {
-    warnings.push({
-      code: 'NO_BUDGET_ACCOUNTS',
-      message: 'Nenhuma conta incluída no orçamento mensal.',
-    });
-  }
   if (available < LOW_BALANCE_THRESHOLD) {
     warnings.push({
       code: 'LOW_BALANCE',
@@ -149,11 +143,8 @@ export function calculateMonthlyAvailableBreakdown(
   }
 
   const notes = [
-    'Disponível este mês = saldo em contas de gasto corrente − obrigações futuras.',
-    'Investimentos e poupança contam no património, não no dinheiro para gastar.',
+    'Disponível este mês = saldo acumulado dos movimentos − obrigações futuras.',
     'Compras no cartão entram nos gastos do mês, mas não reduzem o disponível agora.',
-    'Pagamentos de cartão saem de uma conta elegível e reduzem o saldo disponível.',
-    'Transferências para investimento reduzem o orçamento; de investimento para conta à ordem aumentam.',
     'Amortizações extra reduzem dívida sem contar como consumo.',
   ];
 

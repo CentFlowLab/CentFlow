@@ -4,7 +4,7 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 
 import { buildAttentionItems } from '@/lib/domain/attention-items';
 import { calculateMonthlyNetWorthMetrics } from '@/lib/domain/net-worth-monthly';
-import { sumTransactionCashBalance } from '@/lib/domain/transaction-date.utils';
+import { sumGlobalCashBalance, sumTransactionCashBalance } from '@/lib/domain/financial/transactions';
 import { isCardCredit } from '@/lib/credit/credit-type.utils';
 import { countRenewalsSoon } from '@/lib/subscriptions/renewal.utils';
 
@@ -119,6 +119,37 @@ function buildCreditCardStates(
     });
 }
 
+function resolveDisplayAccounts(
+  enrichedAccounts: EnrichedAccountState[],
+  transactions: CalculateFinancialStateInput['transactions'],
+  goalContributions: CalculateFinancialStateInput['goalContributions'],
+  loanPayments: CalculateFinancialStateInput['loanPayments'],
+  asOf: Date,
+): EnrichedAccountState[] {
+  if (enrichedAccounts.length > 0) return enrichedAccounts;
+
+  const occurredCash = sumGlobalCashBalance(transactions, {
+    goalContributions,
+    loanPayments,
+    scope: 'occurred',
+    asOf,
+  });
+  if (occurredCash === 0) return [];
+
+  return [
+    {
+      id: 'global-cash',
+      name: 'Saldo',
+      type: 'checking',
+      balance: occurredCash,
+      initialBalance: 0,
+      isActive: true,
+      currency: 'EUR',
+      budgetEnabledResolved: true,
+    },
+  ];
+}
+
 function buildInvestmentSummary(
   accounts: EnrichedAccountState[],
   investments?: CalculateFinancialStateInput['investments'],
@@ -144,38 +175,32 @@ function buildInvestmentSummary(
 function resolveNetWorthInput(input: {
   accounts: EnrichedAccountState[];
   transactions: CalculateFinancialStateInput['transactions'];
+  goalContributions: CalculateFinancialStateInput['goalContributions'];
+  loanPayments: CalculateFinancialStateInput['loanPayments'];
   inventory: NonNullable<CalculateFinancialStateInput['inventory']>;
   investments: RecurringInvestment[];
   credits: NonNullable<CalculateFinancialStateInput['credits']>;
   asOf: Date;
 }) {
-  const hasRealAccounts = input.accounts.length > 0;
+  const occurredCash = sumGlobalCashBalance(input.transactions, {
+    goalContributions: input.goalContributions,
+    loanPayments: input.loanPayments,
+    scope: 'occurred',
+    asOf: input.asOf,
+  });
 
-  if (hasRealAccounts) {
-    return calculateNetWorth({
-      accounts: input.accounts.map((a) => ({
-        id: a.id,
-        name: a.name,
-        balance: a.balance,
-        currency: a.currency,
-      })),
-      inventory: input.inventory,
-      investments: input.investments,
-      savings: 0,
-      credits: input.credits,
-    });
-  }
-
-  const occurredCash = sumTransactionCashBalance(input.transactions, 'occurred', input.asOf);
   return calculateNetWorth({
-    accounts: [
-      {
-        id: 'derived-cash',
-        name: 'Saldo estimado',
-        balance: occurredCash,
-        currency: 'EUR',
-      },
-    ],
+    accounts:
+      occurredCash !== 0
+        ? [
+            {
+              id: 'global-cash',
+              name: 'Saldo',
+              balance: occurredCash,
+              currency: 'EUR',
+            },
+          ]
+        : [],
     inventory: input.inventory,
     investments: input.investments,
     savings: 0,
@@ -206,6 +231,14 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
     balance: account.balance ?? 0,
     budgetEnabledResolved: resolveBudgetEnabled(account),
   }));
+
+  const displayAccounts = resolveDisplayAccounts(
+    enrichedAccounts,
+    input.transactions,
+    goalContributions,
+    loanPayments,
+    asOf,
+  );
 
   const budget = buildMonthlyAvailableBreakdown({
     accounts,
@@ -241,6 +274,8 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
   const netWorth = resolveNetWorthInput({
     accounts: enrichedAccounts,
     transactions: input.transactions,
+    goalContributions,
+    loanPayments,
     inventory,
     investments: recurringInvestments,
     credits,
@@ -311,7 +346,7 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
   });
 
   const opportunities = buildFinancialOpportunities({
-    accounts: enrichedAccounts,
+    accounts: displayAccounts,
     credits,
     creditCards,
     availableThisMonth,
@@ -382,7 +417,7 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
 
   return {
     asOf,
-    accounts: enrichedAccounts,
+    accounts: displayAccounts,
     creditCards,
     credits,
     budget,

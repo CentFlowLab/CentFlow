@@ -42,7 +42,11 @@ export function PaymentMethodPickerField({
   const [mode, setMode] = useState<PaymentMethodKind>(
     restrictTo ??
       value?.kind ??
-      (activeAccounts.length > 0 ? 'account' : cards.length > 0 ? 'card' : 'account'),
+      (!ACCOUNTS_FEATURE_ENABLED || activeAccounts.length === 0
+        ? cards.length > 0
+          ? 'card'
+          : 'card'
+        : 'account'),
   );
 
   const autoAssignedRef = useRef(false);
@@ -83,9 +87,10 @@ export function PaymentMethodPickerField({
         {hint}
       </Text>
 
-      {(activeAccounts.length > 0 || cards.length > 0) && !restrictTo ? (
+      {(ACCOUNTS_FEATURE_ENABLED && activeAccounts.length > 0) || cards.length > 0 ? (
+        !restrictTo ? (
         <View style={styles.modeRow}>
-          {activeAccounts.length > 0 ? (
+          {ACCOUNTS_FEATURE_ENABLED && activeAccounts.length > 0 ? (
             <Pressable
               onPress={() => {
                 setMode('account');
@@ -114,9 +119,10 @@ export function PaymentMethodPickerField({
             </Pressable>
           ) : null}
         </View>
+        ) : null
       ) : null}
 
-      {mode === 'account' && restrictTo !== 'card' ? (
+      {mode === 'account' && ACCOUNTS_FEATURE_ENABLED && restrictTo !== 'card' ? (
         activeAccounts.length === 0 ? (
           <Text variant="caption" color="textMuted">
             Cria uma conta em Ativos para associar movimentos.

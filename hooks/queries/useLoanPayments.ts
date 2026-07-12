@@ -4,7 +4,6 @@ import { queryKeys } from '@/lib/api/keys';
 import { invalidateAssetsQueries } from '@/lib/api/invalidate-queries';
 import type { CreateLoanPaymentInput } from '@/lib/supabase/loan-payments';
 import { useAuth } from '@/lib/auth';
-import { ACCOUNTS_FEATURE_ENABLED } from '@/lib/config/product-features';
 import { isSupabaseEnabled, supabaseLoanPayments } from '@/lib/supabase';
 import {
   advanceCreditPaymentDate,
@@ -21,7 +20,7 @@ export function useLoanPayments() {
   return useQuery({
     queryKey: queryKeys.loanPayments,
     queryFn: () => supabaseLoanPayments.fetchLoanPayments(),
-    enabled: isAuthenticated && ACCOUNTS_FEATURE_ENABLED && isSupabaseEnabled(),
+    enabled: isAuthenticated && isSupabaseEnabled(),
     staleTime: 1000 * 60 * 2,
   });
 }

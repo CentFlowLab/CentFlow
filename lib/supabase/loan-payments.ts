@@ -58,7 +58,7 @@ export async function fetchLoanPayments(): Promise<LoanPaymentRecord[]> {
 
 export type CreateLoanPaymentInput = {
   creditId: string;
-  accountId: string;
+  accountId?: string;
   type: 'monthly_payment' | 'extra_principal_payment';
   amount: number;
   principalAmount?: number;
@@ -83,7 +83,7 @@ export async function createLoanPayment(
   const payload: TablesInsert<'loan_payments'> = {
     user_id: userId,
     credit_id: input.creditId,
-    account_id: input.accountId,
+    account_id: input.accountId ?? null,
     type: input.type,
     amount: input.amount,
     principal_amount: input.principalAmount ?? null,

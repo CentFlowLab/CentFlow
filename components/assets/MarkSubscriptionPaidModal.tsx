@@ -8,7 +8,6 @@ import {
 import { DraggableBottomSheet } from '@/components/layout';
 import { Button, Card, DatePickerField, Text, TextField } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
-import { useAccountsWithBalances } from '@/hooks/queries/useAccounts';
 import { useLiabilities } from '@/hooks/queries/useLiabilities';
 import { useMarkSubscriptionPaid } from '@/hooks/queries/useMarkSubscriptionPaid';
 import { useTransactions } from '@/hooks/queries/useTransactions';
@@ -37,7 +36,6 @@ export function MarkSubscriptionPaidModal({
   const { showToast } = useToast();
   const markPaid = useMarkSubscriptionPaid();
   const { data: transactions = [] } = useTransactions('all');
-  const { data: accounts = [] } = useAccountsWithBalances();
   const { data: liabilities } = useLiabilities();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodSelection>();
@@ -50,7 +48,6 @@ export function MarkSubscriptionPaidModal({
     () => (liabilities?.credits ?? []).filter((c) => isCardCredit(c.creditType)),
     [liabilities?.credits],
   );
-  const hasPaymentOptions = accounts.some((a) => a.isActive) || cards.length > 0;
 
   useEffect(() => {
     if (!visible || !subscription) return;
@@ -75,7 +72,7 @@ export function MarkSubscriptionPaidModal({
     : null;
 
   async function handleConfirm() {
-    if (!subscription || !paymentMethod) return;
+    if (!subscription) return;
     setApiError(null);
 
     if (uiState?.paidThisCycle) {
@@ -125,33 +122,35 @@ export function MarkSubscriptionPaidModal({
           ) : null}
         </Card>
 
-        {!hasPaymentOptions ? (
-          <Text variant="caption" color="textSecondary">
-            Adiciona uma conta ou cartão em Ativos para registar o pagamento.
-          </Text>
+        <TextField
+          label="Valor (€)"
+          value={amount}
+          onChangeText={setAmount}
+          keyboardType="decimal-pad"
+        />
+        {cards.length > 0 ? (
+          <PaymentMethodPickerField
+            value={paymentMethod}
+            onChange={setPaymentMethod}
+            restrictTo="card"
+          />
         ) : (
-          <>
-            <TextField
-              label="Valor (€)"
-              value={amount}
-              onChangeText={setAmount}
-              keyboardType="decimal-pad"
-            />
-            <PaymentMethodPickerField value={paymentMethod} onChange={setPaymentMethod} />
-            <DatePickerField label="Data" value={date} onChange={setDate} />
-            <TextField
-              label="Nota (opcional)"
-              value={note}
-              onChangeText={setNote}
-              placeholder={subscription.name}
-            />
-            {nextRenewal ? (
-              <Text variant="caption" color="textMuted">
-                Próxima renovação: {formatDateShort(nextRenewal)}
-              </Text>
-            ) : null}
-          </>
+          <Text variant="caption" color="textMuted">
+            Regista como despesa no saldo global.
+          </Text>
         )}
+        <DatePickerField label="Data" value={date} onChange={setDate} />
+        <TextField
+          label="Nota (opcional)"
+          value={note}
+          onChangeText={setNote}
+          placeholder={subscription.name}
+        />
+        {nextRenewal ? (
+          <Text variant="caption" color="textMuted">
+            Próxima renovação: {formatDateShort(nextRenewal)}
+          </Text>
+        ) : null}
 
         {apiError ? (
           <Text variant="caption" color="danger">
@@ -163,7 +162,7 @@ export function MarkSubscriptionPaidModal({
           label="Confirmar pagamento"
           onPress={() => void handleConfirm()}
           loading={markPaid.isPending}
-          disabled={!hasPaymentOptions || uiState?.disabled}
+          disabled={uiState?.disabled}
           fullWidth
           size="lg"
         />

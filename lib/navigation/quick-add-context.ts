@@ -7,8 +7,7 @@ export type QuickAddScreenContext =
   | 'creditos'
   | 'ativos_objetivos'
   | 'ativos_garantias'
-  | 'ativos_inventario'
-  | 'ativos_contas';
+  | 'ativos_inventario';
 
 /** Acções contextuais do botão + — nunca mostrar opções irrelevantes ao ecrã. */
 export function getContextualQuickAddActions(
@@ -29,8 +28,6 @@ export function getContextualQuickAddActions(
       return ['warranty'];
     case 'ativos_inventario':
       return ['asset'];
-    case 'ativos_contas':
-      return ['account'];
     default:
       return ['movement'];
   }
@@ -50,8 +47,6 @@ export function getQuickAddContextLabel(context: QuickAddScreenContext): string 
       return 'Nova garantia';
     case 'ativos_inventario':
       return 'Novo ativo';
-    case 'ativos_contas':
-      return 'Nova conta';
     default:
       return 'Adicionar';
   }
@@ -73,8 +68,6 @@ export function getQuickAddActionLabel(action: QuickAddActionId): string {
       return 'Novo ativo';
     case 'warranty':
       return 'Nova garantia';
-    case 'account':
-      return 'Nova conta';
     case 'product':
       return 'Produto';
     default:

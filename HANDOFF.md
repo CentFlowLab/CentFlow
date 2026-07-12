@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-05T20:56:15.394Z -->
-<!-- Git: 5d1a1c9 (2026-07-05T21:20:00+01:00) -->
+<!-- Última geração: 2026-07-12T03:10:43.520Z -->
+<!-- Git: c33c534 (2026-07-05T21:56:46+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 25 — Margem de poupança real (motor de acções financeiras)** |
-| Última geração | 2026-07-05T20:56:15.394Z |
+| Fase atual | **Fase 26 — Contas ocultas na UI (saldo global por transações)** |
+| Última geração | 2026-07-12T03:10:43.520Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `5d1a1c9` (2026-07-05T21:20:00+01:00) |
+| Git commit | `c33c534` (2026-07-05T21:56:46+01:00) |
 
 ---
 
@@ -834,7 +834,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: Fase 25 — Margem de poupança real (motor de acções financeiras)
+## Fase atual: Fase 26 — Contas ocultas na UI (saldo global por transações)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -990,6 +990,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Motor poupança Fase A (5) — CTA alocar ao objetivo (margem disponível, transferência real goal_contributions, Home + Análises Resumo)
 - Motor poupança Fase A (6) — subscrições revista/cancel URL, action-engine (FinancialActionsCard Home + Análises, SubscriptionsSection)
 - Motor poupança Fase B — margem real (mediana variável + projeção + tecto 90%), amortização dívida prioritária, toggle Definições
+- Contas ocultas na UI — ACCOUNTS_FEATURE_ENABLED=false, saldo global (sumGlobalCashBalance), formulários sem picker de conta, tab Contas removida de Ativos
 
 ### 🔲 Pendente
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
