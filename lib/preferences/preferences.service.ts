@@ -28,6 +28,7 @@ type PreferencesRow = {
   theme_id: UserPreferences['themeId'];
   biometrics_enabled: boolean;
   prioritize_debt_amortization?: boolean;
+  benchmark_contribution_consent?: boolean;
 };
 
 function mapRow(row: PreferencesRow): UserPreferences {
@@ -55,6 +56,8 @@ function mapRow(row: PreferencesRow): UserPreferences {
     recommendationCategoryMedian: DEFAULT_PREFERENCES.recommendationCategoryMedian,
     recommendationEmergencyFund: DEFAULT_PREFERENCES.recommendationEmergencyFund,
     recommendationHabitInsight: DEFAULT_PREFERENCES.recommendationHabitInsight,
+    benchmarkContributionConsent:
+      row.benchmark_contribution_consent ?? DEFAULT_PREFERENCES.benchmarkContributionConsent,
   };
 }
 
@@ -102,6 +105,9 @@ function toRow(userId: string, prefs: Partial<UserPreferences>) {
     }),
     ...(prefs.prioritizeDebtAmortization !== undefined && {
       prioritize_debt_amortization: prefs.prioritizeDebtAmortization,
+    }),
+    ...(prefs.benchmarkContributionConsent !== undefined && {
+      benchmark_contribution_consent: prefs.benchmarkContributionConsent,
     }),
   };
 }
@@ -168,6 +174,8 @@ export async function fetchUserPreferences(userId: string): Promise<UserPreferen
         local.recommendationEmergencyFund ?? remote.recommendationEmergencyFund,
       recommendationHabitInsight:
         local.recommendationHabitInsight ?? remote.recommendationHabitInsight,
+      benchmarkContributionConsent:
+        local.benchmarkContributionConsent ?? remote.benchmarkContributionConsent,
     };
   } catch {
     return local;
@@ -193,6 +201,9 @@ export async function updateUserPreferences(
     }),
     ...(patch.recommendationHabitInsight !== undefined && {
       recommendationHabitInsight: patch.recommendationHabitInsight,
+    }),
+    ...(patch.benchmarkContributionConsent !== undefined && {
+      benchmarkContributionConsent: patch.benchmarkContributionConsent,
     }),
   };
 

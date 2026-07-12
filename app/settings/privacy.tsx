@@ -45,6 +45,21 @@ export default function PrivacyScreen() {
       </View>
 
       <View style={styles.section}>
+        <Card variant="elevated" style={styles.card}>
+          <Text variant="bodyMedium">Comparações anónimas (benchmarks)</Text>
+          <Text variant="caption" color="textMuted">
+            Contribui opcionalmente com agregados de gasto para comparações estatísticas —
+            opt-in explícito, dados nunca identificáveis.
+          </Text>
+          <Button
+            label="Gerir consentimento"
+            variant="secondary"
+            onPress={() => router.push('/settings/benchmark-consent')}
+          />
+        </Card>
+      </View>
+
+      <View style={styles.section}>
         <Card variant="outlined" style={styles.card}>
           <Text variant="bodyMedium">Consentimentos futuros</Text>
           <Text variant="caption" color="textMuted">

@@ -33,6 +33,7 @@ export const DEFAULT_PREFERENCES = {
   recommendationCategoryMedian: true,
   recommendationEmergencyFund: true,
   recommendationHabitInsight: true,
+  benchmarkContributionConsent: false,
 };
 
 export const THEME_OPTIONS = THEME_DEFINITIONS.map((theme) => ({

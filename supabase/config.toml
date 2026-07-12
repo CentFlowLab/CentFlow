@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.financial-assistant]
 verify_jwt = true
+
+[functions.spending-benchmarks]
+verify_jwt = false

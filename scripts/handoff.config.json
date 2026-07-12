@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 39 — Padrões de gasto habituais (insights contextuais)",
+  "currentPhase": "Fase 40 — Benchmarks de gasto agregados (infraestrutura)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -178,9 +178,11 @@
     "Assistente conversacional — executeAssistantQuery + simulateDecision no client, histórico Supabase, ecrã /assistant",
     "Open Banking automático — cron GitHub Actions 6h, sync_all com throttle GoCardless, dedupe external_id, motor financeiro pós-import",
     "Open Banking automático — push resumo importações + baixa confiança, aviso consentimento 7 dias, dashboard sync por conta",
-    "Padrões de gasto habituais — detectSpendingHabits (dia da semana + merchant), insight neutro nas recomendações (prioridade baixa), ignorar falso positivo"
+    "Padrões de gasto habituais — detectSpendingHabits (dia da semana + merchant), insight neutro nas recomendações (prioridade baixa), ignorar falso positivo",
+    "Benchmarks agregados — tabela spending_benchmarks, Edge Function + cron semanal, opt-in explícito, UI Análises inactiva até escala"
   ],
   "pending": [
+    "Benchmarks — aplicar migration 20240715100000, deploy Edge Function spending-benchmarks, activar UI com EXPO_PUBLIC_SPENDING_BENCHMARKS_UI=true quando ≥30 opt-in por bucket",
     "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",
     "Open Banking — aplicar migrations 20240713000000 + 20240714100000, secrets GOCARDLESS_* no Supabase, redirect centflow://open-banking/callback, deploy Edge Function gocardless",
     "Migration category_spend_alerts — aplicar 20240713110000 no Supabase remoto",

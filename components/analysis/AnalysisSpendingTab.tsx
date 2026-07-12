@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AnalysisExpandableSection } from '@/components/analysis/AnalysisExpandableSection';
+import { SpendingBenchmarkCard } from '@/components/analysis/SpendingBenchmarkCard';
 import { SpendingCalendarCard } from '@/components/analysis/SpendingCalendarCard';
 import { SpendingCategoryCard } from '@/components/analysis/SpendingCategoryCard';
 import { SpendingTrendBars } from '@/components/analysis/SpendingTrendBars';
@@ -48,6 +49,8 @@ export function AnalysisSpendingTab({ transactions, period }: AnalysisSpendingTa
         budgetStatuses={budgetStatuses}
         showBudgetLimits={showBudgetLimits}
       />
+
+      <SpendingBenchmarkCard />
 
       <AnalysisExpandableSection title="Tendências" subtitle={periodOption.label}>
         <SpendingTrendBars buckets={spendingBuckets} periodLabel={periodOption.label} />

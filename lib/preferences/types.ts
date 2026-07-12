@@ -32,6 +32,8 @@ export type UserPreferences = {
   recommendationCategoryMedian: boolean;
   recommendationEmergencyFund: boolean;
   recommendationHabitInsight: boolean;
+  /** Opt-in explícito para contribuir com benchmarks agregados anonimizados (default OFF). */
+  benchmarkContributionConsent: boolean;
 };
 
 export type UpdateProfileInput = {
