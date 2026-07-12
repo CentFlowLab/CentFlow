@@ -164,7 +164,7 @@ function CategoryRow({
   );
 }
 
-function CategoryPickerSheet({ visible, type, value, onClose, onSelect }: CategoryPickerSheetProps) {
+export function CategoryPickerSheet({ visible, type, value, onClose, onSelect }: CategoryPickerSheetProps) {
   const [query, setQuery] = useState('');
   const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
   const {

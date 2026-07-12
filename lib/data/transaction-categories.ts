@@ -6,13 +6,21 @@ export type TransactionCategory = {
   id: string;
   label: string;
   icon: SymbolViewProps['name'];
+  /** Cor de destaque para ícones (dark mode). */
+  accentColor: string;
   /** Secção a que pertence (para o seletor agrupado). */
   group?: string;
 };
 
+type CategoryItemSeed = {
+  id: string;
+  label: string;
+  icon: SymbolViewProps['name'];
+};
+
 export type CategoryGroup = {
   title: string;
-  items: TransactionCategory[];
+  items: CategoryItemSeed[];
 };
 
 const ICONS = {
@@ -63,6 +71,46 @@ const ICONS = {
   dots: { ios: 'ellipsis.circle.fill', android: 'more_horiz', web: 'more_horiz' },
   tag: { ios: 'tag.fill', android: 'label', web: 'label' },
 } satisfies Record<string, SymbolViewProps['name']>;
+
+/** Paleta de acento por grupo — legível sobre fundos muted em todos os temas. */
+const GROUP_ACCENT_COLORS: Record<string, string> = {
+  'Alimentação & Restauração': '#F97316',
+  Transportes: '#38BDF8',
+  Habitação: '#A78BFA',
+  Saúde: '#F472B6',
+  'Lazer & Entretenimento': '#E879F9',
+  Compras: '#FB7185',
+  'Despesas recorrentes': '#6366F1',
+  Finanças: '#94A3B8',
+  Outros: '#CBD5E1',
+  'Rendimentos principais': '#22C55E',
+  'Outras entradas': '#14B8A6',
+};
+
+const FALLBACK_ACCENT_COLORS = [
+  '#6366F1',
+  '#22C55E',
+  '#F97316',
+  '#38BDF8',
+  '#E879F9',
+  '#14B8A6',
+  '#F472B6',
+  '#A855F7',
+] as const;
+
+function accentForGroup(groupTitle: string): string {
+  return GROUP_ACCENT_COLORS[groupTitle] ?? FALLBACK_ACCENT_COLORS[0];
+}
+
+function withAccent(groups: CategoryGroup[]): TransactionCategory[] {
+  return groups.flatMap((group) =>
+    group.items.map((item) => ({
+      ...item,
+      accentColor: accentForGroup(group.title),
+      group: group.title,
+    })),
+  );
+}
 
 /** Ícone por omissão para categorias personalizadas. */
 export const CUSTOM_CATEGORY_ICON: SymbolViewProps['name'] = ICONS.tag;
@@ -186,7 +234,7 @@ export const INCOME_CATEGORY_GROUPS: CategoryGroup[] = [
 ];
 
 function withGroups(groups: CategoryGroup[]): TransactionCategory[] {
-  return groups.flatMap((group) => group.items.map((item) => ({ ...item, group: group.title })));
+  return withAccent(groups);
 }
 
 export const EXPENSE_CATEGORIES: TransactionCategory[] = withGroups(EXPENSE_CATEGORY_GROUPS);
@@ -234,4 +282,17 @@ export function getCategoryById(
   type: TransactionType,
 ): TransactionCategory | undefined {
   return getCategoriesForType(type).find((c) => c.id === categoryId);
+}
+
+/** Cor de acento do ícone da categoria (fallback determinístico para ids desconhecidos). */
+export function getCategoryAccentColor(categoryId: string, type: TransactionType): string {
+  const catalogType = type === 'income' ? 'income' : 'expense';
+  const found = getCategoryById(categoryId, catalogType);
+  if (found?.accentColor) return found.accentColor;
+
+  let hash = 0;
+  for (let i = 0; i < categoryId.length; i += 1) {
+    hash = (hash + categoryId.charCodeAt(i) * (i + 1)) % FALLBACK_ACCENT_COLORS.length;
+  }
+  return FALLBACK_ACCENT_COLORS[hash] ?? FALLBACK_ACCENT_COLORS[0];
 }

@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 30 — Alertas gasto acima da mediana por categoria",
+  "currentPhase": "Fase 31 — UX Movimentos (sticky headers, chips, menu contextual)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",

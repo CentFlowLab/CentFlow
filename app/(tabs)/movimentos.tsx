@@ -13,14 +13,19 @@ import {
   AddTransactionModal,
   EditTransactionModal,
   MovementFilterChips,
+  MovementMonthSummaryCard,
   MovementSearchBar,
   MOVEMENTS_EMPTY_CONFIG,
   PendingSubscriptionModal,
   RefundTransactionModal,
   SwipeableTransactionListItem,
+  TransactionContextMenuSheet,
   TransactionsSkeleton,
+  computeMovementFilterCounts,
   type MovementTab,
+  type TransactionContextAction,
 } from '@/components/movements';
+import { CategoryPickerSheet } from '@/components/movements/CategoryField';
 import { EmptyState, ErrorState, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useDeleteSubscription, useLiabilities, useSaveSubscription } from '@/hooks/queries/useLiabilities';
@@ -29,23 +34,27 @@ import { useOnboardingAnswers } from '@/hooks/queries/useOnboardingAnswers';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { traceMovementStep } from '@/lib/doctor/movement-flow-trace';
 import {
+  useCreateTransaction,
   useDeleteTransaction,
   useTransactions,
+  useUpdateTransaction,
 } from '@/hooks/queries/useTransactions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useSubscriptionDetection } from '@/hooks/useSubscriptionDetection';
 import { useContextualQuickAdd } from '@/hooks/useContextualQuickAdd';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { MovementsView, Subscription } from '@/lib/domain/assets.types';
-import type { Transaction, TransactionFilter } from '@/lib/domain/transaction.types';
+import type { Transaction, TransactionFilter, CashTransactionType } from '@/lib/domain/transaction.types';
 import {
+  compareMonthSummaries,
   groupTransactionsByDay,
-  summarizeCurrentMonth,
 } from '@/lib/domain/transaction-grouping';
 import {
   flattenTransactionSections,
+  getMovementStickyHeaderIndices,
   type MovementListRow,
 } from '@/lib/lists/flatten-transaction-sections';
+import { getCategoryLabel } from '@/lib/data/transaction-categories';
 import {
   buildRecurringNameList,
   filterTransactionsBySearch,
@@ -74,6 +83,11 @@ export default function MovimentosScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [payCardVisible, setPayCardVisible] = useState(false);
   const [refundVisible, setRefundVisible] = useState(false);
+  const [contextMenuTransaction, setContextMenuTransaction] = useState<Transaction | null>(null);
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [categoryPickerTransaction, setCategoryPickerTransaction] = useState<Transaction | null>(
+    null,
+  );
 
   const { data, isLoading, isError, error, refetch, isRefetching } =
     useTransactions('all');
@@ -92,6 +106,8 @@ export default function MovimentosScreen() {
   const { contentBottomPadding } = useResponsiveLayout();
   const { refreshing, onRefresh } = usePullToRefresh(refetch);
   const deleteMutation = useDeleteTransaction();
+  const createMutation = useCreateTransaction();
+  const updateMutation = useUpdateTransaction();
   const { showToast } = useToast();
   const deleteSubscription = useDeleteSubscription();
   const markSubscriptionReviewed = useMarkSubscriptionReviewed();
@@ -127,9 +143,14 @@ export default function MovimentosScreen() {
     () => flattenTransactionSections(sections),
     [sections],
   );
-  const monthSummary = useMemo(
-    () => summarizeCurrentMonth(data ?? []),
-    [data],
+  const stickyHeaderIndices = useMemo(
+    () => getMovementStickyHeaderIndices(movementRows),
+    [movementRows],
+  );
+  const monthComparison = useMemo(() => compareMonthSummaries(data ?? []), [data]);
+  const filterCounts = useMemo(
+    () => computeMovementFilterCounts(data ?? [], subscriptions.length),
+    [data, subscriptions.length],
   );
 
   useEffect(() => {
@@ -209,6 +230,103 @@ export default function MovimentosScreen() {
     !modalVisible &&
     !suppressDetectionRef.current;
 
+  function handleOpenContextMenu(transaction: Transaction) {
+    setContextMenuTransaction(transaction);
+    setContextMenuVisible(true);
+  }
+
+  function handleContextMenuAction(action: TransactionContextAction, transaction: Transaction) {
+    switch (action) {
+      case 'edit':
+        handleEdit(transaction);
+        break;
+      case 'duplicate':
+        handleDuplicate(transaction);
+        break;
+      case 'changeCategory':
+        setCategoryPickerTransaction(transaction);
+        break;
+      case 'markRecurring':
+        handleMarkRecurring(transaction);
+        break;
+      default:
+        break;
+    }
+    setContextMenuTransaction(null);
+  }
+
+  function todayIsoDate(): string {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
+  }
+
+  function handleDuplicate(transaction: Transaction) {
+    createMutation.mutate(
+      {
+        type: transaction.type,
+        amount: transaction.amount,
+        category: transaction.category,
+        description: transaction.description,
+        date: todayIsoDate(),
+        accountId: transaction.accountId,
+        destinationAccountId: transaction.destinationAccountId,
+        creditId: transaction.creditId,
+        budgetMonth: transaction.budgetMonth,
+      },
+      {
+        onSuccess: () => showToast('Movimento duplicado.', 'success'),
+        onError: () => showToast('Não foi possível duplicar o movimento.', 'error'),
+      },
+    );
+  }
+
+  async function handleMarkRecurring(transaction: Transaction) {
+    try {
+      await saveSubscription.mutateAsync({
+        name: transaction.description?.trim() || getCategoryLabel(transaction.category, 'expense'),
+        amount: transaction.amount,
+        billingInterval: 'monthly',
+        category: transaction.category,
+        notes: 'Criada a partir de um movimento',
+      });
+      showToast('Despesa recorrente adicionada.', 'success');
+    } catch {
+      showToast('Não foi possível criar a despesa recorrente.', 'error');
+    }
+  }
+
+  function toCashCategoryType(transaction: Transaction): CashTransactionType {
+    return transaction.type === 'income' ? 'income' : 'expense';
+  }
+
+  function handleQuickCategoryChange(categoryId: string) {
+    if (!categoryPickerTransaction) return;
+    const transaction = categoryPickerTransaction;
+
+    updateMutation.mutate(
+      {
+        transactionId: transaction.id,
+        input: {
+          type: transaction.type,
+          amount: transaction.amount,
+          category: categoryId,
+          description: transaction.description,
+          date: transaction.date,
+          accountId: transaction.accountId,
+          creditId: transaction.creditId,
+          budgetMonth: transaction.budgetMonth,
+        },
+      },
+      {
+        onSuccess: () => showToast('Categoria actualizada.', 'success'),
+        onError: () => showToast('Não foi possível actualizar a categoria.', 'error'),
+      },
+    );
+    setCategoryPickerTransaction(null);
+  }
+
   function handleEdit(transaction: Transaction) {
     if (transaction.type === 'transfer' || transaction.type === 'credit_payment') return;
     setEditingTransaction(transaction);
@@ -281,7 +399,7 @@ export default function MovimentosScreen() {
       />
 
       <View style={styles.filters}>
-        <MovementFilterChips value={activeTab} onChange={handleTabChange} />
+        <MovementFilterChips value={activeTab} counts={filterCounts} onChange={handleTabChange} />
       </View>
 
       {activeView === 'movimentos' ? (
@@ -308,6 +426,7 @@ export default function MovimentosScreen() {
               data={movementRows}
               keyExtractor={(item) => item.key}
               getItemType={(item) => item.kind}
+              stickyHeaderIndices={stickyHeaderIndices}
               renderItem={({ item }: { item: MovementListRow }) =>
                 item.kind === 'header' ? (
                   <View style={styles.sectionHeader}>
@@ -327,28 +446,12 @@ export default function MovimentosScreen() {
                     creditById={creditById}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onOpenContextMenu={handleOpenContextMenu}
                   />
                 )
               }
               ListHeaderComponent={
-                isEmpty ? null : (
-                  <View style={styles.monthSummary}>
-                    <Text variant="caption" color="textMuted">
-                      Este mês
-                    </Text>
-                    <View style={styles.monthSummaryRow}>
-                      <Text
-                        variant="bodyMedium"
-                        color={monthSummary.net >= 0 ? 'success' : 'text'}>
-                        {monthSummary.net > 0 ? '+' : ''}
-                        {formatCurrency(monthSummary.net)}
-                      </Text>
-                      <Text variant="caption" color="textMuted">
-                        {monthSummary.count} movimento{monthSummary.count === 1 ? '' : 's'}
-                      </Text>
-                    </View>
-                  </View>
-                )
+                isEmpty ? null : <MovementMonthSummaryCard comparison={monthComparison} />
               }
               contentContainerStyle={[
                 styles.listContent,
@@ -485,6 +588,23 @@ export default function MovimentosScreen() {
         onSelect={quickAdd.onSelect}
         actions={quickAdd.actions}
       />
+
+      <TransactionContextMenuSheet
+        visible={contextMenuVisible}
+        transaction={contextMenuTransaction}
+        onClose={() => setContextMenuVisible(false)}
+        onSelect={handleContextMenuAction}
+      />
+
+      {categoryPickerTransaction ? (
+        <CategoryPickerSheet
+          visible
+          type={toCashCategoryType(categoryPickerTransaction)}
+          value={categoryPickerTransaction.category}
+          onClose={() => setCategoryPickerTransaction(null)}
+          onSelect={handleQuickCategoryChange}
+        />
+      ) : null}
     </View>
   );
 }
@@ -512,22 +632,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  monthSummary: {
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  monthSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.sm,
-  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: spacing.md,
     paddingBottom: spacing.xs,
+    backgroundColor: colors.background,
   },
   sectionContent: {
     paddingHorizontal: spacing.lg,

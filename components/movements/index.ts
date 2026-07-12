@@ -3,7 +3,8 @@ export { AddTransactionModal } from './AddTransactionModal';
 export { ConfirmReceiptModal } from './ConfirmReceiptModal';
 export { EditTransactionModal } from './EditTransactionModal';
 export { MOVEMENTS_EMPTY_CONFIG, MOVEMENTS_VIEW_SEGMENTS } from './movements.config';
-export { MovementFilterChips, type MovementTab } from './MovementFilterChips';
+export { MovementFilterChips, computeMovementFilterCounts, type MovementTab } from './MovementFilterChips';
+export { MovementMonthSummaryCard } from './MovementMonthSummaryCard';
 export { MovementSearchBar } from './MovementSearchBar';
 export { PendingSubscriptionModal } from './PendingSubscriptionModal';
 export { QuickExpenseSheet } from './QuickExpenseSheet';
@@ -17,6 +18,10 @@ export { ReceiptImageViewer } from './ReceiptImageViewer';
 export { ReceiptOcrProcessingOverlay } from './ReceiptOcrProcessingOverlay';
 export { ReceiptPreview } from './ReceiptPreview';
 export { SwipeableTransactionListItem } from './SwipeableTransactionListItem';
+export {
+  TransactionContextMenuSheet,
+  type TransactionContextAction,
+} from './TransactionContextMenuSheet';
 export { TransactionForm } from './TransactionForm';
 export { TransactionListItem } from './TransactionListItem';
 export { TransactionsSkeleton } from './TransactionsSkeleton';

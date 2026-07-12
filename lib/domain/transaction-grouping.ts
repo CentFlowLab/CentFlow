@@ -23,6 +23,35 @@ export type MonthSummary = {
   count: number;
 };
 
+export type MonthComparison = {
+  current: MonthSummary;
+  previous: MonthSummary;
+  /** Variação percentual do net actual face ao mês anterior (null se anterior = 0). */
+  netChangePercent: number | null;
+};
+
+function summarizeMonth(
+  transactions: Transaction[],
+  referenceDate: Date,
+): MonthSummary {
+  let net = 0;
+  let count = 0;
+
+  for (const transaction of transactions) {
+    if (resolveTransactionKind(transaction) === 'transfer') continue;
+    if (resolveTransactionKind(transaction) === 'credit_card_payment') continue;
+    const counts =
+      transaction.type === 'income'
+        ? incomeCountsForBudgetMonth(transaction, referenceDate)
+        : expenseCountsForBudgetMonth(transaction, referenceDate);
+    if (!counts) continue;
+    net += signedAmount(transaction);
+    count += 1;
+  }
+
+  return { net, count };
+}
+
 function dayKeyFromDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -80,20 +109,32 @@ export function summarizeCurrentMonth(
   transactions: Transaction[],
   now: Date = new Date(),
 ): MonthSummary {
-  let net = 0;
-  let count = 0;
+  return summarizeMonth(transactions, now);
+}
 
-  for (const transaction of transactions) {
-    if (resolveTransactionKind(transaction) === 'transfer') continue;
-    if (resolveTransactionKind(transaction) === 'credit_card_payment') continue;
-    const counts =
-      transaction.type === 'income'
-        ? incomeCountsForBudgetMonth(transaction, now)
-        : expenseCountsForBudgetMonth(transaction, now);
-    if (!counts) continue;
-    net += signedAmount(transaction);
-    count += 1;
+/** Resumo do mês civil anterior ao de referência. */
+export function summarizePreviousMonth(
+  transactions: Transaction[],
+  now: Date = new Date(),
+): MonthSummary {
+  const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+  return summarizeMonth(transactions, previousMonth);
+}
+
+/** Compara net do mês actual com o mês civil anterior. */
+export function compareMonthSummaries(
+  transactions: Transaction[],
+  now: Date = new Date(),
+): MonthComparison {
+  const current = summarizeCurrentMonth(transactions, now);
+  const previous = summarizePreviousMonth(transactions, now);
+
+  let netChangePercent: number | null = null;
+  if (previous.net !== 0) {
+    netChangePercent = Math.round(((current.net - previous.net) / Math.abs(previous.net)) * 100);
+  } else if (current.net !== 0) {
+    netChangePercent = current.net > 0 ? 100 : -100;
   }
 
-  return { net, count };
+  return { current, previous, netChangePercent };
 }

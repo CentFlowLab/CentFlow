@@ -3,7 +3,7 @@ import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import { Card, Text } from '@/components/ui';
-import { getCategoryById } from '@/lib/data/transaction-categories';
+import { getCategoryById, getCategoryAccentColor } from '@/lib/data/transaction-categories';
 import { resolveTransactionKind } from '@/lib/domain/financial/transaction-kind';
 import {
   buildMovementSubtitle,
@@ -23,6 +23,7 @@ type SwipeableTransactionListItemProps = {
   creditById?: Record<string, string>;
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
+  onOpenContextMenu?: (transaction: Transaction) => void;
 };
 
 export function SwipeableTransactionListItem({
@@ -31,6 +32,7 @@ export function SwipeableTransactionListItem({
   creditById = {},
   onEdit,
   onDelete,
+  onOpenContextMenu,
 }: SwipeableTransactionListItemProps) {
   const kind = resolveTransactionKind(transaction);
   const isTransfer = kind === 'transfer';
@@ -49,6 +51,10 @@ export function SwipeableTransactionListItem({
   const categoryCatalogType =
     isCreditPayment || isCardExpense || isCardRefund ? 'expense' : transaction.type;
   const category = getCategoryById(transaction.category, categoryCatalogType);
+
+  const categoryIconColor = isNonCashMovement
+    ? amountColor
+    : getCategoryAccentColor(transaction.category, categoryCatalogType);
 
   const transferIcon = {
     ios: 'arrow.left.arrow.right',
@@ -165,7 +171,9 @@ export function SwipeableTransactionListItem({
         if (!isTransfer && !isCreditPayment) onEdit(transaction);
       }}
       onLongPress={() => {
-        if (!isTransfer && !isCreditPayment) onEdit(transaction);
+        if (!isTransfer && !isCreditPayment && onOpenContextMenu) {
+          onOpenContextMenu(transaction);
+        }
       }}
       delayLongPress={320}
       style={({ pressed }) => [pressed && !isTransfer && !isCreditPayment && styles.rowPressed]}>
@@ -179,7 +187,7 @@ export function SwipeableTransactionListItem({
                 ? styles.iconIncome
                 : styles.iconExpense,
           ]}>
-          <SymbolView name={icon} tintColor={amountColor} size={20} />
+          <SymbolView name={icon} tintColor={categoryIconColor} size={20} />
         </View>
 
         <View style={styles.content}>

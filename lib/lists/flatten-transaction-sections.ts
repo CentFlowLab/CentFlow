@@ -27,3 +27,12 @@ export function flattenTransactionSections(sections: TransactionDaySection[]): M
 
   return rows;
 }
+
+/** Índices dos cabeçalhos de dia para stickyHeaderIndices do FlashList. */
+export function getMovementStickyHeaderIndices(rows: MovementListRow[]): number[] {
+  const indices: number[] = [];
+  rows.forEach((row, index) => {
+    if (row.kind === 'header') indices.push(index);
+  });
+  return indices;
+}
