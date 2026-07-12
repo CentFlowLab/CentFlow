@@ -5,6 +5,7 @@ import {
   invalidateAssetsQueries,
   invalidateTransactionQueries,
 } from '@/lib/api/invalidate-queries';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
 
@@ -19,9 +20,10 @@ const SYNC_TABLES: SyncTable[] = [
   'subscriptions',
 ];
 
-function invalidateForTable(table: SyncTable, queryClient: QueryClient): void {
+function invalidateForTable(table: SyncTable, queryClient: QueryClient, userId: string): void {
   if (table === 'transactions') {
     invalidateTransactionQueries(queryClient);
+    scheduleFinancialRecalculation(queryClient, userId, { type: 'open_banking_import' });
     return;
   }
   if (table === 'credits' || table === 'subscriptions') {
@@ -55,7 +57,7 @@ export function subscribeToUserDataSync(
           table,
           filter: `user_id=eq.${userId}`,
         },
-        () => invalidateForTable(table, queryClient),
+        () => invalidateForTable(table, queryClient, userId),
       );
     }
 

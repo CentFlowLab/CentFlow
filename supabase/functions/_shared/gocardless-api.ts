@@ -31,6 +31,8 @@ export type GoCardlessTransaction = {
   debtorName?: string;
   remittanceInformationUnstructured?: string;
   remittanceInformationUnstructuredArray?: string[];
+  /** Presente em movimentos ainda não contabilizados. */
+  _pending?: boolean;
 };
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
@@ -74,10 +76,23 @@ async function gcFetch<T>(token: string, path: string, init?: RequestInit): Prom
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`GoCardless ${path} failed: ${response.status} ${text}`);
+    const error = new Error(`GoCardless ${path} failed: ${response.status} ${text}`);
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
   }
 
   return response.json() as Promise<T>;
+}
+
+export function isGoCardlessRateLimitError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const status = (error as Error & { status?: number }).status;
+  if (status === 429) return true;
+  return error.message.includes('429') || error.message.toLowerCase().includes('rate limit');
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function listInstitutions(
@@ -149,8 +164,8 @@ export async function getAccountTransactions(
   const data = await gcFetch<{
     transactions?: { booked?: GoCardlessTransaction[]; pending?: GoCardlessTransaction[] };
   }>(token, `/accounts/${accountId}/transactions/`);
-  const booked = data.transactions?.booked ?? [];
-  const pending = data.transactions?.pending ?? [];
+  const booked = (data.transactions?.booked ?? []).map((tx) => ({ ...tx, _pending: false }));
+  const pending = (data.transactions?.pending ?? []).map((tx) => ({ ...tx, _pending: true }));
   return [...booked, ...pending];
 }
 
@@ -189,7 +204,16 @@ export function buildExternalId(accountId: string, tx: GoCardlessTransaction): s
     const date = resolveTransactionDate(tx);
     const amount = tx.transactionAmount?.amount ?? '0';
     const desc = extractTransactionDescription(tx).slice(0, 40);
-    return `gc:${accountId}:${date}:${amount}:${desc}`;
+    const prefix = tx._pending ? 'gc:pending' : 'gc';
+    return `${prefix}:${accountId}:${date}:${amount}:${desc}`;
   }
+  const prefix = tx._pending ? 'gc:pending' : 'gc';
+  return `${prefix}:${accountId}:${id}`;
+}
+
+/** ID estável quando um movimento pending passa a booked (mesmo transactionId). */
+export function buildBookedExternalId(accountId: string, tx: GoCardlessTransaction): string | null {
+  const id = tx.transactionId ?? tx.internalTransactionId;
+  if (!id) return null;
   return `gc:${accountId}:${id}`;
 }

@@ -11,6 +11,7 @@ import {
 
 import { CreditPaymentReminderGate } from '@/components/assets';
 import { CalendarRiskNotificationGate } from '@/components/calendar';
+import { OpenBankingSyncNotificationGate } from '@/components/open-banking';
 import { BackTapGuideGate } from '@/components/onboarding';
 import { DecisionSimulatorHost } from '@/components/simulator';
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
@@ -169,6 +170,7 @@ function TabLayoutInner() {
     </Tabs>
     <CreditPaymentReminderGate />
     <CalendarRiskNotificationGate />
+    <OpenBankingSyncNotificationGate />
     <BackTapGuideGate />
     <DecisionSimulatorHost />
     </>

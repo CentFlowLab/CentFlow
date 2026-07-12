@@ -1,0 +1,1 @@
+export { OpenBankingSyncNotificationGate } from './OpenBankingSyncNotificationGate';

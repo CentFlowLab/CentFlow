@@ -43,7 +43,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.gocardless]
-verify_jwt = true
+verify_jwt = false
 
 [functions.financial-assistant]
 verify_jwt = true

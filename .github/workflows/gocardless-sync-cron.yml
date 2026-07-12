@@ -1,0 +1,27 @@
+name: Open Banking sync (cron)
+
+on:
+  schedule:
+    # A cada 6 horas — respeita limite GoCardless (~4 pedidos/dia/conta no endpoint transactions)
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-gocardless-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Trigger Supabase gocardless sync_all
+        env:
+          SUPABASE_URL: https://oxhjfwmhcwadlltinlck.supabase.co
+          EMAIL_CRON_SECRET: ${{ secrets.EMAIL_CRON_SECRET }}
+        run: |
+          if [ -z "$EMAIL_CRON_SECRET" ]; then
+            echo "EMAIL_CRON_SECRET não definido nos GitHub Secrets — saltar."
+            exit 0
+          fi
+          curl -sfS -X POST \
+            "${SUPABASE_URL}/functions/v1/gocardless" \
+            -H "x-cron-secret: ${EMAIL_CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"sync_all"}'

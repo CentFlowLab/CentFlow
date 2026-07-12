@@ -16,7 +16,7 @@ import {
   useSupportedBanks,
   useSyncBankConnection,
 } from '@/hooks/queries/useBankConnections';
-import type { BankConnection } from '@/lib/open-banking/types';
+import type { BankConnection, BankConnectionAccount } from '@/lib/open-banking/types';
 import { getOpenBankingRedirectUrl } from '@/lib/open-banking/gocardless.service';
 import { spacing, useTheme, useThemedStyles } from '@/lib/theme';
 import type { ThemeColors } from '@/lib/theme/types';
@@ -70,6 +70,33 @@ export default function BankConnectionsScreen() {
     }
   }
 
+  async function handleRenew(connection: BankConnection) {
+    setLinkingBankId(connection.institutionId);
+    try {
+      const result = await createLink.mutateAsync(connection.institutionId);
+      if (!result.link) throw new Error('Link bancário indisponível');
+
+      const redirectUrl = getOpenBankingRedirectUrl();
+      const browserResult = await WebBrowser.openAuthSessionAsync(result.link, redirectUrl);
+
+      if (browserResult.type === 'success' || browserResult.type === 'dismiss') {
+        const finalized = await finalizeLink.mutateAsync(result.requisitionId);
+        if (finalized.sync?.imported) {
+          showToast(`${finalized.sync.imported} movimentos importados`, 'success');
+        } else {
+          showToast('Consentimento renovado', 'success');
+        }
+      }
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Não foi possível renovar a ligação',
+        'error',
+      );
+    } finally {
+      setLinkingBankId(null);
+    }
+  }
+
   async function handleSync(connection: BankConnection) {
     setSyncingId(connection.id);
     try {
@@ -111,6 +138,7 @@ export default function BankConnectionsScreen() {
 
   const linked = (connections ?? []).filter((item) => item.status === 'linked');
   const pending = (connections ?? []).filter((item) => item.status === 'pending');
+  const expired = (connections ?? []).filter((item) => item.status === 'expired');
 
   return (
     <SettingsScreenLayout
@@ -126,35 +154,37 @@ export default function BankConnectionsScreen() {
         <Text variant="h3">Contas ligadas</Text>
         {connectionsLoading ? (
           <LoadingSpinner message="A carregar ligações..." />
-        ) : linked.length === 0 && pending.length === 0 ? (
+        ) : linked.length === 0 && pending.length === 0 && expired.length === 0 ? (
           <Text variant="body" color="textSecondary">
             Ainda não tens bancos ligados. Escolhe um banco abaixo para começar.
           </Text>
         ) : (
           <View style={styles.connectionList}>
-            {[...linked, ...pending].map((connection) => (
+            {[...linked, ...pending, ...expired].map((connection) => (
               <View key={connection.id} style={styles.connectionRow}>
                 <View style={styles.connectionMeta}>
                   <Text variant="bodyMedium">{connection.institutionName}</Text>
                   <Text variant="caption" color="textMuted">
                     {connectionStatusLabel(connection)}
-                    {connection.lastSyncAt
-                      ? ` · ${formatDateShort(connection.lastSyncAt)}`
-                      : ''}
                   </Text>
+                  <ConnectionSyncSummary connection={connection} />
+                  {connection.consentExpiresAt ? (
+                    <ConsentExpiryBadge expiresAt={connection.consentExpiresAt} />
+                  ) : null}
                   {connection.lastSyncStatus === 'failed' ? (
                     <View style={styles.syncFailedBadge}>
                       <Text variant="caption" style={styles.syncFailedText}>
                         Última sincronização falhou
+                        {connection.lastSyncSource === 'auto' ? ' (automática)' : ''}
                       </Text>
                     </View>
                   ) : null}
                   {connection.accounts.length > 0 ? (
-                    <Text variant="caption" color="textSecondary">
-                      {connection.accounts
-                        .map((account) => account.name ?? account.iban ?? 'Conta')
-                        .join(' · ')}
-                    </Text>
+                    <View style={styles.accountList}>
+                      {connection.accounts.map((account) => (
+                        <AccountSyncRow key={account.id} account={account} />
+                      ))}
+                    </View>
                   ) : null}
                 </View>
                 <View style={styles.connectionActions}>
@@ -165,6 +195,16 @@ export default function BankConnectionsScreen() {
                       variant="secondary"
                       loading={syncingId === connection.id}
                       onPress={() => void handleSync(connection)}
+                    />
+                  ) : null}
+                  {connection.status === 'expired' ||
+                  (connection.consentExpiresAt && daysUntil(connection.consentExpiresAt) <= 7) ? (
+                    <Button
+                      label="Renovar"
+                      size="sm"
+                      variant="primary"
+                      loading={linkingBankId === connection.institutionId}
+                      onPress={() => void handleRenew(connection)}
                     />
                   ) : null}
                   <Button
@@ -227,10 +267,73 @@ export default function BankConnectionsScreen() {
 
 function connectionStatusLabel(connection: BankConnection): string {
   if (connection.status === 'pending') return 'A aguardar autorização';
-  if (connection.status === 'linked') return 'Ligada';
+  if (connection.status === 'linked') return 'Ligada · sync automática a cada 6 horas';
   if (connection.status === 'expired') return 'Consentimento expirado';
   if (connection.status === 'error') return 'Erro na ligação';
   return connection.status;
+}
+
+function daysUntil(isoDate: string): number {
+  return Math.ceil((new Date(isoDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+}
+
+function ConnectionSyncSummary({ connection }: { connection: BankConnection }) {
+  const autoLabel = connection.lastAutoSyncAt
+    ? `Última sync automática: ${formatDateShort(connection.lastAutoSyncAt)}`
+    : 'Sync automática ainda não executada';
+  const manualLabel =
+    connection.lastSyncAt && connection.lastSyncSource === 'manual'
+      ? ` · manual: ${formatDateShort(connection.lastSyncAt)}`
+      : '';
+
+  return (
+    <Text variant="caption" color="textSecondary">
+      {autoLabel}
+      {manualLabel}
+    </Text>
+  );
+}
+
+function ConsentExpiryBadge({ expiresAt }: { expiresAt: string }) {
+  const { colors } = useTheme();
+  const daysLeft = daysUntil(expiresAt);
+  if (daysLeft > 7) return null;
+
+  const label =
+    daysLeft <= 0
+      ? 'Consentimento expirado — renova para continuar'
+      : `Consentimento expira em ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'}`;
+
+  return (
+    <View
+      style={{
+        alignSelf: 'flex-start',
+        backgroundColor: `${colors.warning}22`,
+        borderRadius: 999,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 2,
+        borderWidth: 1,
+        borderColor: `${colors.warning}55`,
+      }}>
+      <Text variant="caption" style={{ color: colors.warning, fontWeight: '600' }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function AccountSyncRow({ account }: { account: BankConnectionAccount }) {
+  const label = account.name ?? account.iban ?? 'Conta';
+  const autoSync = account.lastAutoSyncAt
+    ? `sync auto ${formatDateShort(account.lastAutoSyncAt)}`
+    : 'sem sync auto';
+
+  return (
+    <Text variant="caption" color="textMuted">
+      {label} · {autoSync}
+      {account.lastAutoSyncStatus === 'skipped' ? ' (limite API)' : ''}
+    </Text>
+  );
 }
 
 function createStyles(colors: ThemeColors) {
@@ -255,6 +358,10 @@ function createStyles(colors: ThemeColors) {
     connectionMeta: {
       flex: 1,
       gap: spacing.xs,
+    },
+    accountList: {
+      gap: 2,
+      marginTop: spacing.xs,
     },
     connectionActions: {
       gap: spacing.xs,

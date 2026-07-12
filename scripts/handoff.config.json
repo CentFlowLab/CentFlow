@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 37 — Assistente financeiro conversacional",
+  "currentPhase": "Fase 38 — Open Banking automático (cron + push + consentimento)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -175,11 +175,13 @@
     "Calendário de caixa — buildFinancialCalendar cruza vencimentos, recorrências e rendimento com saldo projetado (cashflow)",
     "Calendário de caixa — ecrã /calendar com grelha mensal (neutro/atenção/risco), detalhe por dia e notificação única a 7 dias",
     "Assistente conversacional — Edge Function financial-assistant (classificação + formatação Anthropic, números do motor)",
-    "Assistente conversacional — executeAssistantQuery + simulateDecision no client, histórico Supabase, ecrã /assistant"
+    "Assistente conversacional — executeAssistantQuery + simulateDecision no client, histórico Supabase, ecrã /assistant",
+    "Open Banking automático — cron GitHub Actions 6h, sync_all com throttle GoCardless, dedupe external_id, motor financeiro pós-import",
+    "Open Banking automático — push resumo importações + baixa confiança, aviso consentimento 7 dias, dashboard sync por conta"
   ],
   "pending": [
     "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",
-    "Open Banking — aplicar migration 20240713000000, secrets GOCARDLESS_* no Supabase, redirect centflow://open-banking/callback no portal GoCardless, cron sync_all",
+    "Open Banking — aplicar migrations 20240713000000 + 20240714100000, secrets GOCARDLESS_* no Supabase, redirect centflow://open-banking/callback, deploy Edge Function gocardless",
     "Migration category_spend_alerts — aplicar 20240713110000 no Supabase remoto",
     "Migration assistant_conversations — aplicar 20240713120000 + deploy Edge Function financial-assistant + secret ANTHROPIC_API_KEY",
     "Rebuild nativo obrigatório — @sentry/react-native (plugin + metro.config.js); configurar EXPO_PUBLIC_SENTRY_DSN no EAS",

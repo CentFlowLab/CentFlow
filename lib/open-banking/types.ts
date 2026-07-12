@@ -8,6 +8,8 @@ export type BankConnectionAccount = {
   name?: string | null;
   currency: string;
   gocardlessAccountId: string;
+  lastAutoSyncAt?: string | null;
+  lastAutoSyncStatus?: 'success' | 'failed' | 'skipped' | null;
 };
 
 export type BankConnection = {
@@ -19,6 +21,9 @@ export type BankConnection = {
   lastSyncAt?: string | null;
   lastSyncStatus: BankSyncStatus;
   lastSyncError?: string | null;
+  lastAutoSyncAt?: string | null;
+  lastSyncSource?: 'manual' | 'auto' | null;
+  consentExpiresAt?: string | null;
   createdAt: string;
   accounts: BankConnectionAccount[];
 };
@@ -40,5 +45,6 @@ export type SyncConnectionResult = {
   ok: boolean;
   imported?: number;
   skipped?: number;
+  lowConfidenceCount?: number;
   error?: string;
 };

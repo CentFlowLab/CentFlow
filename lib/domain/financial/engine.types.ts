@@ -31,6 +31,7 @@ export type FinancialRecalcTrigger =
   | { type: 'subscription_updated'; subscriptionId?: string }
   | { type: 'subscription_deleted'; subscriptionId: string }
   | { type: 'category_budget_updated'; category?: string }
+  | { type: 'open_banking_import'; importedCount?: number }
   | { type: 'manual_refresh' };
 
 export const FINANCIAL_ENGINE_STEP_ORDER = [

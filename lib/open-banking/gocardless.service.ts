@@ -6,6 +6,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 
 import type {
   BankConnection,
+  BankConnectionAccount,
   CreateBankLinkResult,
   GoCardlessInstitution,
   SyncConnectionResult,
@@ -24,6 +25,9 @@ function mapConnection(row: Record<string, unknown>): BankConnection {
     lastSyncAt: (row.last_sync_at as string | null) ?? null,
     lastSyncStatus: (row.last_sync_status as BankConnection['lastSyncStatus']) ?? 'never',
     lastSyncError: (row.last_sync_error as string | null) ?? null,
+    lastAutoSyncAt: (row.last_auto_sync_at as string | null) ?? null,
+    lastSyncSource: (row.last_sync_source as BankConnection['lastSyncSource']) ?? null,
+    consentExpiresAt: (row.consent_expires_at as string | null) ?? null,
     createdAt: String(row.created_at),
     accounts: accounts.map((account) => ({
       id: String(account.id),
@@ -31,6 +35,9 @@ function mapConnection(row: Record<string, unknown>): BankConnection {
       name: (account.name as string | null) ?? null,
       currency: String(account.currency ?? 'EUR'),
       gocardlessAccountId: String(account.gocardless_account_id),
+      lastAutoSyncAt: (account.last_auto_sync_at as string | null) ?? null,
+      lastAutoSyncStatus:
+        (account.last_auto_sync_status as BankConnectionAccount['lastAutoSyncStatus']) ?? null,
     })),
   };
 }

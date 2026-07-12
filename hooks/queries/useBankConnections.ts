@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/api/keys';
 import { fetchTransactions } from '@/lib/api/services/transaction.service';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
 import {
   createBankLink,
   fetchBankConnections,
@@ -53,6 +54,8 @@ export function useCreateBankLink() {
 
 export function useFinalizeBankLink() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
 
   return useMutation({
     mutationFn: async (requisitionId: string) => {
@@ -65,6 +68,10 @@ export function useFinalizeBankLink() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });
 
       if (result.sync?.imported && result.sync.imported > 0) {
+        scheduleFinancialRecalculation(queryClient, userId, {
+          type: 'open_banking_import',
+          importedCount: result.sync.imported,
+        });
         await runCategorySpendChecksAfterImport(previous);
       }
     },
@@ -84,6 +91,8 @@ export function useRevokeBankConnection() {
 
 export function useSyncBankConnection() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
 
   return useMutation({
     mutationFn: async (connectionId: string) => {
@@ -96,6 +105,10 @@ export function useSyncBankConnection() {
       if (result.ok) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });
         if (result.imported && result.imported > 0) {
+          scheduleFinancialRecalculation(queryClient, userId, {
+            type: 'open_banking_import',
+            importedCount: result.imported,
+          });
           await runCategorySpendChecksAfterImport(previous);
         }
       }
