@@ -9,5 +9,13 @@ export {
 } from './transactions';
 export { calculateConsumptionSpending, calculateBudgetImpact } from './ledger-impact';
 
-export { buildFinancialCalendar } from './calendar';
+export {
+  buildFinancialCalendar,
+  buildMonthlySpendingTimeline,
+  type FinancialCalendarResult,
+  type FinancialCalendarProjectionDay,
+  type FinancialCalendarEvent,
+  type FinancialCalendarDayRisk,
+  type BuildFinancialCalendarContext,
+} from './calendar';
 export { buildSpendingCalendar } from './spending-calendar';

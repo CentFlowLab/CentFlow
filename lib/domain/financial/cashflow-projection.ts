@@ -32,6 +32,25 @@ export type CashflowProjectionHorizon = 30 | 60 | 90;
 
 export const CASHFLOW_PROJECTION_HORIZONS: CashflowProjectionHorizon[] = [30, 60, 90];
 
+export type CashflowScheduledEventKind =
+  | 'income'
+  | 'credit_payment'
+  | 'subscription'
+  | 'recurring_expense';
+
+export type CashflowScheduledEvent = {
+  id: string;
+  date: string;
+  amount: number;
+  direction: 'inflow' | 'outflow';
+  kind: CashflowScheduledEventKind;
+  label: string;
+  sourceId?: string;
+  /** Incluído na projeção de saldo (vs. apenas informativo). */
+  affectsProjection: boolean;
+  isConfirmed: boolean;
+};
+
 export type CashflowProjectionPoint = {
   date: string;
   dayIndex: number;
@@ -68,6 +87,15 @@ export type BuildCashflowProjectionInput = {
 };
 
 type CashflowEventMap = Map<string, number>;
+
+type ScheduleResult = {
+  deltas: CashflowEventMap;
+  events: CashflowScheduledEvent[];
+};
+
+function pushEvent(events: CashflowScheduledEvent[], event: CashflowScheduledEvent): void {
+  events.push(event);
+}
 
 function median(values: number[]): number {
   if (values.length === 0) return 0;
@@ -120,8 +148,9 @@ function scheduleSubscriptionPayments(
   transactions: Transaction[],
   asOf: Date,
   horizonEnd: Date,
-): CashflowEventMap {
+): ScheduleResult {
   const events: CashflowEventMap = new Map();
+  const details: CashflowScheduledEvent[] = [];
   const asOfIso = toIsoDate(asOf);
   const horizonIso = toIsoDate(horizonEnd);
   const paidIds = collectPaidSubscriptionIds(subscriptions, transactions, asOf);
@@ -140,6 +169,17 @@ function scheduleSubscriptionPayments(
       guard += 1;
       if (dueIso > asOfIso) {
         addEvent(events, dueIso, -subscription.amount);
+        pushEvent(details, {
+          id: `sub-${subscription.id}-${dueIso}`,
+          date: dueIso,
+          amount: subscription.amount,
+          direction: 'outflow',
+          kind: 'subscription',
+          label: subscription.name,
+          sourceId: subscription.id,
+          affectsProjection: true,
+          isConfirmed: true,
+        });
       }
       dueIso = advanceSubscriptionRenewalDate(
         {
@@ -151,7 +191,7 @@ function scheduleSubscriptionPayments(
     }
   }
 
-  return events;
+  return { deltas: events, events: details };
 }
 
 function scheduleCreditInstallments(
@@ -159,8 +199,9 @@ function scheduleCreditInstallments(
   loanPayments: LoanPaymentRecord[],
   asOf: Date,
   horizonEnd: Date,
-): CashflowEventMap {
+): ScheduleResult {
   const events: CashflowEventMap = new Map();
+  const details: CashflowScheduledEvent[] = [];
   const asOfIso = toIsoDate(asOf);
   const horizonIso = toIsoDate(horizonEnd);
   const monthKey = getMonthKey(asOf);
@@ -186,6 +227,17 @@ function scheduleCreditInstallments(
       guard += 1;
       if (dueIso > asOfIso) {
         addEvent(events, dueIso, -amount);
+        pushEvent(details, {
+          id: `credit-${credit.id}-${dueIso}`,
+          date: dueIso,
+          amount,
+          direction: 'outflow',
+          kind: 'credit_payment',
+          label: credit.name,
+          sourceId: credit.id,
+          affectsProjection: true,
+          isConfirmed: true,
+        });
       }
       const advanced = advanceCreditPaymentDate({ nextPaymentDate: dueIso }, dueIso);
       if (!advanced) break;
@@ -193,7 +245,7 @@ function scheduleCreditInstallments(
     }
   }
 
-  return events;
+  return { deltas: events, events: details };
 }
 
 function scheduleRecurringIncome(
@@ -201,9 +253,10 @@ function scheduleRecurringIncome(
   incomeMedianMonthly: number,
   asOf: Date,
   horizonEnd: Date,
-): CashflowEventMap {
+): ScheduleResult {
   const events: CashflowEventMap = new Map();
-  if (incomeMedianMonthly <= 0) return events;
+  const details: CashflowScheduledEvent[] = [];
+  if (incomeMedianMonthly <= 0) return { deltas: events, events: details };
 
   const asOfIso = toIsoDate(asOf);
   const horizonIso = toIsoDate(horizonEnd);
@@ -219,6 +272,16 @@ function scheduleRecurringIncome(
     const nextDay = toIsoDate(addDays(asOf, 1));
     if (nextDay <= horizonIso) {
       addEvent(events, nextDay, remainingThisMonth);
+      pushEvent(details, {
+        id: `income-remainder-${nextDay}`,
+        date: nextDay,
+        amount: remainingThisMonth,
+        direction: 'inflow',
+        kind: 'income',
+        label: 'Rendimento estimado (restante do mês)',
+        affectsProjection: true,
+        isConfirmed: false,
+      });
     }
   }
 
@@ -227,11 +290,21 @@ function scheduleRecurringIncome(
     const cursorIso = toIsoDate(cursor);
     if (cursorIso > asOfIso) {
       addEvent(events, cursorIso, incomeMedianMonthly);
+      pushEvent(details, {
+        id: `income-monthly-${cursorIso}`,
+        date: cursorIso,
+        amount: incomeMedianMonthly,
+        direction: 'inflow',
+        kind: 'income',
+        label: 'Rendimento mensal estimado',
+        affectsProjection: true,
+        isConfirmed: false,
+      });
     }
     cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1, 12, 0, 0, 0);
   }
 
-  return events;
+  return { deltas: events, events: details };
 }
 
 function mergeEventMaps(...maps: CashflowEventMap[]): CashflowEventMap {
@@ -318,6 +391,40 @@ function findNegativeCrossing(
   return undefined;
 }
 
+/** Eventos agendados usados pela projeção de cashflow (e pelo calendário financeiro). */
+export function buildCashflowScheduledEvents(
+  input: BuildCashflowProjectionInput,
+): CashflowScheduledEvent[] {
+  const asOf = startOfDay(input.asOf ?? new Date());
+  const horizonEnd = addDays(asOf, input.horizon);
+  const incomeMedianMonthly = calculateMonthlyIncomeMedian(input.transactions, asOf);
+
+  const subscriptionSchedule = scheduleSubscriptionPayments(
+    input.subscriptions,
+    input.transactions,
+    asOf,
+    horizonEnd,
+  );
+  const creditSchedule = scheduleCreditInstallments(
+    input.credits,
+    input.loanPayments,
+    asOf,
+    horizonEnd,
+  );
+  const incomeSchedule = scheduleRecurringIncome(
+    input.transactions,
+    incomeMedianMonthly,
+    asOf,
+    horizonEnd,
+  );
+
+  return [
+    ...subscriptionSchedule.events,
+    ...creditSchedule.events,
+    ...incomeSchedule.events,
+  ];
+}
+
 /** Projeção diária de saldo de caixa para 30/60/90 dias. */
 export function buildCashflowProjection(
   input: BuildCashflowProjectionInput,
@@ -336,10 +443,29 @@ export function buildCashflowProjection(
     asOf,
   });
 
+  const subscriptionSchedule = scheduleSubscriptionPayments(
+    input.subscriptions,
+    input.transactions,
+    asOf,
+    horizonEnd,
+  );
+  const creditSchedule = scheduleCreditInstallments(
+    input.credits,
+    input.loanPayments,
+    asOf,
+    horizonEnd,
+  );
+  const incomeSchedule = scheduleRecurringIncome(
+    input.transactions,
+    incomeMedianMonthly,
+    asOf,
+    horizonEnd,
+  );
+
   const events = mergeEventMaps(
-    scheduleSubscriptionPayments(input.subscriptions, input.transactions, asOf, horizonEnd),
-    scheduleCreditInstallments(input.credits, input.loanPayments, asOf, horizonEnd),
-    scheduleRecurringIncome(input.transactions, incomeMedianMonthly, asOf, horizonEnd),
+    subscriptionSchedule.deltas,
+    creditSchedule.deltas,
+    incomeSchedule.deltas,
   );
 
   const points: CashflowProjectionPoint[] = [

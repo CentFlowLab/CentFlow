@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 35 — Simulador de decisões (antes de confirmar)",
+  "currentPhase": "Fase 36 — Calendário de caixa com alertas de risco",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -171,7 +171,9 @@
     "Recomendações determinísticas — generateRecommendations com 4 regras auditáveis (dívida vs investimento, excedente, categoria, emergência)",
     "Recomendações — passo recommendations no motor financeiro + toggles em Definições + card na Home (máx. 3, ver todas)",
     "Simulador de decisões — simulateDecision() com projeção cashflow 30d, margem real (não saldo bruto), impacto em objetivos",
-    "Simulador de decisões — DecisionImpactModal (Antes vs Depois) em Novo movimento e contribuição a objetivos; só persiste ao confirmar"
+    "Simulador de decisões — DecisionImpactModal (Antes vs Depois) em Novo movimento e contribuição a objetivos; só persiste ao confirmar",
+    "Calendário de caixa — buildFinancialCalendar cruza vencimentos, recorrências e rendimento com saldo projetado (cashflow)",
+    "Calendário de caixa — ecrã /calendar com grelha mensal (neutro/atenção/risco), detalhe por dia e notificação única a 7 dias"
   ],
   "pending": [
     "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",

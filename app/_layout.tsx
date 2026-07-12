@@ -161,6 +161,7 @@ function RootNavigator() {
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="calendar" />
           <Stack.Screen name="open-banking/callback" options={{ animation: 'fade' }} />
           <Stack.Screen name="settings" />
           <Stack.Screen

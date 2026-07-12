@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { CreditPaymentReminderGate } from '@/components/assets';
+import { CalendarRiskNotificationGate } from '@/components/calendar';
 import { BackTapGuideGate } from '@/components/onboarding';
 import { DecisionSimulatorHost } from '@/components/simulator';
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
@@ -167,6 +168,7 @@ function TabLayoutInner() {
       />
     </Tabs>
     <CreditPaymentReminderGate />
+    <CalendarRiskNotificationGate />
     <BackTapGuideGate />
     <DecisionSimulatorHost />
     </>

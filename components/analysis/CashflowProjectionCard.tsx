@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { SegmentedControl } from '@/components/layout';
-import { Card, LoadingSpinner, Text } from '@/components/ui';
+import { Button, Card, LoadingSpinner, Text } from '@/components/ui';
 import { useCashflowProjection } from '@/hooks/useCashflowProjection';
 import {
   CASHFLOW_PROJECTION_HORIZONS,
@@ -74,6 +75,13 @@ export function CashflowProjectionCard({ width = 320 }: CashflowProjectionCardPr
           </Text>
         </View>
       ) : null}
+
+      <Button
+        label="Ver calendário de caixa"
+        variant="secondary"
+        onPress={() => router.push('/calendar')}
+        fullWidth
+      />
 
       <SegmentedControl
         segments={segments}

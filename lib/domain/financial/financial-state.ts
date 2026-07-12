@@ -10,7 +10,7 @@ import { countRenewalsSoon } from '@/lib/subscriptions/renewal.utils';
 
 import { enrichAccountsWithBalances } from './accounts';
 import { resolveBudgetEnabled } from './budget-accounts';
-import { buildFinancialCalendar } from './calendar';
+import { buildMonthlySpendingTimeline } from './calendar';
 import {
   calculateCentFlowScore,
   monthlySubscriptionTotal,
@@ -326,7 +326,7 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
   const investmentSummary = buildInvestmentSummary(enrichedAccounts, input.investments);
   const creditSummary = summarizeCreditExposure(credits);
   const creditCards = buildCreditCardStates(credits, input.transactions);
-  const calendar = buildFinancialCalendar(input.transactions, asOf);
+  const calendar = buildMonthlySpendingTimeline(input.transactions, asOf);
 
   const metrics = calculateFinancialMetrics({
     transactions: input.transactions,
