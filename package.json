@@ -53,10 +53,13 @@
     "@types/node": "^22.19.21",
     "@types/react": "~19.2.2",
     "eas-cli": "^20.1.0",
+    "sharp": "^0.34.5",
     "tsx": "^4.20.3",
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "assets:validate-icons": "node scripts/validate-png-alpha.mjs assets/images/splash-icon.png assets/images/android-icon-foreground.png --require-transparent",
+    "assets:regenerate-icons": "node scripts/regenerate-app-icons.mjs",
     "start": "expo start",
     "start:clear": "expo start --clear",
     "android": "expo start --android",
