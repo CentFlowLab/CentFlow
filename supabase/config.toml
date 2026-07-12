@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.email-jobs]
 verify_jwt = false
+
+[functions.gocardless]
+verify_jwt = true

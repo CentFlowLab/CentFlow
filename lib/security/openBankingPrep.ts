@@ -1,6 +1,6 @@
 /**
  * Preparação para open banking — nenhum token bancário em storage local.
- * Consentimentos e revogações passarão sempre por backend seguro.
+ * Consentimentos e revogações passam sempre por backend seguro.
  */
 export type OpenBankingConsentRecord = {
   consentId: string;
@@ -12,17 +12,4 @@ export type OpenBankingConsentRecord = {
   revokedAt?: string;
 };
 
-/** Placeholder — persistência futura via API, não SecureStore/AsyncStorage. */
-export function prepareOpenBankingConsentStore(): {
-  listConsents: () => Promise<OpenBankingConsentRecord[]>;
-  revokeConsent: (consentId: string) => Promise<void>;
-} {
-  return {
-    async listConsents() {
-      return [];
-    },
-    async revokeConsent(_consentId: string) {
-      // Futuro: POST /open-banking/consents/:id/revoke
-    },
-  };
-}
+export { prepareOpenBankingConsentStore } from './open-banking-store';

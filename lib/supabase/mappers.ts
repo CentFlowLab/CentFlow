@@ -80,6 +80,11 @@ export function mapTransactionRow(row: TransactionRow): Transaction {
     recurringId:
       (row as TransactionRow & { recurring_id?: string | null }).recurring_id ?? undefined,
     budgetMonth: (row as TransactionRow).budget_month ?? undefined,
+    source: ((row as TransactionRow & { source?: string }).source ?? 'manual') as Transaction['source'],
+    externalId: (row as TransactionRow & { external_id?: string | null }).external_id ?? undefined,
+    bankConnectionId:
+      (row as TransactionRow & { bank_connection_id?: string | null }).bank_connection_id ??
+      undefined,
   };
 }
 

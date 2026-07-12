@@ -49,6 +49,11 @@ const MENU_SECTIONS: Array<{
         route: '/settings/shortcuts',
       },
       {
+        icon: { ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' },
+        label: 'Ligações bancárias',
+        route: '/settings/bank-connections',
+      },
+      {
         icon: { ios: 'hand.raised.fill', android: 'privacy_tip', web: 'privacy_tip' },
         label: 'Privacidade',
         route: '/settings/privacy',

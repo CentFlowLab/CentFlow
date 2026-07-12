@@ -23,6 +23,8 @@ export function TransactionListItem({ transaction }: TransactionListItemProps) {
   };
   const title = transaction.description?.trim() || transaction.categoryLabel;
   const hasReceipt = Boolean(transaction.receiptId || transaction.receiptImage || transaction.receiptUrl);
+  const isOpenBanking = transaction.source === 'open_banking';
+  const originSuffix = isOpenBanking ? ' · Banco' : hasReceipt ? ' · Talão' : '';
 
   return (
     <Card variant="elevated" style={styles.card}>
@@ -36,7 +38,7 @@ export function TransactionListItem({ transaction }: TransactionListItemProps) {
         </Text>
         <Text variant="caption" color="textMuted" numberOfLines={1}>
           {transaction.categoryLabel} · {formatDateShort(transaction.date)}
-          {hasReceipt ? ' · Talão' : ''}
+          {originSuffix}
         </Text>
       </View>
 

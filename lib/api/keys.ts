@@ -20,6 +20,8 @@ export const queryKeys = {
   goalContributions: ['goal-contributions'] as const,
   categoryBudgets: (userId?: string) => ['category-budgets', userId ?? ''] as const,
   loanPayments: ['loan-payments'] as const,
+  openBankingInstitutions: ['open-banking', 'institutions'] as const,
+  bankConnections: ['open-banking', 'connections'] as const,
   prices: ['prices'] as const,
   emailEvents: (userId: string) => ['email-events', userId] as const,
 } as const;

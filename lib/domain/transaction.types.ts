@@ -25,6 +25,8 @@ export type TransactionType =
 
 export type TransactionFilter = 'all' | CashTransactionType | 'transfer';
 
+export type TransactionSource = 'manual' | 'open_banking';
+
 export interface Transaction {
   id: string;
   type: TransactionType;
@@ -54,6 +56,11 @@ export interface Transaction {
   recurringId?: string | null;
   /** Mês financeiro (YYYY-MM) — receitas podem contar num mês diferente da data. */
   budgetMonth?: string | null;
+  /** Origem do movimento — não afecta cálculos de saldo/analytics. */
+  source?: TransactionSource;
+  /** ID externo (ex.: GoCardless) para deduplicação. */
+  externalId?: string | null;
+  bankConnectionId?: string | null;
 }
 
 export interface CreateTransactionInput {
