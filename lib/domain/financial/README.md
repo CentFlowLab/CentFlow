@@ -109,6 +109,7 @@ Toggles em Definições → Sugestões financeiras (`UserPreferences.recommendat
 | `cashflowProjection` | `lib/domain/financial/cashflow-projection.ts` | `buildCashflowProjection` |
 | `healthScore` | `lib/domain/financial/centflow-score.ts` | `calculateCentFlowScore` |
 | `homeSummary` | `lib/home/smart-summary.ts` | `getSmartSummaryMessage` |
+| `recommendations` | `lib/domain/financial/recommendations.ts` | `generateRecommendations` |
 
 > **Nota sobre orçamento:** em produção usa-se `buildMonthlyAvailableBreakdown` (mesmo caminho que `calculateFinancialState`). `lib/budget/calculateMonthlySpendable.ts` é a formulação legada isolada, mantida nos seus testes unitários.
 
@@ -143,6 +144,6 @@ As invalidações imediatas existentes mantêm-se para resposta rápida da UI; o
 
 `engine.integration.test.ts`:
 
-1. Ordem de invocação dos 9 passos
+1. Ordem de invocação dos 10 passos
 2. Falha isolada em `subscriptions` — restantes passos executam
 3. Integração real com input vazio — resultados derivados presentes

@@ -40,6 +40,8 @@ import { ConfirmReceiptModal } from './ConfirmReceiptModal';
 import { ReceiptAttachmentField } from './ReceiptAttachmentField';
 import { ReceiptDigitizePreview } from './ReceiptDigitizePreview';
 import { ReceiptOcrProcessingOverlay } from './ReceiptOcrProcessingOverlay';
+import { DecisionImpactModal } from '@/components/simulator';
+import type { FinancialDecision } from '@/lib/domain/financial/decision-simulator';
 
 export type TransactionModalPreset = TransactionFilter;
 
@@ -109,6 +111,7 @@ export function AddTransactionModal({
   const [date, setDate] = useState(todayInputDate());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+  const [simulateVisible, setSimulateVisible] = useState(false);
 
   const isSaving = createMutation.isPending;
   const isProcessing = processReceipt.isPending;
@@ -134,6 +137,7 @@ export function AddTransactionModal({
     setDate(todayInputDate());
     setErrors({});
     setApiError(null);
+    setSimulateVisible(false);
     setProcessedReceipt(null);
     setConfirmVisible(false);
     setManualFillMode(false);
@@ -501,6 +505,18 @@ export function AddTransactionModal({
   const showTransactionForm = !hasReceipt || manualFillMode;
   const isBusy = isProcessing || isSaving || isUploadingOnly;
 
+  const parsedAmount = useMemo(() => parseAmount(amount), [amount]);
+
+  const pendingSimulationDecision = useMemo((): FinancialDecision | null => {
+    if (movementKind !== 'expense' || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return null;
+    }
+    if (!category) return null;
+    return { type: 'one_time_expense', amount: parsedAmount, category };
+  }, [movementKind, parsedAmount, category]);
+
+  const canSimulate = Boolean(pendingSimulationDecision) && showTransactionForm && !showConfirm;
+
   const handleSheetClose = useCallback(() => {
     traceMovementStep('modal_close', { reason: 'sheet_onClose' });
     onClose();
@@ -702,14 +718,25 @@ export function AddTransactionModal({
         ) : null}
 
         {showTransactionForm ? (
-          <Button
-            label={savePhaseLabel ?? 'Guardar movimento'}
-            onPress={handleSaveManual}
-            loading={isSaving}
-            disabled={receiptImage.isPicking || isBusy}
-            fullWidth
-            size="lg"
-          />
+          <>
+            {canSimulate ? (
+              <Button
+                label="Simular antes de confirmar"
+                variant="secondary"
+                onPress={() => setSimulateVisible(true)}
+                disabled={receiptImage.isPicking || isBusy}
+                fullWidth
+              />
+            ) : null}
+            <Button
+              label={savePhaseLabel ?? 'Guardar movimento'}
+              onPress={handleSaveManual}
+              loading={isSaving}
+              disabled={receiptImage.isPicking || isBusy}
+              fullWidth
+              size="lg"
+            />
+          </>
         ) : null}
 
         {hasReceipt && !manualFillMode ? (
@@ -746,6 +773,17 @@ export function AddTransactionModal({
           </>
         )}
       </DraggableBottomSheet>
+
+      <DecisionImpactModal
+        visible={simulateVisible}
+        onClose={() => setSimulateVisible(false)}
+        decision={pendingSimulationDecision}
+        confirmLabel="Guardar movimento na mesma"
+        onConfirm={() => {
+          setSimulateVisible(false);
+          void handleSaveManual();
+        }}
+      />
     </>
   );
 }

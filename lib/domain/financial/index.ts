@@ -22,6 +22,14 @@ export * from './score-explain';
 /** Financial Core Engine v2 */
 export type { FinancialState, CalculateFinancialStateInput } from './financial-state.types';
 export { calculateFinancialState, financialStateToDashboard } from './financial-state';
+export { simulateFinancialDecision, buildScenarioFromSuggestionId } from './simulator';
+export {
+  simulateDecision,
+  type FinancialDecision,
+  type DecisionSimulationResult,
+  type DecisionGoalImpact,
+  type SimulateDecisionContext,
+} from './decision-simulator';
 export * from './events';
 export * from './explain';
 export * from './metrics';
