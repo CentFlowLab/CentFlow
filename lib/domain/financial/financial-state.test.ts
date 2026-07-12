@@ -141,6 +141,7 @@ test('explainMonthlyAvailable — resultado coerente com breakdown', () => {
 
   const explanation = explainMonthlyAvailable(state.budget);
   assert.equal(explanation.result, state.availableThisMonth);
+  assert.equal(state.availableThisMonth, 937.2);
 });
 
 test('calculateFinancialState — health score explicável', () => {

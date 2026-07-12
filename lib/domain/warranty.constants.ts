@@ -1,0 +1,2 @@
+export const WARRANTY_CRITICAL_DAYS = 30;
+export const WARRANTY_WARNING_DAYS = 90;

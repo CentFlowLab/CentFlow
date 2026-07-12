@@ -34,6 +34,10 @@ export function applyOptimisticTransactionUpdate(
           description: input.description,
           date: input.date,
           accountId: input.accountId ?? undefined,
+          destinationAccountId: input.destinationAccountId ?? undefined,
+          creditId: input.creditId ?? undefined,
+          relatedTransactionId: input.relatedTransactionId ?? undefined,
+          recurringId: input.recurringId ?? undefined,
         }
       : transaction,
   );

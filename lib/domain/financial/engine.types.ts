@@ -27,6 +27,7 @@ export type FinancialRecalcTrigger =
   | { type: 'credit_created'; creditId?: string }
   | { type: 'credit_updated'; creditId?: string }
   | { type: 'credit_deleted'; creditId: string }
+  | { type: 'loan_payment_created'; creditId?: string }
   | { type: 'subscription_created'; subscriptionId?: string }
   | { type: 'subscription_updated'; subscriptionId?: string }
   | { type: 'subscription_deleted'; subscriptionId: string }

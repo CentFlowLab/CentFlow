@@ -16,12 +16,12 @@ export function resolveGoalCurrent(
       ? subtractMoney(sum, row.amount)
       : addMoney(sum, row.amount);
   }, 0);
-  return roundMoney(Math.max(fromContributions, goal.current));
+  return roundMoney(fromContributions);
 }
 
 export function calculateGoalProgress(
   goal: Pick<Goal, 'target' | 'current'>,
-  contributions: Pick<GoalContribution, 'amount'>[] = [],
+  contributions: Pick<GoalContribution, 'amount' | 'kind'>[] = [],
 ): GoalProgressResult {
   const current = resolveGoalCurrent(goal, contributions);
   const target = goal.target;

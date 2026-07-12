@@ -65,7 +65,7 @@ test('2. investimento budget_enabled false não entra', () => {
   assert.equal(isBudgetAccount(robinhood), false);
 });
 
-test('3. saldo global parte de zero sem transações', () => {
+test('3. saldo de contas budget_enabled inclui saldos iniciais sem transações', () => {
   const breakdown = buildMonthlyAvailableBreakdown({
     accounts: scenarioAccounts,
     transactions: [],
@@ -76,9 +76,9 @@ test('3. saldo global parte de zero sem transações', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 0);
-  assert.equal(breakdown.available, 0);
-  assert.equal(breakdown.budgetAccountsIncluded.length, 0);
+  assert.equal(breakdown.components.budgetAccountBalance, 1071);
+  assert.equal(breakdown.available, 1071);
+  assert.equal(breakdown.budgetAccountsIncluded.length, 2);
 });
 
 test('4. transferência não altera disponível global', () => {
@@ -106,8 +106,9 @@ test('4. transferência não altera disponível global', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 0);
-  assert.equal(breakdown.available, 0);
+  assert.equal(breakdown.components.budgetAccountBalance, 971);
+  assert.equal(breakdown.available, 971);
+  assert.equal(breakdown.components.movedOutOfBudget, 100);
   assert.equal(breakdown.consumptionSpending, 0);
 });
 
@@ -135,8 +136,8 @@ test('5. receita global aumenta disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 200);
-  assert.equal(breakdown.available, 200);
+  assert.equal(breakdown.components.budgetAccountBalance, 1271);
+  assert.equal(breakdown.available, 1271);
   assert.equal(breakdown.components.incomeReceived, 200);
 });
 
@@ -173,8 +174,8 @@ test('6. despesa global reduz disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 200);
-  assert.equal(breakdown.available, 200);
+  assert.equal(breakdown.components.budgetAccountBalance, 1021);
+  assert.equal(breakdown.available, 1021);
   assert.equal(breakdown.components.registeredExpenses, 50);
 });
 
@@ -202,7 +203,7 @@ test('7. receita em qualquer origem conta globalmente', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 500);
+  assert.equal(breakdown.components.budgetAccountBalance, 1071);
   assert.equal(breakdown.components.incomeReceived, 500);
 });
 
@@ -239,7 +240,7 @@ test('8. compra com cartão não reduz disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.available, 1000);
+  assert.equal(breakdown.available, 1071);
   assert.equal(breakdown.consumptionSpending, 100);
 });
 
@@ -277,8 +278,8 @@ test('9. pagamento de cartão reduz disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 920);
-  assert.equal(breakdown.available, 920);
+  assert.equal(breakdown.components.budgetAccountBalance, 991);
+  assert.equal(breakdown.available, 991);
 });
 
 test('10. contribuição para objetivo reduz disponível', () => {
@@ -310,7 +311,7 @@ test('10. contribuição para objetivo reduz disponível', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.components.budgetAccountBalance, 900);
+  assert.equal(breakdown.components.budgetAccountBalance, 971);
   assert.equal(breakdown.components.goalReserved, 100);
 });
 

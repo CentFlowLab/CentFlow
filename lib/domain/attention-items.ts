@@ -6,7 +6,7 @@ import {
   getRenewalStatus,
   isRenewalWithinAlert,
 } from '@/lib/subscriptions/renewal.utils';
-import { WARRANTY_CRITICAL_DAYS } from './warranty.utils';
+import { WARRANTY_CRITICAL_DAYS } from './warranty.constants';
 import { daysUntil } from '@/lib/utils/format';
 
 const CREDIT_DUE_DAYS = 14;

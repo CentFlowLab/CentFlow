@@ -1,8 +1,8 @@
 import { colors } from '@/lib/theme';
 import { daysUntil, formatRelativeDays } from '@/lib/utils/format';
+import { WARRANTY_CRITICAL_DAYS, WARRANTY_WARNING_DAYS } from './warranty.constants';
 
-export const WARRANTY_CRITICAL_DAYS = 30;
-export const WARRANTY_WARNING_DAYS = 90;
+export { WARRANTY_CRITICAL_DAYS, WARRANTY_WARNING_DAYS } from './warranty.constants';
 
 export type WarrantyExpiryStatus = 'expired' | 'critical' | 'warning' | 'ok';
 

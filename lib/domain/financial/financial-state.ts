@@ -17,9 +17,8 @@ import {
 } from './centflow-score';
 import {
   calculateAvailableCredit,
-  calculateCreditCardBalance,
   calculateCreditUtilization,
-  creditBalanceDeltaForTransaction,
+  computeCreditCardDebtFromTransactions,
 } from './credit-cards';
 import { summarizeFinancialEvents } from './events';
 import { explainMonthlyAvailable, explainNetWorth } from './explain';
@@ -34,7 +33,7 @@ import type {
 import { calculateGoalProgress } from './goals';
 import { getExpenseTotal } from './transactions';
 import { buildMonthlyAvailableBreakdown } from './monthly-available.compose';
-import { calculateNetWorth, sumRecurringInvestments } from './netWorth';
+import { calculateConsolidatedNetWorth, sumRecurringInvestments } from './netWorth';
 import { buildFinancialOpportunities } from './opportunities';
 import {
   buildCashFlowState,
@@ -44,7 +43,6 @@ import {
 import { buildNetWorthProjection } from './projections';
 import { mapFinancialSuggestionsToHome } from './suggestions';
 import { buildScoreExplanation } from './score-explain';
-import { addMoney, roundMoney } from './money';
 
 function sumWeeklyExpenses(
   transactions: CalculateFinancialStateInput['transactions'],
@@ -102,12 +100,7 @@ function buildCreditCardStates(
   return credits
     .filter((credit) => isCardCredit(credit.creditType))
     .map((credit) => {
-      let debt = calculateCreditCardBalance(credit);
-      for (const tx of transactions) {
-        if (tx.creditId !== credit.id) continue;
-        debt = addMoney(debt, creditBalanceDeltaForTransaction(tx, 'apply'));
-      }
-      const debtRounded = roundMoney(Math.max(0, debt));
+      const debtRounded = computeCreditCardDebtFromTransactions(credit.id, transactions);
       const withDebt = { ...credit, outstandingBalance: debtRounded };
       const limit =
         credit.originalAmount != null && credit.originalAmount > 0
@@ -175,6 +168,7 @@ function buildInvestmentSummary(
 function resolveNetWorthInput(input: {
   accounts: EnrichedAccountState[];
   transactions: CalculateFinancialStateInput['transactions'];
+  goals: NonNullable<CalculateFinancialStateInput['goals']>;
   goalContributions: CalculateFinancialStateInput['goalContributions'];
   loanPayments: CalculateFinancialStateInput['loanPayments'];
   inventory: NonNullable<CalculateFinancialStateInput['inventory']>;
@@ -182,29 +176,51 @@ function resolveNetWorthInput(input: {
   credits: NonNullable<CalculateFinancialStateInput['credits']>;
   asOf: Date;
 }) {
-  const occurredCash = sumGlobalCashBalance(input.transactions, {
-    goalContributions: input.goalContributions,
-    loanPayments: input.loanPayments,
-    scope: 'occurred',
-    asOf: input.asOf,
+  const activeAccounts = input.accounts.filter((a) => a.isActive);
+  const accountRows = activeAccounts.map((account) => ({
+    id: account.id,
+    name: account.name,
+    balance: account.balance,
+    currency: account.currency ?? 'EUR',
+  }));
+
+  if (accountRows.length === 0) {
+    const occurredCash = sumGlobalCashBalance(input.transactions, {
+      goalContributions: input.goalContributions,
+      loanPayments: input.loanPayments,
+      scope: 'occurred',
+      asOf: input.asOf,
+    });
+    if (occurredCash !== 0) {
+      accountRows.push({
+        id: 'global-cash',
+        name: 'Saldo',
+        balance: occurredCash,
+        currency: 'EUR',
+      });
+    }
+  }
+
+  const goalRows = input.goals.map((goal) => {
+    const contributions = (input.goalContributions ?? []).filter((c) => c.goalId === goal.id);
+    const progress = calculateGoalProgress(goal, contributions);
+    return { current: progress.current };
   });
 
-  return calculateNetWorth({
-    accounts:
-      occurredCash !== 0
-        ? [
-            {
-              id: 'global-cash',
-              name: 'Saldo',
-              balance: occurredCash,
-              currency: 'EUR',
-            },
-          ]
-        : [],
+  const creditsForNetWorth = input.credits.map((credit) => {
+    if (!isCardCredit(credit.creditType)) return credit;
+    return {
+      ...credit,
+      outstandingBalance: computeCreditCardDebtFromTransactions(credit.id, input.transactions),
+    };
+  });
+
+  return calculateConsolidatedNetWorth({
+    accounts: accountRows,
+    goals: goalRows,
     inventory: input.inventory,
     investments: input.investments,
-    savings: 0,
-    credits: input.credits,
+    credits: creditsForNetWorth,
   });
 }
 
@@ -271,13 +287,19 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
         appliedAmount: 0,
       }));
 
+  const netWorthInvestments =
+    input.investments?.length && input.investments.length > 0
+      ? recurringInvestments
+      : [];
+
   const netWorth = resolveNetWorthInput({
     accounts: enrichedAccounts,
     transactions: input.transactions,
+    goals,
     goalContributions,
     loanPayments,
     inventory,
-    investments: recurringInvestments,
+    investments: netWorthInvestments,
     credits,
     asOf,
   });

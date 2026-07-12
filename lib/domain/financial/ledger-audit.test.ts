@@ -171,7 +171,7 @@ test('amortização baixa dívida e orçamento, não é gasto de consumo', () =>
   assert.equal(breakdown.consumptionSpending, 0);
 });
 
-test('orçamento global ignora saldos iniciais de contas', () => {
+test('contas com budget_enabled incluem saldo inicial no orçamento', () => {
   const accounts: BankAccount[] = [
     {
       id: 'inv',
@@ -195,6 +195,7 @@ test('orçamento global ignora saldos iniciais de contas', () => {
     referenceDate: JULY,
   });
 
-  assert.equal(breakdown.available, 0);
-  assert.equal(breakdown.budgetAccountsIncluded.length, 0);
+  assert.equal(breakdown.available, 500);
+  assert.equal(breakdown.budgetAccountsIncluded.length, 1);
+  assert.equal(breakdown.budgetAccountsExcluded.length, 1);
 });

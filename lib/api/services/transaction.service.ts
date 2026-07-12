@@ -281,12 +281,35 @@ export async function updateTransaction(
   transactionId: string,
   input: UpdateTransactionInput,
 ): Promise<Transaction> {
+  const userId = await resolveTransactionUserId();
+  let existing: Transaction | null = null;
+
   if (isMockAuthEnabled()) {
-    return updateMockTransaction(transactionId, input);
+    existing = await findMockTransaction(transactionId);
+    const updated = await updateMockTransaction(transactionId, input);
+    if (userId) {
+      if (existing?.creditId) {
+        await syncCreditBalanceFromTransaction(userId, existing, 'reverse');
+      }
+      if (updated.creditId) {
+        await syncCreditBalanceFromTransaction(userId, updated, 'apply');
+      }
+    }
+    return updated;
   }
 
   if (isSupabaseEnabled()) {
-    return supabaseTransactions.updateTransaction(transactionId, input);
+    existing = await supabaseTransactions.fetchTransactionById(transactionId);
+    const updated = await supabaseTransactions.updateTransaction(transactionId, input);
+    if (userId) {
+      if (existing?.creditId) {
+        await syncCreditBalanceFromTransaction(userId, existing, 'reverse');
+      }
+      if (updated.creditId) {
+        await syncCreditBalanceFromTransaction(userId, updated, 'apply');
+      }
+    }
+    return updated;
   }
 
   const payload = toUpdateTransactionPayload(input);

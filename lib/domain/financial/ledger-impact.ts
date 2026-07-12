@@ -180,6 +180,11 @@ export function calculateConsumptionSpending(
       continue;
     }
 
+    if (kind === 'credit_card_refund') {
+      total = subtractMoney(total, amount);
+      continue;
+    }
+
     if (kind === 'expense') {
       if (
         !budgetAccountIds ||

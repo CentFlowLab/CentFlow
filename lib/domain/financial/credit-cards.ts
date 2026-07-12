@@ -97,3 +97,16 @@ export function isCreditCardRefundTransaction(
 ): boolean {
   return resolveTransactionKind(tx) === 'credit_card_refund';
 }
+
+/** Dívida do cartão derivada apenas dos movimentos — fonte única para UI e património. */
+export function computeCreditCardDebtFromTransactions(
+  creditId: string,
+  transactions: Pick<Transaction, 'type' | 'amount' | 'creditId'>[],
+): number {
+  let debt = 0;
+  for (const tx of transactions) {
+    if (tx.creditId !== creditId) continue;
+    debt = addMoney(debt, creditBalanceDeltaForTransaction(tx, 'apply'));
+  }
+  return roundMoney(Math.max(0, debt));
+}

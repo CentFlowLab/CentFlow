@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { useAccounts } from '@/hooks/queries/useAccounts';
 import { useAssets } from '@/hooks/queries/useAssets';
 import { useGoalContributions } from '@/hooks/queries/useGoalContributions';
 import { useLoanPayments } from '@/hooks/queries/useLoanPayments';
@@ -26,20 +27,21 @@ export function useFinancialState(
 ): UseFinancialStateResult {
   const referenceDate = options.referenceDate ?? new Date();
   const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const { data: assets, isLoading: assetsLoading } = useAssets();
   const { data: liabilities, isLoading: liabLoading } = useLiabilities();
   const { data: goalContributions = [], isLoading: goalsLoading } = useGoalContributions();
   const { data: loanPayments = [], isLoading: loanLoading } = useLoanPayments();
 
   const isLoading =
-    txLoading || assetsLoading || liabLoading || goalsLoading || loanLoading;
+    txLoading || accountsLoading || assetsLoading || liabLoading || goalsLoading || loanLoading;
 
   const state = useMemo(() => {
     if (isLoading) return null;
 
     const input: CalculateFinancialStateInput = {
       transactions,
-      accounts: [],
+      accounts,
       credits: liabilities?.credits ?? assets?.credits ?? [],
       goals: assets?.goals ?? [],
       goalContributions,
@@ -52,6 +54,7 @@ export function useFinancialState(
     return calculateFinancialState(input);
   }, [
     transactions,
+    accounts,
     assets,
     liabilities,
     goalContributions,

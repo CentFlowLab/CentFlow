@@ -15,6 +15,14 @@ import {
   calculateMonthlyAvailableBreakdown,
   type MonthlyAvailableObligation,
 } from '@/lib/domain/financial/monthly-available';
+import { enrichAccountsWithBalances } from '@/lib/domain/financial/accounts';
+import {
+  calculateBudgetTransferFlow,
+  getBudgetAccountIds,
+  partitionAccountsByBudget,
+  sumBudgetAccountBalances,
+  toBudgetAccountSnapshots,
+} from '@/lib/domain/financial/budget-accounts';
 import {
   filterOccurredInCalendarMonth,
   sumGlobalCashBalance,
@@ -42,18 +50,36 @@ export type BuildMonthlyAvailableInput = {
   referenceDate?: Date;
 };
 
-/** Disponível mensal agregado globalmente — ignora contas e account_id. */
+/** Disponível mensal — contas com budget_enabled quando existem; senão saldo global por movimentos. */
 export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput) {
   const reference = input.referenceDate ?? new Date();
   const monthKey = getMonthKey(reference);
   const period = { kind: 'month' as const, monthKey, asOf: reference };
 
-  const budgetAccountBalance = sumGlobalCashBalance(input.transactions, {
-    goalContributions: input.goalContributions,
-    loanPayments: input.loanPayments,
-    scope: 'occurred',
-    asOf: reference,
-  });
+  const enrichedAccounts = enrichAccountsWithBalances(
+    input.accounts,
+    input.transactions,
+    input.goalContributions,
+    input.loanPayments,
+  );
+  const { inBudget, outOfBudget } = partitionAccountsByBudget(enrichedAccounts);
+  const budgetAccountIds = getBudgetAccountIds(enrichedAccounts);
+
+  const budgetAccountBalance =
+    input.accounts.length > 0
+      ? sumBudgetAccountBalances(enrichedAccounts)
+      : sumGlobalCashBalance(input.transactions, {
+          goalContributions: input.goalContributions,
+          loanPayments: input.loanPayments,
+          scope: 'occurred',
+          asOf: reference,
+        });
+
+  const { movedOutOfBudget, movedIntoBudget } = calculateBudgetTransferFlow(
+    input.transactions,
+    budgetAccountIds,
+    period,
+  );
 
   const occurred = filterOccurredInCalendarMonth(input.transactions, reference);
 
@@ -119,13 +145,16 @@ export function buildMonthlyAvailableBreakdown(input: BuildMonthlyAvailableInput
       loanPaymentsPaid: monthlyTotal,
       loanAmortizationsPaid: amortizationTotal,
       financialCharges: interestTotal,
-      movedOutOfBudget: 0,
-      movedIntoBudget: 0,
+      movedOutOfBudget,
+      movedIntoBudget,
       referenceDate: reference,
       consumptionSpending,
     },
     obligations,
-    { included: [], excluded: [] },
+    {
+      included: toBudgetAccountSnapshots(inBudget),
+      excluded: toBudgetAccountSnapshots(outOfBudget),
+    },
   );
 }
 

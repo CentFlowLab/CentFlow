@@ -13,6 +13,7 @@ import {
 import { saveCreditForUser } from '@/lib/liabilities/liabilities.service';
 import type { Credit } from '@/lib/domain/types';
 import { traceLoanPayment } from '@/lib/doctor/loan-payment-trace';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.invalidation';
 
 export function useLoanPayments() {
   const { isAuthenticated } = useAuth();
@@ -79,6 +80,7 @@ export function useCreateLoanPayment() {
       queryClient.invalidateQueries({ queryKey: queryKeys.home });
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
       invalidateAssetsQueries(queryClient);
+      scheduleFinancialRecalculation(queryClient, userId, { type: 'loan_payment_created' });
     },
   });
 }
