@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          bank: string | null
+          budget_enabled: boolean | null
+          color: string | null
+          created_at: string
+          currency: string
+          icon: string | null
+          id: string
+          initial_balance: number
+          institution: string | null
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bank?: string | null
+          budget_enabled?: boolean | null
+          color?: string | null
+          created_at?: string
+          currency?: string
+          icon?: string | null
+          id?: string
+          initial_balance?: number
+          institution?: string | null
+          is_active?: boolean
+          name: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bank?: string | null
+          budget_enabled?: boolean | null
+          color?: string | null
+          created_at?: string
+          currency?: string
+          icon?: string | null
+          id?: string
+          initial_balance?: number
+          institution?: string | null
+          is_active?: boolean
+          name?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string
+          environment: string
+          event: string
+          id: string
+          properties: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          environment?: string
+          event: string
+          id?: string
+          properties?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          environment?: string
+          event?: string
+          id?: string
+          properties?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           force_update_required: boolean
@@ -47,6 +125,169 @@ export type Database = {
           store_url_ios?: string | null
           update_message?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      assistant_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      assistant_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          intent: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          intent?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          intent?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_connection_accounts: {
+        Row: {
+          connection_id: string
+          created_at: string
+          currency: string
+          gocardless_account_id: string
+          iban: string | null
+          id: string
+          last_auto_sync_at: string | null
+          last_auto_sync_status: string | null
+          name: string | null
+          user_id: string
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          currency?: string
+          gocardless_account_id: string
+          iban?: string | null
+          id?: string
+          last_auto_sync_at?: string | null
+          last_auto_sync_status?: string | null
+          name?: string | null
+          user_id: string
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          currency?: string
+          gocardless_account_id?: string
+          iban?: string | null
+          id?: string
+          last_auto_sync_at?: string | null
+          last_auto_sync_status?: string | null
+          name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_connection_accounts_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_connections: {
+        Row: {
+          consent_expires_at: string | null
+          consent_expiry_notified_at: string | null
+          created_at: string
+          id: string
+          institution_id: string
+          institution_name: string
+          last_auto_sync_at: string | null
+          last_sync_at: string | null
+          last_sync_error: string | null
+          last_sync_source: string | null
+          last_sync_status: string
+          requisition_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consent_expires_at?: string | null
+          consent_expiry_notified_at?: string | null
+          created_at?: string
+          id?: string
+          institution_id: string
+          institution_name: string
+          last_auto_sync_at?: string | null
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_source?: string | null
+          last_sync_status?: string
+          requisition_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consent_expires_at?: string | null
+          consent_expiry_notified_at?: string | null
+          created_at?: string
+          id?: string
+          institution_id?: string
+          institution_name?: string
+          last_auto_sync_at?: string | null
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_source?: string | null
+          last_sync_status?: string
+          requisition_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -152,66 +393,6 @@ export type Database = {
         }
         Relationships: []
       }
-      loan_payments: {
-        Row: {
-          account_id: string | null
-          amount: number
-          created_at: string
-          credit_id: string
-          fees_amount: number | null
-          id: string
-          interest_amount: number | null
-          note: string | null
-          paid_at: string
-          principal_amount: number | null
-          type: string
-          user_id: string
-        }
-        Insert: {
-          account_id?: string | null
-          amount: number
-          created_at?: string
-          credit_id: string
-          fees_amount?: number | null
-          id?: string
-          interest_amount?: number | null
-          note?: string | null
-          paid_at?: string
-          principal_amount?: number | null
-          type: string
-          user_id: string
-        }
-        Update: {
-          account_id?: string | null
-          amount?: number
-          created_at?: string
-          credit_id?: string
-          fees_amount?: number | null
-          id?: string
-          interest_amount?: number | null
-          note?: string | null
-          paid_at?: string
-          principal_amount?: number | null
-          type?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "loan_payments_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "loan_payments_credit_id_fkey"
-            columns: ["credit_id"]
-            isOneToOne: false
-            referencedRelation: "credits"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_events: {
         Row: {
           email_type: string
@@ -241,57 +422,6 @@ export type Database = {
           provider_message_id?: string | null
           sent_at?: string
           status?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      accounts: {
-        Row: {
-          bank: string | null
-          budget_enabled: boolean | null
-          color: string | null
-          created_at: string
-          currency: string
-          icon: string | null
-          id: string
-          initial_balance: number
-          institution: string | null
-          is_active: boolean
-          name: string
-          type: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          bank?: string | null
-          budget_enabled?: boolean | null
-          color?: string | null
-          created_at?: string
-          currency?: string
-          icon?: string | null
-          id?: string
-          initial_balance?: number
-          institution?: string | null
-          is_active?: boolean
-          name: string
-          type: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          bank?: string | null
-          budget_enabled?: boolean | null
-          color?: string | null
-          created_at?: string
-          currency?: string
-          icon?: string | null
-          id?: string
-          initial_balance?: number
-          institution?: string | null
-          is_active?: boolean
-          name?: string
-          type?: string
-          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -387,29 +517,139 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          description: string | null
+          id: string
+          name: string
+          receipt_url: string | null
+          source_warranty_id: string | null
+          updated_at: string
+          user_id: string
+          value: number
+          warranty_expired_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          receipt_url?: string | null
+          source_warranty_id?: string | null
+          updated_at?: string
+          user_id: string
+          value: number
+          warranty_expired_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          receipt_url?: string | null
+          source_warranty_id?: string | null
+          updated_at?: string
+          user_id?: string
+          value?: number
+          warranty_expired_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_source_warranty_id_fkey"
+            columns: ["source_warranty_id"]
+            isOneToOne: false
+            referencedRelation: "warranties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_payments: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          credit_id: string
+          fees_amount: number | null
+          id: string
+          interest_amount: number | null
+          note: string | null
+          paid_at: string
+          principal_amount: number | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          credit_id: string
+          fees_amount?: number | null
+          id?: string
+          interest_amount?: number | null
+          note?: string | null
+          paid_at?: string
+          principal_amount?: number | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          credit_id?: string
+          fees_amount?: number | null
+          id?: string
+          interest_amount?: number | null
+          note?: string | null
+          paid_at?: string
+          principal_amount?: number | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_payments_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "credits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_groups: {
+        Row: {
+          aliases: string[]
+          category: string | null
+          created_at: string
           id: string
           name: string
           updated_at: string
           user_id: string
-          value: number
         }
         Insert: {
+          aliases?: string[]
           category?: string | null
           created_at?: string
           id?: string
           name: string
           updated_at?: string
           user_id: string
-          value: number
         }
         Update: {
+          aliases?: string[]
           category?: string | null
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
           user_id?: string
-          value?: number
         }
         Relationships: []
       }
@@ -495,6 +735,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      open_banking_sync_digests: {
+        Row: {
+          connection_id: string | null
+          created_at: string
+          id: string
+          imported_count: number
+          kind: string
+          low_confidence_count: number
+          notified_at: string | null
+          user_id: string
+        }
+        Insert: {
+          connection_id?: string | null
+          created_at?: string
+          id?: string
+          imported_count?: number
+          kind?: string
+          low_confidence_count?: number
+          notified_at?: string | null
+          user_id: string
+        }
+        Update: {
+          connection_id?: string | null
+          created_at?: string
+          id?: string
+          imported_count?: number
+          kind?: string
+          low_confidence_count?: number
+          notified_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "open_banking_sync_digests_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -610,6 +891,45 @@ export type Database = {
         }
         Relationships: []
       }
+      spending_benchmarks: {
+        Row: {
+          category: string
+          computed_at: string
+          id: string
+          income_bucket_key: string
+          income_bucket_label: string
+          mean_amount: number
+          median_amount: number
+          period_month_key: string
+          region: string
+          sample_count: number
+        }
+        Insert: {
+          category: string
+          computed_at?: string
+          id?: string
+          income_bucket_key: string
+          income_bucket_label: string
+          mean_amount: number
+          median_amount: number
+          period_month_key: string
+          region?: string
+          sample_count: number
+        }
+        Update: {
+          category?: string
+          computed_at?: string
+          id?: string
+          income_bucket_key?: string
+          income_bucket_label?: string
+          mean_amount?: number
+          median_amount?: number
+          period_month_key?: string
+          region?: string
+          sample_count?: number
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           amount: number
@@ -656,17 +976,23 @@ export type Database = {
         Row: {
           account_id: string | null
           amount: number
+          bank_connection_id: string | null
           budget_month: string | null
           category: string
           created_at: string
+          credit_id: string | null
           currency: string
           description: string | null
           destination_account_id: string | null
-          credit_id: string | null
-          related_transaction_id: string | null
-          recurring_id: string | null
+          external_id: string | null
           id: string
+          merchant: string | null
+          merchant_group_id: string | null
           receipt_id: string | null
+          receipt_url: string | null
+          recurring_id: string | null
+          related_transaction_id: string | null
+          source: string
           transaction_date: string
           type: string
           updated_at: string
@@ -675,17 +1001,23 @@ export type Database = {
         Insert: {
           account_id?: string | null
           amount: number
+          bank_connection_id?: string | null
           budget_month?: string | null
           category: string
           created_at?: string
+          credit_id?: string | null
           currency?: string
           description?: string | null
           destination_account_id?: string | null
-          credit_id?: string | null
-          related_transaction_id?: string | null
-          recurring_id?: string | null
+          external_id?: string | null
           id?: string
+          merchant?: string | null
+          merchant_group_id?: string | null
           receipt_id?: string | null
+          receipt_url?: string | null
+          recurring_id?: string | null
+          related_transaction_id?: string | null
+          source?: string
           transaction_date?: string
           type: string
           updated_at?: string
@@ -694,17 +1026,23 @@ export type Database = {
         Update: {
           account_id?: string | null
           amount?: number
+          bank_connection_id?: string | null
           budget_month?: string | null
           category?: string
           created_at?: string
+          credit_id?: string | null
           currency?: string
           description?: string | null
           destination_account_id?: string | null
-          credit_id?: string | null
-          related_transaction_id?: string | null
-          recurring_id?: string | null
+          external_id?: string | null
           id?: string
+          merchant?: string | null
+          merchant_group_id?: string | null
           receipt_id?: string | null
+          receipt_url?: string | null
+          recurring_id?: string | null
+          related_transaction_id?: string | null
+          source?: string
           transaction_date?: string
           type?: string
           updated_at?: string
@@ -719,16 +1057,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_bank_connection_id_fkey"
+            columns: ["bank_connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_destination_account_id_fkey"
+            columns: ["destination_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_merchant_group_id_fkey"
+            columns: ["merchant_group_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_groups"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_receipt_id_fkey"
             columns: ["receipt_id"]
             isOneToOne: false
             referencedRelation: "receipts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_related_transaction_id_fkey"
+            columns: ["related_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_preferences: {
         Row: {
+          benchmark_contribution_consent: boolean
           biometrics_enabled: boolean
           budget_alerts: boolean
           category_spend_alert_threshold: number
@@ -750,6 +1131,7 @@ export type Database = {
           weekly_digest: boolean
         }
         Insert: {
+          benchmark_contribution_consent?: boolean
           biometrics_enabled?: boolean
           budget_alerts?: boolean
           category_spend_alert_threshold?: number
@@ -771,6 +1153,7 @@ export type Database = {
           weekly_digest?: boolean
         }
         Update: {
+          benchmark_contribution_consent?: boolean
           biometrics_enabled?: boolean
           budget_alerts?: boolean
           category_spend_alert_threshold?: number
@@ -798,12 +1181,14 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          moved_to_inventory: boolean
           notes: string | null
           product: string
           purchase_date: string | null
           receipt_id: string | null
           receipt_label: string | null
           receipt_transaction_id: string | null
+          receipt_url: string | null
           store: string | null
           updated_at: string
           user_id: string
@@ -812,12 +1197,14 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
+          moved_to_inventory?: boolean
           notes?: string | null
           product: string
           purchase_date?: string | null
           receipt_id?: string | null
           receipt_label?: string | null
           receipt_transaction_id?: string | null
+          receipt_url?: string | null
           store?: string | null
           updated_at?: string
           user_id: string
@@ -826,12 +1213,14 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          moved_to_inventory?: boolean
           notes?: string | null
           product?: string
           purchase_date?: string | null
           receipt_id?: string | null
           receipt_label?: string | null
           receipt_transaction_id?: string | null
+          receipt_url?: string | null
           store?: string | null
           updated_at?: string
           user_id?: string
@@ -843,6 +1232,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_own_account: { Args: never; Returns: undefined }
       user_has_any_financial_data: {
         Args: { p_user_id: string }
         Returns: boolean
@@ -1435,11 +1825,3 @@ export const Constants = {
     },
   },
 } as const
-
-export type Profile = Tables<"profiles">
-export type ReceiptRow = Tables<"receipts">
-export type OcrResultRow = Tables<"ocr_results">
-export type TransactionRow = Tables<"transactions">
-export type ReceiptStatus = ReceiptRow["status"]
-export type TransactionType = TransactionRow["type"]
-export type OcrSource = OcrResultRow["source"]
