@@ -9,6 +9,10 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 import type { LoanPaymentRecord } from '@/lib/domain/financial/loan-payments';
 import type { UserPreferences } from '@/lib/preferences/types';
 
+import {
+  DEFAULT_RECOMMENDATION_RULE_SETTINGS,
+  type RecommendationRuleSettings,
+} from './recommendations';
 import type { FinancialEngineInput } from './engine.types';
 
 function pickLongestTransactionList(
@@ -21,6 +25,26 @@ function pickLongestTransactionList(
     }
   }
   return best;
+}
+
+function resolveRecommendationRules(
+  preferences?: UserPreferences,
+): RecommendationRuleSettings {
+  if (!preferences) return { ...DEFAULT_RECOMMENDATION_RULE_SETTINGS };
+  return {
+    debt_vs_investment:
+      preferences.recommendationDebtVsInvestment ??
+      DEFAULT_RECOMMENDATION_RULE_SETTINGS.debt_vs_investment,
+    surplus_allocation:
+      preferences.recommendationSurplusAllocation ??
+      DEFAULT_RECOMMENDATION_RULE_SETTINGS.surplus_allocation,
+    category_above_median:
+      preferences.recommendationCategoryMedian ??
+      DEFAULT_RECOMMENDATION_RULE_SETTINGS.category_above_median,
+    emergency_fund:
+      preferences.recommendationEmergencyFund ??
+      DEFAULT_RECOMMENDATION_RULE_SETTINGS.emergency_fund,
+  };
 }
 
 /** Recolhe snapshot financeiro do cache React Query (sem I/O). */
@@ -63,5 +87,7 @@ export function gatherFinancialEngineInput(
     categoryBudgets,
     dismissedSubscriptionIds: [],
     prioritizeDebtAmortization: preferences?.prioritizeDebtAmortization ?? true,
+    recommendationRules: resolveRecommendationRules(preferences),
+    categorySpendAlertThreshold: preferences?.categorySpendAlertThreshold ?? 2,
   };
 }

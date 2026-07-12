@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 33 — Motor Financeiro (orquestração central de recálculos)",
+  "currentPhase": "Fase 34 — Motor de recomendações determinísticas",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -167,7 +167,9 @@
     "Docs sentry-auto-fix-pipeline.md — setup Sentry↔GitHub, labels, salvaguardas",
     "Motor Financeiro — lib/domain/financial/engine.ts (recalculateFinancialState, 9 passos isolados, falha não bloqueia)",
     "Motor Financeiro — scheduleFinancialRecalculation em background (mutations transações, objetivos, créditos, subscrições, orçamentos categoria)",
-    "Motor Financeiro — testes integração (ordem, falha isolada, resultados derivados) + README mapa de dependências"
+    "Motor Financeiro — testes integração (ordem, falha isolada, resultados derivados) + README mapa de dependências",
+    "Recomendações determinísticas — generateRecommendations com 4 regras auditáveis (dívida vs investimento, excedente, categoria, emergência)",
+    "Recomendações — passo recommendations no motor financeiro + toggles em Definições + card na Home (máx. 3, ver todas)"
   ],
   "pending": [
     "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",

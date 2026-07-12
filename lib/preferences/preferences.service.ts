@@ -50,6 +50,10 @@ function mapRow(row: PreferencesRow): UserPreferences {
     themeId: normalizeThemeId(row.theme_id),
     biometricsEnabled: row.biometrics_enabled,
     prioritizeDebtAmortization: row.prioritize_debt_amortization ?? true,
+    recommendationDebtVsInvestment: DEFAULT_PREFERENCES.recommendationDebtVsInvestment,
+    recommendationSurplusAllocation: DEFAULT_PREFERENCES.recommendationSurplusAllocation,
+    recommendationCategoryMedian: DEFAULT_PREFERENCES.recommendationCategoryMedian,
+    recommendationEmergencyFund: DEFAULT_PREFERENCES.recommendationEmergencyFund,
   };
 }
 
@@ -143,14 +147,27 @@ async function updateSupabasePreferences(
 }
 
 export async function fetchUserPreferences(userId: string): Promise<UserPreferences> {
+  const local = await loadStoredPreferences(userId);
+
   if (isMockAuthEnabled() || !isSupabaseEnabled()) {
-    return loadStoredPreferences(userId);
+    return local;
   }
 
   try {
-    return await fetchSupabasePreferences(userId);
+    const remote = await fetchSupabasePreferences(userId);
+    return {
+      ...remote,
+      recommendationDebtVsInvestment:
+        local.recommendationDebtVsInvestment ?? remote.recommendationDebtVsInvestment,
+      recommendationSurplusAllocation:
+        local.recommendationSurplusAllocation ?? remote.recommendationSurplusAllocation,
+      recommendationCategoryMedian:
+        local.recommendationCategoryMedian ?? remote.recommendationCategoryMedian,
+      recommendationEmergencyFund:
+        local.recommendationEmergencyFund ?? remote.recommendationEmergencyFund,
+    };
   } catch {
-    return loadStoredPreferences(userId);
+    return local;
   }
 }
 
@@ -158,6 +175,21 @@ export async function updateUserPreferences(
   userId: string,
   patch: Partial<UserPreferences>,
 ): Promise<UserPreferences> {
+  const recommendationPatch = {
+    ...(patch.recommendationDebtVsInvestment !== undefined && {
+      recommendationDebtVsInvestment: patch.recommendationDebtVsInvestment,
+    }),
+    ...(patch.recommendationSurplusAllocation !== undefined && {
+      recommendationSurplusAllocation: patch.recommendationSurplusAllocation,
+    }),
+    ...(patch.recommendationCategoryMedian !== undefined && {
+      recommendationCategoryMedian: patch.recommendationCategoryMedian,
+    }),
+    ...(patch.recommendationEmergencyFund !== undefined && {
+      recommendationEmergencyFund: patch.recommendationEmergencyFund,
+    }),
+  };
+
   if (isMockAuthEnabled() || !isSupabaseEnabled()) {
     const current = await loadStoredPreferences(userId);
     const next = { ...current, ...patch };
@@ -166,7 +198,13 @@ export async function updateUserPreferences(
   }
 
   try {
-    return await updateSupabasePreferences(userId, patch);
+    const next = await updateSupabasePreferences(userId, patch);
+    if (Object.keys(recommendationPatch).length > 0) {
+      const local = await loadStoredPreferences(userId);
+      await saveStoredPreferences(userId, { ...local, ...next, ...recommendationPatch });
+      return { ...next, ...recommendationPatch };
+    }
+    return next;
   } catch {
     const current = await loadStoredPreferences(userId);
     const next = { ...current, ...patch };

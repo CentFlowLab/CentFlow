@@ -8,16 +8,60 @@ import {
 import { Card, LoadingSpinner, SectionHeader, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
+import type { UserPreferences } from '@/lib/preferences/types';
 import { spacing } from '@/lib/theme';
+
+type RuleToggle = {
+  key: keyof Pick<
+    UserPreferences,
+    | 'recommendationDebtVsInvestment'
+    | 'recommendationSurplusAllocation'
+    | 'recommendationCategoryMedian'
+    | 'recommendationEmergencyFund'
+  >;
+  label: string;
+  description: string;
+};
+
+const RULE_TOGGLES: RuleToggle[] = [
+  {
+    key: 'recommendationDebtVsInvestment',
+    label: 'Dívida vs investimento',
+    description: 'Sugere amortização quando a taxa de dívida é claramente superior ao rendimento investido',
+  },
+  {
+    key: 'recommendationSurplusAllocation',
+    label: 'Excedente de fim de mês',
+    description: 'Propõe destino para margem disponível (dívida ou objetivos, conforme prioridade)',
+  },
+  {
+    key: 'recommendationCategoryMedian',
+    label: 'Categoria acima da mediana',
+    description: 'Alerta quando uma categoria gasta consistentemente acima do habitual',
+  },
+  {
+    key: 'recommendationEmergencyFund',
+    label: 'Fundo de emergência',
+    description: 'Prioriza poupança de emergência quando o disponível cobre poucas despesas fixas',
+  },
+];
 
 export default function FinancialSuggestionsScreen() {
   const { data: preferences, isLoading } = useUserPreferences();
   const updatePreferences = useUpdatePreferences();
   const { showToast } = useToast();
 
-  async function handleToggle(value: boolean) {
+  async function handleDebtPriorityToggle(value: boolean) {
     try {
       await updatePreferences.mutateAsync({ prioritizeDebtAmortization: value });
+    } catch {
+      showToast('Não foi possível guardar a preferência.', 'error');
+    }
+  }
+
+  async function handleRuleToggle(key: RuleToggle['key'], value: boolean) {
+    try {
+      await updatePreferences.mutateAsync({ [key]: value });
     } catch {
       showToast('Não foi possível guardar a preferência.', 'error');
     }
@@ -46,13 +90,29 @@ export default function FinancialSuggestionsScreen() {
             label="Priorizar amortização de dívida"
             description="Quando activo, sugerimos pagar dívida antes de alocar a objetivos de poupança"
             value={preferences.prioritizeDebtAmortization}
-            onValueChange={(value) => void handleToggle(value)}
+            onValueChange={(value) => void handleDebtPriorityToggle(value)}
             disabled={updatePreferences.isPending}
           />
         </Card>
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader title="Regras de recomendação" />
+        <Card variant="elevated" style={styles.card}>
+          {RULE_TOGGLES.map((rule) => (
+            <SettingsToggleRow
+              key={rule.key}
+              label={rule.label}
+              description={rule.description}
+              value={preferences[rule.key]}
+              onValueChange={(value) => void handleRuleToggle(rule.key, value)}
+              disabled={updatePreferences.isPending}
+            />
+          ))}
+        </Card>
         <Text variant="caption" color="textMuted" style={styles.hint}>
-          Reservamos ~10% da margem estimada como almofada de segurança. Desactiva esta opção se
-          preferires sugestões de alocação a objetivos mesmo com dívida em aberto.
+          Cada regra é determinística e mostra os números reais que a originaram. Desactiva as que
+          não quiseres ver na Home.
         </Text>
       </View>
     </SettingsScreenLayout>

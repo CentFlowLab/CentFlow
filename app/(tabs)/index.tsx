@@ -16,6 +16,7 @@ import {
   HomePostOnboardingWelcomeCard,
 } from '@/components/dashboard';
 import { MonthlySpendableCard, MonthlySpendableSheet, FinancialActionsCard } from '@/components/budget';
+import { RecommendationsCard } from '@/components/dashboard';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal } from '@/components/movements';
 import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
@@ -183,6 +184,7 @@ export default function InicioScreen() {
       <>
         <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
         <FinancialActionsCard key="financial-actions" maxActions={3} />
+        <RecommendationsCard key="recommendations" maxVisible={3} />
       </>
     ),
     assets: hasActivity ? (

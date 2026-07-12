@@ -15,5 +15,4 @@ export function invalidateFinancialDerivedQueries(
   void queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets(userId) });
   void queryClient.invalidateQueries({ queryKey: queryKeys.goalContributions });
   void queryClient.invalidateQueries({ queryKey: queryKeys.loanPayments });
-  void queryClient.invalidateQueries({ queryKey: queryKeys.financialEngine(userId) });
 }

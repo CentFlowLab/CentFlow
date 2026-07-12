@@ -6,6 +6,7 @@ import { FINANCIAL_ENGINE_STEP_ORDER } from './engine.types';
 import { recalculateFinancialState } from './engine';
 import { DEFAULT_FINANCIAL_ENGINE_STEP_RUNNERS } from './engine.steps';
 import type { FinancialEngineInput } from './engine.types';
+import { DEFAULT_RECOMMENDATION_RULE_SETTINGS } from './recommendations';
 
 const EMPTY_INPUT: FinancialEngineInput = {
   transactions: [],
@@ -19,6 +20,8 @@ const EMPTY_INPUT: FinancialEngineInput = {
   categoryBudgets: [],
   dismissedSubscriptionIds: [],
   prioritizeDebtAmortization: false,
+  recommendationRules: { ...DEFAULT_RECOMMENDATION_RULE_SETTINGS },
+  categorySpendAlertThreshold: 2,
   referenceDate: new Date('2026-06-15T12:00:00'),
 };
 
@@ -73,14 +76,22 @@ test('recalculateFinancialState — falha num passo não impede os restantes', a
 });
 
 test('recalculateFinancialState — integração real produz resultados derivados', async () => {
+  const stepRunners = {
+    ...DEFAULT_FINANCIAL_ENGINE_STEP_RUNNERS,
+    recommendations: (ctx: import('./engine.types').FinancialEngineContext) => {
+      ctx.results.recommendations = [];
+    },
+  };
+
   const result = await recalculateFinancialState('user-1', EMPTY_INPUT, {
     type: 'manual_refresh',
-  });
+  }, { stepRunners });
 
-  assert.equal(result.steps.every((step) => step.ok), true);
+  assert.equal(result.steps.filter((step) => step.step !== 'recommendations').every((step) => step.ok), true);
   assert.ok(result.results.budget);
   assert.ok(result.results.netWorth);
   assert.ok(result.results.healthScore);
   assert.ok(result.results.homeSummary);
+  assert.ok(Array.isArray(result.results.recommendations));
   assert.ok(result.totalDurationMs >= 0);
 });

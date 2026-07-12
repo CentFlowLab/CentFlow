@@ -26,6 +26,11 @@ export type UserPreferences = {
   biometricsEnabled: boolean;
   /** Quando true, sugestões favorecem amortizar dívida em vez de alocar a objetivos. */
   prioritizeDebtAmortization: boolean;
+  /** Regras do motor de recomendações determinísticas (todas activas por defeito). */
+  recommendationDebtVsInvestment: boolean;
+  recommendationSurplusAllocation: boolean;
+  recommendationCategoryMedian: boolean;
+  recommendationEmergencyFund: boolean;
 };
 
 export type UpdateProfileInput = {

@@ -56,3 +56,14 @@ export type {
   FinancialEngineRunResult,
   FinancialEngineStepId,
 } from './engine.types';
+export type {
+  Recommendation,
+  RecommendationPriority,
+  RecommendationRuleId,
+  RecommendationRuleSettings,
+} from './recommendations';
+export {
+  generateRecommendations,
+  DEFAULT_RECOMMENDATION_RULE_SETTINGS,
+  filterConsecutiveRecommendationDuplicates,
+} from './recommendations';

@@ -7,7 +7,9 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 import type { CreditAnalysis } from '@/lib/credit/credit-analysis';
 import type { DetectedSubscription } from '@/lib/subscriptions/detect-subscriptions';
 
+import type { Recommendation } from './recommendations';
 import type { CentFlowScoreResult } from './types';
+
 import type { CashflowProjectionResult } from './cashflow-projection';
 import type { LoanPaymentRecord } from './loan-payments';
 import type { MonthlyAvailableBreakdown } from './monthly-available';
@@ -41,6 +43,7 @@ export const FINANCIAL_ENGINE_STEP_ORDER = [
   'cashflowProjection',
   'healthScore',
   'homeSummary',
+  'recommendations',
 ] as const;
 
 export type FinancialEngineStepId = (typeof FINANCIAL_ENGINE_STEP_ORDER)[number];
@@ -58,6 +61,8 @@ export type FinancialEngineInput = {
   categoryBudgets: CategoryBudget[];
   dismissedSubscriptionIds: string[];
   prioritizeDebtAmortization: boolean;
+  recommendationRules: import('./recommendations').RecommendationRuleSettings;
+  categorySpendAlertThreshold: number;
   referenceDate?: Date;
 };
 
@@ -95,6 +100,7 @@ export type FinancialEngineStepResults = {
   cashflowProjection?: CashflowProjectionResult;
   healthScore?: CentFlowScoreResult;
   homeSummary?: { message: string; weeklySpending: number };
+  recommendations?: Recommendation[];
 };
 
 export type FinancialEngineStepOutcome = {

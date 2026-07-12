@@ -46,6 +46,7 @@ flowchart TD
     CF[7. cashflowProjection]
     HS[8. healthScore]
     HM[9. homeSummary]
+    REC[10. recommendations]
   end
 
   CR --> L
@@ -70,7 +71,26 @@ flowchart TD
   S --> HS
   NW --> HM
   TX --> HM
+  HM --> REC
+  B --> REC
+  NW --> REC
+  TX --> REC
 ```
+
+### Recomendações (`recommendations.ts`)
+
+Passo final do pipeline — chama `generateRecommendations(calculateFinancialState(...))` com:
+
+| Regra | Origem da lógica |
+|-------|------------------|
+| Dívida vs investimento | `credit-analysis`, `resolveDebtEffectiveAnnualRate`, `simulateEarlyAmortization` |
+| Excedente sem destino | `calculateRealSavingsMargin`, `buildDebtAmortizationAction` / `buildSavingsAllocationAction` |
+| Categoria acima da mediana | `getPreviousCompleteMonthKeys`, mediana mensal por categoria |
+| Fundo de emergência | `sumMonthlyDebtPayments`, subscrições mensais |
+
+Anti-repetição: `recommendation-fired.storage` guarda fingerprint + data; mesma regra no dia seguinte com os mesmos números é suprimida.
+
+Toggles em Definições → Sugestões financeiras (`UserPreferences.recommendation*`).
 
 ### O que cada passo reutiliza
 

@@ -28,6 +28,10 @@ export const DEFAULT_PREFERENCES = {
   themeId: DEFAULT_THEME_ID as ThemeId,
   biometricsEnabled: false,
   prioritizeDebtAmortization: true,
+  recommendationDebtVsInvestment: true,
+  recommendationSurplusAllocation: true,
+  recommendationCategoryMedian: true,
+  recommendationEmergencyFund: true,
 };
 
 export const THEME_OPTIONS = THEME_DEFINITIONS.map((theme) => ({
