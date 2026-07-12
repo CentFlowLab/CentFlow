@@ -4,7 +4,7 @@ import type { AttentionItem, Suggestion } from '@/lib/domain';
 
 export function openAttentionItemRoute(type: AttentionItem['type']): void {
   if (type === 'credit') {
-    router.push('/(tabs)/precos');
+    router.push('/(tabs)/creditos');
     return;
   }
   if (type === 'subscription') {

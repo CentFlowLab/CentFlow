@@ -16,6 +16,8 @@
  */
 
 import { hashUserIdForSentry, setSentryUserFromHash } from '@/lib/sentry';
+import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
+import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
 
 import { AnalyticsEvents, type AnalyticsEvent, type AnalyticsPayloads } from './events';
 
@@ -70,25 +72,23 @@ export function track<E extends AnalyticsEvent>(
     });
   }
 
-  // ------------------------------------------------------------------
-  // TODO (post-beta): send to real analytics backend
-  //
-  // Example PostHog:
-  //   if (!isMockAuthEnabled()) {
-  //     posthog.capture(eventName, payload);
-  //   }
-  //
-  // Example Supabase (lightweight, privacy-friendly):
-  //   supabase.from('analytics_events').insert({
-  //     event: eventName,
-  //     properties: properties ?? {},
-  //     user_id: currentUserId,
-  //     created_at: payload.timestamp,
-  //   }).catch(() => {});
-  //
-  // Important: respect EXPO_PUBLIC_MOCK_* and do not spam during demo mode
-  // if user has not opted in, or use anonymized ids.
-  // ------------------------------------------------------------------
+  // Persistência em Supabase (fire-and-forget; falhas silenciosas para não bloquear UX)
+  if (!isMockAuthEnabled() && isSupabaseEnabled() && currentUserId) {
+    const supabase = getSupabaseClient();
+    void (supabase as { from: (table: string) => { insert: (row: unknown) => Promise<{ error: { message: string } | null }> } })
+      .from('analytics_events')
+      .insert({
+        user_id: currentUserId,
+        event: eventName,
+        properties: (properties ?? {}) as Record<string, unknown>,
+        environment: payload.environment as string,
+      })
+      .then(({ error }) => {
+        if (error && __DEV__) {
+          console.warn('[Analytics] persist failed', error.message);
+        }
+      });
+  }
 }
 
 /**

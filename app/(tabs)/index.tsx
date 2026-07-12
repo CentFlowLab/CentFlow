@@ -78,7 +78,7 @@ export default function InicioScreen() {
       onReceipt: openReceiptScanner,
       onAsset: () => router.push('/(tabs)/ativos?action=new-asset'),
       onGoal: () => router.push('/(tabs)/ativos?action=new-goal'),
-      onCredit: () => router.push('/(tabs)/precos?action=new-credit'),
+      onCredit: () => router.push('/(tabs)/creditos?action=new-credit'),
     },
     onboardingAnswers,
   );

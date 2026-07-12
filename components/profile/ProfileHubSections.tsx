@@ -202,21 +202,21 @@ export function ProfileHubSections({
           <PreferenceRow
             icon={{ ios: 'bell.fill', android: 'notifications', web: 'notifications' }}
             label="Notificações"
-            caption="Alertas e lembretes"
+            caption="Alertas e lembretes · Definições"
             onPress={() => router.push('/settings/notifications')}
             withBorder
           />
           <PreferenceRow
             icon={{ ios: 'lock.fill', android: 'lock', web: 'lock' }}
             label="Segurança"
-            caption="FaceID / biometria e privacidade"
+            caption="Biometria e sessões · Definições"
             onPress={() => router.push('/settings/security')}
             withBorder
           />
           <PreferenceRow
             icon={{ ios: 'paintbrush.fill', android: 'palette', web: 'palette' }}
             label="Aparência"
-            caption="Tema da aplicação"
+            caption="Tema da aplicação · Definições"
             onPress={() => router.push('/settings/appearance')}
             withBorder
           />
@@ -306,7 +306,7 @@ export function ProfileHubSections({
             <StatCell
               label="Créditos"
               value={activeCredits}
-              onPress={() => router.push('/(tabs)/movimentos?view=creditos')}
+              onPress={() => router.push('/(tabs)/creditos' as never)}
             />
           </View>
         </Card>

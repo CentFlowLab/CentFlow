@@ -16,11 +16,16 @@ import { spacing } from '@/lib/theme';
 
 export default function ExportDataScreen() {
   const [exporting, setExporting] = useState(false);
-  const { data: transactions } = useTransactions('all');
-  const { data: assets } = useAssets();
-  const { data: liabilities } = useLiabilities();
+  const {
+    data: transactions,
+    isLoading: transactionsLoading,
+  } = useTransactions('all');
+  const { data: assets, isLoading: assetsLoading } = useAssets();
+  const { data: liabilities, isLoading: liabilitiesLoading } = useLiabilities();
   const { score } = useCentFlowIntelligence();
   const { showToast } = useToast();
+
+  const dataLoading = transactionsLoading || assetsLoading || liabilitiesLoading;
 
   const credits = liabilities?.credits ?? assets?.credits ?? [];
   const subscriptions = liabilities?.subscriptions ?? assets?.subscriptions ?? [];
@@ -75,9 +80,16 @@ export default function ExportDataScreen() {
       </Card>
 
       <Button
-        label={exporting ? 'A exportar...' : 'Exportar dados (JSON)'}
+        label={
+          dataLoading
+            ? 'A carregar dados...'
+            : exporting
+              ? 'A exportar...'
+              : 'Exportar dados (JSON)'
+        }
         onPress={handleExport}
-        loading={exporting}
+        loading={exporting || dataLoading}
+        disabled={dataLoading || exporting}
         fullWidth
       />
     </SettingsScreenLayout>

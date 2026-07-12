@@ -23,7 +23,7 @@ const STEPS = [
 export default function ShortcutsScreen() {
   const { showToast } = useToast();
 
-  async function handleCopyUrl() {
+  async function handleShareUrl() {
     try {
       await Share.share({ message: QUICK_EXPENSE_URL });
     } catch {
@@ -49,17 +49,17 @@ export default function ShortcutsScreen() {
           {QUICK_EXPENSE_URL}
         </Text>
         <Text variant="caption" color="textMuted">
-          Mantém premido para copiar, ou usa o botão abaixo.
+          Mantém premido no URL para copiar manualmente, ou usa o botão abaixo para partilhar.
         </Text>
         <Button
-          label="Copiar URL"
-          onPress={() => void handleCopyUrl()}
+          label="Partilhar URL"
+          onPress={() => void handleShareUrl()}
           variant="secondary"
           fullWidth
           style={styles.copyButton}
           icon={
             <SymbolView
-              name={{ ios: 'doc.on.doc.fill', android: 'content_copy', web: 'content_copy' }}
+              name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
               tintColor={colors.primary}
               size={16}
             />

@@ -1,6 +1,5 @@
 export { CreditFormModal } from './CreditFormModal';
 export { PayCreditCardModal } from './PayCreditCardModal';
-export { RegisterCreditPaymentModal } from './RegisterCreditPaymentModal';
 export { CreditPaymentReminderGate } from './CreditPaymentReminderGate';
 export { SubscriptionFormModal } from './SubscriptionFormModal';
 export { CreditsSection } from './CreditsSection';
@@ -16,9 +15,6 @@ export { AddWarrantyModal, WarrantyFormModal } from './WarrantyFormModal';
 export { ASSETS_EMPTY_CONFIG, ASSETS_SEGMENTS, ASSETS_SECTION_META } from './assets.config';
 export { AssetsEmptyState } from './AssetsEmptyState';
 export { AssetsOverviewCard } from './AssetsOverviewCard';
-export { AccountsSection } from './AccountsSection';
-export { AssetsSectionShell } from './AssetsSectionShell';
-export { AssetsTabToolbar } from './AssetsTabToolbar';
 export { GoalListItem } from './GoalListItem';
 export { GoalProgressBar } from './GoalProgressBar';
 export { GoalsEmptyState } from './GoalsEmptyState';

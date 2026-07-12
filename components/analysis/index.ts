@@ -8,7 +8,6 @@ export { AnalysisSummaryTab } from './AnalysisSummaryTab';
 export { CashflowProjectionCard } from './CashflowProjectionCard';
 export { InsightsSection } from './InsightsSection';
 export { PatrimonyAllocationCard } from './PatrimonyAllocationCard';
-export { PricesInsightsSection } from './PricesInsightsSection';
 export { SpendingCalendarCard } from './SpendingCalendarCard';
 export { SpendingCategoryCard } from './SpendingCategoryCard';
 export { SpendingTrendBars } from './SpendingTrendBars';

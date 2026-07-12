@@ -23,7 +23,7 @@ const ACTION_ROUTE: Record<PostOnboardingWelcomeAction, string> = {
   movement: '/(tabs)/movimentos?action=new-movement',
   receipt: '/(tabs)/movimentos?action=receipt',
   goal: '/(tabs)/ativos?action=new-goal',
-  credit: '/(tabs)/precos?action=new-credit',
+  credit: '/(tabs)/creditos?action=new-credit',
   asset: '/(tabs)/ativos?action=new-asset',
   subscription: '/(tabs)/movimentos?view=subscricoes&action=new-subscription',
   warranty: '/(tabs)/ativos?tab=garantias&action=new-warranty',

@@ -1,13 +1,6 @@
-export { AnimatedAssistantMessage } from './AnimatedAssistantMessage';
 export { BackTapGuide } from './BackTapGuide';
 export { BackTapGuideGate } from './BackTapGuideGate';
-export { FeatureAreaCard } from './FeatureAreaCard';
 export { OnboardingGateEffect } from './OnboardingGateEffect';
 export { OnboardingIllustration } from './OnboardingIllustration';
-export { OnboardingPlanLoading } from './OnboardingPlanLoading';
 export { OnboardingProgressBar } from './OnboardingProgressBar';
 export { OnboardingShell } from './OnboardingShell';
-export { OnboardingStepHeader } from './OnboardingStepHeader';
-export { OnboardingValueCard } from './OnboardingValueCard';
-export { SelectableCard } from './SelectableCard';
-export { ValuePromiseSection } from './ValuePromiseSection';

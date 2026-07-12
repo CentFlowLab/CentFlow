@@ -155,7 +155,7 @@ export default function MovimentosScreen() {
 
   useEffect(() => {
     if (view === 'creditos') {
-      router.replace('/(tabs)/precos');
+      router.replace('/(tabs)/creditos');
       return;
     }
     if (view === 'subscricoes' || view === 'movimentos') {

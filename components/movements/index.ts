@@ -8,9 +8,7 @@ export { MovementMonthSummaryCard } from './MovementMonthSummaryCard';
 export { MovementSearchBar } from './MovementSearchBar';
 export { PendingSubscriptionModal } from './PendingSubscriptionModal';
 export { QuickExpenseSheet } from './QuickExpenseSheet';
-export { OcrDetectionSummary } from './OcrDetectionSummary';
 export { OcrFailureCard, OcrFieldBadge, OcrFieldsChecklist } from './ocr';
-export { OcrResultCard } from './OcrResultCard';
 export { ReceiptDataForm } from './ReceiptDataForm';
 export { ReceiptItemsEditor } from './ReceiptItemsEditor';
 export { ReceiptItemsSummary } from './ReceiptItemsSummary';
@@ -23,5 +21,4 @@ export {
   type TransactionContextAction,
 } from './TransactionContextMenuSheet';
 export { TransactionForm } from './TransactionForm';
-export { TransactionListItem } from './TransactionListItem';
 export { TransactionsSkeleton } from './TransactionsSkeleton';

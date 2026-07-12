@@ -158,7 +158,7 @@ function buildDebtVsInvestmentRecommendations(
         ? `Amortizar ${formatMoney(amount)} no cartão ${credit.name}`
         : `Amortizar ${formatMoney(amount)} no crédito ${credit.name}`,
       fingerprint,
-      ctaRoute: '/(tabs)/precos',
+      ctaRoute: '/(tabs)/creditos',
     });
   }
 
@@ -201,7 +201,7 @@ function buildSurplusAllocationRecommendations(
         explanation: `Margem estimada de ${formatMoney(margin.cappedActionBudget)} (disponível ${formatMoney(margin.availableThisMonth)} − projeção variável ${formatMoney(margin.variableProjection)}). A dívida "${debtAction.creditName}" tem prioridade face aos objetivos.`,
         suggestedAction: `Amortizar ${formatMoney(debtAction.amount)} em ${debtAction.creditName}`,
         fingerprint,
-        ctaRoute: '/(tabs)/precos',
+        ctaRoute: '/(tabs)/creditos',
       },
     ];
   }

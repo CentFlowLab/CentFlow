@@ -44,7 +44,7 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
         if (handlers.onProduct) {
           handlers.onProduct();
         } else {
-          router.push('/(tabs)/precos');
+          router.push('/(tabs)/creditos');
           showToast('Regista movimentos para monitorizar preços.', 'info');
         }
         break;
@@ -59,7 +59,7 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
         if (handlers.onCredit) {
           handlers.onCredit();
         } else {
-          router.push('/(tabs)/precos');
+          router.push('/(tabs)/creditos');
         }
         break;
       case 'asset':

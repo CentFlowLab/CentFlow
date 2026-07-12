@@ -37,7 +37,6 @@ export default function PrivacyScreen() {
           <Text variant="caption" color="textMuted">
             Como tratamos, protegemos e armazenamos a tua informação.
           </Text>
-          <Button label="Ver política" variant="ghost" onPress={() => {}} disabled />
           <Text variant="caption" color="textMuted">
             Disponível em breve no site CentFlow.
           </Text>
@@ -61,11 +60,16 @@ export default function PrivacyScreen() {
 
       <View style={styles.section}>
         <Card variant="outlined" style={styles.card}>
-          <Text variant="bodyMedium">Consentimentos futuros</Text>
+          <Text variant="bodyMedium">Open Banking</Text>
           <Text variant="caption" color="textMuted">
-            Ligações bancárias e open banking exigirão consentimento explícito revogável a
-            qualquer momento. Nenhum token bancário será guardado localmente.
+            Ligações bancárias com consentimento explícito revogável estão disponíveis em
+            Definições → Ligações bancárias. Nenhum token bancário é guardado localmente na app.
           </Text>
+          <Button
+            label="Gerir ligações bancárias"
+            variant="secondary"
+            onPress={() => router.push('/settings/bank-connections')}
+          />
         </Card>
       </View>
 
@@ -75,7 +79,6 @@ export default function PrivacyScreen() {
           <Text variant="caption" color="textMuted">
             Pedido de eliminação permanente — disponível quando o backend estiver pronto.
           </Text>
-          <Button label="Pedir eliminação" variant="ghost" disabled />
         </Card>
       </View>
     </SettingsScreenLayout>

@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 40 — Benchmarks de gasto agregados (infraestrutura)",
+  "currentPhase": "Ronda 1 — Correcções AUDIT_REPORT (críticos + perfil/definições + dead code)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",

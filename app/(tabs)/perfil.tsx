@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/layout';
 import { FinancialProfileDetailSheet, FinancialProfileProgress, ProfileHubSections } from '@/components/profile';
 import {
-  Button,
   ErrorState,
   ProfileSkeleton,
   ScreenContainer,
@@ -15,20 +14,17 @@ import { useProfile } from '@/hooks/queries/useProfile';
 import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { useDiagnosticScreen } from '@/hooks/useDiagnosticScreen';
 import { useAnalytics } from '@/lib/analytics';
-import { useAuth } from '@/lib/auth';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
 import { colors, spacing } from '@/lib/theme';
 
 export default function PerfilScreen() {
   useDiagnosticScreen('profile');
 
-  const { signOut } = useAuth();
   const { data: profile, isLoading, isError, error, refetch, isRefetching } = useProfile();
 
   // Keeps analytics user context fresh when the user visits Profile
   useAnalytics();
   const { data: financialProfile, isLoading: isProfileScoreLoading } = useFinancialProfile();
-  const [loggingOut, setLoggingOut] = useState(false);
   const [profileDetailVisible, setProfileDetailVisible] = useState(false);
   const { showToast } = useToast();
   const { activateFeature } = useFeatureAreas();
@@ -44,24 +40,6 @@ export default function PerfilScreen() {
     } finally {
       setActivatingFeature(null);
     }
-  }
-
-  function handleSignOut() {
-    Alert.alert('Terminar sessão', 'Tens a certeza que queres sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          setLoggingOut(true);
-          try {
-            await signOut();
-          } finally {
-            setLoggingOut(false);
-          }
-        },
-      },
-    ]);
   }
 
   return (
@@ -104,13 +82,6 @@ export default function PerfilScreen() {
             }
           />
 
-          <Button
-            label="Terminar sessão"
-            variant="danger"
-            onPress={handleSignOut}
-            loading={loggingOut}
-            fullWidth
-          />
         </ScreenContainer>
       )}
 

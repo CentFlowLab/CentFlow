@@ -22,7 +22,7 @@ const TARGET_TO_PATH: Record<EmailDeepLinkTarget, string> = {
   goal: '/ativos?action=new-goal',
   warranty: '/ativos?action=new-warranty',
   subscription: '/movimentos?action=new-subscription&view=subscricoes',
-  credit: '/precos',
+  credit: '/creditos',
   weekly_summary: '/(tabs)/',
 };
 
@@ -41,7 +41,7 @@ export function resolveEmailDeepLinkRoute(url: string): Href | null {
     if (path.startsWith('/onboarding')) return '/onboarding' as Href;
     if (path.startsWith('/movimentos')) return path as Href;
     if (path.startsWith('/ativos')) return path as Href;
-    if (path.startsWith('/precos')) return '/precos' as Href;
+    if (path.startsWith('/creditos')) return '/creditos' as Href;
     if (path === '/' || path.startsWith('/(tabs)')) return '/(tabs)/' as Href;
 
     return null;

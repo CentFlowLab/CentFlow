@@ -6,7 +6,7 @@ import {
   SettingsHero,
   SettingsScreenLayout,
 } from '@/components/settings';
-import { Button, Card, LoadingSpinner, Text } from '@/components/ui';
+import { Button, Card, ErrorState, LoadingSpinner, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import {
   useBankConnections,
@@ -23,8 +23,22 @@ import type { ThemeColors } from '@/lib/theme/types';
 import { formatDateShort } from '@/lib/utils/format';
 
 export default function BankConnectionsScreen() {
-  const { data: connections, isLoading: connectionsLoading } = useBankConnections();
-  const { data: banks, isLoading: banksLoading } = useSupportedBanks();
+  const {
+    data: connections,
+    isLoading: connectionsLoading,
+    isError: connectionsError,
+    error: connectionsErrorValue,
+    refetch: refetchConnections,
+    isRefetching: connectionsRefetching,
+  } = useBankConnections();
+  const {
+    data: banks,
+    isLoading: banksLoading,
+    isError: banksError,
+    error: banksErrorValue,
+    refetch: refetchBanks,
+    isRefetching: banksRefetching,
+  } = useSupportedBanks();
   const createLink = useCreateBankLink();
   const finalizeLink = useFinalizeBankLink();
   const revokeConnection = useRevokeBankConnection();
@@ -139,6 +153,28 @@ export default function BankConnectionsScreen() {
   const linked = (connections ?? []).filter((item) => item.status === 'linked');
   const pending = (connections ?? []).filter((item) => item.status === 'pending');
   const expired = (connections ?? []).filter((item) => item.status === 'expired');
+
+  const loadError = connectionsError || banksError;
+  const loadErrorValue = connectionsErrorValue ?? banksErrorValue;
+
+  async function handleRetryLoad() {
+    await Promise.all([refetchConnections(), refetchBanks()]);
+  }
+
+  if (loadError && !connectionsLoading && !banksLoading) {
+    return (
+      <SettingsScreenLayout
+        title="Ligações bancárias"
+        subtitle="Importação automática via Open Banking (complemento à entrada manual)">
+        <ErrorState
+          context="generic"
+          error={loadErrorValue}
+          onRetry={() => void handleRetryLoad()}
+          retryLoading={connectionsRefetching || banksRefetching}
+        />
+      </SettingsScreenLayout>
+    );
+  }
 
   return (
     <SettingsScreenLayout

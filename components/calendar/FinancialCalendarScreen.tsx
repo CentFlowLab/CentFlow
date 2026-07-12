@@ -2,7 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Card, LoadingSpinner, Text } from '@/components/ui';
+import { Card, ErrorState, LoadingSpinner, Text } from '@/components/ui';
 import { useFinancialCalendar } from '@/hooks/useFinancialCalendar';
 import type {
   FinancialCalendarDayRisk,
@@ -98,7 +98,8 @@ function DayDetail({ day }: { day: FinancialCalendarProjectionDay }) {
 }
 
 export function FinancialCalendarScreen() {
-  const { calendar, isLoading } = useFinancialCalendar({ horizonDays: 30 });
+  const { calendar, isLoading, isError, error, refetch, isRefetching } =
+    useFinancialCalendar({ horizonDays: 30 });
   const [visibleMonth, setVisibleMonth] = useState(() => startOfDay(new Date()));
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -118,10 +119,23 @@ export function FinancialCalendarScreen() {
   const selectedDay = selectedDate ? dayMap.get(selectedDate) ?? null : null;
   const weekdays = getWeekdayLabels();
 
-  if (isLoading || !calendar) {
+  if (isLoading) {
     return (
       <View style={styles.loading}>
         <LoadingSpinner message="A calcular calendário financeiro..." />
+      </View>
+    );
+  }
+
+  if (isError || !calendar) {
+    return (
+      <View style={styles.loading}>
+        <ErrorState
+          context="generic"
+          error={error}
+          onRetry={() => void refetch()}
+          retryLoading={isRefetching}
+        />
       </View>
     );
   }

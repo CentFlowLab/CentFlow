@@ -60,7 +60,7 @@ export function getFirstStepPath(primaryObjective: string | null): string {
     case 'subscriptions':
       return 'movimentos?action=new-subscription&view=subscricoes';
     case 'organize_credits':
-      return 'precos';
+      return 'creditos';
     case 'track_wealth':
       return 'ativos?action=new-asset';
     default:

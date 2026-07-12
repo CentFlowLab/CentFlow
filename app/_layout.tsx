@@ -15,7 +15,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect, AppSecurityBootstrap, BiometricGate, EmailDeepLinkHandler, QuickExpenseLinkHandler } from '@/components/app';
-import { DiagnosticsBootstrap, DiagnosticOverlay } from '@/components/diagnostics';
+import { DiagnosticsBootstrap } from '@/components/diagnostics';
 import { View } from 'react-native';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -103,7 +103,6 @@ function RootLayout() {
                       <RootNavigator />
                     </BiometricGate>
                   </AppSecurityBootstrap>
-                  <DiagnosticOverlay />
                   </NavigationThemeBridge>
                   </ToastProvider>
                 </AppThemeProvider>

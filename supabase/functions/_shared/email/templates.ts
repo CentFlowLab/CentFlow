@@ -96,7 +96,7 @@ export function buildEmailTemplate(
         greeting,
         body: `Tens uma prestação a aproximar-se${extras.name ? ` (${extras.name})` : ''}. Consulta os detalhes na app.`,
         ctaLabel: 'Ver crédito',
-        ctaUrl: buildDeepLink('precos'),
+        ctaUrl: buildDeepLink('creditos'),
       });
 
     case 'weekly_digest':

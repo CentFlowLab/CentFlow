@@ -24,6 +24,16 @@ const MENU_SECTIONS: Array<{
     title: 'Conta e app',
     items: [
       {
+        icon: { ios: 'person.crop.circle', android: 'person', web: 'person' },
+        label: 'Dados pessoais',
+        route: '/settings/personal-data',
+      },
+      {
+        icon: { ios: 'eurosign.circle', android: 'euro', web: 'euro' },
+        label: 'Moeda e região',
+        route: '/settings/currency-region',
+      },
+      {
         icon: { ios: 'lock.fill', android: 'lock', web: 'lock' },
         label: 'Segurança',
         route: '/settings/security',
