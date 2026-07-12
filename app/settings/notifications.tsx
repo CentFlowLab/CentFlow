@@ -3,14 +3,24 @@ import { StyleSheet, View } from 'react-native';
 import {
   SettingsHero,
   SettingsScreenLayout,
+  SettingsThresholdSlider,
   SettingsToggleRow,
 } from '@/components/settings';
 import { Card, LoadingSpinner, SectionHeader, Text } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
+import {
+  MAX_CATEGORY_SPEND_ALERT_THRESHOLD,
+  MIN_CATEGORY_SPEND_ALERT_THRESHOLD,
+} from '@/lib/domain/financial/category-spend-anomaly';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/queries/useUserPreferences';
 import { spacing } from '@/lib/theme';
 
-type PushToggleKey = 'pushNotifications' | 'warrantyAlerts' | 'budgetAlerts' | 'weeklyDigest';
+type PushToggleKey =
+  | 'pushNotifications'
+  | 'warrantyAlerts'
+  | 'budgetAlerts'
+  | 'categorySpendAlerts'
+  | 'weeklyDigest';
 
 type EmailToggleKey =
   | 'emailImportant'
@@ -80,6 +90,34 @@ export default function NotificationsScreen() {
             value={preferences.budgetAlerts}
             onValueChange={(value) => handlePushToggle('budgetAlerts', value)}
             disabled={updatePreferences.isPending}
+          />
+          <SettingsToggleRow
+            label="Gasto acima do habitual"
+            description="Quando um gasto ultrapassa a mediana da categoria"
+            value={preferences.categorySpendAlerts}
+            onValueChange={(value) => handlePushToggle('categorySpendAlerts', value)}
+            disabled={updatePreferences.isPending || !preferences.pushNotifications}
+          />
+          <SettingsThresholdSlider
+            label="Limiar de alerta"
+            description="Multiplicador sobre a mediana histórica (1,5× a 3×)"
+            value={preferences.categorySpendAlertThreshold}
+            minimumValue={MIN_CATEGORY_SPEND_ALERT_THRESHOLD}
+            maximumValue={MAX_CATEGORY_SPEND_ALERT_THRESHOLD}
+            step={0.5}
+            formatValue={(value) => `${value.toFixed(1).replace('.', ',')}× a mediana`}
+            onValueChange={async (value) => {
+              try {
+                await updatePreferences.mutateAsync({ categorySpendAlertThreshold: value });
+              } catch {
+                showToast('Não foi possível guardar o limiar.', 'error');
+              }
+            }}
+            disabled={
+              updatePreferences.isPending ||
+              !preferences.pushNotifications ||
+              !preferences.categorySpendAlerts
+            }
           />
         </Card>
       </View>

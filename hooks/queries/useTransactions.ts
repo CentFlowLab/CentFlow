@@ -24,6 +24,7 @@ import type {
   TransactionFilter,
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
+import { checkCategorySpendAnomalyForTransaction } from '@/lib/notifications/category-spend-alert.service';
 
 export {
   getTransactionQueries,
@@ -105,7 +106,7 @@ export function useCreateTransaction() {
       traceStep(error ? 'mutation_error' : 'mutation_settled', { hadError: Boolean(error) });
       queueMicrotask(() => setPhase(null));
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       if (variables.type === 'transfer') {
         traceTransferStep('mutation_success', { component: 'useCreateTransaction' });
       } else {
@@ -121,6 +122,11 @@ export function useCreateTransaction() {
       ) {
         invalidateAssetsQueries(queryClient);
         void queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      }
+
+      const created = data?.transaction;
+      if (created) {
+        void checkCategorySpendAnomalyForTransaction(created);
       }
     },
     onError: (error, variables) => {

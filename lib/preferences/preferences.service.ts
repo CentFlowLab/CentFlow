@@ -3,6 +3,8 @@ import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
 
 import { normalizeThemeId } from '@/lib/theme/themes';
 
+import { clampCategorySpendAlertThreshold } from '@/lib/domain/financial/category-spend-anomaly';
+
 import { DEFAULT_PREFERENCES } from './config';
 import { normalizeCountryCode } from './locale.data';
 import { loadStoredPreferences, saveStoredPreferences } from './storage';
@@ -13,6 +15,8 @@ type PreferencesRow = {
   push_notifications: boolean;
   warranty_alerts: boolean;
   budget_alerts: boolean;
+  category_spend_alerts?: boolean;
+  category_spend_alert_threshold?: number;
   weekly_digest: boolean;
   email_important?: boolean;
   email_weekly_digest?: boolean;
@@ -31,6 +35,10 @@ function mapRow(row: PreferencesRow): UserPreferences {
     pushNotifications: row.push_notifications,
     warrantyAlerts: row.warranty_alerts,
     budgetAlerts: row.budget_alerts,
+    categorySpendAlerts: row.category_spend_alerts ?? true,
+    categorySpendAlertThreshold: clampCategorySpendAlertThreshold(
+      row.category_spend_alert_threshold ?? DEFAULT_PREFERENCES.categorySpendAlertThreshold,
+    ),
     weeklyDigest: row.weekly_digest,
     emailImportant: row.email_important ?? true,
     emailWeeklyDigest: row.email_weekly_digest ?? row.weekly_digest ?? true,
@@ -61,6 +69,14 @@ function toRow(userId: string, prefs: Partial<UserPreferences>) {
     }),
     ...(prefs.warrantyAlerts !== undefined && { warranty_alerts: prefs.warrantyAlerts }),
     ...(prefs.budgetAlerts !== undefined && { budget_alerts: prefs.budgetAlerts }),
+    ...(prefs.categorySpendAlerts !== undefined && {
+      category_spend_alerts: prefs.categorySpendAlerts,
+    }),
+    ...(prefs.categorySpendAlertThreshold !== undefined && {
+      category_spend_alert_threshold: clampCategorySpendAlertThreshold(
+        prefs.categorySpendAlertThreshold,
+      ),
+    }),
     ...(prefs.weeklyDigest !== undefined && { weekly_digest: prefs.weeklyDigest }),
     ...(prefs.emailImportant !== undefined && { email_important: prefs.emailImportant }),
     ...(prefs.emailWeeklyDigest !== undefined && { email_weekly_digest: prefs.emailWeeklyDigest }),

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/api/keys';
+import { fetchTransactions } from '@/lib/api/services/transaction.service';
 import {
   createBankLink,
   fetchBankConnections,
@@ -10,6 +11,12 @@ import {
   syncBankConnection,
 } from '@/lib/open-banking/gocardless.service';
 import { useAuth } from '@/lib/auth';
+import {
+  checkCategorySpendAnomaliesForTransactions,
+  filterExpenseTransactions,
+  findNewTransactions,
+} from '@/lib/notifications/category-spend-alert.service';
+import type { Transaction } from '@/lib/domain/transaction.types';
 
 export function useSupportedBanks() {
   const { isAuthenticated } = useAuth();
@@ -48,10 +55,18 @@ export function useFinalizeBankLink() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (requisitionId: string) => finalizeBankLink(requisitionId),
-    onSuccess: () => {
+    mutationFn: async (requisitionId: string) => {
+      const previous = await fetchTransactions('all');
+      const result = await finalizeBankLink(requisitionId);
+      return { result, previous };
+    },
+    onSuccess: async ({ result, previous }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bankConnections });
       void queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });
+
+      if (result.sync?.imported && result.sync.imported > 0) {
+        await runCategorySpendChecksAfterImport(previous);
+      }
     },
   });
 }
@@ -71,12 +86,30 @@ export function useSyncBankConnection() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (connectionId: string) => syncBankConnection(connectionId),
-    onSuccess: (result) => {
+    mutationFn: async (connectionId: string) => {
+      const previous = await fetchTransactions('all');
+      const result = await syncBankConnection(connectionId);
+      return { result, previous };
+    },
+    onSuccess: async ({ result, previous }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bankConnections });
       if (result.ok) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });
+        if (result.imported && result.imported > 0) {
+          await runCategorySpendChecksAfterImport(previous);
+        }
       }
     },
   });
+}
+
+async function runCategorySpendChecksAfterImport(previous: Transaction[]): Promise<void> {
+  try {
+    const current = await fetchTransactions('all');
+    const imported = filterExpenseTransactions(findNewTransactions(previous, current));
+    if (imported.length === 0) return;
+    await checkCategorySpendAnomaliesForTransactions(imported);
+  } catch {
+    // Efeito secundário — não bloquear sync.
+  }
 }

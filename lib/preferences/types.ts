@@ -10,6 +10,10 @@ export type UserPreferences = {
   pushNotifications: boolean;
   warrantyAlerts: boolean;
   budgetAlerts: boolean;
+  /** Alerta quando um gasto ultrapassa a mediana histórica da categoria. */
+  categorySpendAlerts: boolean;
+  /** Multiplicador sobre a mediana (1,5× a 3×). */
+  categorySpendAlertThreshold: number;
   weeklyDigest: boolean;
   emailImportant: boolean;
   emailWeeklyDigest: boolean;

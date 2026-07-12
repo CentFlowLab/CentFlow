@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 29 — Open Banking GoCardless (importação automática PT)",
+  "currentPhase": "Fase 30 — Alertas gasto acima da mediana por categoria",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -159,10 +159,13 @@
     "Contas ocultas na UI — ACCOUNTS_FEATURE_ENABLED=false, saldo global (sumGlobalCashBalance), formulários sem picker de conta, tab Contas removida de Ativos",
     "Skins de tema — 4 paletas (Classic, Midnight Indigo, Warm Graphite, Deep Emerald), tokens em lib/theme, ThemeProvider + useTheme/useThemedStyles, persistência Supabase (theme_id) + SecureStore, seletor visual em Definições → Aparência",
     "Projeção cashflow 30/60/90d — buildCashflowProjection (mediana variável + recorrências + dívida), gráfico na tab Resumo das Análises, recálculo via TanStack Query",
-    "Open Banking GoCardless — Edge Function gocardless (OAuth/consent + sync), fuzzy merchant matching, source open_banking, ecrã Definições → Ligações bancárias"
+    "Open Banking GoCardless — Edge Function gocardless (OAuth/consent + sync), fuzzy merchant matching, source open_banking, ecrã Definições → Ligações bancárias",
+    "Alertas gasto acima da mediana — calculateCategorySpendMedian (motor poupança), notificação local expo-notifications, toggle + slider limiar em Definições, hook pós-criação e sync Open Banking"
   ],
   "pending": [
+    "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",
     "Open Banking — aplicar migration 20240713000000, secrets GOCARDLESS_* no Supabase, redirect centflow://open-banking/callback no portal GoCardless, cron sync_all",
+    "Migration category_spend_alerts — aplicar 20240713110000 no Supabase remoto",
     "Migrar ecrãs restantes para useThemedStyles (StyleSheets estáticos com colors.* ainda congelam no primeiro tema)",
     "OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)",
     "Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)",

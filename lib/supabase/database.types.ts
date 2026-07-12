@@ -731,6 +731,8 @@ export type Database = {
         Row: {
           biometrics_enabled: boolean
           budget_alerts: boolean
+          category_spend_alert_threshold: number
+          category_spend_alerts: boolean
           created_at: string
           email_credit_payments: boolean
           email_important: boolean
@@ -750,6 +752,8 @@ export type Database = {
         Insert: {
           biometrics_enabled?: boolean
           budget_alerts?: boolean
+          category_spend_alert_threshold?: number
+          category_spend_alerts?: boolean
           created_at?: string
           email_credit_payments?: boolean
           email_important?: boolean
@@ -769,6 +773,8 @@ export type Database = {
         Update: {
           biometrics_enabled?: boolean
           budget_alerts?: boolean
+          category_spend_alert_threshold?: number
+          category_spend_alerts?: boolean
           created_at?: string
           email_credit_payments?: boolean
           email_important?: boolean

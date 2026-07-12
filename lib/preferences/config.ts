@@ -9,10 +9,14 @@ import {
   normalizeCountryCode,
 } from './locale.data';
 
+import { DEFAULT_CATEGORY_SPEND_ALERT_THRESHOLD } from '@/lib/domain/financial/category-spend-anomaly';
+
 export const DEFAULT_PREFERENCES = {
   pushNotifications: true,
   warrantyAlerts: true,
   budgetAlerts: false,
+  categorySpendAlerts: true,
+  categorySpendAlertThreshold: DEFAULT_CATEGORY_SPEND_ALERT_THRESHOLD,
   weeklyDigest: true,
   emailImportant: true,
   emailWeeklyDigest: true,

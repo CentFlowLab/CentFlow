@@ -82,7 +82,14 @@
       "expo-ocr-kit",
       "expo-updates",
       "expo-sharing",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#0A1628"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

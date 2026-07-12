@@ -57,12 +57,54 @@ function monthPeriod(monthKey: string, asOf: Date): FinancialPeriod {
   return { kind: 'month', monthKey, asOf };
 }
 
-function median(values: number[]): number {
+export function calculateMedian(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 1) return roundMoney(sorted[mid]);
   return roundMoney((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+/** Mínimo de transacções históricas para baseline de alerta por categoria. */
+export const MIN_CATEGORY_SPEND_BASELINE_TRANSACTIONS = 5;
+
+export type CategorySpendMedianResult = {
+  medianAmount: number;
+  transactionCount: number;
+  monthKeys: string[];
+  hasEnoughHistory: boolean;
+};
+
+/**
+ * Mediana dos montantes individuais de gasto numa categoria
+ * (últimos 3 meses civis completos, mesmas exclusões que consumo variável).
+ */
+export function calculateCategorySpendMedian(
+  transactions: Transaction[],
+  category: string,
+  asOf: Date = new Date(),
+  options?: { excludeTransactionId?: string },
+): CategorySpendMedianResult {
+  const monthKeys = getPreviousCompleteMonthKeys(VARIABLE_SPEND_MONTH_COUNT, asOf);
+  const amounts: number[] = [];
+
+  for (const monthKey of monthKeys) {
+    for (const tx of filterTransactionsByPeriod(transactions, monthPeriod(monthKey, asOf))) {
+      if (tx.category !== category) continue;
+      if (options?.excludeTransactionId && tx.id === options.excludeTransactionId) continue;
+      if (!countsAsVariableSpendTransaction(tx)) continue;
+      amounts.push(calculateBudgetImpact(tx).budgetExpenseDelta);
+    }
+  }
+
+  const hasEnoughHistory = amounts.length >= MIN_CATEGORY_SPEND_BASELINE_TRANSACTIONS;
+
+  return {
+    medianAmount: hasEnoughHistory ? calculateMedian(amounts) : 0,
+    transactionCount: amounts.length,
+    monthKeys,
+    hasEnoughHistory,
+  };
 }
 
 export function isOneOffVariableCategory(category: string | undefined): boolean {
@@ -120,7 +162,7 @@ export function calculateVariableSpendMonthlyMedian(
   }
 
   return {
-    medianMonthly: median(monthlyTotals),
+    medianMonthly: calculateMedian(monthlyTotals),
     monthlyTotals,
     monthsUsed: monthsWithSpend,
     monthKeys,
