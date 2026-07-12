@@ -1,7 +1,12 @@
 const { getDefaultConfig } = require('expo/metro-config');
-const { withSentryConfig } = require('@sentry/react-native/metro');
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
-module.exports = withSentryConfig(config);
+// Sentry metro wrapper só quando org/project estão definidos (EAS Build com source maps).
+if (process.env.SENTRY_ORG && process.env.SENTRY_PROJECT) {
+  const { withSentryConfig } = require('@sentry/react-native/metro');
+  module.exports = withSentryConfig(config);
+} else {
+  module.exports = config;
+}
