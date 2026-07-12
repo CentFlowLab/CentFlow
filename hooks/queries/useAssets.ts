@@ -16,6 +16,7 @@ import {
 } from '@/lib/api/services/assets.service';
 import { useAuth } from '@/lib/auth';
 import { logDoctorMutationFailure } from '@/lib/doctor';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
 import type { AssetsData } from '@/lib/domain/assets.types';
 import type {
   CreateGoalInput,
@@ -41,9 +42,15 @@ export function useAssets() {
 
 export function useCreateGoal() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
+
   return useMutation({
     mutationFn: (input: CreateGoalInput) => createGoal(input),
-    onSuccess: () => invalidateAssetsQueries(queryClient),
+    onSuccess: () => {
+      invalidateAssetsQueries(queryClient);
+      scheduleFinancialRecalculation(queryClient, userId, { type: 'goal_created' });
+    },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
         action: 'goal_create',
@@ -56,9 +63,18 @@ export function useCreateGoal() {
 
 export function useUpdateGoal() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
+
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateGoalInput }) => updateGoal(id, input),
-    onSuccess: () => invalidateAssetsQueries(queryClient),
+    onSuccess: (_data, variables) => {
+      invalidateAssetsQueries(queryClient);
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: 'goal_updated',
+        goalId: variables.id,
+      });
+    },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
         action: 'goal_update',

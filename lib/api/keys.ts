@@ -23,5 +23,5 @@ export const queryKeys = {
   openBankingInstitutions: ['open-banking', 'institutions'] as const,
   bankConnections: ['open-banking', 'connections'] as const,
   prices: ['prices'] as const,
-  emailEvents: (userId: string) => ['email-events', userId] as const,
+  financialEngine: (userId: string) => ['financial-engine', userId] as const,
 } as const;

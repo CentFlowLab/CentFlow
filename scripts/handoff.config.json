@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 32 — Sentry + pipeline auto-fix (erros → issue → PR)",
+  "currentPhase": "Fase 33 — Motor Financeiro (orquestração central de recálculos)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -164,7 +164,10 @@
     "UX Movimentos — sticky headers por dia, chips com ícones/contagens, menu long-press (duplicar/categoria/recorrente), card resumo mensal vs mês anterior, cor de categoria nos ícones",
     "Sentry — @sentry/react-native, Sentry.wrap no root, bridge logAppError, redacção financeira, tags financial_domain",
     "Pipeline auto-fix — .github/workflows/auto-fix-errors.yml (Claude Code → PR, rate limit 5/dia, sem merge)",
-    "Docs sentry-auto-fix-pipeline.md — setup Sentry↔GitHub, labels, salvaguardas"
+    "Docs sentry-auto-fix-pipeline.md — setup Sentry↔GitHub, labels, salvaguardas",
+    "Motor Financeiro — lib/domain/financial/engine.ts (recalculateFinancialState, 9 passos isolados, falha não bloqueia)",
+    "Motor Financeiro — scheduleFinancialRecalculation em background (mutations transações, objetivos, créditos, subscrições, orçamentos categoria)",
+    "Motor Financeiro — testes integração (ordem, falha isolada, resultados derivados) + README mapa de dependências"
   ],
   "pending": [
     "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",

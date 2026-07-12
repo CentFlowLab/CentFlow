@@ -25,6 +25,7 @@ import type {
   UpdateTransactionInput,
 } from '@/lib/domain/transaction.types';
 import { checkCategorySpendAnomalyForTransaction } from '@/lib/notifications/category-spend-alert.service';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
 
 export {
   getTransactionQueries,
@@ -62,6 +63,8 @@ export function getCreateTransactionPhaseLabel(
  */
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
   const [phase, setPhase] = useState<CreateTransactionPhase | null>(null);
 
   const mutation = useMutation({
@@ -128,6 +131,11 @@ export function useCreateTransaction() {
       if (created) {
         void checkCategorySpendAnomalyForTransaction(created);
       }
+
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: 'transaction_created',
+        transactionId: created?.id,
+      });
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
@@ -148,6 +156,8 @@ export function useCreateTransaction() {
 
 export function useUpdateTransaction() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
 
   return useMutation({
     mutationFn: ({
@@ -177,12 +187,20 @@ export function useUpdateTransaction() {
         payload: { transactionId: variables.transactionId },
       });
     },
-    onSettled: () => invalidateTransactionQueries(queryClient),
+    onSettled: (_data, _error, variables) => {
+      invalidateTransactionQueries(queryClient);
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: 'transaction_updated',
+        transactionId: variables.transactionId,
+      });
+    },
   });
 }
 
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
 
   return useMutation({
     mutationFn: (transactionId: string) => deleteTransaction(transactionId),
@@ -206,9 +224,13 @@ export function useDeleteTransaction() {
         payload: { transactionId },
       });
     },
-    onSettled: () => {
+    onSettled: (_data, _error, transactionId) => {
       invalidateTransactionQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: 'transaction_deleted',
+        transactionId,
+      });
     },
   });
 }

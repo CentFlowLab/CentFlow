@@ -13,6 +13,7 @@ import {
 } from '@/lib/liabilities/liabilities.service';
 import { useAuth } from '@/lib/auth';
 import { logDoctorMutationFailure } from '@/lib/doctor';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
 
 function randomId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -64,9 +65,13 @@ export function useSaveCredit() {
 
       return saveCreditForUser(userId, credit);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: variables.id ? 'credit_updated' : 'credit_created',
+        creditId: variables.id,
+      });
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
@@ -88,9 +93,13 @@ export function useDeleteCredit() {
     mutationFn: async (id: string) => {
       await deleteCreditForUser(userId, id);
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: 'credit_deleted',
+        creditId: id,
+      });
     },
     onError: (error, id) => {
       logDoctorMutationFailure(error, {
@@ -126,9 +135,13 @@ export function useSaveSubscription() {
 
       return saveSubscriptionForUser(userId, subscription);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: variables.id ? 'subscription_updated' : 'subscription_created',
+        subscriptionId: variables.id,
+      });
     },
     onError: (error, variables) => {
       logDoctorMutationFailure(error, {
@@ -150,9 +163,13 @@ export function useDeleteSubscription() {
     mutationFn: async (id: string) => {
       await deleteSubscriptionForUser(userId, id);
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       invalidateAssetsQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: queryKeys.liabilities(userId) });
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: 'subscription_deleted',
+        subscriptionId: id,
+      });
     },
     onError: (error, id) => {
       logDoctorMutationFailure(error, {

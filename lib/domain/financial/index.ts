@@ -43,3 +43,16 @@ export * from './category-budgets';
 export * from './savings-allocation';
 export * from './subscription-review';
 export * from './action-engine';
+
+/** Motor financeiro — orquestração de recálculos derivados */
+export {
+  recalculateFinancialState,
+  FINANCIAL_ENGINE_STEP_ORDER,
+} from './engine';
+export { scheduleFinancialRecalculation, runFinancialRecalculation } from './engine.runner';
+export type {
+  FinancialRecalcTrigger,
+  FinancialEngineInput,
+  FinancialEngineRunResult,
+  FinancialEngineStepId,
+} from './engine.types';

@@ -11,6 +11,7 @@ import type { CategoryBudgetSource } from '@/lib/domain/category-budget.types';
 import { calculateCategoryBudgetStatus } from '@/lib/domain/financial/category-budgets';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { useAuth } from '@/lib/auth';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
 
 import { useTransactions } from './useTransactions';
 
@@ -53,10 +54,14 @@ export function useUpsertCategoryBudget() {
       monthlyLimit: number;
       source?: CategoryBudgetSource;
     }) => upsertCategoryBudgetForUser(userId, input),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.categoryBudgets(userId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.home });
       void queryClient.invalidateQueries({ queryKey: queryKeys.analytics() });
+      scheduleFinancialRecalculation(queryClient, userId, {
+        type: 'category_budget_updated',
+        category: variables.category,
+      });
     },
   });
 }
