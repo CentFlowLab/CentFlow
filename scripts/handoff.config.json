@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 27 — Skins de tema seleccionáveis (4 paletas)",
+  "currentPhase": "Fase 28 — Projeção de cashflow (30/60/90 dias)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -157,7 +157,8 @@
     "Motor poupança Fase A (6) — subscrições revista/cancel URL, action-engine (FinancialActionsCard Home + Análises, SubscriptionsSection)",
     "Motor poupança Fase B — margem real (mediana variável + projeção + tecto 90%), amortização dívida prioritária, toggle Definições",
     "Contas ocultas na UI — ACCOUNTS_FEATURE_ENABLED=false, saldo global (sumGlobalCashBalance), formulários sem picker de conta, tab Contas removida de Ativos",
-    "Skins de tema — 4 paletas (Classic, Midnight Indigo, Warm Graphite, Deep Emerald), tokens em lib/theme, ThemeProvider + useTheme/useThemedStyles, persistência Supabase (theme_id) + SecureStore, seletor visual em Definições → Aparência"
+    "Skins de tema — 4 paletas (Classic, Midnight Indigo, Warm Graphite, Deep Emerald), tokens em lib/theme, ThemeProvider + useTheme/useThemedStyles, persistência Supabase (theme_id) + SecureStore, seletor visual em Definições → Aparência",
+    "Projeção cashflow 30/60/90d — buildCashflowProjection (mediana variável + recorrências + dívida), gráfico na tab Resumo das Análises, recálculo via TanStack Query"
   ],
   "pending": [
     "Migrar ecrãs restantes para useThemedStyles (StyleSheets estáticos com colors.* ainda congelam no primeiro tema)",

@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { FinancialActionsCard } from '@/components/budget';
 import { AnalysisMetricCard } from '@/components/analysis/AnalysisMetricCard';
+import { CashflowProjectionCard } from '@/components/analysis/CashflowProjectionCard';
 import { InsightsSection } from '@/components/analysis/InsightsSection';
 import { TrendsSummaryCard } from '@/components/analysis/TrendsSummaryCard';
 import { Card, Text } from '@/components/ui';
@@ -18,6 +19,7 @@ type AnalysisSummaryTabProps = {
 
 export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
   const spendable = useMonthlySpendable();
+  const { width: windowWidth } = useWindowDimensions();
   const savings = useMemo(
     () => calculateSavingsRate(data.trends.totalIncome, data.trends.totalExpenses),
     [data.trends.totalIncome, data.trends.totalExpenses],
@@ -34,6 +36,8 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
         periodLabel={data.periodLabel}
         showNetWorthChange={false}
       />
+
+      <CashflowProjectionCard width={windowWidth - spacing.lg * 2} />
 
       <View style={styles.metricsRow}>
         {cashflowMetric ? <AnalysisMetricCard metric={cashflowMetric} /> : null}
