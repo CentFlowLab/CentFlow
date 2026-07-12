@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "Fase 36 — Calendário de caixa com alertas de risco",
+  "currentPhase": "Fase 37 — Assistente financeiro conversacional",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -173,12 +173,15 @@
     "Simulador de decisões — simulateDecision() com projeção cashflow 30d, margem real (não saldo bruto), impacto em objetivos",
     "Simulador de decisões — DecisionImpactModal (Antes vs Depois) em Novo movimento e contribuição a objetivos; só persiste ao confirmar",
     "Calendário de caixa — buildFinancialCalendar cruza vencimentos, recorrências e rendimento com saldo projetado (cashflow)",
-    "Calendário de caixa — ecrã /calendar com grelha mensal (neutro/atenção/risco), detalhe por dia e notificação única a 7 dias"
+    "Calendário de caixa — ecrã /calendar com grelha mensal (neutro/atenção/risco), detalhe por dia e notificação única a 7 dias",
+    "Assistente conversacional — Edge Function financial-assistant (classificação + formatação Anthropic, números do motor)",
+    "Assistente conversacional — executeAssistantQuery + simulateDecision no client, histórico Supabase, ecrã /assistant"
   ],
   "pending": [
     "Notificações locais — expo-notifications é módulo nativo: novo IPA necessário para permissões push locais (OTA cobre JS)",
     "Open Banking — aplicar migration 20240713000000, secrets GOCARDLESS_* no Supabase, redirect centflow://open-banking/callback no portal GoCardless, cron sync_all",
     "Migration category_spend_alerts — aplicar 20240713110000 no Supabase remoto",
+    "Migration assistant_conversations — aplicar 20240713120000 + deploy Edge Function financial-assistant + secret ANTHROPIC_API_KEY",
     "Rebuild nativo obrigatório — @sentry/react-native (plugin + metro.config.js); configurar EXPO_PUBLIC_SENTRY_DSN no EAS",
     "Sentry dashboard — integração GitHub + regras de alerta (auto-detected-error vs requires-manual-review)",
     "GitHub secret ANTHROPIC_API_KEY para workflow auto-fix-errors.yml",

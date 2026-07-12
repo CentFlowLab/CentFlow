@@ -17,6 +17,7 @@ export * from './score';
 
 export * from './types';
 export * from './assistant';
+export * from './assistant-chat';
 export * from './score-explain';
 
 /** Financial Core Engine v2 */

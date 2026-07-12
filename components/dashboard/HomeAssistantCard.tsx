@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { Card, Text } from '@/components/ui';
 import type { DailyAssistantPlan, AssistantActionId } from '@/lib/domain/financial';
@@ -53,6 +54,12 @@ export function HomeAssistantCard({ plan, onAction, onOpenActionCenter }: HomeAs
           Ver plano completo →
         </Text>
       </Pressable>
+
+      <Pressable onPress={() => router.push('/assistant')} style={styles.chatCta}>
+        <Text variant="caption" color="textSecondary">
+          Perguntar ao assistente →
+        </Text>
+      </Pressable>
     </Card>
   );
 }
@@ -96,5 +103,9 @@ const styles = StyleSheet.create({
   },
   cta: {
     alignSelf: 'flex-start',
+  },
+  chatCta: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
   },
 });
