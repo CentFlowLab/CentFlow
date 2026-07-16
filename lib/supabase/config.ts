@@ -15,6 +15,11 @@ export function isGoogleSignInAvailable(): boolean {
   return isMockAuthEnabled() || isSupabaseEnabled();
 }
 
+/** Apple Sign-In — verificar disponibilidade async em runtime (iOS). */
+export function isAppleSignInConfigured(): boolean {
+  return isMockAuthEnabled() || isSupabaseEnabled();
+}
+
 export function getSupabaseUrl(): string {
   return SUPABASE_URL;
 }

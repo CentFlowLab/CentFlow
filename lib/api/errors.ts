@@ -6,6 +6,7 @@ export type ScreenErrorContext =
   | 'movements'
   | 'analysis'
   | 'prices'
+  | 'credits'
   | 'assets'
   | 'profile'
   | 'generic';
@@ -35,6 +36,11 @@ const SCREEN_ERROR_COPY: Record<ScreenErrorContext, ScreenErrorCopy> = {
     title: 'Preços não carregados',
     fallbackDescription:
       'Não conseguimos calcular a inflação pessoal agora. Verifica a internet e tenta de novo.',
+  },
+  credits: {
+    title: 'Créditos indisponíveis',
+    fallbackDescription:
+      'Não foi possível carregar os teus créditos e cartões. Verifica a ligação e tenta novamente.',
   },
   assets: {
     title: 'Ativos indisponíveis',

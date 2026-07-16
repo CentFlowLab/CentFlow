@@ -6,6 +6,7 @@ export const SECURE_KEYS = {
   appPinHash: 'centflow_app_pin_hash',
   biometricEnabled: 'centflow_biometric_enabled',
   migrationVersion: 'centflow_migration_version',
+  privacyConsent: 'centflow_privacy_consent_v1',
 } as const;
 
 export type SecureKey = (typeof SECURE_KEYS)[keyof typeof SECURE_KEYS];

@@ -2,7 +2,7 @@ import type { FinancialState } from './financial-state.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import type { BankAccount } from '@/lib/domain/account.types';
-import type { Credit } from '@/lib/domain/types';
+import type { Credit, InventoryItem } from '@/lib/domain/types';
 import type { Subscription } from '@/lib/domain/assets.types';
 import type { LoanPaymentRecord } from './loan-payments';
 
@@ -35,7 +35,7 @@ export type FinancialDoctorInput = {
   credits: Credit[];
   subscriptions: Subscription[];
   goals?: Array<{ id: string; current: number; target: number }>;
-  inventory?: Array<{ id: string; value: number }>;
+  inventory?: InventoryItem[];
 };
 
 function ledgerCardDebt(creditId: string, transactions: Transaction[]): number {
@@ -261,7 +261,7 @@ export function diagnoseFinancialState(
     });
   }
 
-  if (state.projection.projectedNetWorth < state.netWorth.netWorth - 100000) {
+  if (state.projection.netWorth < state.netWorth.netWorth - 100000) {
     issues.push({
       code: 'CASHFLOW_PROJECTION_SANITY',
       severity: 'warning',

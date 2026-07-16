@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useFinancialEngineSnapshot } from '@/hooks/useFinancialEngineSnapshot';
 import { queryKeys } from '@/lib/api/keys';
 import {
   fetchCategoryBudgetsForUser,
@@ -8,7 +9,7 @@ import {
   upsertCategoryBudgetForUser,
 } from '@/lib/category-budgets/category-budgets.service';
 import type { CategoryBudgetSource } from '@/lib/domain/category-budget.types';
-import { calculateCategoryBudgetStatus } from '@/lib/domain/financial/category-budgets';
+import { selectCategoryBudgetStatus } from '@/lib/domain/financial/engine.selectors';
 import type { Transaction } from '@/lib/domain/transaction.types';
 import { useAuth } from '@/lib/auth';
 import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
@@ -82,20 +83,21 @@ export function useSeedSuggestedCategoryBudgets() {
   });
 }
 
-export function useCategoryBudgetStatus(asOf?: Date) {
-  const { data: budgets = [], isLoading, isError, error } = useCategoryBudgets();
-  const { data: transactions = [] } = useTransactions('all');
+/** Estados de orçamento por categoria — lê passo categoryBudgets do motor. */
+export function useCategoryBudgetStatus(_asOf?: Date) {
+  const budgetsQuery = useCategoryBudgets();
+  const { engineResults, isLoading: engineLoading } = useFinancialEngineSnapshot();
 
   const statuses = useMemo(
-    () => calculateCategoryBudgetStatus(budgets, transactions, asOf ?? new Date()),
-    [budgets, transactions, asOf],
+    () => selectCategoryBudgetStatus(engineResults ?? undefined),
+    [engineResults],
   );
 
   return {
-    budgets,
+    budgets: budgetsQuery.data ?? [],
     statuses,
-    isLoading,
-    isError,
-    error,
+    isLoading: budgetsQuery.isLoading || engineLoading,
+    isError: budgetsQuery.isError,
+    error: budgetsQuery.error,
   };
 }

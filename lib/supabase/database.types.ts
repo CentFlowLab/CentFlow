@@ -1825,3 +1825,12 @@ export const Constants = {
     },
   },
 } as const
+
+/** Aliases de conveniência — derivados do schema gerado (não editar manualmente os Row). */
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type TransactionRow = Database['public']['Tables']['transactions']['Row'];
+export type ReceiptRow = Database['public']['Tables']['receipts']['Row'];
+export type OcrResultRow = Database['public']['Tables']['ocr_results']['Row'];
+export type TransactionType = TransactionRow['type'];
+export type ReceiptStatus = ReceiptRow['status'];
+export type OcrSource = OcrResultRow['source'];

@@ -2,19 +2,33 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
+import {
+  AuthScreenLayout,
+  AuthSocialDivider,
+  AppleSignInButton,
+  GoogleSignInButton,
+} from '@/components/auth';
+import { LegalLinksFooter } from '@/components/legal/LegalLinksFooter';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { isMockAuthEnabled, loginSchema, useAuth, getAuthErrorMessage } from '@/lib/auth';
 import { colors, spacing } from '@/lib/theme';
 
 export default function LoginScreen() {
-  const { signIn, signInWithGoogle, isGoogleSignInAvailable, sessionExpiredMessage } = useAuth();
+  const {
+    signIn,
+    signInWithGoogle,
+    signInWithApple,
+    isGoogleSignInAvailable,
+    isAppleSignInAvailable,
+    sessionExpiredMessage,
+  } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   async function handleLogin() {
     setApiError(null);
@@ -58,6 +72,22 @@ export default function LoginScreen() {
       setGoogleLoading(false);
     }
   }
+
+  async function handleAppleSignIn() {
+    setApiError(null);
+    setAppleLoading(true);
+
+    try {
+      await signInWithApple();
+      router.replace('/(tabs)');
+    } catch (error) {
+      setApiError(getAuthErrorMessage(error));
+    } finally {
+      setAppleLoading(false);
+    }
+  }
+
+  const socialLoading = googleLoading || appleLoading;
 
   return (
     <AuthScreenLayout
@@ -126,19 +156,30 @@ export default function LoginScreen() {
         label="Entrar"
         onPress={handleLogin}
         loading={loading}
-        disabled={googleLoading}
+        disabled={socialLoading}
         fullWidth
         size="lg"
         style={styles.submit}
       />
 
-      {isGoogleSignInAvailable ? (
+      {isAppleSignInAvailable ? (
         <>
           <AuthSocialDivider />
+          <AppleSignInButton
+            onPress={handleAppleSignIn}
+            loading={appleLoading}
+            disabled={loading || googleLoading}
+          />
+        </>
+      ) : null}
+
+      {isGoogleSignInAvailable ? (
+        <>
+          {isAppleSignInAvailable ? null : <AuthSocialDivider />}
           <GoogleSignInButton
             onPress={handleGoogleSignIn}
             loading={googleLoading}
-            disabled={loading}
+            disabled={loading || appleLoading}
           />
           {isMockAuthEnabled() ? (
             <Text variant="caption" color="textMuted" align="center">
@@ -147,6 +188,8 @@ export default function LoginScreen() {
           ) : null}
         </>
       ) : null}
+
+      <LegalLinksFooter />
     </AuthScreenLayout>
   );
 }

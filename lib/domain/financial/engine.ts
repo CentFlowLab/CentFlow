@@ -1,5 +1,6 @@
 import { logAppEvent } from '@/lib/diagnostics/app-log';
 
+import { runCoreFinancialState } from './engine.core';
 import { DEFAULT_FINANCIAL_ENGINE_STEP_RUNNERS } from './engine.steps';
 import type {
   FinancialEngineContext,
@@ -39,11 +40,14 @@ export async function recalculateFinancialState(
   const started = nowMs();
   const asOf = input.referenceDate ?? new Date();
 
+  const coreState = runCoreFinancialState(input, asOf);
+
   const ctx: FinancialEngineContext = {
     userId,
     input,
     asOf,
-    results: {},
+    coreState,
+    results: { coreState },
   };
 
   const steps: FinancialEngineStepOutcome[] = [];

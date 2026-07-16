@@ -8,7 +8,8 @@ import test from 'node:test';
 import type { BankAccount } from '@/lib/domain/account.types';
 import type { GoalContribution } from '@/lib/domain/goal-contribution.types';
 import type { Transaction } from '@/lib/domain/transaction.types';
-import type { Credit, Goal, InventoryItem } from '@/lib/domain/types';
+import type { Credit, InventoryItem } from '@/lib/domain/types';
+import type { Goal } from '@/lib/domain/assets.types';
 
 import { calculateFinancialState } from './financial-state';
 import { diagnoseFinancialState } from './financial-doctor';

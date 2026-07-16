@@ -8,39 +8,48 @@ import {
   generateRecommendations,
   mergeRecommendationFiredRecords,
 } from './recommendations';
+import { createTestFinancialState } from './test-financial-state.fixture';
 
 const AS_OF = new Date('2026-06-15T12:00:00');
 
 function baseState(overrides: Partial<FinancialState> = {}): FinancialState {
-  return {
+  return createTestFinancialState({
     asOf: AS_OF,
-    accounts: [],
-    creditCards: [],
-    credits: [],
-    budget: {
-      available: 500,
-      dailySafeSpend: 20,
-      incomeReceived: 2000,
-      consumptionSpending: 800,
-      obligationsTotal: 200,
-      obligations: [],
-    },
     availableThisMonth: 500,
     dailySafeSpend: 20,
-    budgetExplanation: { lines: [], formula: '' },
-    cashFlow: { monthlyIncome: 2000, monthlyExpenses: 1200, net: 800, savingsRate: 0.4, weeklySpending: 200 },
+    budget: {
+      ...createTestFinancialState().budget,
+      available: 500,
+      dailySafeSpend: 20,
+      consumptionSpending: 800,
+    },
+    cashFlow: {
+      monthlyIncome: 2000,
+      monthlyExpenses: 1200,
+      net: 800,
+      savingsRate: 0.4,
+      weeklySpending: 200,
+    },
     netWorth: {
       netWorth: 10000,
       totalAssets: 12000,
       totalLiabilities: 2000,
+      breakdown: { accounts: 0, inventory: 0, investments: 3000, savings: 0, liabilities: 2000 },
       assetsByCategory: [],
-      liabilitiesByCategory: [],
     },
-    netWorthExplanation: { lines: [] },
-    netWorthProjection: { netWorth: 10000, futureMovementsDelta: 0 },
-    goalProgress: [{ id: 'g1', name: 'Férias', current: 100, target: 1000, percent: 10, remaining: 900, isComplete: false }],
+    goalProgress: [
+      {
+        id: 'g1',
+        name: 'Férias',
+        current: 100,
+        target: 1000,
+        percent: 10,
+        remaining: 900,
+        isComplete: false,
+      },
+    ],
     subscriptions: { items: [], monthlyTotal: 50, renewingSoon: 0 },
-    investmentSummary: { totalBalance: 3000, accountCount: 1, expectedReturnWeighted: 5 },
+    investmentSummary: { totalBalance: 3000, accountCount: 1 },
     metrics: {
       savingsRate: 40,
       debtRatio: 0.2,
@@ -56,17 +65,11 @@ function baseState(overrides: Partial<FinancialState> = {}): FinancialState {
       goalVelocity: 10,
       financialFreedomScore: 50,
     },
-    insights: [],
-    warnings: [],
-    suggestions: [],
-    financialSuggestions: [],
-    attentionItems: [],
     healthScore: {
       score: 60,
       band: 'good',
       bandLabel: 'Bom',
-      level: { id: 'silver', label: 'Gestor', minScore: 40, maxScore: 59, perks: [] },
-      breakdown: { savings: 15, debt: 15, subscriptions: 15, goals: 15 },
+      breakdown: { savings: 15, debt: 15, subscriptions: 15, goals: 15, stability: 0 },
       input: {
         netWorth: 10000,
         netWorthChangePercent: 1,
@@ -76,19 +79,12 @@ function baseState(overrides: Partial<FinancialState> = {}): FinancialState {
         totalDebt: 2000,
         goals: [{ current: 100, target: 1000 }],
         subscriptionsRenewingSoon: 0,
-        featuredGoalGap: 900,
-        warrantiesExpiringSoon: 0,
-        weeklyExpenseDelta: null,
-        goalsCount: 1,
-        transactionCount: 10,
       },
-      explanation: { lines: [] },
+      summary: '',
+      explanation: { earned: [], missing: [] },
     },
-    events: { total: 0, byType: {} },
-    dashboard: { personalInflation: null },
-    calendar: [],
     ...overrides,
-  };
+  });
 }
 
 test('generateRecommendations — dívida acima do investimento inclui números auditáveis', () => {

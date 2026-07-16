@@ -2,6 +2,7 @@ import type { AppLogSeverity } from '@/lib/diagnostics/app-log';
 import { getDiagnosticRuntimeContext } from '@/lib/diagnostics/runtime-context';
 
 import { detectFinancialDomain } from './tags';
+import { isSentryClientActive } from './runtime';
 
 function getSentry() {
   try {
@@ -32,8 +33,8 @@ export function captureAppError(
   error: unknown,
   context: SentryCaptureContext,
 ): void {
-  const Sentry = getSentry();
-  if (!Sentry?.isEnabled()) return;
+  const sentry = getSentry();
+  if (!sentry || !isSentryClientActive(sentry)) return;
   if (!shouldCapture(context.severity)) return;
 
   const err = error instanceof Error ? error : new Error(String(error));
@@ -41,7 +42,7 @@ export function captureAppError(
   const financialDomain =
     context.financialDomain ?? detectFinancialDomain(context.source, err.message) ?? undefined;
 
-  Sentry.withScope((scope) => {
+  sentry.withScope((scope) => {
     scope.setTag('error_source', context.source);
     scope.setTag('screen', context.screen ?? runtime.screen);
     scope.setTag('user_action', context.action ?? runtime.action);
@@ -58,7 +59,7 @@ export function captureAppError(
     if (context.extra) {
       scope.setContext('app', context.extra);
     }
-    Sentry.captureException(err);
+    sentry.captureException(err);
   });
 }
 

@@ -1,5 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -26,7 +27,9 @@ const CREDIT_TABS: Array<{ key: CreditTab; label: string }> = [
   { key: 'cards', label: 'Cartões de Crédito' },
 ];
 
-export default function PrecosScreen() {
+export default function CreditosScreen() {
+  const { action } = useLocalSearchParams<{ action?: string }>();
+  const handledAction = useRef(false);
   const [editingCredit, setEditingCredit] = useState<Credit | null>(null);
   const [creditFormVisible, setCreditFormVisible] = useState(false);
   const [newCreditType, setNewCreditType] = useState<CreditType>('personal');
@@ -57,6 +60,14 @@ export default function PrecosScreen() {
     setCreditFormVisible(true);
   }
 
+  useEffect(() => {
+    if (handledAction.current || action !== 'new-credit') return;
+    handledAction.current = true;
+    setEditingCredit(null);
+    setNewCreditType(activeTab === 'cards' ? 'card' : 'personal');
+    setCreditFormVisible(true);
+  }, [action, activeTab]);
+
   return (
     <View style={styles.screen}>
       <AppHeader
@@ -78,7 +89,7 @@ export default function PrecosScreen() {
       {isError ? (
         <View style={styles.centered}>
           <ErrorState
-            context="assets"
+            context="credits"
             error={error}
             onRetry={() => refetch()}
             retryLoading={isRefetching}

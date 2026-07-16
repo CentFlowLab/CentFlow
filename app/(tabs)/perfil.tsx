@@ -33,10 +33,12 @@ export default function PerfilScreen() {
   async function handleActivateFeature(feature: FeatureAreaId) {
     setActivatingFeature(feature);
     try {
-      await activateFeature(feature);
-      showToast('Área activada com sucesso.', 'success');
-    } catch {
-      showToast('Não foi possível activar esta área.', 'error');
+      const ok = await activateFeature(feature);
+      if (ok) {
+        showToast('Área activada com sucesso.', 'success');
+      } else {
+        showToast('Não foi possível activar esta área.', 'error');
+      }
     } finally {
       setActivatingFeature(null);
     }

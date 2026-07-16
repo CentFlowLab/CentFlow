@@ -68,8 +68,8 @@ export default function BankConnectionsScreen() {
 
       if (browserResult.type === 'success' || browserResult.type === 'dismiss') {
         const finalized = await finalizeLink.mutateAsync(result.requisitionId);
-        if (finalized.sync?.imported) {
-          showToast(`${finalized.sync.imported} movimentos importados`, 'success');
+        if (finalized.result.sync?.imported) {
+          showToast(`${finalized.result.sync.imported} movimentos importados`, 'success');
         } else {
           showToast('Conta bancária ligada', 'success');
         }
@@ -95,8 +95,8 @@ export default function BankConnectionsScreen() {
 
       if (browserResult.type === 'success' || browserResult.type === 'dismiss') {
         const finalized = await finalizeLink.mutateAsync(result.requisitionId);
-        if (finalized.sync?.imported) {
-          showToast(`${finalized.sync.imported} movimentos importados`, 'success');
+        if (finalized.result.sync?.imported) {
+          showToast(`${finalized.result.sync.imported} movimentos importados`, 'success');
         } else {
           showToast('Consentimento renovado', 'success');
         }
@@ -114,16 +114,16 @@ export default function BankConnectionsScreen() {
   async function handleSync(connection: BankConnection) {
     setSyncingId(connection.id);
     try {
-      const result = await syncConnection.mutateAsync(connection.id);
-      if (result.ok) {
+      const syncResult = await syncConnection.mutateAsync(connection.id);
+      if (syncResult.result.ok) {
         showToast(
-          result.imported
-            ? `${result.imported} movimentos novos importados`
+          syncResult.result.imported
+            ? `${syncResult.result.imported} movimentos novos importados`
             : 'Sincronização concluída — sem movimentos novos',
           'success',
         );
       } else {
-        showToast(result.error ?? 'Sincronização falhou', 'error');
+        showToast(syncResult.result.error ?? 'Sincronização falhou', 'error');
       }
     } finally {
       setSyncingId(null);

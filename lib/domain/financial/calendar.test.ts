@@ -6,6 +6,7 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 
 import { buildFinancialCalendar } from './calendar';
 import type { FinancialState } from './financial-state.types';
+import { createTestFinancialState } from './test-financial-state.fixture';
 
 const AS_OF = new Date('2026-07-10T12:00:00');
 
@@ -23,14 +24,11 @@ function tx(
 }
 
 function stubState(): FinancialState {
-  return {
+  return createTestFinancialState({
     asOf: AS_OF,
     availableThisMonth: 500,
-    credits: [],
-    subscriptions: { items: [], monthlyTotal: 0, renewingSoon: 0 },
-    budget: { daysRemaining: 20 } as FinancialState['budget'],
-    goalProgress: [],
-  } as FinancialState;
+    budget: { ...createTestFinancialState().budget, daysRemaining: 20 },
+  });
 }
 
 test('buildFinancialCalendar — sem padrão de rendimento assinala receção não confirmada', () => {

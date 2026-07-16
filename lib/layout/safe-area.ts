@@ -1,4 +1,4 @@
-import { spacing } from '@/lib/theme';
+import { spacing } from '@/lib/theme/spacing';
 
 /** Fallback mínimo quando o SO não reporta insets (raro em edge-to-edge). */
 export const ANDROID_MIN_BOTTOM_INSET = 12;

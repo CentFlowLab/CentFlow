@@ -1,67 +1,29 @@
 import { useMemo } from 'react';
 
-import { captureDomainCalculationError } from '@/lib/sentry';
-import { useAssets } from '@/hooks/queries/useAssets';
-import { useGoalContributions } from '@/hooks/queries/useGoalContributions';
-import { useLoanPayments } from '@/hooks/queries/useLoanPayments';
-import { useLiabilities } from '@/hooks/queries/useLiabilities';
-import { useTransactions } from '@/hooks/queries/useTransactions';
-import { useUserPreferences } from '@/hooks/queries/useUserPreferences';
+import { useFinancialEngineSnapshot } from '@/hooks/useFinancialEngineSnapshot';
 import {
-  buildCashflowProjection,
+  CASHFLOW_PROJECTION_HORIZONS,
   type CashflowProjectionHorizon,
   type CashflowProjectionResult,
-} from '@/lib/projections';
+} from '@/lib/domain/financial/cashflow-projection';
+import { selectCashflowProjection } from '@/lib/domain/financial/engine.selectors';
 
 export type UseCashflowProjectionResult = {
   projection: CashflowProjectionResult | null;
   isLoading: boolean;
 };
 
-/** Projeção de cashflow — recalcula quando transações/preferências mudam (TanStack Query). */
+/** Projeção de cashflow — lê snapshot do motor financeiro (passo cashflowProjection). */
 export function useCashflowProjection(
-  horizon: CashflowProjectionHorizon = 30,
+  horizon: CashflowProjectionHorizon = CASHFLOW_PROJECTION_HORIZONS[0],
 ): UseCashflowProjectionResult {
-  const { data: transactions = [], isLoading: txLoading } = useTransactions('all');
-  const { data: assets, isLoading: assetsLoading } = useAssets();
-  const { data: liabilities, isLoading: liabLoading } = useLiabilities();
-  const { data: goalContributions = [], isLoading: goalsLoading } = useGoalContributions();
-  const { data: loanPayments = [], isLoading: loanLoading } = useLoanPayments();
-  const { data: preferences, isLoading: prefsLoading } = useUserPreferences();
-
-  const isLoading =
-    txLoading || assetsLoading || liabLoading || goalsLoading || loanLoading || prefsLoading;
+  const { engineResults, isLoading } = useFinancialEngineSnapshot();
 
   const projection = useMemo(() => {
-    if (isLoading) return null;
+    const cached = selectCashflowProjection(engineResults ?? undefined);
+    if (!cached) return null;
+    return cached.horizon === horizon ? cached : null;
+  }, [engineResults, horizon]);
 
-    try {
-      return buildCashflowProjection({
-        horizon,
-        transactions,
-        subscriptions: liabilities?.subscriptions ?? assets?.subscriptions ?? [],
-        credits: liabilities?.credits ?? assets?.credits ?? [],
-        goalContributions,
-        loanPayments,
-        prioritizeDebtAmortization: preferences?.prioritizeDebtAmortization ?? true,
-      });
-    } catch (error) {
-      captureDomainCalculationError('cashflow_projection', error, { horizon });
-      return null;
-    }
-  }, [
-    assets,
-    goalContributions,
-    horizon,
-    isLoading,
-    liabilities,
-    loanPayments,
-    preferences?.prioritizeDebtAmortization,
-    transactions,
-  ]);
-
-  return {
-    projection,
-    isLoading,
-  };
+  return { projection, isLoading };
 }

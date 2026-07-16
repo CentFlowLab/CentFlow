@@ -33,6 +33,8 @@ export interface Transaction {
   amount: number;
   category: string;
   categoryLabel: string;
+  /** Comerciante (Open Banking ou manual). */
+  merchant?: string | null;
   description?: string;
   date: string;
   currency: string;

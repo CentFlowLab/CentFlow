@@ -17,7 +17,9 @@
 
 import { hashUserIdForSentry, setSentryUserFromHash } from '@/lib/sentry';
 import { isMockAuthEnabled } from '@/lib/auth/mock-auth';
+import { isProductAnalyticsConsented } from '@/lib/privacy/consent.memory';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
+import type { Json } from '@/lib/supabase/database.types';
 
 import { AnalyticsEvents, type AnalyticsEvent, type AnalyticsPayloads } from './events';
 
@@ -72,15 +74,20 @@ export function track<E extends AnalyticsEvent>(
     });
   }
 
-  // Persistência em Supabase (fire-and-forget; falhas silenciosas para não bloquear UX)
-  if (!isMockAuthEnabled() && isSupabaseEnabled() && currentUserId) {
+  // Persistência em Supabase — apenas com consentimento explícito
+  if (
+    !isMockAuthEnabled() &&
+    isSupabaseEnabled() &&
+    currentUserId &&
+    isProductAnalyticsConsented()
+  ) {
     const supabase = getSupabaseClient();
-    void (supabase as { from: (table: string) => { insert: (row: unknown) => Promise<{ error: { message: string } | null }> } })
+    void supabase
       .from('analytics_events')
       .insert({
         user_id: currentUserId,
         event: eventName,
-        properties: (properties ?? {}) as Record<string, unknown>,
+        properties: (properties ?? {}) as Json,
         environment: payload.environment as string,
       })
       .then(({ error }) => {

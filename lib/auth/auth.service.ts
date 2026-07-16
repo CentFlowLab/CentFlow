@@ -5,7 +5,7 @@ import { isRealDataOnlyVariant } from '@/lib/config/app-variant';
 import { isSupabaseEnabled, supabaseAuth } from '@/lib/supabase';
 
 import { AUTH_ENDPOINTS } from './constants';
-import { createMockSession, createMockGoogleSession, isMockAuthEnabled } from './mock-auth';
+import { createMockSession, createMockGoogleSession, createMockAppleSession, isMockAuthEnabled } from './mock-auth';
 import { deleteToken, loadToken, saveToken } from './storage';
 import type {
   AuthSession,
@@ -152,6 +152,22 @@ export async function completeGoogleOAuthCallback(url: string): Promise<AuthSess
   return persistSession(session);
 }
 
+export async function loginWithApple(): Promise<AuthSession> {
+  if (isMockAuthEnabled()) {
+    return persistSession(createMockAppleSession());
+  }
+
+  assertSupabaseAuthBackend();
+
+  if (isSupabaseEnabled()) {
+    return persistSession(await supabaseAuth.signInWithApple());
+  }
+
+  throw new Error(
+    'Login com Apple requer Supabase. Define EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY.',
+  );
+}
+
 export async function getCurrentUser(): Promise<User> {
   if (isMockAuthEnabled()) {
     const token = getAccessToken();
@@ -161,6 +177,15 @@ export async function getCurrentUser(): Promise<User> {
         name: 'Utilizador Google',
         email: 'google.user@gmail.com',
         avatarInitials: 'UG',
+        currency: 'EUR',
+      });
+    }
+    if (token === 'mock-apple-token') {
+      return loadMockProfileOverlay('mock-apple-user-1', {
+        id: 'mock-apple-user-1',
+        name: 'Utilizador Apple',
+        email: 'apple.user@privaterelay.appleid.com',
+        avatarInitials: 'UA',
         currency: 'EUR',
       });
     }

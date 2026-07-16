@@ -23,14 +23,19 @@ export function useFeatureAreas() {
   );
 
   const activateFeature = useCallback(
-    async (feature: FeatureAreaId) => {
-      if (!user?.id || !answers) return;
+    async (feature: FeatureAreaId): Promise<boolean> => {
+      if (!user?.id || !answers) return false;
 
-      const next = withActivatedFeature(answers, feature);
-      await saveOnboardingAnswersForUser(user.id, next);
-      queryClient.setQueryData(queryKeys.onboardingAnswers, next);
+      try {
+        const next = withActivatedFeature(answers, feature);
+        await saveOnboardingAnswersForUser(user.id, next);
+        queryClient.setQueryData(queryKeys.onboardingAnswers, next);
+        return true;
+      } catch {
+        return false;
+      }
     },
-    [answers, queryClient, user?.id],
+    [answers, queryClient, user],
   );
 
   const enabledFeatures =

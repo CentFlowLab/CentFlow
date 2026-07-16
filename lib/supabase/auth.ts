@@ -200,6 +200,56 @@ export async function signInWithGoogle(): Promise<AuthSession | 'web-redirect'> 
   return signInWithGoogleNative();
 }
 
+export async function signInWithAppleNative(): Promise<AuthSession> {
+  if (Platform.OS !== 'ios') {
+    throw new Error('Sign in with Apple só está disponível no iPhone.');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const AppleAuthentication = require('expo-apple-authentication') as typeof import('expo-apple-authentication');
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+
+  if (!credential.identityToken) {
+    throw new Error('Token Apple em falta. Tenta novamente.');
+  }
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'apple',
+    token: credential.identityToken,
+  });
+
+  if (error) throw new Error(error.message);
+  if (!data.session?.access_token || !data.session.user) {
+    throw new Error('Sessão Apple inválida');
+  }
+
+  const metadata = {
+    ...data.session.user.user_metadata,
+    full_name:
+      credential.fullName?.givenName && credential.fullName?.familyName
+        ? `${credential.fullName.givenName} ${credential.fullName.familyName}`.trim()
+        : data.session.user.user_metadata?.full_name,
+  };
+
+  const user = await fetchProfileUser(
+    data.session.user.id,
+    data.session.user.email ?? credential.email ?? '',
+    metadata,
+  );
+
+  return toAuthSession(data.session.access_token, user);
+}
+
+export async function signInWithApple(): Promise<AuthSession> {
+  return signInWithAppleNative();
+}
+
 export async function completeGoogleOAuthFromUrl(url: string): Promise<AuthSession> {
   return createSessionFromOAuthUrl(url);
 }

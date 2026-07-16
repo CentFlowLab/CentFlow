@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 
 import type { AttentionItem, Suggestion } from '@/lib/domain';
+import { appHref } from '@/lib/navigation/href';
 
 export function openAttentionItemRoute(type: AttentionItem['type']): void {
   if (type === 'credit') {
-    router.push('/(tabs)/creditos');
+    router.push(appHref('creditos'));
     return;
   }
   if (type === 'subscription') {

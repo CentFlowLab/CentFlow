@@ -8,6 +8,7 @@ import type { CreditAnalysis } from '@/lib/credit/credit-analysis';
 import type { DetectedSubscription } from '@/lib/subscriptions/detect-subscriptions';
 
 import type { Recommendation } from './recommendations';
+import type { FinancialState } from './financial-state.types';
 import type { CentFlowScoreResult } from './types';
 
 import type { CashflowProjectionResult } from './cashflow-projection';
@@ -33,6 +34,9 @@ export type FinancialRecalcTrigger =
   | { type: 'subscription_deleted'; subscriptionId: string }
   | { type: 'category_budget_updated'; category?: string }
   | { type: 'open_banking_import'; importedCount?: number }
+  | { type: 'account_created'; accountId?: string }
+  | { type: 'account_updated'; accountId?: string }
+  | { type: 'account_deleted'; accountId: string }
   | { type: 'manual_refresh' };
 
 export const FINANCIAL_ENGINE_STEP_ORDER = [
@@ -93,6 +97,8 @@ export type FinancialEngineNetWorthResult = NetWorthResult & {
 };
 
 export type FinancialEngineStepResults = {
+  /** Snapshot canónico — fonte única de verdade para todos os passos derivados. */
+  coreState?: FinancialState;
   liabilities?: FinancialEngineLiabilitiesResult;
   subscriptions?: FinancialEngineSubscriptionsResult;
   creditState?: FinancialEngineCreditStateResult;
@@ -128,6 +134,8 @@ export type FinancialEngineContext = {
   userId: string;
   input: FinancialEngineInput;
   asOf: Date;
+  /** Estado canónico calculado uma vez antes dos passos derivados. */
+  coreState: FinancialState;
   results: FinancialEngineStepResults;
 };
 

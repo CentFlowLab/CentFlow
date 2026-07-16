@@ -10,6 +10,7 @@
     "@supabase/supabase-js": "^2.108.1",
     "@tanstack/react-query": "^5.101.0",
     "expo": "~56.0.11",
+    "expo-apple-authentication": "~56.0.4",
     "expo-application": "~56.0.3",
     "expo-auth-session": "~56.0.14",
     "expo-build-properties": "^56.0.18",
@@ -33,7 +34,6 @@
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.6",
     "expo-updates": "~56.0.19",
-    "expo-video": "~56.1.4",
     "expo-web-browser": "~56.0.5",
     "jpeg-js": "^0.4.4",
     "react": "19.2.3",
@@ -53,6 +53,8 @@
     "@types/node": "^22.19.21",
     "@types/react": "~19.2.2",
     "eas-cli": "^20.1.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~56.0.4",
     "sharp": "^0.34.5",
     "tsx": "^4.20.3",
     "typescript": "~6.0.3"
@@ -67,6 +69,8 @@
     "web": "expo start --web",
     "handoff": "tsx scripts/generate-handoff.ts",
     "test": "tsx --test lib/**/*.test.ts",
+    "test:coverage": "node --experimental-test-coverage --test-coverage-include=lib/domain/financial/** --import tsx --test lib/domain/financial/**/*.test.ts",
+    "lint": "eslint lib/domain/financial/engine.selectors.ts lib/domain/financial/engine.selectors.test.ts lib/domain/financial/account-mutations.integration.test.ts hooks/useFinancialEngineSnapshot.ts lib/navigation/href.ts scripts/handoff-metrics.ts",
     "test:ocr": "tsx scripts/test-ocr-sanitize.ts",
     "supabase:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts",
     "eas:init": "eas init",
@@ -85,7 +89,8 @@
     "eas:update:list": "node scripts/eas-run.cjs update:list",
     "email:login": "npx supabase login",
     "email:setup": "node scripts/setup-resend-email.mjs",
-    "email:deploy": "npx supabase functions deploy send-email email-jobs"
+    "email:deploy": "npx supabase functions deploy send-email email-jobs",
+    "lint:all": "expo lint"
   },
   "private": true
 }

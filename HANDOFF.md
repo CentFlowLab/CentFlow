@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-12T03:15:48.065Z -->
-<!-- Git: 71c01c3 (2026-07-12T04:10:57+01:00) -->
+<!-- Última geração: 2026-07-16T23:04:29.054Z -->
+<!-- Git: 258a73a (2026-07-12T20:58:14+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **Fase 26 — Contas ocultas na UI (saldo global por transações)** |
-| Última geração | 2026-07-12T03:15:48.065Z |
+| Fase atual | **RC2 Device QA — build Android 607cc31c errored; smoke bloqueado até novo APK** |
+| Última geração | 2026-07-16T23:04:29.054Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `71c01c3` (2026-07-12T04:10:57+01:00) |
+| Git commit | `258a73a` (2026-07-12T20:58:14+01:00) |
 
 ---
 
@@ -53,8 +53,8 @@ Património Líq.  = Total Ativos − Total Passivos
 | **Total Ativos** | **25 291,30 €** |
 | Passivos (créditos) | 13 250,00 € |
 | **Património Líquido** | **12 041,30 €** |
-| Mês anterior | 9850,00 € |
-| Variação | +22.3% |
+| Mês anterior | 14 820,00 € |
+| Variação | -18.8% |
 | Gastos esta semana | 342,50 € |
 | Alertas ativos | 5 |
 | Sugestões | 2 |
@@ -85,7 +85,7 @@ Património Líq.  = Total Ativos − Total Passivos
 | Ativos | `app/(tabs)/ativos.tsx` | 🔲 Sub-nav + empty states |
 | Perfil | `app/(tabs)/perfil.tsx` | 🔲 Menu estático |
 
-Ecrãs detetados: `analises`, `ativos`, `index`, `movimentos`, `perfil`, `precos`
+Ecrãs detetados: `analises`, `ativos`, `creditos`, `index`, `movimentos`, `perfil`
 
 ---
 
@@ -135,23 +135,34 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     _layout.tsx
     analises.tsx
     ativos.tsx
+    creditos.tsx
     index.tsx
     movimentos.tsx
     perfil.tsx
-    precos.tsx
   +html.tsx
   +not-found.tsx
   _layout.tsx
+  assistant.tsx
   auth/
     callback.tsx
+  calendar.tsx
   index.tsx
+  legal/
+    _layout.tsx
+    privacy.tsx
+    terms.tsx
   onboarding.tsx
+  open-banking/
+    callback.tsx
   quick-expense.tsx
   reset-password.tsx
   settings/
     _layout.tsx
     appearance.tsx
+    bank-connections.tsx
+    benchmark-consent.tsx
     currency-region.tsx
+    delete-account.tsx
     diagnostics.tsx
     export-data.tsx
     export-pdf.tsx
@@ -163,11 +174,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     security.tsx
     shortcuts.tsx
   accounts/
-    AccountFormModal.tsx
-    AccountListItem.tsx
-    AccountPickerField.tsx
     PaymentMethodPickerField.tsx
-    TransferAccountModal.tsx
     index.ts
   analysis/
     AnalysisDebtTab.tsx
@@ -177,9 +184,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     AnalysisSkeleton.tsx
     AnalysisSpendingTab.tsx
     AnalysisSummaryTab.tsx
+    CashflowProjectionCard.tsx
     InsightsSection.tsx
     PatrimonyAllocationCard.tsx
-    PricesInsightsSection.tsx
+    SpendingBenchmarkCard.tsx
     SpendingCalendarCard.tsx
     SpendingCategoryCard.tsx
     SpendingTrendBars.tsx
@@ -195,15 +203,17 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     StartupErrorScreen.tsx
     StartupShell.tsx
     index.ts
+  assistant/
+    FinancialAssistantScreen.tsx
+    index.ts
   auth/
+    AppleSignInButton.tsx
     AuthLoadingScreen.tsx
     AuthScreenLayout.tsx
     AuthSocialDivider.tsx
     GoogleSignInButton.tsx
     index.ts
   budget/
-    AllocateToGoalCard.tsx
-    CategoryBudgetAlertsCard.tsx
     CategoryBudgetProgressRow.tsx
     EditCategoryBudgetSheet.tsx
     FinancialActionsCard.tsx
@@ -211,16 +221,16 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     MonthlySpendableSheet.tsx
     SavingsMarginBreakdownLines.tsx
     index.ts
+  calendar/
+    CalendarRiskNotificationGate.tsx
+    FinancialCalendarScreen.tsx
+    index.ts
   charts/
     DonutChart.tsx
     index.ts
   dashboard/
     ActionCenterSheet.tsx
     AttentionCard.tsx
-    CentFlowScoreCard.tsx
-    CentFlowScoreSheet.tsx
-    DashboardFinancialSnapshot.tsx
-    DashboardGreeting.tsx
     DashboardHeaderLeading.tsx
     DashboardSkeleton.tsx
     DemoModeBadge.tsx
@@ -228,18 +238,14 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     HomeAssetsSummaryCard.tsx
     HomeAssistantCard.tsx
     HomeAttentionSheet.tsx
-    HomeChangesSheet.tsx
-    HomeGoalHighlightCard.tsx
     HomePersonalizedInsightCard.tsx
     HomePostOnboardingWelcomeCard.tsx
-    HomeQuickActions.tsx
-    MetricCard.tsx
-    NetWorthHeroCard.tsx
+    RecommendationCard.tsx
+    RecommendationsCard.tsx
+    RecommendationsSheet.tsx
     SuggestionCard.tsx
     index.ts
   diagnostics/
-    DiagnosticLogPanel.tsx
-    DiagnosticOverlay.tsx
     DiagnosticsBootstrap.tsx
     DoctorOperationCard.tsx
     DoctorSections.tsx
@@ -248,7 +254,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     FeatureAreaGate.tsx
     index.ts
   icons/
-    AnalysisIconMark.tsx
     TabIcon.tsx
   layout/
     AppHeader.tsx
@@ -261,17 +266,18 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     TabBarAnalisesIcon.tsx
     UserAvatarButton.tsx
     index.ts
+  legal/
+    LegalDocumentScreen.tsx
+    LegalLinksFooter.tsx
   movements/
     AddTransactionModal.tsx
     CategoryField.tsx
     ConfirmReceiptModal.tsx
     EditCategorySheet.tsx
     EditTransactionModal.tsx
-    ImportCsvModal.tsx
     MovementFilterChips.tsx
+    MovementMonthSummaryCard.tsx
     MovementSearchBar.tsx
-    OcrDetectionSummary.tsx
-    OcrResultCard.tsx
     PendingSubscriptionModal.tsx
     QuickExpenseSheet.tsx
     ReceiptAttachmentField.tsx
@@ -284,8 +290,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     ReceiptPreview.tsx
     RefundTransactionModal.tsx
     SwipeableTransactionListItem.tsx
+    TransactionContextMenuSheet.tsx
     TransactionForm.tsx
-    TransactionListItem.tsx
     TransactionsSkeleton.tsx
     index.ts
     movements.config.ts
@@ -295,19 +301,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       OcrFieldsChecklist.tsx
       index.ts
   onboarding/
-    AnimatedAssistantMessage.tsx
     BackTapGuide.tsx
     BackTapGuideGate.tsx
-    FeatureAreaCard.tsx
     OnboardingGateEffect.tsx
     OnboardingIllustration.tsx
-    OnboardingPlanLoading.tsx
     OnboardingProgressBar.tsx
     OnboardingShell.tsx
-    OnboardingStepHeader.tsx
-    OnboardingValueCard.tsx
-    SelectableCard.tsx
-    ValuePromiseSection.tsx
     index.ts
     premium/
       BigAmountInput.tsx
@@ -316,6 +315,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       WheelPicker.tsx
       index.ts
       primitives.tsx
+  open-banking/
+    OpenBankingSyncNotificationGate.tsx
+    index.ts
+  privacy/
+    PrivacyConsentGate.tsx
+    PrivacyConsentModal.tsx
   profile/
     FinancialProfileDetailSheet.tsx
     FinancialProfileDimensionRow.tsx
@@ -326,15 +331,14 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   security/
     PasswordStrengthMeter.tsx
   settings/
-    ChangePasswordModal.tsx
-    SettingsOptionGroup.tsx
     SettingsScreenLayout.tsx
+    SettingsThresholdSlider.tsx
     SettingsToggleRow.tsx
     index.ts
   simulator/
+    DecisionImpactModal.tsx
     DecisionSimulatorHost.tsx
     DecisionSimulatorModal.tsx
-    DecisionSimulatorSection.tsx
     index.ts
   ui/
     BottomActionSheet.tsx
@@ -346,7 +350,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     ErrorState.tsx
     FormSheetFooter.tsx
     LoadingSpinner.tsx
-    QueryScreenState.tsx
+    RefetchingIndicator.tsx
     ScreenContainer.tsx
     SearchableSelect.tsx
     SectionHeader.tsx
@@ -357,12 +361,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     index.ts
     skeletons/
       AssetsSkeleton.tsx
-      PricesSkeleton.tsx
       ProfileSkeleton.tsx
-  useClientOnlyValue.ts
-  useClientOnlyValue.web.ts
-  useColorScheme.ts
-  useColorScheme.web.ts
   version/
     ForceUpdateScreen.tsx
   mutations/
@@ -372,6 +371,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useActiveSessions.ts
     useAnalysisData.ts
     useAssets.ts
+    useBankConnections.ts
     useCategoryBudgets.ts
     useDashboard.ts
     useDashboardData.ts
@@ -383,20 +383,24 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useLoanPayments.ts
     useMarkSubscriptionPaid.ts
     useMarkSubscriptionReviewed.ts
-    useNetWorth.ts
     useOnboardingAnswers.ts
     usePatrimonyAllocation.ts
-    usePricesData.ts
     useProfile.ts
     useTransactions.ts
     useUserPreferences.ts
+  useCashflowProjection.ts
   useCentFlowIntelligence.ts
   useContextualQuickAdd.ts
   useCustomCategories.ts
   useDiagnosticScreen.ts
   useFeatureAreas.ts
   useFinancialActions.ts
+  useFinancialAssistantChat.ts
+  useFinancialCalendar.ts
+  useFinancialEngineSnapshot.ts
+  useFinancialRecommendations.ts
   useFinancialState.ts
+  useFinancialState.types.ts
   useFormDismiss.ts
   useImportCsv.ts
   useKeyboardVisible.ts
@@ -412,6 +416,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useSubscriptionDetection.ts
   useTabBarBottomInset.ts
   useTabBarMetrics.ts
+  account/
+    delete-account.constants.ts
+    delete-account.service.ts
+    delete-account.test.ts
   accounts/
     balance.test.ts
     balance.ts
@@ -447,7 +455,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       financial-profile.service.ts
       home.service.ts
       liabilities-fetch.ts
-      prices.service.ts
       profile.service.ts
       receipt-items.service.ts
       receipt.service.ts
@@ -460,6 +467,9 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   app/
     intro-session.ts
   auth/
+    apple-sign-in.platform.ts
+    apple-sign-in.test.ts
+    apple-sign-in.ts
     auth.context.tsx
     auth.service.ts
     constants.ts
@@ -474,6 +484,15 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     supabase-oauth.config.ts
     types.ts
     useAuth.ts
+  benchmarks/
+    benchmarks.test.ts
+    compare-spending-benchmark.ts
+    config.ts
+    income-buckets.ts
+    resolve-user-income-bucket.ts
+    spending-benchmarks.service.ts
+    types.ts
+    useSpendingBenchmarkComparisons.ts
   budget/
     calculateMonthlySpendable.test.ts
     calculateMonthlySpendable.ts
@@ -549,20 +568,29 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     dashboard.compose.ts
     date-input.schema.ts
     financial/
+      account-mutations.integration.test.ts
       accounts.test.ts
       accounts.ts
       action-engine.test.ts
       action-engine.ts
       analytics.ts
       assets.ts
+      assistant-chat.client.ts
+      assistant-chat.test.ts
+      assistant-chat.ts
       assistant.ts
       budget-accounts.test.ts
       budget-accounts.ts
       budget.ts
+      calendar.test.ts
       calendar.ts
+      cashflow-projection.test.ts
+      cashflow-projection.ts
       cashflow.ts
       category-budgets.test.ts
       category-budgets.ts
+      category-spend-anomaly.test.ts
+      category-spend-anomaly.ts
       centflow-score.ts
       credit-cards.test.ts
       credit-cards.ts
@@ -574,7 +602,23 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       debt-amortization-action.ts
       debt-priority.test.ts
       debt-priority.ts
+      decision-simulator.test.ts
+      decision-simulator.ts
       domain-types.ts
+      engine-mutation-flows.test.ts
+      engine-parity.test.ts
+      engine-performance.test.ts
+      engine.contract.ts
+      engine.core.ts
+      engine.gather.ts
+      engine.integration.test.ts
+      engine.invalidation.ts
+      engine.runner.ts
+      engine.selectors.test.ts
+      engine.selectors.ts
+      engine.steps.ts
+      engine.ts
+      engine.types.ts
       events.ts
       explain.ts
       financial-doctor.ts
@@ -585,6 +629,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       goals-contribution-validation.test.ts
       goals.test.ts
       goals.ts
+      habits.test.ts
+      habits.ts
       index.ts
       insights.ts
       investments.ts
@@ -605,6 +651,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       netWorth.ts
       opportunities.ts
       projections.ts
+      recommendations.test.ts
+      recommendations.ts
       savings-allocation.test.ts
       savings-allocation.ts
       savings-margin.test.ts
@@ -618,12 +666,14 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       simulator.ts
       simulator.types.ts
       spending-calendar.ts
+      stabilization-matrix.test.ts
       subscription-payments.test.ts
       subscription-payments.ts
       subscription-review.ts
       subscriptions.ts
       suggestions.test.ts
       suggestions.ts
+      test-financial-state.fixture.ts
       transaction-kind.ts
       transactions.test.ts
       transactions.ts
@@ -660,6 +710,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     transaction.schema.ts
     transaction.types.ts
     types.ts
+    warranty.constants.ts
     warranty.utils.ts
   email/
     addresses.ts
@@ -689,11 +740,19 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     safe-area.ts
     tab-bar-metrics.test.ts
     tab-bar-metrics.ts
+  legal/
+    constants.ts
+    privacy-policy.content.ts
+    terms.content.ts
+    types.ts
   liabilities/
     liabilities.service.ts
   lists/
     flatten-transaction-sections.test.ts
     flatten-transaction-sections.ts
+  merchant/
+    fuzzy-match.test.ts
+    fuzzy-match.ts
   migrations/
     index.ts
     migrationRunner.ts
@@ -702,7 +761,17 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     settingsMigrations.ts
   navigation/
     dashboard-routes.ts
+    href.ts
     quick-add-context.ts
+  notifications/
+    __tests__/
+      open-banking-sync-alert.test.ts
+    calendar-risk-alert.service.ts
+    calendar-risk-notification.storage.ts
+    category-spend-alert.service.ts
+    local-notifications.ts
+    open-banking-sync-alert.service.ts
+    open-banking-sync-messages.ts
   onboarding/
     answers.service.ts
     assistance.test.ts
@@ -726,6 +795,10 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     types.ts
     welcome-priority.ts
     welcome.ts
+  open-banking/
+    gocardless.service.ts
+    index.ts
+    types.ts
   preferences/
     PreferencesProvider.tsx
     config.ts
@@ -734,6 +807,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     preferences.service.ts
     storage.ts
     types.ts
+  privacy/
+    consent.memory.ts
+    consent.storage.ts
+    consent.test.ts
+    consent.types.ts
+  projections.ts
   quick-expense/
     __tests__/
       handle-quick-expense-link.test.ts
@@ -755,6 +834,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     appIntegrity.ts
     biometricLock.ts
     index.ts
+    open-banking-store.ts
     openBankingPrep.ts
     passwordPolicy.test.ts
     passwordPolicy.ts
@@ -762,15 +842,27 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     securityLogger.ts
     sessionSecurity.ts
     versionGuard.ts
+  sentry/
+    bootstrap.ts
+    capture.ts
+    index.ts
+    init.ts
+    privacy.ts
+    runtime.ts
+    sentry.test.ts
+    tags.ts
   simulator/
     simulator-bridge.ts
   storage/
+    ignored-habits.storage.ts
     liabilities-storage.ts
     local-flags.ts
     pending-subscriptions.storage.ts
+    recommendation-fired.storage.ts
     secure-store-key.ts
   subscriptions/
     cancel-url-map.ts
+    detect-recurring-income.ts
     detect-subscriptions.test.ts
     detect-subscriptions.ts
     renewal.constants.ts
@@ -786,6 +878,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     client.ts
     config.ts
     database.types.ts
+    financial-assistant.ts
     goal-contributions.ts
     index.ts
     liabilities.ts
@@ -833,13 +926,14 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   widgets/
     widget-data.ts
   generate-handoff.ts
+  handoff-metrics.ts
   handoff.config.json
   test-ocr-sanitize.ts
 ```
 
 ---
 
-## Fase atual: Fase 26 — Contas ocultas na UI (saldo global por transações)
+## Fase atual: RC2 Device QA — build Android 607cc31c errored; smoke bloqueado até novo APK
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -996,20 +1090,97 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Motor poupança Fase A (6) — subscrições revista/cancel URL, action-engine (FinancialActionsCard Home + Análises, SubscriptionsSection)
 - Motor poupança Fase B — margem real (mediana variável + projeção + tecto 90%), amortização dívida prioritária, toggle Definições
 - Contas ocultas na UI — ACCOUNTS_FEATURE_ENABLED=false, saldo global (sumGlobalCashBalance), formulários sem picker de conta, tab Contas removida de Ativos
+- Skins de tema — 4 paletas (Classic, Midnight Indigo, Warm Graphite, Deep Emerald), tokens em lib/theme, ThemeProvider + useTheme/useThemedStyles, persistência Supabase (theme_id) + SecureStore, seletor visual em Definições → Aparência
+- Projeção cashflow 30/60/90d — buildCashflowProjection (mediana variável + recorrências + dívida), gráfico na tab Resumo das Análises, recálculo via TanStack Query
+- Open Banking GoCardless — Edge Function gocardless (OAuth/consent + sync), fuzzy merchant matching, source open_banking, ecrã Definições → Ligações bancárias
+- Alertas gasto acima da mediana — calculateCategorySpendMedian (motor poupança), notificação local expo-notifications, toggle + slider limiar em Definições, hook pós-criação e sync Open Banking
+- UX Movimentos — sticky headers por dia, chips com ícones/contagens, menu long-press (duplicar/categoria/recorrente), card resumo mensal vs mês anterior, cor de categoria nos ícones
+- Sentry — @sentry/react-native, Sentry.wrap no root, bridge logAppError, redacção financeira, tags financial_domain
+- Pipeline auto-fix — .github/workflows/auto-fix-errors.yml (Claude Code → PR, rate limit 5/dia, sem merge)
+- Docs sentry-auto-fix-pipeline.md — setup Sentry↔GitHub, labels, salvaguardas
+- Motor Financeiro — lib/domain/financial/engine.ts (recalculateFinancialState, 9 passos isolados, falha não bloqueia)
+- Motor Financeiro — scheduleFinancialRecalculation em background (mutations transações, objetivos, créditos, subscrições, orçamentos categoria)
+- Motor Financeiro — testes integração (ordem, falha isolada, resultados derivados) + README mapa de dependências
+- Recomendações determinísticas — generateRecommendations com 4 regras auditáveis (dívida vs investimento, excedente, categoria, emergência)
+- Recomendações — passo recommendations no motor financeiro + toggles em Definições + card na Home (máx. 3, ver todas)
+- Simulador de decisões — simulateDecision() com projeção cashflow 30d, margem real (não saldo bruto), impacto em objetivos
+- Simulador de decisões — DecisionImpactModal (Antes vs Depois) em Novo movimento e contribuição a objetivos; só persiste ao confirmar
+- Calendário de caixa — buildFinancialCalendar cruza vencimentos, recorrências e rendimento com saldo projetado (cashflow)
+- Calendário de caixa — ecrã /calendar com grelha mensal (neutro/atenção/risco), detalhe por dia e notificação única a 7 dias
+- Assistente conversacional — Edge Function financial-assistant (classificação + formatação Anthropic, números do motor)
+- Assistente conversacional — executeAssistantQuery + simulateDecision no client, histórico Supabase, ecrã /assistant
+- Open Banking automático — cron GitHub Actions 6h, sync_all com throttle GoCardless, dedupe external_id, motor financeiro pós-import
+- Open Banking automático — push resumo importações + baixa confiança, aviso consentimento 7 dias, dashboard sync por conta
+- Padrões de gasto habituais — detectSpendingHabits (dia da semana + merchant), insight neutro nas recomendações (prioridade baixa), ignorar falso positivo
+- Benchmarks agregados — tabela spending_benchmarks, Edge Function + cron semanal, opt-in explícito, UI Análises inactiva até escala
+- Financial Engine Unification — runCoreFinancialState como única fonte; v2 passos derivam coreState; paridade + mutation tests; 421/421 npm test
+- Financial Engine Unification — docs/financial-engine-audit.md, docs/financial-engine-unification.md, FINANCIAL_ENGINE_UNIFICATION_REPORT.md
+- Financial Engine Unification — fix movimentos futuros em saldos de conta; objetivos PL só com contribuições; home/dashboard passam accounts
+- Financial Engine Unification — fix 5 testes Node (safe-area, financial-movement); fix useLoanPayments import engine.runner
+- Compliance RC — Política de Privacidade in-app (/legal/privacy) + docs/legal/privacy-policy.md v1.0.0
+- Compliance RC — Termos de Utilização in-app (/legal/terms) + docs/legal/terms.md v1.0.0
+- Compliance RC — Eliminar conta (UI settings/delete-account + RPC delete_own_account + limpeza SecureStore/cache)
+- Compliance RC — Sign in with Apple (iOS, expo-apple-authentication + Supabase signInWithIdToken)
+- Compliance RC — Consentimento analytics/crash (PrivacyConsentGate + toggles em Privacidade)
+- Compliance RC — Links legais (login, registo, definições) + metadata loja docs/store/
+- Compliance RC — RECORD_AUDIO removido de app.json Android permissions
+- RC1 Device Validation — docs/device-test-matrix.md (matriz 8 dispositivos)
+- RC1 Device Validation — docs/smoke-test-checklist.md (50+ smoke tests P0/P1/P2)
+- RC1 Device Validation — docs/crash-matrix.md (riscos crash por fluxo)
+- RC1 Device Validation — REAL_DEVICE_VALIDATION_PLAN.md (plano mestre campanha)
+- RC1 Device Validation — RC1_RELEASE_GATE.md (porta TestFlight/Play)
+- RC2 Build Readiness — docs/build-audit.md (auditoria EAS/Expo/plugins)
+- RC2 Build Readiness — BUILD_RELEASE_AUDIT.md (scores + recomendação build)
+- RC2 Build Readiness — RC2_BUILD_CHECKLIST.md (PASS/FAIL/PENDENTE)
+- RC2 Native Build — expo-video removido (zero imports; ADR-006 obsoleto)
+- RC2 Native Build — blockedPermissions RECORD_AUDIO em app.json (manifest final sem microfone)
+- RC2 Native Build — preflight verde (npm ci, 487/487, tsc 0, assets, handoff)
+- RC2 Native Build — docs/supabase-external-checklist.md + smoke-p0-execution.md
+- RC2 Native Build — RC2_NATIVE_BUILD_REPORT.md
+- RC2 Native Build — Build Android 607cc31c ERRORED (sem APK; causa: lockfile npm 10)
+- RC2 Native Build — Fix lockfile npm@10.9.4 (typescript@5.9.3); validação local verde
+- RC2 Native Build — docs/android-build-607cc31c-failure.md (causa-raiz documentada)
+- RC2 Native Build — Build Android eb472165 FINISHED (APK RC2 canónico)
+- iOS RC2 — auditoria + preflight; IPA bloqueado (sem Apple Team no EAS)
+- iOS RC2 — IOS_RC2_BUILD_REPORT.md criado
 
 ### 🔲 Pendente
+- Financial Engine — migrar useCashflowProjection e useCategoryBudgetStatus para cache coreState
+- Financial Engine — scheduleFinancialRecalculation em mutações de contas
+- Financial Engine — expandir ESLint além do scope mínimo actual (dívida técnica lint global)
+- Benchmarks — aplicar migration 20240715100000, deploy Edge Function spending-benchmarks, activar UI com EXPO_PUBLIC_SPENDING_BENCHMARKS_UI=true quando ≥30 opt-in por bucket
+- Open Banking — aplicar migrations 20240713000000 + 20240714100000, secrets GOCARDLESS_* no Supabase, redirect centflow://open-banking/callback, deploy Edge Function gocardless
+- Migration category_spend_alerts — aplicar 20240713110000 no Supabase remoto
+- Migration assistant_conversations — aplicar 20240713120000 + deploy Edge Function financial-assistant + secret ANTHROPIC_API_KEY
+- Sentry — configurar EXPO_PUBLIC_SENTRY_DSN + SENTRY_ORG/PROJECT no EAS para plugin nativo
+- Sentry dashboard — integração GitHub + regras de alerta (auto-detected-error vs requires-manual-review)
+- GitHub secret ANTHROPIC_API_KEY para workflow auto-fix-errors.yml
+- Branch protection main — exigir 1 aprovação humana (ver docs/sentry-auto-fix-pipeline.md)
+- Migrar ecrãs restantes para useThemedStyles (StyleSheets estáticos com colors.* ainda congelam no primeiro tema)
 - OCR: definir GOOGLE_VISION_API_KEY nos secrets + deploy process-receipt (CONFIRMADO em falta — causa do erro non-2xx)
-- Activar Google Provider no Supabase Dashboard (BUG 3 — código pronto, falta config + redirect centflow://auth/callback)
+- Activar Google Provider no Supabase Dashboard (código pronto; redirect centflow://auth/callback)
 - Testar envio real Resend no Doctor (modo sandbox → só envia para a conta Resend)
 - EMAIL_CRON_SECRET no GitHub Secrets (workflow email-jobs-cron)
 - Produção email — verificar mail.centflow.app no Resend + EMAIL_MODE=production
 - Integrar ocr_preprocess.py no serviço api.centflow.app (repo backend separado)
 - Edição linha a linha de itens do talão
 - Ativos — CRUD objetivos, garantias, inventário
-- Onboarding IPA nativo — expo-haptics (háptica), expo-blur (glass), expo-apple-authentication (Apple Sign In no login): instalar + novo IPA (não entram por OTA)
+- Compliance RC — Revisão jurídica externa dos textos legais + URL pública https://centflow.app/privacy (ou equivalente)
 - Onboarding — ligar savingsGoal/savingsMonths a um objetivo real (criar Goal) e monthlyIncome ao orçamento mensal
-- OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou do módulo nativo expo-ocr-kit (não presente no IPA unsigned) — sem isso, cai em preenchimento manual
+- OCR de imagens fotografadas depende de GOOGLE_VISION_API_KEY (cloud) ou expo-ocr-kit on-device
 - Copiar URL do guia Back Tap usa Share (OTA-safe); 'Copiado ✓' com clipboard nativo requer expo-clipboard num novo IPA
+- RC2 Native Build — Build 7dc46d04 OBSOLETO — não testar (pré expo-video)
+- RC2 Device QA — Smoke P0 Android iniciado (eb472165; 20/20 BLOCKED aguarda instalação)
+- RC2 Native Build — Smoke P0 Android (20 testes) após instalação confirmada
+- iOS RC2 — Ligar Apple Team ao EAS (`npx eas credentials -p ios`) sem revogar certificados
+- iOS RC2 — Registar UDID iPhone (`npx eas device:create`) + regenerar Ad Hoc se necessário
+- iOS RC2 — Confirmar App ID + Sign in with Apple (PENDENTE APPLE DEVELOPER)
+- iOS RC2 — Após credenciais: EAS_NO_VCS=1 npm run eas:build:beta:ios
+- RC2 Native Build — iOS beta BLOQUEADO: eas credentials -p ios interactivo + UDIDs registados
+- RC2 Native Build — Supabase Dashboard: Google + Apple providers, redirect URLs, SHA-1 Android
+- RC2 Native Build — Smoke P0 em ≥1 Android + ≥1 iPhone físico
+- RC2 Native Build — Para TestFlight: perfil production + eas submit (beta é internal only)
+- RC2 Native Build — Para Play Closed: AAB production + service account (beta é APK only)
 
 ---
 

@@ -1,3 +1,4 @@
+import { appHref } from '@/lib/navigation/href';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -34,7 +35,7 @@ export default function OpenBankingCallbackScreen() {
 
     void finalize
       .mutateAsync(requisitionId)
-      .then((result) => {
+      .then(({ result }) => {
         if (result.sync?.imported) {
           showToast(`${result.sync.imported} movimentos importados`, 'success');
         } else if (result.syncError) {
@@ -42,7 +43,7 @@ export default function OpenBankingCallbackScreen() {
         } else {
           showToast('Conta bancária ligada', 'success');
         }
-        router.replace('/settings/bank-connections');
+        router.replace(appHref('bankConnections'));
       })
       .catch((callbackError) => {
         setError(callbackError instanceof Error ? callbackError.message : 'Falha no callback');
@@ -57,7 +58,7 @@ export default function OpenBankingCallbackScreen() {
           <Text variant="body" color="textSecondary">
             {error}
           </Text>
-          <Button label="Ir às ligações" onPress={() => router.replace('/settings/bank-connections')} />
+          <Button label="Ir às ligações" onPress={() => router.replace(appHref('bankConnections'))} />
         </Card>
       </View>
     );

@@ -37,6 +37,7 @@ import {
   type HomeSectionId,
 } from '@/lib/onboarding/personalization';
 import { mergeHomeSuggestions } from '@/lib/onboarding/suggestions-bridge';
+import { appHref } from '@/lib/navigation/href';
 import { colors, spacing } from '@/lib/theme';
 
 export default function InicioScreen() {
@@ -78,7 +79,7 @@ export default function InicioScreen() {
       onReceipt: openReceiptScanner,
       onAsset: () => router.push('/(tabs)/ativos?action=new-asset'),
       onGoal: () => router.push('/(tabs)/ativos?action=new-goal'),
-      onCredit: () => router.push('/(tabs)/creditos?action=new-credit'),
+      onCredit: () => router.push(appHref('creditosNew')),
     },
     onboardingAnswers,
   );

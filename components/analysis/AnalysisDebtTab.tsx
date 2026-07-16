@@ -3,13 +3,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { PayCreditCardModal } from '@/components/assets/PayCreditCardModal';
 import { Button, Card, Text } from '@/components/ui';
-import { useLiabilities } from '@/hooks/queries/useLiabilities';
-import { isCardCredit } from '@/lib/credit/credit-type.utils';
+import { useFinancialEngineSnapshot } from '@/hooks/useFinancialEngineSnapshot';
 import {
-  calculateCreditCardBalance,
-  calculateCreditUtilization,
-} from '@/lib/domain/financial/credit-cards';
-import { sumCreditLiabilities } from '@/lib/domain/financial/liabilities';
+  selectCreditCardDebts,
+  selectDebtSummary,
+  selectLoanDebts,
+} from '@/lib/domain/financial/engine.selectors';
 import type { Credit } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
@@ -17,13 +16,31 @@ import { formatCurrency, formatPercent } from '@/lib/utils/format';
 import { AnalysisExpandableSection } from './AnalysisExpandableSection';
 
 export function AnalysisDebtTab() {
-  const { data } = useLiabilities();
+  const { coreState, isLoading } = useFinancialEngineSnapshot();
   const [payCredit, setPayCredit] = useState<Credit | null>(null);
 
-  const credits = data?.credits ?? [];
-  const cards = useMemo(() => credits.filter((c) => isCardCredit(c.creditType)), [credits]);
-  const loans = useMemo(() => credits.filter((c) => !isCardCredit(c.creditType)), [credits]);
-  const totalDebt = sumCreditLiabilities(credits);
+  const debtSummary = useMemo(
+    () => (coreState ? selectDebtSummary(coreState) : null),
+    [coreState],
+  );
+  const cards = useMemo(
+    () => (coreState ? selectCreditCardDebts(coreState) : []),
+    [coreState],
+  );
+  const loans = useMemo(
+    () => (coreState ? selectLoanDebts(coreState) : []),
+    [coreState],
+  );
+
+  if (isLoading || !debtSummary) {
+    return (
+      <View style={styles.container}>
+        <Text variant="body" color="textSecondary">
+          A carregar dívida...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -31,10 +48,10 @@ export function AnalysisDebtTab() {
         <Text variant="caption" color="textMuted">
           Dívida total
         </Text>
-        <Text variant="h2">{formatCurrency(totalDebt)}</Text>
+        <Text variant="h2">{formatCurrency(debtSummary.totalDebt)}</Text>
         <Text variant="caption" color="textSecondary">
-          {cards.length} cartão{cards.length === 1 ? '' : 'ões'} · {loans.length} crédito
-          {loans.length === 1 ? '' : 's'}
+          {debtSummary.cardCount} cartão{debtSummary.cardCount === 1 ? '' : 'ões'} ·{' '}
+          {debtSummary.loanCount} crédito{debtSummary.loanCount === 1 ? '' : 's'}
         </Text>
       </Card>
 
@@ -45,16 +62,15 @@ export function AnalysisDebtTab() {
           </Text>
         ) : (
           cards.map((card) => (
-            <Card key={card.id} variant="outlined" style={styles.debtItem}>
+            <Card key={card.creditId} variant="outlined" style={styles.debtItem}>
               <View style={styles.debtRow}>
                 <Text variant="bodyMedium">{card.name}</Text>
-                <Text variant="bodyMedium">{formatCurrency(calculateCreditCardBalance(card))}</Text>
+                <Text variant="bodyMedium">{formatCurrency(card.debt)}</Text>
               </View>
-              {card.originalAmount ? (
+              {card.limit != null ? (
                 <Text variant="caption" color="textMuted">
-                  Utilização{' '}
-                  {formatPercent(calculateCreditUtilization(card) ?? 0, 0, false)} · Limite{' '}
-                  {formatCurrency(card.originalAmount)}
+                  Utilização {formatPercent(card.utilizationPercent ?? 0, 0, false)} · Limite{' '}
+                  {formatCurrency(card.limit)}
                 </Text>
               ) : null}
               {card.nextPaymentDate ? (
@@ -69,7 +85,11 @@ export function AnalysisDebtTab() {
                 label="Pagar cartão"
                 variant="secondary"
                 size="sm"
-                onPress={() => setPayCredit(card)}
+                onPress={() =>
+                  setPayCredit(
+                    coreState?.credits.find((c) => c.id === card.creditId) ?? null,
+                  )
+                }
                 style={styles.payButton}
               />
             </Card>
@@ -84,7 +104,7 @@ export function AnalysisDebtTab() {
           </Text>
         ) : (
           loans.map((loan) => (
-            <Card key={loan.id} variant="outlined" style={styles.debtItem}>
+            <Card key={loan.creditId} variant="outlined" style={styles.debtItem}>
               <View style={styles.debtRow}>
                 <Text variant="bodyMedium">{loan.name}</Text>
                 <Text variant="bodyMedium">{formatCurrency(loan.outstandingBalance)}</Text>

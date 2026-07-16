@@ -7,7 +7,12 @@ import type { Credit } from '@/lib/domain/types';
 import type { Transaction } from '@/lib/domain/transaction.types';
 
 import { calculateFinancialState } from './financial-state';
-import { simulateFinancialDecision } from './simulator';
+import {
+  buildScenarioFromSuggestionId,
+  creditUtilizationAfterPayment,
+  simulateFinancialDecision,
+} from './simulator';
+import { createTestFinancialState } from './test-financial-state.fixture';
 
 const AS_OF = new Date('2026-06-15T12:00:00');
 
@@ -266,4 +271,386 @@ test('10. todas as simulações têm before/after', () => {
   assert.ok(result.after);
   assert.ok(result.impact.length > 0);
   assert.ok(result.recommendation.length > 0);
+});
+
+test('11. valor zero em amortização lança erro — decisão impossível', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 1000, budgetEnabled: true })],
+    credits: [{ id: 'l1', name: 'Crédito', outstandingBalance: 5000, creditType: 'personal' }],
+  });
+  assert.throws(
+    () =>
+      simulateFinancialDecision({
+        financialState: state,
+        scenario: { type: 'amortize_credit', creditId: 'l1', accountId: 'a1', amount: 0 },
+      }),
+    /Valor inválido/,
+  );
+});
+
+test('12. saldo insuficiente em contribuição objetivo', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 50, budgetEnabled: true })],
+    goals: [{ id: 'g1', name: 'Meta', target: 1000, current: 0 }],
+  });
+  assert.throws(
+    () =>
+      simulateFinancialDecision({
+        financialState: state,
+        scenario: { type: 'contribute_goal', goalId: 'g1', accountId: 'a1', amount: 200 },
+      }),
+    /Saldo insuficiente/,
+  );
+});
+
+test('13. pagamento cartão em crédito não-cartão lança erro', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 1000, budgetEnabled: true })],
+    credits: [{ id: 'l1', name: 'Empréstimo', outstandingBalance: 3000, creditType: 'personal' }],
+  });
+  assert.throws(
+    () =>
+      simulateFinancialDecision({
+        financialState: state,
+        scenario: { type: 'pay_credit_card', creditId: 'l1', accountId: 'a1', amount: 100 },
+      }),
+    /não é cartão/,
+  );
+});
+
+test('14. orçamento negativo gera warning NEGATIVE_BUDGET', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 100, budgetEnabled: true })],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'increase_monthly_savings', amount: 500 },
+  });
+  assert.ok(result.warnings.some((w) => w.code === 'NEGATIVE_BUDGET'));
+  assert.match(result.recommendation, /negativo|adia/i);
+});
+
+test('15. amortização com pouca liquidez — warning LOW_LIQUIDITY', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 250, budgetEnabled: true })],
+    credits: [
+      {
+        id: 'l1',
+        name: 'Crédito',
+        outstandingBalance: 5000,
+        creditType: 'personal',
+        monthlyPayment: 200,
+        interestRateAnnual: 10,
+      },
+    ],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'amortize_credit', creditId: 'l1', accountId: 'a1', amount: 100 },
+  });
+  assert.ok(result.warnings.some((w) => w.code === 'LOW_LIQUIDITY'));
+  assert.ok(result.explanation.benefits.some((b) => b.includes('Juros futuros')));
+});
+
+test('16. cancelamento subscrição anual — summary com valor mensalizado', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 800, budgetEnabled: true })],
+    subscriptions: [{ id: 's1', name: 'Office 365', amount: 120, billingInterval: 'annual' }],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'cancel_subscription', subscriptionId: 's1' },
+  });
+  assert.match(result.explanation.summary, /Office 365/);
+  assert.match(result.explanation.summary, /ano/i);
+});
+
+test('17. redução categoria com reductionAmount zero lança erro', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 1000, budgetEnabled: true })],
+  });
+  assert.throws(
+    () =>
+      simulateFinancialDecision({
+        financialState: state,
+        scenario: { type: 'reduce_category_spending', categoryKey: 'food', reductionAmount: 0 },
+        categorySpending: { food: 100 },
+      }),
+    /Redução inválida/,
+  );
+});
+
+test('18. simulação determinística — mesmo input produz mesmo output', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 2000, budgetEnabled: true })],
+    credits: [{ id: 'l1', name: 'Crédito', outstandingBalance: 1000, creditType: 'personal' }],
+  });
+  const input = {
+    financialState: state,
+    scenario: { type: 'amortize_credit' as const, creditId: 'l1', accountId: 'a1', amount: 200 },
+  };
+  const a = simulateFinancialDecision(input);
+  const b = simulateFinancialDecision(input);
+  assert.deepEqual(a.after, b.after);
+  assert.deepEqual(a.before, b.before);
+  assert.equal(state.netWorth.netWorth, baseState({
+    accounts: [account({ id: 'a1', initialBalance: 2000, budgetEnabled: true })],
+    credits: [{ id: 'l1', name: 'Crédito', outstandingBalance: 1000, creditType: 'personal' }],
+  }).netWorth.netWorth);
+});
+
+test('19. creditUtilizationAfterPayment — utilização após pagamento', () => {
+  const credit: Credit = {
+    id: 'c1',
+    name: 'Visa',
+    outstandingBalance: 400,
+    originalAmount: 2000,
+    creditType: 'card',
+  };
+  const utilization = creditUtilizationAfterPayment(credit, 200);
+  assert.ok(utilization !== null);
+  assert.ok(utilization! < 100);
+});
+
+test('20. buildScenarioFromSuggestionId — fin-amort com sugestão válida', () => {
+  const state = createTestFinancialState({
+    asOf: AS_OF,
+    accounts: [
+      {
+        id: 'inv',
+        name: 'Invest',
+        type: 'investment',
+        balance: 5000,
+        initialBalance: 5000,
+        currency: 'EUR',
+        isActive: true,
+        budgetEnabledResolved: false,
+      },
+    ],
+    credits: [
+      {
+        id: 'loan1',
+        name: 'Crédito',
+        outstandingBalance: 10000,
+        creditType: 'personal',
+        monthlyPayment: 300,
+      },
+    ],
+    financialSuggestions: [
+      {
+        id: 'fin-amort-loan1',
+        title: 'Amortizar',
+        reason: 'TAEG alta',
+        dataUsed: ['dívida'],
+        scenarios: [{ percent: 10, amount: 500, interestSaved: 50, monthsSaved: 2 }],
+        disclaimer: 'Teste',
+        type: 'savings',
+        priority: 1,
+      },
+    ],
+  });
+  const scenario = buildScenarioFromSuggestionId('fin-amort-loan1', state);
+  assert.ok(scenario);
+  assert.equal(scenario?.type, 'amortize_credit');
+  if (scenario?.type === 'amortize_credit') {
+    assert.equal(scenario.amount, 500);
+    assert.equal(scenario.creditId, 'loan1');
+  }
+});
+
+test('21. buildScenarioFromSuggestionId — fin-high-taeg sem conta devolve null', () => {
+  const state = createTestFinancialState({
+    asOf: AS_OF,
+    accounts: [],
+    credits: [{ id: 'loan1', name: 'Crédito', outstandingBalance: 5000, creditType: 'personal' }],
+  });
+  assert.equal(buildScenarioFromSuggestionId('fin-high-taeg-loan1', state), null);
+});
+
+test('22. impacto neutro em transferência investimento — património e título', () => {
+  const state = baseState({
+    accounts: [
+      account({ id: 'chk', initialBalance: 1500, budgetEnabled: true }),
+      account({ id: 'inv', type: 'investment', initialBalance: 3000, budgetEnabled: false }),
+    ],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'transfer_to_investment', fromAccountId: 'chk', toAccountId: 'inv', amount: 1 },
+  });
+  assert.match(result.title, /investimento/i);
+  assert.equal(result.after.netWorth, result.before.netWorth);
+  assert.ok(result.explanation.unchanged.some((line) => line.includes('Património')));
+});
+
+test('23. amortizar desde conta sem orçamento — orçamento inalterado', () => {
+  const state = baseState({
+    accounts: [
+      account({ id: 'inv', type: 'investment', initialBalance: 3000, budgetEnabled: false }),
+      account({ id: 'chk', initialBalance: 500, budgetEnabled: true }),
+    ],
+    credits: [{ id: 'l1', name: 'Crédito', outstandingBalance: 8000, creditType: 'personal', monthlyPayment: 200 }],
+  });
+  const beforeAvailable = state.availableThisMonth;
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'amortize_credit', creditId: 'l1', accountId: 'inv', amount: 500 },
+  });
+  assert.equal(result.after.availableThisMonth, beforeAvailable);
+});
+
+test('24. increase_monthly_savings — explanation e recomendação', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 800, budgetEnabled: true })],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'increase_monthly_savings', amount: 50 },
+  });
+  assert.ok(result.explanation.changes.some((c) => c.includes('Disponível mensal reduz')));
+  assert.ok(result.explanation.benefits.some((b) => b.includes('Taxa de poupança')));
+});
+
+test('25. buildScenarioFromSuggestionId — fin-high-taeg com conta válida', () => {
+  const state = createTestFinancialState({
+    asOf: AS_OF,
+    accounts: [
+      {
+        id: 'chk',
+        name: 'Corrente',
+        type: 'checking',
+        balance: 2000,
+        initialBalance: 2000,
+        currency: 'EUR',
+        isActive: true,
+        budgetEnabledResolved: true,
+      },
+    ],
+    credits: [
+      {
+        id: 'loan1',
+        name: 'Crédito',
+        outstandingBalance: 10000,
+        creditType: 'personal',
+        interestRateAnnual: 12,
+      },
+    ],
+  });
+  const scenario = buildScenarioFromSuggestionId('fin-high-taeg-loan1', state);
+  assert.ok(scenario);
+  assert.equal(scenario?.type, 'amortize_credit');
+});
+
+test('26. subscrição trimestral — cancelamento mensaliza valor', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 600, budgetEnabled: true })],
+    subscriptions: [{ id: 's1', name: 'Adobe', amount: 90, billingInterval: 'quarterly' }],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'cancel_subscription', subscriptionId: 's1' },
+  });
+  assert.ok(result.after.availableThisMonth > result.before.availableThisMonth);
+});
+
+test('27. withdraw_goal — risco de colchão da meta', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 1000, budgetEnabled: true })],
+    goals: [{ id: 'g1', name: 'Reserva', target: 2000, current: 800 }],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'withdraw_goal', goalId: 'g1', accountId: 'a1', amount: 200 },
+  });
+  assert.ok(result.explanation.risks.some((r) => r.includes('meta')));
+  assert.equal(result.after.goals[0]?.current, 600);
+});
+
+test('28. amortização sem juros estimados — não adiciona benefício de poupança', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 5000, budgetEnabled: true })],
+    credits: [
+      {
+        id: 'l1',
+        name: 'Sem taxa',
+        outstandingBalance: 1000,
+        creditType: 'personal',
+        monthlyPayment: 0,
+        interestRateAnnual: 0,
+      },
+    ],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'amortize_credit', creditId: 'l1', accountId: 'a1', amount: 100 },
+  });
+  assert.equal(
+    result.explanation.benefits.filter((b) => b.includes('Juros futuros')).length,
+    0,
+  );
+});
+
+test('29. último dia do mês — daysRemaining zero não divide por zero', () => {
+  const state = createTestFinancialState({
+    asOf: new Date('2026-06-30T12:00:00'),
+    availableThisMonth: 300,
+    dailySafeSpend: 300,
+    budget: {
+      ...createTestFinancialState().budget,
+      daysRemaining: 0,
+      available: 300,
+      dailySafeSpend: 300,
+    },
+    accounts: [
+      {
+        id: 'a1',
+        name: 'Conta',
+        type: 'checking',
+        balance: 300,
+        initialBalance: 300,
+        currency: 'EUR',
+        isActive: true,
+        budgetEnabledResolved: true,
+      },
+    ],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'increase_monthly_income', amount: 100 },
+  });
+  assert.ok(Number.isFinite(result.after.dailySafeSpend));
+});
+
+test('30. amortização com dívida baixa — recomendação específica', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 3000, budgetEnabled: true })],
+    credits: [{ id: 'l1', name: 'Pequeno', outstandingBalance: 500, creditType: 'personal', monthlyPayment: 50 }],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: { type: 'amortize_credit', creditId: 'l1', accountId: 'a1', amount: 200 },
+  });
+  assert.match(result.recommendation, /liquidez|dívida/i);
+});
+
+test('31. reduce_category_spending — benefits na explicação', () => {
+  const state = baseState({
+    accounts: [account({ id: 'a1', initialBalance: 1200, budgetEnabled: true })],
+    transactions: [
+      tx({ id: '1', type: 'income', amount: 2000, date: '2026-06-01', accountId: 'a1' }),
+      tx({ id: '2', type: 'expense', amount: 600, date: '2026-06-08', accountId: 'a1', category: 'transport', categoryLabel: 'Transportes' }),
+    ],
+  });
+  const result = simulateFinancialDecision({
+    financialState: state,
+    scenario: {
+      type: 'reduce_category_spending',
+      categoryKey: 'transport',
+      categoryLabel: 'Transportes',
+      reductionAmount: 50,
+    },
+    categorySpending: { transport: 150 },
+  });
+  assert.ok(result.explanation.benefits.some((b) => b.includes('Taxa de poupança')));
+  assert.ok(result.impact.some((line) => line.label === 'Taxa de poupança' || line.label === 'Despesas mensais'));
 });

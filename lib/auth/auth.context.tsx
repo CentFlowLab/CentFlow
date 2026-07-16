@@ -3,6 +3,7 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState } from
 import { queryClient } from '@/lib/api';
 import { setAccessToken } from '@/lib/api/token';
 import { identify, resetAnalytics } from '@/lib/analytics';
+import { checkAppleSignInAvailable } from '@/lib/auth/apple-sign-in';
 import { isGoogleSignInAvailable, isSupabaseEnabled } from '@/lib/supabase';
 import {
   getSessionExpiredMessage,
@@ -25,9 +26,11 @@ type AuthContextValue = {
   startupError: string | null;
   sessionExpiredMessage: string | null;
   isGoogleSignInAvailable: boolean;
+  isAppleSignInAvailable: boolean;
   signIn: (credentials: LoginCredentials) => Promise<void>;
   signUp: (credentials: RegisterCredentials) => Promise<void>;
   signInWithGoogle: () => Promise<boolean>;
+  signInWithApple: () => Promise<void>;
   completeGoogleSignInFromCallback: (url: string) => Promise<void>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<void>;
@@ -47,7 +50,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [startupError, setStartupError] = useState<string | null>(null);
   const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  const [isAppleSignInAvailable, setIsAppleSignInAvailable] = useState(false);
   const signingOutRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void checkAppleSignInAvailable().then((available) => {
+      if (mounted) setIsAppleSignInAvailable(available);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -149,6 +163,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [applySession]);
 
+  const signInWithApple = useCallback(async () => {
+    try {
+      const session = await authService.loginWithApple();
+      applySession(session);
+    } catch (error) {
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? String((error as { code: string }).code)
+          : '';
+      if (code === 'ERR_REQUEST_CANCELED') {
+        return;
+      }
+      throw new Error(getAuthErrorMessage(error));
+    }
+  }, [applySession]);
+
   const completeGoogleSignInFromCallback = useCallback(async (url: string) => {
     try {
       const session = await authService.completeGoogleOAuthCallback(url);
@@ -209,9 +239,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       startupError,
       sessionExpiredMessage,
       isGoogleSignInAvailable: isGoogleSignInAvailable(),
+      isAppleSignInAvailable,
       signIn,
       signUp,
       signInWithGoogle,
+      signInWithApple,
       completeGoogleSignInFromCallback,
       signOut,
       signOutAllDevices,
@@ -223,9 +255,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isLoading,
       startupError,
       sessionExpiredMessage,
+      isAppleSignInAvailable,
       signIn,
       signUp,
       signInWithGoogle,
+      signInWithApple,
       completeGoogleSignInFromCallback,
       signOut,
       signOutAllDevices,

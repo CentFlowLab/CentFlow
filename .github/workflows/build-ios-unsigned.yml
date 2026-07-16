@@ -1,5 +1,6 @@
-# Alias para o pipeline unificado — ver release.yml
-name: Build iOS unsigned IPA (legacy alias)
+# Alias sideload — IPA unsigned apenas (sem OTA).
+# Pipeline completo: CentFlow Release (release.yml).
+name: Build iOS unsigned IPA
 
 on:
   workflow_dispatch:
@@ -9,5 +10,5 @@ jobs:
     uses: ./.github/workflows/release.yml
     secrets: inherit
     with:
-      publish_ota: true
+      publish_ota: false
       build_ipa: true

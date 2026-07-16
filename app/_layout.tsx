@@ -15,6 +15,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { StartupErrorScreen, StartupShell, RemoteDataSyncEffect, AndroidNavigationBarEffect, AppSecurityBootstrap, BiometricGate, EmailDeepLinkHandler, QuickExpenseLinkHandler } from '@/components/app';
+import { PrivacyConsentGate } from '@/components/privacy/PrivacyConsentGate';
 import { DiagnosticsBootstrap } from '@/components/diagnostics';
 import { View } from 'react-native';
 import { OnboardingGateEffect } from '@/components/onboarding/OnboardingGateEffect';
@@ -92,6 +93,7 @@ function RootLayout() {
               <PreferencesProvider>
                 <AppThemeProvider>
                   <ToastProvider>
+                  <PrivacyConsentGate>
                   <NavigationThemeBridge>
                   <StatusBar style="light" />
                   <DiagnosticsBootstrap />
@@ -104,6 +106,7 @@ function RootLayout() {
                     </BiometricGate>
                   </AppSecurityBootstrap>
                   </NavigationThemeBridge>
+                  </PrivacyConsentGate>
                   </ToastProvider>
                 </AppThemeProvider>
               </PreferencesProvider>
@@ -151,6 +154,7 @@ function RootNavigator() {
           animation: 'slide_from_right',
         }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="legal" />
         <Stack.Screen name="reset-password" options={{ animation: 'fade' }} />
         <Stack.Screen
           name="auth/callback"

@@ -1,7 +1,12 @@
 import { isMockAuthEnabled } from '@/lib/auth';
+import type {
+  AssistantMotorSnapshot,
+  AssistantQueryResult,
+} from '@/lib/domain/financial/assistant-chat';
 import type { FinancialAssistantResponse } from '@/lib/domain/financial/assistant-chat.client';
-import type { AssistantMotorSnapshot, AssistantQueryResult } from '@/lib/domain/financial/assistant-chat';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
+
+export type { FinancialAssistantResponse } from '@/lib/domain/financial/assistant-chat.client';
 
 export type AskFinancialAssistantInput = {
   message: string;

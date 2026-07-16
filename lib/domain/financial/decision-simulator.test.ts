@@ -7,6 +7,7 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 import { simulateDecision } from './decision-simulator';
 import type { FinancialState, GoalProgressState } from './financial-state.types';
 import { calculateRealSavingsMargin } from './savings-margin';
+import { createTestFinancialState } from './test-financial-state.fixture';
 
 const AS_OF = new Date('2026-06-15T12:00:00');
 
@@ -29,14 +30,16 @@ function stubState(partial: {
   credits?: Credit[];
   goalProgress?: GoalProgressState[];
 }): FinancialState {
-  return {
+  return createTestFinancialState({
     asOf: AS_OF,
     availableThisMonth: partial.availableThisMonth,
     credits: partial.credits ?? [],
-    subscriptions: { items: [], monthlyTotal: 0, renewingSoon: 0 },
-    budget: { daysRemaining: partial.daysRemaining ?? 15 } as FinancialState['budget'],
+    budget: {
+      ...createTestFinancialState().budget,
+      daysRemaining: partial.daysRemaining ?? 15,
+    },
     goalProgress: partial.goalProgress ?? [],
-  } as FinancialState;
+  });
 }
 
 function baseContext(transactions: Transaction[]) {

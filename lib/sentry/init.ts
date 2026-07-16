@@ -3,7 +3,10 @@ import * as Updates from 'expo-updates';
 
 import { getRuntimePublicEnv } from '@/lib/config/runtime-env';
 
+import { isCrashReportingConsented } from '@/lib/privacy/consent.memory';
+
 import { scrubSentryEvent } from './privacy';
+import { isSentryClientActive } from './runtime';
 
 let initialized = false;
 
@@ -22,6 +25,13 @@ export function isSentryConfigured(): boolean {
 
 export function initSentry(): void {
   if (initialized) return;
+
+  if (!isCrashReportingConsented()) {
+    if (__DEV__) {
+      console.info('[Sentry] Relatórios de crash desactivados — sem consentimento.');
+    }
+    return;
+  }
 
   const Sentry = getSentry();
   if (!Sentry) {
@@ -74,11 +84,16 @@ export function initSentry(): void {
 }
 
 export function setSentryUserFromHash(userHash: string | null): void {
-  const Sentry = getSentry();
-  if (!Sentry?.isEnabled()) return;
+  const sentry = getSentry();
+  if (!sentry || !isSentryClientActive(sentry)) return;
   if (!userHash) {
-    Sentry.setUser(null);
+    sentry.setUser(null);
     return;
   }
-  Sentry.setUser({ id: userHash });
+  sentry.setUser({ id: userHash });
+}
+
+/** Chamado após carregar consentimento (PrivacyConsentGate). */
+export function bootstrapSentryFromConsent(): void {
+  initSentry();
 }

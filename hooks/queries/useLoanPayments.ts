@@ -13,7 +13,7 @@ import {
 import { saveCreditForUser } from '@/lib/liabilities/liabilities.service';
 import type { Credit } from '@/lib/domain/types';
 import { traceLoanPayment } from '@/lib/doctor/loan-payment-trace';
-import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.invalidation';
+import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
 
 export function useLoanPayments() {
   const { isAuthenticated } = useAuth();
@@ -43,6 +43,10 @@ export function useCreateLoanPayment() {
       );
 
       const payment = await supabaseLoanPayments.createLoanPayment(input);
+
+      if (!input.accountId) {
+        throw new Error('Seleciona a conta de origem do pagamento.');
+      }
 
       const impact =
         input.type === 'monthly_payment'

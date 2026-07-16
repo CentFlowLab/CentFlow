@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { AUTH_ENDPOINTS } from '../lib/auth/constants';
-import { buildMockDashboard } from '../lib/data/mocks';
+import { buildHandoffDashboardMetrics } from './handoff-metrics';
 import { formatCurrency, formatPercent } from '../lib/utils/format';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -106,7 +106,7 @@ function listDomainExports(): string[] {
 function generate(config: HandoffConfig): string {
   const pkg = loadPackageJson();
   const deps = (pkg.dependencies ?? {}) as Record<string, string>;
-  const dashboard = buildMockDashboard();
+  const dashboard = buildHandoffDashboardMetrics();
   const { netWorth } = dashboard;
   const git = getGitInfo();
   const now = new Date().toISOString();

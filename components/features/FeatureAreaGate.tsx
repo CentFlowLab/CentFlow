@@ -3,6 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 
 import { Button, Card, Text } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useFeatureAreas } from '@/hooks/useFeatureAreas';
 import { FEATURE_AREA_CONFIG } from '@/lib/onboarding/constants';
 import type { FeatureAreaId } from '@/lib/onboarding/types';
@@ -16,6 +17,7 @@ type FeatureAreaGateProps = {
 
 export function FeatureAreaGate({ feature, children, preview = false }: FeatureAreaGateProps) {
   const { isFeatureActive, activateFeature, onboardingCompleted } = useFeatureAreas();
+  const { showToast } = useToast();
   const [activating, setActivating] = useState(false);
 
   if (!onboardingCompleted || isFeatureActive(feature)) {
@@ -27,7 +29,10 @@ export function FeatureAreaGate({ feature, children, preview = false }: FeatureA
   async function handleActivate() {
     setActivating(true);
     try {
-      await activateFeature(feature);
+      const ok = await activateFeature(feature);
+      if (!ok) {
+        showToast('Não foi possível activar esta área. Tenta novamente.', 'error');
+      }
     } finally {
       setActivating(false);
     }

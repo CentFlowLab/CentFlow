@@ -1,5 +1,6 @@
 import type { Transaction } from '@/lib/domain/transaction.types';
 import type { Credit } from '@/lib/domain/types';
+import type { RecommendationFiredRecord } from '@/lib/storage/recommendation-fired.storage';
 
 import {
   resolveEffectiveAnnualRate,
@@ -23,6 +24,7 @@ import { groupTransactionsByCategory } from './transactions';
 import { formatMoney, roundMoney } from './money';
 import { sumMonthlyDebtPayments } from './liabilities';
 import { buildHabitDeviationMessage, buildHabitDeviationTitle, detectSpendingHabits, findHabitDeviations } from './habits';
+import type { FinancialState } from './financial-state.types';
 
 export type RecommendationPriority = 'alta' | 'média' | 'baixa';
 
@@ -420,7 +422,7 @@ export function mergeRecommendationFiredRecords(
  */
 export function generateRecommendations(
   financialState: FinancialState,
-  context: GenerateRecommendationsContext = {},
+  context: GenerateRecommendationsContext = { transactions: [] },
 ): Recommendation[] {
   const settings = resolveSettings(context.settings);
   const asOf = context.asOf ?? financialState.asOf;

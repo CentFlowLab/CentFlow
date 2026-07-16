@@ -4,7 +4,7 @@ import type { Transaction } from '@/lib/domain/transaction.types';
 
 import { buildAttentionItems } from '@/lib/domain/attention-items';
 import { calculateMonthlyNetWorthMetrics } from '@/lib/domain/net-worth-monthly';
-import { sumGlobalCashBalance, sumTransactionCashBalance } from '@/lib/domain/financial/transactions';
+import { sumGlobalCashBalance, sumTransactionCashBalance, filterOccurredTransactions } from '@/lib/domain/financial/transactions';
 import { isCardCredit } from '@/lib/credit/credit-type.utils';
 import { countRenewalsSoon } from '@/lib/subscriptions/renewal.utils';
 
@@ -168,6 +168,7 @@ function buildInvestmentSummary(
 function resolveNetWorthInput(input: {
   accounts: EnrichedAccountState[];
   transactions: CalculateFinancialStateInput['transactions'];
+  occurredTransactions: CalculateFinancialStateInput['transactions'];
   goals: NonNullable<CalculateFinancialStateInput['goals']>;
   goalContributions: CalculateFinancialStateInput['goalContributions'];
   loanPayments: CalculateFinancialStateInput['loanPayments'];
@@ -204,14 +205,19 @@ function resolveNetWorthInput(input: {
   const goalRows = input.goals.map((goal) => {
     const contributions = (input.goalContributions ?? []).filter((c) => c.goalId === goal.id);
     const progress = calculateGoalProgress(goal, contributions);
-    return { current: progress.current };
+    // Só soma em património quando há contribuições — evita duplicar liquidez já nas contas.
+    const currentForNetWorth = contributions.length > 0 ? progress.current : 0;
+    return { current: currentForNetWorth };
   });
 
   const creditsForNetWorth = input.credits.map((credit) => {
     if (!isCardCredit(credit.creditType)) return credit;
     return {
       ...credit,
-      outstandingBalance: computeCreditCardDebtFromTransactions(credit.id, input.transactions),
+      outstandingBalance: computeCreditCardDebtFromTransactions(
+        credit.id,
+        input.occurredTransactions,
+      ),
     };
   });
 
@@ -234,10 +240,11 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
   const subscriptions = input.subscriptions ?? [];
   const inventory = input.inventory ?? [];
   const loanPayments = input.loanPayments ?? [];
+  const occurredTransactions = filterOccurredTransactions(input.transactions, asOf);
 
   const accountsWithBalances = enrichAccountsWithBalances(
     accounts,
-    input.transactions,
+    occurredTransactions,
     goalContributions,
     loanPayments,
   );
@@ -295,6 +302,7 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
   const netWorth = resolveNetWorthInput({
     accounts: enrichedAccounts,
     transactions: input.transactions,
+    occurredTransactions,
     goals,
     goalContributions,
     loanPayments,
@@ -346,8 +354,13 @@ export function calculateFinancialState(input: CalculateFinancialStateInput): Fi
   };
 
   const investmentSummary = buildInvestmentSummary(enrichedAccounts, input.investments);
-  const creditSummary = summarizeCreditExposure(credits);
-  const creditCards = buildCreditCardStates(credits, input.transactions);
+  const creditCards = buildCreditCardStates(credits, occurredTransactions);
+  const creditsWithLedgerDebt = credits.map((credit) => {
+    const card = creditCards.find((entry) => entry.credit.id === credit.id);
+    if (card) return { ...credit, outstandingBalance: card.debt };
+    return credit;
+  });
+  const creditSummary = summarizeCreditExposure(creditsWithLedgerDebt);
   const calendar = buildMonthlySpendingTimeline(input.transactions, asOf);
 
   const metrics = calculateFinancialMetrics({

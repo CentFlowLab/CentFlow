@@ -24,6 +24,7 @@ import {
   type AssistantMessage,
   type FinancialAssistantResponse,
 } from '@/lib/supabase/financial-assistant';
+import { getScreenErrorContent } from '@/lib/api/errors';
 
 export function useFinancialAssistantChat() {
   const { state, isLoading: stateLoading } = useFinancialState();
@@ -115,7 +116,7 @@ export function useFinancialAssistantChat() {
 
         return response;
       } catch (err) {
-        const messageText = err instanceof Error ? err.message : 'Erro ao enviar mensagem.';
+        const messageText = getScreenErrorContent(err, 'generic').description;
         setError(messageText);
         return null;
       } finally {

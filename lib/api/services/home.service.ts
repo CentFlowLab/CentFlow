@@ -4,6 +4,7 @@ import { composeDashboardFromLocalSources } from '@/lib/domain/dashboard.compose
 import type { HomeScreenData } from '@/lib/domain/home.types';
 import { isSupabaseEnabled, supabaseGoalContributions, supabaseLoanPayments } from '@/lib/supabase';
 
+import { fetchAccountsData } from './accounts.service';
 import { buildMockHomeScreenData, composeHomeScreenData } from '../mock-home';
 import { fetchAssetsData } from './assets.service';
 import { fetchDashboardData } from './dashboard.service';
@@ -19,12 +20,13 @@ export async function fetchHomeScreenData(): Promise<HomeScreenData> {
     return buildMockHomeScreenData();
   }
 
-  const [assets, transactions, credits, goalContributions, loanPayments] = await Promise.all([
+  const [assets, transactions, credits, goalContributions, loanPayments, accounts] = await Promise.all([
     fetchAssetsData(),
     fetchTransactions('all'),
     fetchCreditsForCurrentUser(),
     isSupabaseEnabled() ? supabaseGoalContributions.fetchGoalContributions() : Promise.resolve([]),
     isSupabaseEnabled() ? supabaseLoanPayments.fetchLoanPayments() : Promise.resolve([]),
+    fetchAccountsData(),
   ]);
 
   if (isSupabaseEnabled()) {
@@ -32,6 +34,7 @@ export async function fetchHomeScreenData(): Promise<HomeScreenData> {
       transactions,
       assets,
       credits,
+      accounts,
       goalContributions,
       loanPayments,
     });

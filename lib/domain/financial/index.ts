@@ -53,6 +53,9 @@ export * from './savings-allocation';
 export * from './subscription-review';
 export * from './action-engine';
 
+export { runCoreFinancialState, toCalculateFinancialStateInput } from './engine.core';
+export type { FinancialEngineCoreInput, FinancialEngineCoreResult } from './engine.contract';
+
 /** Motor financeiro — orquestração de recálculos derivados */
 export {
   recalculateFinancialState,

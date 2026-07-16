@@ -23,6 +23,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.everyft1me.centflow",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -37,8 +38,10 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -46,9 +49,10 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
+      "plugins": [
       "expo-router",
       "expo-web-browser",
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {
@@ -82,7 +86,6 @@
       "expo-ocr-kit",
       "expo-updates",
       "expo-sharing",
-      "expo-video",
       [
         "expo-notifications",
         {

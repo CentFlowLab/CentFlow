@@ -2,7 +2,13 @@ import { Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AuthScreenLayout, AuthSocialDivider, GoogleSignInButton } from '@/components/auth';
+import {
+  AuthScreenLayout,
+  AuthSocialDivider,
+  AppleSignInButton,
+  GoogleSignInButton,
+} from '@/components/auth';
+import { LegalLinksFooter } from '@/components/legal/LegalLinksFooter';
 import { PasswordStrengthMeter } from '@/components/security/PasswordStrengthMeter';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { isMockAuthEnabled, registerSchema, useAuth, getAuthErrorMessage } from '@/lib/auth';
@@ -10,7 +16,13 @@ import { PASSWORD_POLICY_HINT, validatePassword } from '@/lib/security/passwordP
 import { colors, spacing } from '@/lib/theme';
 
 export default function RegisterScreen() {
-  const { signUp, signInWithGoogle, isGoogleSignInAvailable } = useAuth();
+  const {
+    signUp,
+    signInWithGoogle,
+    signInWithApple,
+    isGoogleSignInAvailable,
+    isAppleSignInAvailable,
+  } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,6 +31,7 @@ export default function RegisterScreen() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   const passwordValidation = useMemo(
     () => validatePassword(password, { email, name }),
@@ -82,6 +95,22 @@ export default function RegisterScreen() {
       setGoogleLoading(false);
     }
   }
+
+  async function handleAppleSignIn() {
+    setApiError(null);
+    setAppleLoading(true);
+
+    try {
+      await signInWithApple();
+      router.replace('/(tabs)');
+    } catch (error) {
+      setApiError(getAuthErrorMessage(error));
+    } finally {
+      setAppleLoading(false);
+    }
+  }
+
+  const socialLoading = googleLoading || appleLoading;
 
   return (
     <AuthScreenLayout
@@ -172,22 +201,35 @@ export default function RegisterScreen() {
         label="Criar conta"
         onPress={handleRegister}
         loading={loading}
-        disabled={!canSubmit || googleLoading}
+        disabled={!canSubmit || socialLoading}
         fullWidth
         size="lg"
         style={styles.submit}
       />
 
-      {isGoogleSignInAvailable ? (
+      {isAppleSignInAvailable ? (
         <>
           <AuthSocialDivider />
-          <GoogleSignInButton
-            onPress={handleGoogleSignIn}
-            loading={googleLoading}
-            disabled={loading}
+          <AppleSignInButton
+            onPress={handleAppleSignIn}
+            loading={appleLoading}
+            disabled={loading || googleLoading}
           />
         </>
       ) : null}
+
+      {isGoogleSignInAvailable ? (
+        <>
+          {isAppleSignInAvailable ? null : <AuthSocialDivider />}
+          <GoogleSignInButton
+            onPress={handleGoogleSignIn}
+            loading={googleLoading}
+            disabled={loading || appleLoading}
+          />
+        </>
+      ) : null}
+
+      <LegalLinksFooter />
     </AuthScreenLayout>
   );
 }

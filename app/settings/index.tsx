@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { SettingsScreenLayout } from '@/components/settings/SettingsScreenLayout';
+import { LegalLinksFooter } from '@/components/legal/LegalLinksFooter';
 import { Card, SectionHeader, Text } from '@/components/ui';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track } from '@/lib/analytics';
@@ -173,6 +174,7 @@ export default function SettingsIndexScreen() {
           </Card>
         </View>
       ))}
+      <LegalLinksFooter align="left" />
     </SettingsScreenLayout>
   );
 }

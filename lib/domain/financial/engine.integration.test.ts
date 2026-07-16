@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { FinancialEngineStepId } from './engine.types';
+import type { FinancialEngineStepId, FinancialEngineStepRunner } from './engine.types';
 import { FINANCIAL_ENGINE_STEP_ORDER } from './engine.types';
 import { recalculateFinancialState } from './engine';
 import { DEFAULT_FINANCIAL_ENGINE_STEP_RUNNERS } from './engine.steps';
@@ -28,14 +28,15 @@ const EMPTY_INPUT: FinancialEngineInput = {
 test('recalculateFinancialState — invoca todos os passos pela ordem de dependências', async () => {
   const calls: FinancialEngineStepId[] = [];
 
-  const stepRunners = Object.fromEntries(
+  const stepRunners: Partial<Record<FinancialEngineStepId, FinancialEngineStepRunner>> =
+    Object.fromEntries(
     FINANCIAL_ENGINE_STEP_ORDER.map((step) => [
       step,
       () => {
         calls.push(step);
       },
     ]),
-  ) as typeof DEFAULT_FINANCIAL_ENGINE_STEP_RUNNERS;
+  );
 
   await recalculateFinancialState('user-1', EMPTY_INPUT, { type: 'transaction_created' }, {
     stepRunners,
@@ -47,7 +48,8 @@ test('recalculateFinancialState — invoca todos os passos pela ordem de depend�
 test('recalculateFinancialState — falha num passo não impede os restantes', async () => {
   const calls: FinancialEngineStepId[] = [];
 
-  const stepRunners = Object.fromEntries(
+  const stepRunners: Partial<Record<FinancialEngineStepId, FinancialEngineStepRunner>> =
+    Object.fromEntries(
     FINANCIAL_ENGINE_STEP_ORDER.map((step) => [
       step,
       () => {
@@ -57,7 +59,7 @@ test('recalculateFinancialState — falha num passo não impede os restantes', a
         calls.push(step);
       },
     ]),
-  ) as typeof DEFAULT_FINANCIAL_ENGINE_STEP_RUNNERS;
+  );
 
   const result = await recalculateFinancialState(
     'user-1',
