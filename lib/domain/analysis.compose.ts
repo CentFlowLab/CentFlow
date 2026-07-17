@@ -59,13 +59,15 @@ export function buildAnalysisTrends(
 
 export function buildTrendMetrics(trends: AnalysisTrends): AnalysisData['metrics'] {
   const savings = calculateSavingsRate(trends.totalIncome, trends.totalExpenses);
+  const expenseRatio =
+    savings.income > 0 ? (savings.expenses / savings.income) * 100 : null;
 
   return [
     {
       id: 'cashflow',
-      label: 'Fluxo líquido',
+      label: 'Fluxo líquido realizado',
       value: formatCurrency(trends.netCashflow),
-      subtitle: `${trends.periodDays} dias`,
+      subtitle: `últimos ${trends.periodDays} dias`,
       trend: trends.netCashflow >= 0 ? 'up' : 'down',
       icon: { ios: 'arrow.left.arrow.right', android: 'swap_horiz', web: 'swap_horiz' },
       color: trends.netCashflow >= 0 ? colors.success : colors.danger,
@@ -73,12 +75,11 @@ export function buildTrendMetrics(trends: AnalysisTrends): AnalysisData['metrics
     {
       id: 'expenses-30d',
       label: 'Rácio de gasto',
-      value: formatPercent(
-        savings.income > 0 ? (savings.expenses / savings.income) * 100 : 0,
-        0,
-        false,
-      ),
-      subtitle: 'vs receitas',
+      value:
+        expenseRatio != null
+          ? formatPercent(expenseRatio, 0, false)
+          : 'Não calculável',
+      subtitle: expenseRatio != null ? 'vs receitas (período)' : 'sem receitas no período',
       trend: 'neutral',
       icon: { ios: 'cart.fill', android: 'shopping_cart', web: 'shopping_cart' },
       color: colors.warning,

@@ -54,26 +54,24 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
             : formatPercent(savings.rate, 1, false)}
         </Text>
         <Text variant="caption" color="textSecondary">
-          Receitas {formatCurrency(savings.income)} · Gastos {formatCurrency(savings.expenses)}
+          Receitas realizadas {formatCurrency(savings.income)} · Despesas realizadas{' '}
+          {formatCurrency(savings.expenses)}
         </Text>
       </Card>
 
       <Card variant="outlined" style={styles.budgetContextCard}>
         <Text variant="caption" color="textMuted">
-          Orçamento vs património
+          Situação do mês civil
         </Text>
         <Text variant="bodyMedium">
-          Gastos do mês: {formatCurrency(spendable.consumptionSpending)} (inclui cartão)
+          Despesas de consumo: {formatCurrency(spendable.consumptionSpending)} (inclui cartão)
         </Text>
         <Text variant="bodyMedium">
-          Disponível para gastar: {formatCurrency(spendable.available)}
-        </Text>
-        <Text variant="caption" color="textSecondary">
-          Investimentos e poupança entram no património, não no orçamento mensal.
+          Saldo previsto: {formatCurrency(spendable.available)}
         </Text>
       </Card>
 
-      <FinancialActionsCard maxActions={4} title="Próximos passos" />
+      <FinancialActionsCard maxActions={2} title="Próximos passos" />
 
       <InsightsSection insights={topInsights} />
     </View>

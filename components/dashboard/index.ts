@@ -6,6 +6,8 @@ export { HomePersonalizedInsightCard } from './HomePersonalizedInsightCard';
 export { HomePostOnboardingWelcomeCard } from './HomePostOnboardingWelcomeCard';
 export { RecommendationsCard } from './RecommendationsCard';
 export { HomeAlertsSection } from './HomeAlertsSection';
+export { HomePrioritySection } from './HomePrioritySection';
+export { HomeRecentMovementsCard } from './HomeRecentMovementsCard';
 export { HomeAttentionSheet } from './HomeAttentionSheet';
 export { DashboardHeaderLeading } from './DashboardHeaderLeading';
 export { DashboardSkeleton } from './DashboardSkeleton';

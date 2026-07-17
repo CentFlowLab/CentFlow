@@ -40,14 +40,34 @@ export function emergencyMonthsCovered(
 }
 
 export function formatMissingMetricLabel(
-  kind: 'insufficient' | 'no_comparison' | 'unavailable' = 'insufficient',
+  kind: 'insufficient' | 'no_comparison' | 'unavailable' | 'not_calculable' = 'insufficient',
 ): string {
   switch (kind) {
     case 'no_comparison':
       return 'Sem comparação disponível';
     case 'unavailable':
       return 'Ainda não é possível calcular';
+    case 'not_calculable':
+      return 'Não calculável';
     default:
       return 'Sem dados suficientes';
   }
+}
+
+/** Percentagem só quando o denominador é positivo e útil. */
+export function safePercentage(numerator: number, denominator: number): number | null {
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator)) return null;
+  if (denominator <= 0) return null;
+  const pct = (numerator / denominator) * 100;
+  return Number.isFinite(pct) ? pct : null;
+}
+
+export function isMeaningfulComparison(previous: number, minAbsBase = 0.01): boolean {
+  return Number.isFinite(previous) && Math.abs(previous) >= minAbsBase;
+}
+
+export function clampProgress(value: number, allowOver = false): number {
+  if (!Number.isFinite(value)) return 0;
+  if (allowOver) return Math.max(0, value);
+  return Math.min(100, Math.max(0, value));
 }

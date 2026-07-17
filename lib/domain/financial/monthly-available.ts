@@ -143,7 +143,7 @@ export function calculateMonthlyAvailableBreakdown(
   }
 
   const notes = [
-    'Disponível este mês = saldo acumulado dos movimentos − obrigações futuras.',
+    'Saldo previsto = saldo de caixa − obrigações futuras do mês.',
     'Compras no cartão entram nos gastos do mês, mas não reduzem o disponível agora.',
     'Amortizações extra reduzem dívida sem contar como consumo.',
   ];

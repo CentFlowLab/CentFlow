@@ -25,9 +25,7 @@ function buildSavingsTip(input: AssistantInput, score: CentFlowScoreResult): str
       return `Podes poupar cerca de ${Math.round(input.monthlySubscriptionCost * 0.25)}€/mês revendo despesas recorrentes.`;
     }
   }
-  if (score.breakdown.savings < 12 && input.monthlyExpenses > 0) {
-    return 'Tenta reduzir 5% das despesas fixas este mês.';
-  }
+  // Sem despesa concreta identificada — não inventar oportunidade genérica.
   return undefined;
 }
 
@@ -50,20 +48,6 @@ function buildGettingStartedInsights(input: AssistantInput): AssistantInsight[] 
       actionLabel: 'Adicionar movimento',
     });
   }
-
-  items.push({
-    id: 'start-receipt',
-    emoji: '📸',
-    title: 'Digitaliza um talão',
-    description: withVerboseDescription(
-      'OCR cria movimento automaticamente e pode guardar a garantia.',
-      verbose,
-      'Basta fotografar — a CentFlow preenche valor, data e categoria.',
-    ),
-    priority: 'high',
-    actionId: 'scan_receipt',
-    actionLabel: 'Digitalizar talão',
-  });
 
   if (input.goalsCount === 0) {
     items.push({

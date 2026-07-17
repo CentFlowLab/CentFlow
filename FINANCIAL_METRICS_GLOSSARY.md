@@ -13,21 +13,23 @@ Fonte de verdade para labels e fórmulas na UI. Qualquer ecrã deve usar a mesma
 
 ---
 
-## Disponível este mês
+## Saldo previsto (Home — situação do mês)
 
 | Campo | Valor |
 |-------|--------|
-| **Definição** | Saldo das contas de orçamento menos obrigações futuras do mês. |
-| **Fórmula** | `budgetAccountBalance − futureObligations` |
+| **Definição** | Saldo de caixa (movimentos acumulados em contas de orçamento) menos obrigações futuras do mês civil. |
+| **Fórmula** | `budgetAccountBalance − futureObligations` (`monthly-available.ts`) |
 | **Inclui** | Contas `budget_enabled`, obrigações planeadas (prestações, subscrições, etc.). |
 | **Exclui** | Investimentos, inventário, compras de cartão (não reduzem caixa até pagamento). |
 | **Período** | Mês civil até `asOf`. |
 | **Sem dados** | Contas vazias → 0 com empty state, não “saudável”. |
 | **Denominador 0** | N/A (não é rácio). |
-| **UI** | `MonthlySpendableCard`, sheet, Análises resumo. |
-| **Label PT-PT** | Preferir “Disponível este mês” + subtítulo “após obrigações previstas”. |
+| **UI** | `MonthlySpendableCard` (“Saldo previsto”), `MonthlySpendableSheet` (“Ver cálculo”). |
+| **Label PT-PT** | **Saldo previsto** — nunca só “Disponível este mês” sem decomposição. |
 
-**Nota:** Valor pode ser negativo = “Previsto negativo” — explicar componentes, não julgar.
+**Nota:** Valor pode ser negativo = “Previsto negativo” — mostrar saldo de caixa + obrigações futuras. Não julgar.
+
+**Alias legado:** “Disponível este mês” no motor/notas internas aponta para a mesma fórmula.
 
 ---
 

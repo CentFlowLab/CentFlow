@@ -66,10 +66,11 @@ export function PlanResult({ savingsGoal, months, monthlyIncome, firstName }: Pl
     },
     NO_INCOME: {
       tone: colors.textMuted,
-      text: 'Adiciona o teu rendimento para veres quanto fica livre.',
+      text: 'Adiciona o teu rendimento para veres o esforço do plano.',
     },
   };
   const note = warning ? warningCopy[warning] : null;
+  const remainderAfterSaving = plan.freePerMonth;
 
   return (
     <View style={styles.wrap}>
@@ -128,18 +129,18 @@ export function PlanResult({ savingsGoal, months, monthlyIncome, firstName }: Pl
         </Text>
       </Animated.View>
 
-      {plan.freePerMonth != null ? (
+      {remainderAfterSaving != null && remainderAfterSaving >= 0 ? (
         <Animated.View
           entering={FadeInDown.duration(450).delay(380)}
           style={styles.freeCard}>
-          <Text variant="caption" color="textMuted">
-            Continuas com
+          <Text variant="caption" color="textMuted" align="center">
+            Depois de reservares cerca de {euro(plan.monthlySaving)}, ficam
           </Text>
           <Text variant="h1" color="success" style={styles.freeAmount}>
-            ~{euro(Math.max(0, plan.freePerMonth))}
+            ~{euro(remainderAfterSaving)}
           </Text>
-          <Text variant="caption" color="textMuted">
-            livres por mês
+          <Text variant="caption" color="textMuted" align="center">
+            antes das despesas mensais
           </Text>
         </Animated.View>
       ) : null}

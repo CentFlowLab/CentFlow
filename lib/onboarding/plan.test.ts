@@ -10,6 +10,45 @@ test('plano simples — 6000€ em 12 meses → 500€/mês', () => {
   assert.equal(result.feasible, true);
 });
 
+test('1000€ rendimento / 2500€ / 12 meses → ~208€ e resto positivo (não −792)', () => {
+  const result = calculateOnboardingPlan({
+    savingsGoal: 2500,
+    months: 12,
+    monthlyIncome: 1000,
+  });
+  assert.equal(result.monthlySaving, 208.33);
+  assert.equal(result.freePerMonth, 791.67);
+  assert.ok((result.freePerMonth ?? 0) > 0);
+  assert.equal(result.feasible, true);
+});
+
+test('rendimento igual à contribuição → resto 0', () => {
+  const result = calculateOnboardingPlan({
+    savingsGoal: 1200,
+    months: 12,
+    monthlyIncome: 100,
+  });
+  assert.equal(result.monthlySaving, 100);
+  assert.equal(result.freePerMonth, 0);
+});
+
+test('rendimento inferior à contribuição → EXCEEDS_INCOME e resto negativo', () => {
+  const result = calculateOnboardingPlan({
+    savingsGoal: 3000,
+    months: 12,
+    monthlyIncome: 100,
+  });
+  assert.ok(result.warnings.includes('EXCEEDS_INCOME'));
+  assert.ok((result.freePerMonth ?? 0) < 0);
+  assert.equal(result.feasible, false);
+});
+
+test('objetivo zero → contribuição zero', () => {
+  const result = calculateOnboardingPlan({ savingsGoal: 0, months: 12, monthlyIncome: 1000 });
+  assert.equal(result.monthlySaving, 0);
+  assert.equal(result.freePerMonth, 1000);
+});
+
 test('sem rendimento → freePerMonth null e warning NO_INCOME', () => {
   const result = calculateOnboardingPlan({ savingsGoal: 1200, months: 12 });
   assert.equal(result.monthlySaving, 100);

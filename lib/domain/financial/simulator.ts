@@ -308,7 +308,7 @@ function scenarioTitle(scenario: SimulationScenario, state: FinancialState): str
     }
     case 'pay_credit_card': {
       const card = state.creditCards.find((row) => row.credit.id === scenario.creditId);
-      return `Pagar cartão ${formatMoney(scenario.amount)} — ${card?.credit.name ?? 'cartão'}`;
+      return `Registar pagamento ${formatMoney(scenario.amount)} — ${card?.credit.name ?? 'cartão'}`;
     }
     case 'contribute_goal': {
       const goal = state.goalProgress.find((row) => row.id === scenario.goalId);
@@ -617,7 +617,7 @@ export const SIMULATION_PRESETS: Array<{
   icon: string;
 }> = [
   { type: 'amortize_credit', label: 'Amortizar dívida', description: 'Reduz crédito, mantém PL', icon: 'percent' },
-  { type: 'pay_credit_card', label: 'Pagar cartão', description: 'Baixa dívida do cartão', icon: 'credit_card' },
+  { type: 'pay_credit_card', label: 'Registar pagamento', description: 'Baixa dívida do cartão', icon: 'credit_card' },
   { type: 'contribute_goal', label: 'Reforçar objetivo', description: 'Reserva no objetivo', icon: 'flag' },
   { type: 'cancel_subscription', label: 'Cortar recorrente', description: 'Liberta margem mensal', icon: 'subscriptions' },
   { type: 'reduce_category_spending', label: 'Reduzir categoria', description: 'Optimiza gastos', icon: 'trending_down' },

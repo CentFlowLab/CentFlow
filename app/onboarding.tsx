@@ -308,6 +308,7 @@ export default function OnboardingScreen() {
             <PremiumHeader
               eyebrow="O que acontece contigo?"
               title="Escolhe tudo o que sentes."
+              lead="Podes escolher várias opções."
             />
             <ChoiceList>
               {PROBLEM_OPTIONS.map((option, index) => (
@@ -318,6 +319,7 @@ export default function OnboardingScreen() {
                   selected={answers.profileTags.includes(option.id)}
                   index={index}
                   compact
+                  selectionMode="multiple"
                   onPress={() =>
                     patch({ profileTags: toggle(answers.profileTags, option.id as ProfileTagId) })
                   }
@@ -479,8 +481,8 @@ export default function OnboardingScreen() {
         return (
           <Hero
             emoji="🤖"
-            title="A IA da CentFlow trabalha por ti."
-            subtitle="Analisa automaticamente os teus hábitos e encontra oportunidades para poupares mais."
+            title="Análises quando há dados suficientes."
+            subtitle="A CentFlow analisa os teus padrões e apresenta sugestões — nunca decide por ti."
           />
         );
 
@@ -489,7 +491,7 @@ export default function OnboardingScreen() {
           <Hero
             emoji="🧾"
             title="Despesas em segundos."
-            subtitle="Fotografa um talão e o OCR adiciona a despesa automaticamente."
+            subtitle="Digitaliza um talão para preencher os dados mais rapidamente. Revês, editas e confirmas antes de guardar."
           />
         );
 
@@ -499,6 +501,7 @@ export default function OnboardingScreen() {
             <PremiumHeader
               eyebrow="Créditos (opcional)"
               title="Tens algum destes créditos?"
+              lead="Podes escolher várias opções."
             />
             <ChoiceList>
               {ONBOARDING_CREDIT_OPTIONS.map((option, index) => (
@@ -509,6 +512,7 @@ export default function OnboardingScreen() {
                   selected={answers.creditTypes.includes(option.id)}
                   index={index}
                   compact
+                  selectionMode="multiple"
                   onPress={() =>
                     patch({ creditTypes: toggle(answers.creditTypes, option.id as OnboardingCreditId) })
                   }
@@ -521,7 +525,11 @@ export default function OnboardingScreen() {
       case 'investments':
         return (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            <PremiumHeader eyebrow="Investimentos" title="Onde investes?" />
+            <PremiumHeader
+              eyebrow="Investimentos"
+              title="Onde investes?"
+              lead="Podes escolher várias opções."
+            />
             <ChoiceList>
               {ONBOARDING_INVESTMENT_OPTIONS.map((option, index) => (
                 <ChoiceCard
@@ -531,6 +539,7 @@ export default function OnboardingScreen() {
                   selected={answers.investmentTypes.includes(option.id)}
                   index={index}
                   compact
+                  selectionMode="multiple"
                   onPress={() => toggleInvestment(option.id as OnboardingInvestmentId)}
                 />
               ))}
@@ -544,7 +553,7 @@ export default function OnboardingScreen() {
             <Hero
               emoji="🔐"
               title="Os teus dados, protegidos."
-              subtitle="Segurança ao nível de um banco — sempre contigo."
+              subtitle="Protegidos em trânsito e em repouso, sincronizados com a tua conta."
             />
             <View style={styles.securityList}>
               {SECURITY_ITEMS.map((item, index) => (

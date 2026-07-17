@@ -17,12 +17,15 @@ import {
   useSyncBankConnection,
 } from '@/hooks/queries/useBankConnections';
 import type { BankConnection, BankConnectionAccount } from '@/lib/open-banking/types';
+import { isOpenBankingUiEnabled } from '@/lib/config/product-features';
 import { getOpenBankingRedirectUrl } from '@/lib/open-banking/gocardless.service';
+import { getOpenBankingUserMessage } from '@/lib/open-banking/user-errors';
 import { spacing, useTheme, useThemedStyles } from '@/lib/theme';
 import type { ThemeColors } from '@/lib/theme/types';
 import { formatDateShort } from '@/lib/utils/format';
 
 export default function BankConnectionsScreen() {
+  const openBankingEnabled = isOpenBankingUiEnabled();
   const {
     data: connections,
     isLoading: connectionsLoading,
@@ -75,10 +78,7 @@ export default function BankConnectionsScreen() {
         }
       }
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Não foi possível ligar o banco',
-        'error',
-      );
+      showToast(getOpenBankingUserMessage(error), 'error');
     } finally {
       setLinkingBankId(null);
     }
@@ -102,10 +102,7 @@ export default function BankConnectionsScreen() {
         }
       }
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Não foi possível renovar a ligação',
-        'error',
-      );
+      showToast(getOpenBankingUserMessage(error), 'error');
     } finally {
       setLinkingBankId(null);
     }
@@ -123,7 +120,10 @@ export default function BankConnectionsScreen() {
           'success',
         );
       } else {
-        showToast(syncResult.result.error ?? 'Sincronização falhou', 'error');
+        showToast(
+          getOpenBankingUserMessage(syncResult.result.error ?? 'Sincronização falhou'),
+          'error',
+        );
       }
     } finally {
       setSyncingId(null);
@@ -161,6 +161,22 @@ export default function BankConnectionsScreen() {
     await Promise.all([refetchConnections(), refetchBanks()]);
   }
 
+  if (!openBankingEnabled) {
+    return (
+      <SettingsScreenLayout
+        title="Ligações bancárias"
+        subtitle="Importação automática via Open Banking">
+        <Card variant="outlined" style={styles.section}>
+          <Text variant="h3">Indisponível de momento</Text>
+          <Text variant="body" color="textSecondary">
+            A ligação bancária ainda não está disponível nesta versão. Continua a registar
+            movimentos manualmente — os teus dados mantêm-se seguros.
+          </Text>
+        </Card>
+      </SettingsScreenLayout>
+    );
+  }
+
   if (loadError && !connectionsLoading && !banksLoading) {
     return (
       <SettingsScreenLayout
@@ -168,7 +184,11 @@ export default function BankConnectionsScreen() {
         subtitle="Importação automática via Open Banking (complemento à entrada manual)">
         <ErrorState
           context="generic"
-          error={loadErrorValue}
+          error={
+            loadErrorValue instanceof Error
+              ? new Error(getOpenBankingUserMessage(loadErrorValue))
+              : new Error(getOpenBankingUserMessage(loadErrorValue))
+          }
           onRetry={() => void handleRetryLoad()}
           retryLoading={connectionsRefetching || banksRefetching}
         />
@@ -183,7 +203,7 @@ export default function BankConnectionsScreen() {
       <SettingsHero
         icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}
         title="Open Banking"
-        description="Liga o teu banco português para importar movimentos automaticamente. Podes continuar a registar despesas manualmente — incluindo talões OCR."
+        description="Liga o teu banco português para importar movimentos automaticamente. Podes continuar a registar despesas manualmente."
       />
 
       <Card variant="outlined" style={styles.section}>

@@ -8,15 +8,16 @@ import {
   DashboardHeaderLeading,
   DashboardSkeleton,
   DemoModeBadge,
-  HomeAlertsSection,
   HomeAssetsSummaryCard,
   HomeAssistantCard,
   HomeAttentionSheet,
   HomePersonalizedInsightCard,
   HomePostOnboardingWelcomeCard,
+  HomePrioritySection,
+  HomeRecentMovementsCard,
+  RecommendationsCard,
 } from '@/components/dashboard';
-import { MonthlySpendableCard, MonthlySpendableSheet, FinancialActionsCard } from '@/components/budget';
-import { RecommendationsCard } from '@/components/dashboard';
+import { MonthlySpendableCard, MonthlySpendableSheet } from '@/components/budget';
 import { AppHeader, QuickAddMenuSheet } from '@/components/layout';
 import { AddTransactionModal } from '@/components/movements';
 import { ErrorState, RefetchingIndicator, ScreenContainer } from '@/components/ui';
@@ -184,24 +185,29 @@ export default function InicioScreen() {
     spendable: (
       <>
         <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
-        <FinancialActionsCard key="financial-actions" maxActions={1} />
+        <HomePrioritySection
+          key="priority"
+          attentionItems={attentionItems}
+          suggestions={mergedSuggestions}
+          onOpenAllAttention={() => setAttentionSheetVisible(true)}
+        />
+        {hasActivity ? (
+          <HomeAssetsSummaryCard
+            key="assets-compact"
+            summary={assetsSummary}
+            hints={assetsHints}
+          />
+        ) : null}
+        <HomeRecentMovementsCard key="recent" transactions={recentTransactions} />
         <RecommendationsCard key="recommendations" maxVisible={1} />
       </>
     ),
-    assets: hasActivity ? (
-      <HomeAssetsSummaryCard key="assets" summary={assetsSummary} hints={assetsHints} />
-    ) : null,
-    alerts: (
-      <HomeAlertsSection
-        key="alerts"
-        attentionItems={attentionItems}
-        suggestions={mergedSuggestions}
-        onOpenAllAttention={() => setAttentionSheetVisible(true)}
-      />
-    ),
-    /** Assistente só com insights concretos — evita cartão genérico. */
+    /** Compactado na secção spendable — evita cartões concorrentes. */
+    assets: null,
+    alerts: null,
+    /** Assistente só com insights concretos e sem duplicar a prioridade. */
     assistant:
-      assistant.insights.length > 0 ? (
+      assistant.insights.length > 0 && attentionItems.length === 0 ? (
         <HomeAssistantCard
           key="assistant"
           plan={assistant}

@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-17T15:44:14.309Z -->
-<!-- Git: 2e0ba95 (2026-07-17T03:21:33+01:00) -->
+<!-- Última geração: 2026-07-17T17:51:41.459Z -->
+<!-- Git: e7bd7ea (2026-07-17T16:44:28+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -16,10 +16,10 @@
 
 | Campo | Valor |
 |-------|-------|
-| Fase atual | **RC2 Device QA — build Android 607cc31c errored; smoke bloqueado até novo APK** |
-| Última geração | 2026-07-17T15:44:14.309Z |
+| Fase atual | **Internal Beta — sprint coerência financeira/UX (sem OTA nesta entrega)** |
+| Última geração | 2026-07-17T17:51:41.459Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `2e0ba95` (2026-07-17T03:21:33+01:00) |
+| Git commit | `e7bd7ea` (2026-07-17T16:44:28+01:00) |
 
 ---
 
@@ -240,6 +240,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     HomeAttentionSheet.tsx
     HomePersonalizedInsightCard.tsx
     HomePostOnboardingWelcomeCard.tsx
+    HomePrioritySection.tsx
+    HomeRecentMovementsCard.tsx
     RecommendationCard.tsx
     RecommendationsCard.tsx
     RecommendationsSheet.tsx
@@ -788,6 +790,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   open-banking/
     gocardless.service.ts
     types.ts
+    user-errors.test.ts
+    user-errors.ts
   preferences/
     PreferencesProvider.tsx
     config.ts
@@ -920,7 +924,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 
 ---
 
-## Fase atual: RC2 Device QA — build Android 607cc31c errored; smoke bloqueado até novo APK
+## Fase atual: Internal Beta — sprint coerência financeira/UX (sem OTA nesta entrega)
 
 ### ✅ Concluído
 - Base Expo SDK 56 + Expo Router + TypeScript
@@ -1122,8 +1126,15 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Cleanup — removidos reports/auditorias de gate e código morto (CSV/hooks/widgets)
 - Cleanup — removidos reexports mortos (hooks, barrels components/lib, open-banking index)
 - UX Remediation P0 — guardrails financeiros, Doctor só DEV, OCR flag, tab bar, perfil, settings
+- Sprint confiança — Home situação do mês (caixa/obrigações/previsto) + Ver cálculo
+- Sprint confiança — rácios inválidos Não calculável; património sem Ativos negativos opacos
+- Sprint confiança — onboarding plano/OCR/IA/segurança; seleção múltipla acessível
+- Sprint confiança — Open Banking UI off + erros Edge Function traduzidos
+- Sprint confiança — Home prioridade única + movimentos recentes; Registar pagamento; tab Património
 
 ### 🔲 Pendente
+- QA dispositivo — validar Home/Movimentos/Análises/Património em iPhone físico (LiveContainer)
+- Património IA — separar Objetivos da taxonomia de activos (planeamento dedicado)
 - Financial Engine — migrar useCashflowProjection e useCategoryBudgetStatus para cache coreState
 - Financial Engine — scheduleFinancialRecalculation em mutações de contas
 - Financial Engine — expandir ESLint além do scope mínimo actual (dívida técnica lint global)

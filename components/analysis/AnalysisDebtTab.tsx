@@ -82,7 +82,7 @@ export function AnalysisDebtTab() {
                 </Text>
               ) : null}
               <Button
-                label="Pagar cartão"
+                label="Registar pagamento"
                 variant="secondary"
                 size="sm"
                 onPress={() =>

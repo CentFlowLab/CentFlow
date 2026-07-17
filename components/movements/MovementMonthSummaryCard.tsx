@@ -21,7 +21,7 @@ export function MovementMonthSummaryCard({ comparison }: MovementMonthSummaryCar
     <Card variant="elevated" style={styles.card}>
       <View style={styles.topRow}>
         <Text variant="label" color="textMuted">
-          Este mês
+          Saldo realizado deste mês
         </Text>
         {netChangePercent !== null ? (
           <View style={styles.trend}>

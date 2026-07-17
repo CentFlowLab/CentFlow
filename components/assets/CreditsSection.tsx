@@ -99,7 +99,7 @@ export function CreditsSection({
     <View style={styles.container}>
       <Card variant="outlined" style={styles.summaryCard}>
         <Text variant="caption" color="textMuted">
-          Total em dívida
+          {isCardVariant ? 'Total dos cartões' : 'Total dos créditos'}
         </Text>
         <Text variant="h3" color="danger">
           {formatCurrency(totalDebt)}
@@ -226,7 +226,7 @@ export function CreditsSection({
 
               {isCardVariant && onRegisterPayment ? (
                 <Button
-                  label="Pagar cartão"
+                  label="Registar pagamento"
                   variant="secondary"
                   size="md"
                   fullWidth

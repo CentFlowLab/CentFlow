@@ -63,9 +63,9 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
       header={(requestClose) => (
         <View style={styles.header}>
           <View>
-            <Text variant="h2">Disponível até ao fim do mês</Text>
+            <Text variant="h2">Saldo previsto do mês</Text>
             <Text variant="caption" color="textMuted">
-              Soma de todas as transações menos obrigações futuras deste mês
+              Saldo de caixa menos obrigações futuras até ao fim do mês
             </Text>
           </View>
           <Pressable onPress={requestClose} hitSlop={12} accessibilityLabel="Fechar">
@@ -79,7 +79,7 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
       )}>
       <Card variant="elevated" style={styles.heroCard}>
         <Text variant="label" color="textMuted">
-          Restam este mês
+          Saldo previsto
         </Text>
         <Text style={[styles.heroValue, { color: remainingTone }]}>
           {formatCurrency(spendable.available)}
@@ -111,7 +111,7 @@ export function MonthlySpendableSheet({ visible, onClose }: MonthlySpendableShee
         />
         <View style={styles.divider} />
         <View style={styles.statRow}>
-          <Text variant="bodyMedium">= Disponível este mês</Text>
+          <Text variant="bodyMedium">= Saldo previsto</Text>
           <Text variant="bodyMedium" style={{ color: remainingTone }}>
             {formatCurrency(spendable.available)}
           </Text>

@@ -57,6 +57,7 @@ export function ChoiceCard({
   onPress,
   index = 0,
   compact = false,
+  selectionMode = 'single',
 }: {
   emoji?: string;
   label: string;
@@ -65,13 +66,19 @@ export function ChoiceCard({
   onPress: () => void;
   index?: number;
   compact?: boolean;
+  /** single = radio; multiple = checkbox visual */
+  selectionMode?: 'single' | 'multiple';
 }) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const isMultiple = selectionMode === 'multiple';
 
   return (
     <Animated.View entering={FadeInDown.duration(380).delay(index * 55)} style={animatedStyle}>
       <Pressable
+        accessibilityRole={isMultiple ? 'checkbox' : 'radio'}
+        accessibilityState={{ selected, checked: selected }}
+        accessibilityLabel={label}
         onPress={() => {
           haptics.selection();
           onPress();
@@ -104,8 +111,18 @@ export function ChoiceCard({
             </Text>
           ) : null}
         </View>
-        <View style={[styles.radio, selected && styles.radioSelected]}>
-          {selected ? <View style={styles.radioDot} /> : null}
+        <View
+          style={[
+            isMultiple ? styles.checkbox : styles.radio,
+            selected && (isMultiple ? styles.checkboxSelected : styles.radioSelected),
+          ]}>
+          {selected ? (
+            isMultiple ? (
+              <View style={styles.checkboxMark} />
+            ) : (
+              <View style={styles.radioDot} />
+            )
+          ) : null}
         </View>
       </Pressable>
     </Animated.View>
@@ -189,6 +206,25 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: radius.full,
+    backgroundColor: colors.primary,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.sm,
+    borderWidth: 2,
+    borderColor: colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
+  },
+  checkboxMark: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
     backgroundColor: colors.primary,
   },
 });

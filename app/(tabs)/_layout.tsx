@@ -138,7 +138,7 @@ function TabLayoutInner() {
       <Tabs.Screen
         name="ativos"
         options={{
-          title: 'Ativos',
+          title: 'Património',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               name={{

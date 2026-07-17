@@ -1,7 +1,7 @@
 {
   "projectName": "CentFlow",
   "tagline": "Where does it go?",
-  "currentPhase": "RC2 Device QA — build Android 607cc31c errored; smoke bloqueado até novo APK",
+  "currentPhase": "Internal Beta — sprint coerência financeira/UX (sem OTA nesta entrega)",
   "completed": [
     "Base Expo SDK 56 + Expo Router + TypeScript",
     "Design system dark premium (Card, Button, EmptyState, TextField, etc.)",
@@ -201,9 +201,16 @@
     "iOS Sideload — branch rc2-ios-sideload + IPA unsigned (publish_ota:false)",
     "Cleanup — removidos reports/auditorias de gate e código morto (CSV/hooks/widgets)",
     "Cleanup — removidos reexports mortos (hooks, barrels components/lib, open-banking index)",
-    "UX Remediation P0 — guardrails financeiros, Doctor só DEV, OCR flag, tab bar, perfil, settings"
+    "UX Remediation P0 — guardrails financeiros, Doctor só DEV, OCR flag, tab bar, perfil, settings",
+    "Sprint confiança — Home situação do mês (caixa/obrigações/previsto) + Ver cálculo",
+    "Sprint confiança — rácios inválidos Não calculável; património sem Ativos negativos opacos",
+    "Sprint confiança — onboarding plano/OCR/IA/segurança; seleção múltipla acessível",
+    "Sprint confiança — Open Banking UI off + erros Edge Function traduzidos",
+    "Sprint confiança — Home prioridade única + movimentos recentes; Registar pagamento; tab Património"
   ],
   "pending": [
+    "QA dispositivo — validar Home/Movimentos/Análises/Património em iPhone físico (LiveContainer)",
+    "Património IA — separar Objetivos da taxonomia de activos (planeamento dedicado)",
     "Financial Engine — migrar useCashflowProjection e useCategoryBudgetStatus para cache coreState",
     "Financial Engine — scheduleFinancialRecalculation em mutações de contas",
     "Financial Engine — expandir ESLint além do scope mínimo actual (dívida técnica lint global)",

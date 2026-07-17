@@ -10,6 +10,7 @@ import { Card, SectionHeader, Text } from '@/components/ui';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AnalyticsEvents, track } from '@/lib/analytics';
 import { getAppVariant } from '@/lib/config/app-variant';
+import { isOpenBankingUiEnabled } from '@/lib/config/product-features';
 import { isDiagnosticsEnabled } from '@/lib/diagnostics';
 import { colors, spacing } from '@/lib/theme';
 
@@ -131,8 +132,13 @@ export default function SettingsIndexScreen() {
   function getMenuSections() {
     const sections = MENU_SECTIONS.map((section) => ({
       ...section,
-      items: [...section.items],
-    }));
+      items: section.items.filter((item) => {
+        if (item.route === '/settings/bank-connections' && !isOpenBankingUiEnabled()) {
+          return false;
+        }
+        return true;
+      }),
+    })).filter((section) => section.items.length > 0);
     if (isDiagnosticsEnabled()) {
       sections.push({
         title: 'Desenvolvimento',

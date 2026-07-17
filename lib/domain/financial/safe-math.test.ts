@@ -3,10 +3,13 @@ import test from 'node:test';
 
 import {
   clampPercentage,
+  clampProgress,
   emergencyMonthsCovered,
   formatMissingMetricLabel,
+  isMeaningfulComparison,
   percentChangeVsPrevious,
   safeDivide,
+  safePercentage,
 } from './safe-math';
 
 test('safeDivide — denominador zero ou inválido', () => {
@@ -41,5 +44,27 @@ test('emergencyMonthsCovered — sem fixos / disponível negativo', () => {
 
 test('formatMissingMetricLabel — copy PT-PT', () => {
   assert.equal(formatMissingMetricLabel('no_comparison'), 'Sem comparação disponível');
+  assert.equal(formatMissingMetricLabel('not_calculable'), 'Não calculável');
   assert.equal(formatMissingMetricLabel(), 'Sem dados suficientes');
+});
+
+test('safePercentage — denominador zero ou ativos ≤ 0', () => {
+  assert.equal(safePercentage(100, 0), null);
+  assert.equal(safePercentage(100, -50), null);
+  assert.equal(safePercentage(50, 200), 25);
+  assert.equal(safePercentage(Number.NaN, 10), null);
+  assert.equal(safePercentage(10, Number.POSITIVE_INFINITY), null);
+});
+
+test('isMeaningfulComparison — base demasiado pequena', () => {
+  assert.equal(isMeaningfulComparison(0), false);
+  assert.equal(isMeaningfulComparison(0.001), false);
+  assert.equal(isMeaningfulComparison(10), true);
+});
+
+test('clampProgress — NaN e sobrecumprimento', () => {
+  assert.equal(clampProgress(Number.NaN), 0);
+  assert.equal(clampProgress(120), 100);
+  assert.equal(clampProgress(120, true), 120);
+  assert.equal(clampProgress(-5), 0);
 });

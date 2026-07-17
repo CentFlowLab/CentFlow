@@ -31,17 +31,17 @@ export function TrendsSummaryCard({
 
       <View style={styles.summaryGrid}>
         <TrendStat
-          label="Receitas"
+          label="Receitas realizadas"
           value={formatCurrency(trends.totalIncome)}
           tone={colors.success}
         />
         <TrendStat
-          label="Gastos"
+          label="Despesas realizadas"
           value={formatCurrency(trends.totalExpenses)}
           tone={colors.danger}
         />
         <TrendStat
-          label="Fluxo líquido"
+          label="Fluxo líquido realizado"
           value={formatCurrency(trends.netCashflow)}
           tone={trends.netCashflow >= 0 ? colors.primary : colors.warning}
         />
@@ -49,7 +49,7 @@ export function TrendsSummaryCard({
 
       <View style={styles.bars}>
         <BarRow label="Receitas" width={incomeWidth} color={colors.success} />
-        <BarRow label="Gastos" width={expenseWidth} color={colors.danger} />
+        <BarRow label="Despesas" width={expenseWidth} color={colors.danger} />
       </View>
 
       {showNetWorthChange ? (

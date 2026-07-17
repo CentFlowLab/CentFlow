@@ -12,6 +12,7 @@ import type {
   RawAnalyticsResponse,
 } from '@/lib/types/analysis.api';
 import type { RawNetWorthResponse } from '@/lib/types';
+import { formatMissingMetricLabel, safePercentage } from '@/lib/domain/financial/safe-math';
 import { formatPercent } from '@/lib/utils/format';
 import { colors } from '@/lib/theme';
 
@@ -109,56 +110,78 @@ function mapAnalysisMetricItem(raw: RawAnalysisMetric): AnalysisMetric {
  * Calcula métricas derivadas do património quando a API não as envia.
  * Substitui a lógica que estava em analysis.mocks.ts.
  */
+function ratioMetric(
+  id: string,
+  label: string,
+  numerator: number,
+  denominator: number,
+  subtitleWhenOk: string,
+  icons: AnalysisMetric['icon'],
+  colorWhenOk: string,
+): AnalysisMetric {
+  const pct = safePercentage(numerator, denominator);
+  if (pct == null) {
+    return {
+      id,
+      label,
+      value: formatMissingMetricLabel('not_calculable'),
+      subtitle: 'Requer ativos positivos',
+      trend: 'neutral',
+      icon: icons,
+      color: colors.textMuted,
+    };
+  }
+  return {
+    id,
+    label,
+    value: formatPercent(pct, 1, false),
+    subtitle: subtitleWhenOk,
+    trend: id === 'debt-ratio' && pct > 40 ? 'down' : 'neutral',
+    icon: icons,
+    color: id === 'debt-ratio' && pct > 40 ? colors.danger : colorWhenOk,
+  };
+}
+
 export function buildMetricsFromNetWorth(netWorth: NetWorthResult): AnalysisMetric[] {
-  const totalAssets = netWorth.totalAssets || 1;
-  const investmentShare = (netWorth.breakdown.investments / totalAssets) * 100;
-  const liquidityShare = (netWorth.breakdown.accounts / totalAssets) * 100;
-  const debtRatio =
-    netWorth.totalAssets > 0
-      ? (netWorth.totalLiabilities / netWorth.totalAssets) * 100
-      : 0;
+  const assetsBase = netWorth.totalAssets;
 
   return [
-    {
-      id: 'debt-ratio',
-      label: 'Rácio de dívida',
-      value: formatPercent(debtRatio, 1, false),
-      subtitle: 'passivos / ativos',
-      trend: debtRatio > 40 ? 'down' : 'neutral',
-      icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
-      color: debtRatio > 40 ? colors.danger : colors.textSecondary,
-    },
-    {
-      id: 'investment-share',
-      label: 'Investido',
-      value: formatPercent(investmentShare, 1, false),
-      subtitle: 'do património',
-      trend: 'up',
-      icon: {
-        ios: 'chart.line.uptrend.xyaxis',
-        android: 'trending_up',
-        web: 'trending_up',
-      },
-      color: colors.primary,
-    },
-    {
-      id: 'liquidity',
-      label: 'Liquidez',
-      value: formatPercent(liquidityShare, 1, false),
-      subtitle: 'em contas',
-      trend: 'neutral',
-      icon: { ios: 'banknote.fill', android: 'payments', web: 'payments' },
-      color: colors.accent,
-    },
-    {
-      id: 'inventory-share',
-      label: 'Inventário',
-      value: formatPercent((netWorth.breakdown.inventory / totalAssets) * 100, 1, false),
-      subtitle: 'do património',
-      trend: 'neutral',
-      icon: { ios: 'shippingbox.fill', android: 'inventory', web: 'inventory' },
-      color: colors.textSecondary,
-    },
+    ratioMetric(
+      'debt-ratio',
+      'Rácio de dívida',
+      netWorth.totalLiabilities,
+      assetsBase,
+      'passivos / ativos',
+      { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
+      colors.textSecondary,
+    ),
+    ratioMetric(
+      'investment-share',
+      'Investido',
+      netWorth.breakdown.investments,
+      assetsBase,
+      'dos ativos',
+      { ios: 'chart.line.uptrend.xyaxis', android: 'trending_up', web: 'trending_up' },
+      colors.primary,
+    ),
+    ratioMetric(
+      'liquidity',
+      'Liquidez',
+      Math.max(0, netWorth.breakdown.accounts),
+      assetsBase,
+      'em contas',
+      { ios: 'banknote.fill', android: 'payments', web: 'payments' },
+      colors.accent,
+    ),
+    ratioMetric(
+      'inventory-share',
+      'Inventário',
+      netWorth.breakdown.inventory,
+      assetsBase,
+      'dos ativos',
+      { ios: 'shippingbox.fill', android: 'inventory', web: 'inventory' },
+      colors.textSecondary,
+    ),
   ];
 }
 
@@ -166,21 +189,6 @@ function mapMetricsPayload(
   payload: RawAnalysisMetricsPayload,
   netWorth: NetWorthResult,
 ): AnalysisMetric[] {
-  const totalAssets = netWorth.totalAssets || 1;
-  const debtRatio = toNumber(
-    pick(payload.debtRatio, payload.debt_ratio),
-    netWorth.totalAssets > 0
-      ? (netWorth.totalLiabilities / netWorth.totalAssets) * 100
-      : 0,
-  );
-  const investmentShare = toNumber(
-    pick(payload.investmentShare, payload.investment_share),
-    (netWorth.breakdown.investments / totalAssets) * 100,
-  );
-  const liquidityShare = toNumber(
-    pick(payload.liquidityShare, payload.liquidity_share),
-    (netWorth.breakdown.accounts / totalAssets) * 100,
-  );
   const savingsRate = pick(payload.savingsRate, payload.savings_rate);
 
   const metrics: AnalysisMetric[] = [];
@@ -197,40 +205,7 @@ function mapMetricsPayload(
     });
   }
 
-  metrics.push(
-    {
-      id: 'debt-ratio',
-      label: 'Rácio de dívida',
-      value: formatPercent(debtRatio, 1, false),
-      subtitle: 'passivos / ativos',
-      trend: debtRatio > 40 ? 'down' : 'neutral',
-      icon: { ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' },
-      color: debtRatio > 40 ? colors.danger : colors.textSecondary,
-    },
-    {
-      id: 'investment-share',
-      label: 'Investido',
-      value: formatPercent(investmentShare, 1, false),
-      subtitle: 'do património',
-      trend: 'up',
-      icon: {
-        ios: 'chart.line.uptrend.xyaxis',
-        android: 'trending_up',
-        web: 'trending_up',
-      },
-      color: colors.primary,
-    },
-    {
-      id: 'liquidity',
-      label: 'Liquidez',
-      value: formatPercent(liquidityShare, 1, false),
-      subtitle: 'em contas',
-      trend: 'neutral',
-      icon: { ios: 'banknote.fill', android: 'payments', web: 'payments' },
-      color: colors.accent,
-    },
-  );
-
+  metrics.push(...buildMetricsFromNetWorth(netWorth));
   return metrics;
 }
 

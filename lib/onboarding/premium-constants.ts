@@ -107,8 +107,16 @@ export const ONBOARDING_INVESTMENT_OPTIONS: PremiumOption<OnboardingInvestmentId
 /** Passo 14 — Segurança (informativo). */
 export const SECURITY_ITEMS: { emoji: string; title: string; description: string }[] = [
   { emoji: '🔒', title: 'Face ID e biometria', description: 'Só tu abres a tua CentFlow.' },
-  { emoji: '🛡️', title: 'Encriptação', description: 'Os teus dados são protegidos ponta a ponta.' },
-  { emoji: '☁️', title: 'Backup e sincronização', description: 'Nunca perdes o teu plano.' },
+  {
+    emoji: '🛡️',
+    title: 'Encriptação',
+    description: 'Os teus dados são protegidos em trânsito e em repouso.',
+  },
+  {
+    emoji: '☁️',
+    title: 'Backup e sincronização',
+    description: 'O teu plano é sincronizado com segurança com a tua conta.',
+  },
 ];
 
 /** Passo 15 — Construção (passos reais sempre que possível). */
