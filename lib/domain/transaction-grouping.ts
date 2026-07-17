@@ -6,6 +6,7 @@ import {
   incomeCountsForBudgetMonth,
 } from './monthly-budget-movements';
 import { calculateBudgetImpact } from './financial/ledger-impact';
+import { percentChangeVsPrevious } from './financial/safe-math';
 import { resolveTransactionKind } from './financial/transaction-kind';
 
 export type TransactionDaySection = {
@@ -26,7 +27,7 @@ export type MonthSummary = {
 export type MonthComparison = {
   current: MonthSummary;
   previous: MonthSummary;
-  /** Variação percentual do net actual face ao mês anterior (null se anterior = 0). */
+  /** Variação % face ao mês anterior; null sem base comparável. */
   netChangePercent: number | null;
 };
 
@@ -129,12 +130,9 @@ export function compareMonthSummaries(
   const current = summarizeCurrentMonth(transactions, now);
   const previous = summarizePreviousMonth(transactions, now);
 
-  let netChangePercent: number | null = null;
-  if (previous.net !== 0) {
-    netChangePercent = Math.round(((current.net - previous.net) / Math.abs(previous.net)) * 100);
-  } else if (current.net !== 0) {
-    netChangePercent = current.net > 0 ? 100 : -100;
-  }
-
-  return { current, previous, netChangePercent };
+  return {
+    current,
+    previous,
+    netChangePercent: percentChangeVsPrevious(current.net, previous.net),
+  };
 }

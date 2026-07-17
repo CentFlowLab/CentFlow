@@ -25,7 +25,7 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
     [data.trends.totalIncome, data.trends.totalExpenses],
   );
 
-  const topInsights = data.insights.slice(0, 3);
+  const topInsights = data.insights.slice(0, 3); // 1 prioritário + até 2 secundários
   const savingsMetric = data.metrics.find((m) => m.id === 'savings-rate');
   const cashflowMetric = data.metrics.find((m) => m.id === 'cashflow');
 
@@ -48,8 +48,10 @@ export function AnalysisSummaryTab({ data }: AnalysisSummaryTabProps) {
         <Text variant="caption" color="textMuted">
           Taxa de poupança
         </Text>
-        <Text variant="h2">
-          {formatPercent(Math.max(0, savings.rate ?? 0), 1, false)}
+        <Text variant="h2" color={savings.rate != null && savings.rate < 0 ? 'danger' : 'text'}>
+          {savings.rate == null
+            ? 'Sem dados suficientes'
+            : formatPercent(savings.rate, 1, false)}
         </Text>
         <Text variant="caption" color="textSecondary">
           Receitas {formatCurrency(savings.income)} · Gastos {formatCurrency(savings.expenses)}

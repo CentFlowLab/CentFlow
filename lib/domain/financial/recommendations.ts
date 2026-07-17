@@ -24,6 +24,7 @@ import { groupTransactionsByCategory } from './transactions';
 import { formatMoney, roundMoney } from './money';
 import { sumMonthlyDebtPayments } from './liabilities';
 import { buildHabitDeviationMessage, buildHabitDeviationTitle, detectSpendingHabits, findHabitDeviations } from './habits';
+import { emergencyMonthsCovered } from './safe-math';
 import type { FinancialState } from './financial-state.types';
 
 export type RecommendationPriority = 'alta' | 'média' | 'baixa';
@@ -316,10 +317,8 @@ function buildEmergencyFundRecommendations(
   const fixedMonthly = roundMoney(
     state.subscriptions.monthlyTotal + sumMonthlyDebtPayments(state.credits),
   );
-  if (fixedMonthly <= 0) return [];
-
-  const monthsCovered = state.availableThisMonth / fixedMonthly;
-  if (monthsCovered >= EMERGENCY_MONTHS_TARGET) return [];
+  const monthsCovered = emergencyMonthsCovered(state.availableThisMonth, fixedMonthly);
+  if (monthsCovered == null || monthsCovered >= EMERGENCY_MONTHS_TARGET) return [];
 
   const openGoals = state.goalProgress.filter((goal) => !goal.isComplete);
   if (openGoals.length === 0) return [];
@@ -332,7 +331,7 @@ function buildEmergencyFundRecommendations(
       ruleId: 'emergency_fund',
       priority: monthsCovered < 1 ? 'alta' : 'média',
       title: 'Fundo de emergência curto',
-      explanation: `Disponível ${formatMoney(state.availableThisMonth)} cobre ~${monthsCovered.toFixed(1)} meses de despesas fixas (${formatMoney(fixedMonthly)}/mês em subscrições e prestações). Recomendado: ≥${EMERGENCY_MONTHS_TARGET} meses antes de acelerar outros objetivos.`,
+      explanation: `O disponível ${formatMoney(state.availableThisMonth)} cobre cerca de ${monthsCovered.toFixed(1)} meses de despesas fixas (${formatMoney(fixedMonthly)}/mês em subscrições e prestações). Recomendado: pelo menos ${EMERGENCY_MONTHS_TARGET} meses antes de acelerar outros objetivos.`,
       suggestedAction: 'Priorizar poupança de emergência este mês',
       fingerprint,
       ctaRoute: '/(tabs)/ativos?tab=objetivos',

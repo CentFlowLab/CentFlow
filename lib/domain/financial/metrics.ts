@@ -6,9 +6,14 @@ import { isCardCredit } from '@/lib/credit/credit-type.utils';
 import { resolveEffectiveAnnualRate } from '@/lib/credit/credit-analysis';
 
 import { getMonthKey } from './dates';
-import { debtToIncomeRatio, sumCreditLiabilities, sumMonthlyDebtPayments } from './liabilities';
+import {
+  debtToIncomeRatio,
+  sumCreditLiabilities,
+  sumMonthlyDebtPayments,
+} from './liabilities';
 import { addMoney, roundMoney } from './money';
 import { calculateSavingsRate } from './savings';
+import { emergencyMonthsCovered } from './safe-math';
 import { getExpenseTotal, getIncomeTotal } from './transactions';
 import { monthlySubscriptionTotal } from './centflow-score';
 import type { CashFlowState, InvestmentSummary } from './financial-state.types';
@@ -91,12 +96,9 @@ export function calculateFinancialMetrics(input: CalculateMetricsInput): Financi
   const averageDailySpend =
     daysInMonth > 0 ? roundMoney(input.consumptionSpending / daysInMonth) : 0;
 
-  const emergencyMonths =
-    averageDailySpend > 0
-      ? roundMoney(input.availableThisMonth / (averageDailySpend * 30))
-      : input.availableThisMonth > 0
-        ? 99
-        : 0;
+  /** Meses de despesas fixas (subscrições + prestações) — alinhado a recomendações. */
+  const fixedMonthly = roundMoney(subTotal + sumMonthlyDebtPayments(input.credits));
+  const emergencyMonths = emergencyMonthsCovered(input.availableThisMonth, fixedMonthly) ?? 0;
 
   const loanCredits = input.credits.filter((c) => !isCardCredit(c.creditType));
   const taegSum = loanCredits.reduce((sum, c) => {

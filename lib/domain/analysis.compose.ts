@@ -110,11 +110,11 @@ export function composeAnalysisFromSources(input: {
           {
             id: 'savings-rate',
             label: 'Taxa de poupança',
-            value: formatPercent(Math.max(0, savings.rate), 1, false),
+            value: formatPercent(savings.rate, 1, false),
             subtitle: `últimos ${trends.periodDays} dias`,
-            trend: trends.netCashflow >= 0 ? ('up' as const) : ('down' as const),
+            trend: savings.rate >= 0 ? ('up' as const) : ('down' as const),
             icon: { ios: 'leaf.fill', android: 'eco', web: 'eco' },
-            color: colors.success,
+            color: savings.rate >= 0 ? colors.success : colors.danger,
           },
         ]
       : [];
@@ -161,11 +161,11 @@ export function applyAnalysisPeriod(
           {
             id: 'savings-rate',
             label: 'Taxa de poupança',
-            value: formatPercent(Math.max(0, savings.rate), 1, false),
+            value: formatPercent(savings.rate, 1, false),
             subtitle: periodLabel,
-            trend: trends.netCashflow >= 0 ? ('up' as const) : ('down' as const),
+            trend: savings.rate >= 0 ? ('up' as const) : ('down' as const),
             icon: { ios: 'leaf.fill', android: 'eco', web: 'eco' },
-            color: colors.success,
+            color: savings.rate >= 0 ? colors.success : colors.danger,
           },
         ]
       : [];

@@ -65,11 +65,14 @@ export function buildFinancialOpportunities(input: BuildOpportunitiesInput): {
     }
   }
 
-  if (metrics.emergencyMonths > 0 && metrics.emergencyMonths < 1) {
+  if (metrics.emergencyMonths >= 0 && metrics.emergencyMonths < 1) {
     insights.push({
       id: 'opp-emergency-fund',
       title: 'Fundo de emergência curto',
-      description: `O teu fundo de emergência cobre cerca de ${Math.round(metrics.emergencyMonths * 30)} dias.`,
+      description:
+        metrics.emergencyMonths === 0
+          ? 'O disponível não cobre um mês de despesas fixas (subscrições e prestações).'
+          : `O disponível cobre cerca de ${metrics.emergencyMonths.toFixed(1)} meses de despesas fixas.`,
       severity: 'warning',
       dataUsed: [`Disponível: ${formatMoney(input.availableThisMonth)}`],
     });

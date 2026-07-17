@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Text } from '@/components/ui';
 import type { MonthComparison } from '@/lib/domain/transaction-grouping';
 import { colors, spacing } from '@/lib/theme';
+import { formatMissingMetricLabel } from '@/lib/domain/financial/safe-math';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
 
 type MovementMonthSummaryCardProps = {
@@ -39,7 +40,7 @@ export function MovementMonthSummaryCard({ comparison }: MovementMonthSummaryCar
           </View>
         ) : (
           <Text variant="caption" color="textMuted">
-            Sem histórico no mês anterior
+            {formatMissingMetricLabel('no_comparison')}
           </Text>
         )}
       </View>
