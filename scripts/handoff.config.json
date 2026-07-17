@@ -199,7 +199,8 @@
     "RC2 Native Build — Build Android eb472165 FINISHED (APK RC2 canónico)",
     "RC2 Native Build — Fix lockfile npm@10.9.4 (typescript@5.9.3)",
     "iOS Sideload — branch rc2-ios-sideload + IPA unsigned (publish_ota:false)",
-    "Cleanup — removidos reports/auditorias de gate e código morto (CSV/hooks/widgets)"
+    "Cleanup — removidos reports/auditorias de gate e código morto (CSV/hooks/widgets)",
+    "Cleanup — removidos reexports mortos (hooks, barrels components/lib, open-banking index)"
   ],
   "pending": [
     "Financial Engine — migrar useCashflowProjection e useCategoryBudgetStatus para cache coreState",

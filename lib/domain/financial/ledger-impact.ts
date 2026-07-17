@@ -5,8 +5,6 @@ import { addMoney, roundMoney, subtractMoney } from './money';
 import {
   countsAsBudgetExpense,
   countsAsBudgetIncome,
-  countsAsCalendarSpending,
-  countsAsCalendarSpendingReduction,
   resolveTransactionKind,
   type LedgerTransactionKind,
   type TransactionLike,
@@ -309,5 +307,3 @@ export function ledgerKindLabel(kind: LedgerTransactionKind): string {
   };
   return labels[kind];
 }
-
-export { countsAsCalendarSpending, countsAsCalendarSpendingReduction };

@@ -22,5 +22,3 @@ async function setStoredVersion(version: number): Promise<void> {
 export async function runAllDataMigrations(userId: string): Promise<MigrationResult> {
   return runMigrations(ALL_MIGRATIONS, getStoredVersion, setStoredVersion, { userId });
 }
-
-export { migrateUserPreferences, withDefaults, runMigrations } from './migrationRunner';

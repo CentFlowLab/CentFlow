@@ -23,7 +23,6 @@ export * from './score-explain';
 /** Financial Core Engine v2 */
 export type { FinancialState, CalculateFinancialStateInput } from './financial-state.types';
 export { calculateFinancialState, financialStateToDashboard } from './financial-state';
-export { simulateFinancialDecision, buildScenarioFromSuggestionId } from './simulator';
 export {
   simulateDecision,
   type FinancialDecision,
@@ -56,16 +55,14 @@ export { runCoreFinancialState, toCalculateFinancialStateInput } from './engine.
 export type { FinancialEngineCoreInput, FinancialEngineCoreResult } from './engine.contract';
 
 /** Motor financeiro — orquestração de recálculos derivados */
-export {
-  recalculateFinancialState,
-  FINANCIAL_ENGINE_STEP_ORDER,
-} from './engine';
+export { recalculateFinancialState } from './engine';
 export { scheduleFinancialRecalculation, runFinancialRecalculation } from './engine.runner';
-export type {
-  FinancialRecalcTrigger,
-  FinancialEngineInput,
-  FinancialEngineRunResult,
-  FinancialEngineStepId,
+export {
+  FINANCIAL_ENGINE_STEP_ORDER,
+  type FinancialRecalcTrigger,
+  type FinancialEngineInput,
+  type FinancialEngineRunResult,
+  type FinancialEngineStepId,
 } from './engine.types';
 export type {
   Recommendation,

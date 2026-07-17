@@ -1,15 +1,11 @@
 export { ActionCenterSheet } from './ActionCenterSheet';
-export { AttentionCard } from './AttentionCard';
 export { HomeAssistantCard } from './HomeAssistantCard';
 export { DemoModeBadge } from './DemoModeBadge';
 export { HomeAssetsSummaryCard } from './HomeAssetsSummaryCard';
 export { HomePersonalizedInsightCard } from './HomePersonalizedInsightCard';
 export { HomePostOnboardingWelcomeCard } from './HomePostOnboardingWelcomeCard';
 export { RecommendationsCard } from './RecommendationsCard';
-export { RecommendationCard } from './RecommendationCard';
-export { RecommendationsSheet } from './RecommendationsSheet';
 export { HomeAlertsSection } from './HomeAlertsSection';
 export { HomeAttentionSheet } from './HomeAttentionSheet';
 export { DashboardHeaderLeading } from './DashboardHeaderLeading';
 export { DashboardSkeleton } from './DashboardSkeleton';
-export { SuggestionCard } from './SuggestionCard';

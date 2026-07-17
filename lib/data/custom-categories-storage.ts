@@ -176,5 +176,3 @@ export function suggestEmojiForCategoryName(name: string, currentEmoji?: string,
   if (emojiManual && currentEmoji) return currentEmoji;
   return getAutoEmoji(name) ?? currentEmoji ?? DEFAULT_CATEGORY_EMOJI;
 }
-
-export { resolveCategoryEmoji, getAutoEmoji, DEFAULT_CATEGORY_EMOJI };

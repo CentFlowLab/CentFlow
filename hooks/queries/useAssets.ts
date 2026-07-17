@@ -27,8 +27,6 @@ import type {
   UpdateWarrantyInput,
 } from '@/lib/domain/assets.schema';
 
-export { invalidateAssetsQueries };
-
 export function useAssets() {
   const { isAuthenticated } = useAuth();
 

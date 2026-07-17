@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { queryKeys } from '@/lib/api/keys';
@@ -26,12 +26,6 @@ import type {
 } from '@/lib/domain/transaction.types';
 import { checkCategorySpendAnomalyForTransaction } from '@/lib/notifications/category-spend-alert.service';
 import { scheduleFinancialRecalculation } from '@/lib/domain/financial/engine.runner';
-
-export {
-  getTransactionQueries,
-  patchTransactionCaches,
-  invalidateTransactionQueries,
-};
 
 export function useTransactions(filter: TransactionFilter = 'all') {
   const { isAuthenticated } = useAuth();

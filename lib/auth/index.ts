@@ -1,22 +1,7 @@
 export { AuthProvider } from './auth.context';
 export { useAuth } from './useAuth';
 export { isMockAuthEnabled, isMockOcrDemoEnabled } from './mock-auth';
-export { getGoogleAuthRedirectUri, getGoogleAuthRedirectAllowList } from './google-oauth.config';
-export { getSupabaseGoogleOAuthCallbackUrl } from './supabase-oauth.config';
-export {
-  isOAuthCallbackUrl,
-  openGoogleOAuthBrowser,
-  parseGoogleOAuthCallbackUrl,
-  resolveOAuthCallbackUrl,
-} from './google-oauth';
-export { isSupabaseEnabled, isGoogleSignInAvailable } from '@/lib/supabase';
+export { resolveOAuthCallbackUrl } from './google-oauth';
 export * as authService from './auth.service';
 export { getAuthErrorMessage } from './errors';
 export { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema } from './schemas';
-export type {
-  User,
-  AuthSession,
-  LoginCredentials,
-  RegisterCredentials,
-} from './types';
-export { AUTH_ENDPOINTS } from './constants';

@@ -164,5 +164,3 @@ export function useTheme(): ThemeContextValue {
 export function useThemeColors(): ThemeColors {
   return useTheme().colors;
 }
-
-export { normalizeThemeId };

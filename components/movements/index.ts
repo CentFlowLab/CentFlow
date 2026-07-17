@@ -1,24 +1,15 @@
 export { RefundTransactionModal } from './RefundTransactionModal';
 export { AddTransactionModal } from './AddTransactionModal';
-export { ConfirmReceiptModal } from './ConfirmReceiptModal';
 export { EditTransactionModal } from './EditTransactionModal';
-export { MOVEMENTS_EMPTY_CONFIG, MOVEMENTS_VIEW_SEGMENTS } from './movements.config';
+export { MOVEMENTS_EMPTY_CONFIG } from './movements.config';
 export { MovementFilterChips, computeMovementFilterCounts, type MovementTab } from './MovementFilterChips';
 export { MovementMonthSummaryCard } from './MovementMonthSummaryCard';
 export { MovementSearchBar } from './MovementSearchBar';
 export { PendingSubscriptionModal } from './PendingSubscriptionModal';
 export { QuickExpenseSheet } from './QuickExpenseSheet';
-export { OcrFailureCard, OcrFieldBadge, OcrFieldsChecklist } from './ocr';
-export { ReceiptDataForm } from './ReceiptDataForm';
-export { ReceiptItemsEditor } from './ReceiptItemsEditor';
-export { ReceiptItemsSummary } from './ReceiptItemsSummary';
-export { ReceiptImageViewer } from './ReceiptImageViewer';
-export { ReceiptOcrProcessingOverlay } from './ReceiptOcrProcessingOverlay';
-export { ReceiptPreview } from './ReceiptPreview';
 export { SwipeableTransactionListItem } from './SwipeableTransactionListItem';
 export {
   TransactionContextMenuSheet,
   type TransactionContextAction,
 } from './TransactionContextMenuSheet';
-export { TransactionForm } from './TransactionForm';
 export { TransactionsSkeleton } from './TransactionsSkeleton';

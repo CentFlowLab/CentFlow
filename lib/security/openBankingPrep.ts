@@ -11,5 +11,3 @@ export type OpenBankingConsentRecord = {
   expiresAt?: string;
   revokedAt?: string;
 };
-
-export { prepareOpenBankingConsentStore } from './open-banking-store';

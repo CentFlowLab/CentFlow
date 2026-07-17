@@ -7,9 +7,6 @@ import {
   financialStateToDashboard,
 } from '@/lib/domain/financial/financial-state';
 
-/** Movimentos já ocorridos — reutilizável em análises e score. */
-export { filterOccurredTransactions } from '@/lib/domain/financial/transactions';
-
 /** Dashboard mínimo a partir de dados Supabase (sem API legacy). */
 export function composeDashboardFromLocalSources(input: {
   transactions: Transaction[];

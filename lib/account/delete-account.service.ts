@@ -5,12 +5,7 @@ import { clearPrivacyConsent } from '@/lib/privacy/consent.storage';
 import { secureStorage, SECURE_KEYS } from '@/lib/security/secureStorage';
 import { getSupabaseClient, isSupabaseEnabled } from '@/lib/supabase';
 
-import {
-  DELETE_ACCOUNT_CONFIRMATION_PHRASE,
-  getDeleteAccountConfirmationPhrase,
-} from './delete-account.constants';
-
-export { getDeleteAccountConfirmationPhrase };
+import { DELETE_ACCOUNT_CONFIRMATION_PHRASE } from './delete-account.constants';
 
 export type DeleteAccountInput = {
   email: string;

@@ -13,8 +13,6 @@ import type {
 } from './engine.types';
 import { FINANCIAL_ENGINE_STEP_ORDER } from './engine.types';
 
-export { FINANCIAL_ENGINE_STEP_ORDER } from './engine.types';
-
 function nowMs(): number {
   if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
     return performance.now();

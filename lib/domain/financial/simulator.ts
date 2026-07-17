@@ -660,11 +660,3 @@ export function creditUtilizationAfterPayment(
   const newBalance = roundMoney(Math.max(0, subtractMoney(credit.outstandingBalance, paymentAmount)));
   return calculateCreditUtilization({ ...credit, outstandingBalance: newBalance });
 }
-
-export {
-  simulateDecision,
-  type FinancialDecision,
-  type DecisionSimulationResult,
-  type DecisionGoalImpact,
-  type SimulateDecisionContext,
-} from './decision-simulator';

@@ -1,7 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 
 import {
-  invalidateAllRemoteData,
   invalidateAssetsQueries,
   invalidateTransactionQueries,
 } from '@/lib/api/invalidate-queries';
@@ -70,5 +69,3 @@ export function subscribeToUserDataSync(
     return () => {};
   }
 }
-
-export { invalidateAllRemoteData };
