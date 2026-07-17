@@ -184,8 +184,8 @@ export default function InicioScreen() {
     spendable: (
       <>
         <MonthlySpendableCard key="spendable" onOpenDetails={() => setSpendableVisible(true)} />
-        <FinancialActionsCard key="financial-actions" maxActions={3} />
-        <RecommendationsCard key="recommendations" maxVisible={3} />
+        <FinancialActionsCard key="financial-actions" maxActions={1} />
+        <RecommendationsCard key="recommendations" maxVisible={1} />
       </>
     ),
     assets: hasActivity ? (
@@ -199,14 +199,16 @@ export default function InicioScreen() {
         onOpenAllAttention={() => setAttentionSheetVisible(true)}
       />
     ),
-    assistant: (
-      <HomeAssistantCard
-        key="assistant"
-        plan={assistant}
-        onAction={handleAssistantAction}
-        onOpenActionCenter={() => setActionCenterVisible(true)}
-      />
-    ),
+    /** Assistente só com insights concretos — evita cartão genérico. */
+    assistant:
+      assistant.insights.length > 0 ? (
+        <HomeAssistantCard
+          key="assistant"
+          plan={assistant}
+          onAction={handleAssistantAction}
+          onOpenActionCenter={() => setActionCenterVisible(true)}
+        />
+      ) : null,
   };
 
   return (

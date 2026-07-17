@@ -16,7 +16,6 @@ import { BackTapGuideGate } from '@/components/onboarding';
 import { DecisionSimulatorHost } from '@/components/simulator';
 import { CentFlowTabBar } from '@/components/layout/CentFlowTabBar';
 import { TabIcon } from '@/components/icons/TabIcon';
-import { TabBarAnalisesIcon } from '@/components/layout';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { useTabBarMetrics } from '@/hooks/useTabBarMetrics';
 import { spacing, typography, useTheme, useThemedStyles } from '@/lib/theme';
@@ -48,7 +47,6 @@ function TabLayoutInner() {
               minHeight: contentHeight,
               paddingBottom: 0,
               paddingTop: 0,
-              overflow: 'visible',
             },
         tabBarLabelStyle: typography.tabLabel,
         tabBarLabel: ({ focused, color, children }) => (
@@ -107,23 +105,16 @@ function TabLayoutInner() {
         name="analises"
         options={{
           title: 'Análises',
-          tabBarIcon: ({ focused }) => <TabBarAnalisesIcon focused={focused} />,
-          tabBarLabel: ({ focused, children }) => (
-            <Text
-              style={[
-                typography.tabLabel,
-                styles.tabLabel,
-                {
-                  color: focused ? colors.primary : colors.textMuted,
-                  fontWeight: focused ? '600' : '400',
-                },
-              ]}>
-              {children}
-            </Text>
-          ),
-          tabBarItemStyle: styles.analisesTabItem,
-          tabBarButton: (props) => (
-            <TabBarAnalisesButton {...(props as PressableProps)} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={{
+                ios: 'chart.pie.fill',
+                android: 'pie_chart',
+                web: 'pie_chart',
+              }}
+              color={color}
+              size={focused ? 26 : 24}
+            />
           ),
         }}
       />
@@ -174,33 +165,6 @@ function TabLayoutInner() {
     <BackTapGuideGate />
     <DecisionSimulatorHost />
     </>
-  );
-}
-
-function TabBarAnalisesButton(props: PressableProps) {
-  const { style, children, ...rest } = props;
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
-
-  return (
-    <Pressable
-      {...rest}
-      android_ripple={{
-        color: `${colors.primary}30`,
-        borderless: true,
-        radius: 32,
-      }}
-      hitSlop={{ top: 8, bottom: 4, left: 4, right: 4 }}
-      style={(state) => [
-        styles.analisesTabButton,
-        typeof style === 'function' ? style(state) : style,
-      ]}>
-      {(state) => (
-        <View style={styles.analisesTabContent}>
-          {renderPressableChildren(children, state)}
-        </View>
-      )}
-    </Pressable>
   );
 }
 
@@ -257,26 +221,8 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       paddingVertical: spacing.xs,
     },
-    analisesTabItem: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingVertical: spacing.xs,
-      overflow: 'visible',
-    },
     tabLabel: {
       marginTop: 2,
-    },
-    analisesTabButton: {
-      flex: 1,
-      alignSelf: 'stretch',
-      overflow: 'visible',
-    },
-    analisesTabContent: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'visible',
     },
     tabButton: {
       flex: 1,

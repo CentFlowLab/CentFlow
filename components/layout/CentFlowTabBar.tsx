@@ -21,7 +21,7 @@ type CentFlowTabBarProps = {
 };
 
 /**
- * Tab bar com safe area inferior clampada (Android) e espaço para botão central elevado.
+ * Tab bar equilibrada — safe area inferior clampada (Android), sem botão central elevado.
  */
 export function CentFlowTabBar(props: CentFlowTabBarProps) {
   const { hidden, ...rest } = props;
@@ -36,7 +36,7 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
     backgroundColor: colors.tabBar,
     paddingBottom: bottomInset,
     minHeight: totalHeight,
-    overflow: 'visible',
+    overflow: 'hidden',
     borderTopWidth: 1,
     borderTopColor: colors.tabBarBorder,
   };
@@ -45,7 +45,7 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
     height: contentHeight,
     minHeight: contentHeight,
     justifyContent: 'center',
-    overflow: 'visible',
+    overflow: 'hidden',
   };
 
   return (
@@ -62,7 +62,7 @@ export function CentFlowTabBar(props: CentFlowTabBarProps) {
               paddingBottom: 0,
               paddingTop: 0,
               borderTopWidth: 0,
-              overflow: 'visible',
+              overflow: 'hidden',
             },
             rest.style,
           ]}
