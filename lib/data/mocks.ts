@@ -246,9 +246,6 @@ export function buildMockDashboard(): DashboardData {
   };
 }
 
-/** @deprecated Usar buildMockDashboard() — mantido para retrocompatibilidade. */
-export const mockDashboard = buildMockDashboard();
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getDateFromNow(days: number): string {

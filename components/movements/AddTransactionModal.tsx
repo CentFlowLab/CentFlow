@@ -53,7 +53,6 @@ type AddTransactionModalProps = {
   startWithReceiptPicker?: boolean;
   /** Filtro activo em Movimentos — define tipo inicial e se mostra selector. */
   presetFilter?: TransactionModalPreset;
-  onImportCsv?: () => void;
   onRequestCardPayment?: () => void;
   onRequestRefund?: () => void;
 };
@@ -78,7 +77,6 @@ export function AddTransactionModal({
   onClose,
   startWithReceiptPicker = false,
   presetFilter = 'all',
-  onImportCsv,
   onRequestCardPayment,
   onRequestRefund,
 }: AddTransactionModalProps) {
@@ -750,26 +748,6 @@ export function AddTransactionModal({
           />
         ) : null}
 
-        {onImportCsv ? (
-          <Button
-            label="Importar CSV"
-            variant="secondary"
-            onPress={onImportCsv}
-            disabled={isBusy}
-            fullWidth
-            icon={
-              <SymbolView
-                name={{
-                  ios: 'square.and.arrow.down',
-                  android: 'upload_file',
-                  web: 'upload_file',
-                }}
-                tintColor={colors.primary}
-                size={18}
-              />
-            }
-          />
-        ) : null}
           </>
         )}
       </DraggableBottomSheet>

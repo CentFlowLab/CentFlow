@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-16T23:04:29.054Z -->
-<!-- Git: 258a73a (2026-07-12T20:58:14+01:00) -->
+<!-- Última geração: 2026-07-17T02:13:12.544Z -->
+<!-- Git: 430c8c6 (2026-07-17T00:07:35+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **RC2 Device QA — build Android 607cc31c errored; smoke bloqueado até novo APK** |
-| Última geração | 2026-07-16T23:04:29.054Z |
+| Última geração | 2026-07-17T02:13:12.544Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `258a73a` (2026-07-12T20:58:14+01:00) |
+| Git commit | `430c8c6` (2026-07-17T00:07:35+01:00) |
 
 ---
 
@@ -373,7 +373,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useAssets.ts
     useBankConnections.ts
     useCategoryBudgets.ts
-    useDashboard.ts
     useDashboardData.ts
     useEmailEvents.ts
     useFinancialProfile.ts
@@ -384,7 +383,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     useMarkSubscriptionPaid.ts
     useMarkSubscriptionReviewed.ts
     useOnboardingAnswers.ts
-    usePatrimonyAllocation.ts
     useProfile.ts
     useTransactions.ts
     useUserPreferences.ts
@@ -401,8 +399,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useFinancialRecommendations.ts
   useFinancialState.ts
   useFinancialState.types.ts
-  useFormDismiss.ts
-  useImportCsv.ts
   useKeyboardVisible.ts
   useMonthlySpendable.ts
   useMovementRenderProbe.ts
@@ -414,7 +410,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
   useResponsiveLayout.ts
   useSavingsAllocationAction.ts
   useSubscriptionDetection.ts
-  useTabBarBottomInset.ts
   useTabBarMetrics.ts
   account/
     delete-account.constants.ts
@@ -450,7 +445,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       accounts.service.ts
       analysis.service.ts
       assets.service.ts
-      csv-import.service.ts
       dashboard.service.ts
       financial-profile.service.ts
       home.service.ts
@@ -516,16 +510,11 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     credit-reminder-storage.ts
     credit-type.utils.test.ts
     credit-type.utils.ts
-  csv/
-    csv-import.types.ts
-    parse-transactions-csv.ts
-    read-csv-file.ts
   data/
     analysis.mocks.ts
     category-budgets-storage.ts
     custom-categories-storage.ts
     mocks.ts
-    prices.mocks.ts
     transaction-categories.ts
   diagnostics/
     app-log.ts
@@ -594,7 +583,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       centflow-score.ts
       credit-cards.test.ts
       credit-cards.ts
-      creditCards.ts
       credits.ts
       dates.test.ts
       dates.ts
@@ -923,8 +911,6 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
     format.ts
     pluralize.test.ts
     pluralize.ts
-  widgets/
-    widget-data.ts
   generate-handoff.ts
   handoff-metrics.ts
   handoff.config.json
@@ -1114,7 +1100,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Padrões de gasto habituais — detectSpendingHabits (dia da semana + merchant), insight neutro nas recomendações (prioridade baixa), ignorar falso positivo
 - Benchmarks agregados — tabela spending_benchmarks, Edge Function + cron semanal, opt-in explícito, UI Análises inactiva até escala
 - Financial Engine Unification — runCoreFinancialState como única fonte; v2 passos derivam coreState; paridade + mutation tests; 421/421 npm test
-- Financial Engine Unification — docs/financial-engine-audit.md, docs/financial-engine-unification.md, FINANCIAL_ENGINE_UNIFICATION_REPORT.md
+- Financial Engine Unification — docs/financial-engine-unification.md
 - Financial Engine Unification — fix movimentos futuros em saldos de conta; objetivos PL só com contribuições; home/dashboard passam accounts
 - Financial Engine Unification — fix 5 testes Node (safe-area, financial-movement); fix useLoanPayments import engine.runner
 - Compliance RC — Política de Privacidade in-app (/legal/privacy) + docs/legal/privacy-policy.md v1.0.0
@@ -1127,22 +1113,12 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - RC1 Device Validation — docs/device-test-matrix.md (matriz 8 dispositivos)
 - RC1 Device Validation — docs/smoke-test-checklist.md (50+ smoke tests P0/P1/P2)
 - RC1 Device Validation — docs/crash-matrix.md (riscos crash por fluxo)
-- RC1 Device Validation — REAL_DEVICE_VALIDATION_PLAN.md (plano mestre campanha)
-- RC1 Device Validation — RC1_RELEASE_GATE.md (porta TestFlight/Play)
-- RC2 Build Readiness — docs/build-audit.md (auditoria EAS/Expo/plugins)
-- RC2 Build Readiness — BUILD_RELEASE_AUDIT.md (scores + recomendação build)
-- RC2 Build Readiness — RC2_BUILD_CHECKLIST.md (PASS/FAIL/PENDENTE)
-- RC2 Native Build — expo-video removido (zero imports; ADR-006 obsoleto)
-- RC2 Native Build — blockedPermissions RECORD_AUDIO em app.json (manifest final sem microfone)
-- RC2 Native Build — preflight verde (npm ci, 487/487, tsc 0, assets, handoff)
-- RC2 Native Build — docs/supabase-external-checklist.md + smoke-p0-execution.md
-- RC2 Native Build — RC2_NATIVE_BUILD_REPORT.md
-- RC2 Native Build — Build Android 607cc31c ERRORED (sem APK; causa: lockfile npm 10)
-- RC2 Native Build — Fix lockfile npm@10.9.4 (typescript@5.9.3); validação local verde
-- RC2 Native Build — docs/android-build-607cc31c-failure.md (causa-raiz documentada)
+- RC1 Device Validation — docs de smoke/device/crash matrix
+- RC2 Native Build — expo-video removido; blockedPermissions RECORD_AUDIO
 - RC2 Native Build — Build Android eb472165 FINISHED (APK RC2 canónico)
-- iOS RC2 — auditoria + preflight; IPA bloqueado (sem Apple Team no EAS)
-- iOS RC2 — IOS_RC2_BUILD_REPORT.md criado
+- RC2 Native Build — Fix lockfile npm@10.9.4 (typescript@5.9.3)
+- iOS Sideload — branch rc2-ios-sideload + IPA unsigned (publish_ota:false)
+- Cleanup — removidos reports/auditorias de gate e código morto (CSV/hooks/widgets)
 
 ### 🔲 Pendente
 - Financial Engine — migrar useCashflowProjection e useCategoryBudgetStatus para cache coreState
@@ -1213,7 +1189,7 @@ Tema        → lib/theme/
 ## Integração API (futuro)
 
 ```typescript
-// hooks/queries/useDashboard.ts
+// hooks/queries/useDashboardData.ts
 const raw = await apiFetch<DashboardRaw>('/dashboard');
 return mapToDashboard(raw); // usa calculateNetWorth() no mapper
 ```

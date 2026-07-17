@@ -43,7 +43,6 @@ export * from './budget';
 export * from './cashflow';
 export * from './forecast';
 export * from './credits';
-export * from './creditCards';
 export * from './assets';
 export * from './investments';
 export * from './subscriptions';

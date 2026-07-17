@@ -49,5 +49,7 @@ ci-artifacts/
 
 # build logs (podem conter URLs/chaves anon — não commitar)
 build-log*.txt
+build-log.bin
+build-view-temp.json
 eas-build-output.txt
 

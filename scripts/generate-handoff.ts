@@ -287,7 +287,7 @@ Tema        → lib/theme/
 ## Integração API (futuro)
 
 \`\`\`typescript
-// hooks/queries/useDashboard.ts
+// hooks/queries/useDashboardData.ts
 const raw = await apiFetch<DashboardRaw>('/dashboard');
 return mapToDashboard(raw); // usa calculateNetWorth() no mapper
 \`\`\`

@@ -14,16 +14,16 @@ import { getRuntimePublicEnv } from '@/lib/config/runtime-env';
 
 /**
  * Modo dev: permite testar a app sem backend.
- * - EXPO_PUBLIC_MOCK_AUTH=true  → força mock
+ * - Beta / Produção → nunca mock (mesmo com EXPO_PUBLIC_MOCK_AUTH=true forçado)
  * - EXPO_PUBLIC_MOCK_AUTH=false → força API real
- * - Beta / Produção → nunca mock (mesmo em __DEV__)
+ * - EXPO_PUBLIC_MOCK_AUTH=true  → mock (só fora de beta/produção)
  * - Development → mock activo por defeito em __DEV__
  */
 export function isMockAuthEnabled(): boolean {
+  if (isRealDataOnlyVariant()) return false;
   const mockAuth = getRuntimePublicEnv('EXPO_PUBLIC_MOCK_AUTH');
   if (mockAuth === 'false') return false;
   if (mockAuth === 'true') return true;
-  if (isRealDataOnlyVariant()) return false;
   return __DEV__;
 }
 

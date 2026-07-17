@@ -2,10 +2,10 @@
 
 ## Estado
 
-- Snapshot de dados preparado em `lib/widgets/widget-data.ts`
-- UI nativa de widgets **pendente** de módulo nativo (iOS WidgetKit / Android Glance)
+- Stub JS removido (não havia UI nativa ligada).
+- UI nativa de widgets **pendente** de módulo nativo (iOS WidgetKit / Android Glance).
 
-## Dados expostos
+## Dados previstos
 
 | Campo | Descrição |
 |-------|-----------|
@@ -17,5 +17,5 @@
 ## Próximo passo nativo
 
 1. Configurar target Widget Extension (iOS) ou App Widget (Android)
-2. Partilhar `WidgetSnapshot` via App Group / SharedPreferences
+2. Definir `WidgetSnapshot` partilhado via App Group / SharedPreferences
 3. Refresh a cada abertura da app + background fetch
