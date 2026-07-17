@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-17T02:21:25.337Z -->
-<!-- Git: a28d832 (2026-07-17T03:13:26+01:00) -->
+<!-- Última geração: 2026-07-17T15:44:14.309Z -->
+<!-- Git: 2e0ba95 (2026-07-17T03:21:33+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **RC2 Device QA — build Android 607cc31c errored; smoke bloqueado até novo APK** |
-| Última geração | 2026-07-17T02:21:25.337Z |
+| Última geração | 2026-07-17T15:44:14.309Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `a28d832` (2026-07-17T03:13:26+01:00) |
+| Git commit | `2e0ba95` (2026-07-17T03:21:33+01:00) |
 
 ---
 
@@ -641,6 +641,8 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
       projections.ts
       recommendations.test.ts
       recommendations.ts
+      safe-math.test.ts
+      safe-math.ts
       savings-allocation.test.ts
       savings-allocation.ts
       savings-margin.test.ts
@@ -1119,6 +1121,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - iOS Sideload — branch rc2-ios-sideload + IPA unsigned (publish_ota:false)
 - Cleanup — removidos reports/auditorias de gate e código morto (CSV/hooks/widgets)
 - Cleanup — removidos reexports mortos (hooks, barrels components/lib, open-banking index)
+- UX Remediation P0 — guardrails financeiros, Doctor só DEV, OCR flag, tab bar, perfil, settings
 
 ### 🔲 Pendente
 - Financial Engine — migrar useCashflowProjection e useCategoryBudgetStatus para cache coreState
