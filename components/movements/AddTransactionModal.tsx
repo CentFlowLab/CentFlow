@@ -30,6 +30,7 @@ import {
 } from '@/lib/api/errors';
 import { uploadReceiptOnly } from '@/lib/api/services/receipt.service';
 import { resolveOcrUserMessage, DEFAULT_OCR_FAILED_MESSAGE } from '@/lib/receipt/ocr-messages';
+import { isReceiptOcrUiEnabled } from '@/lib/config/product-features';
 import { colors, formSpacing, radius, spacing } from '@/lib/theme';
 import { logDoctorValidationFailure, traceMovementError, traceMovementStep } from '@/lib/doctor';
 import { setDiagnosticAction } from '@/lib/diagnostics';
@@ -164,8 +165,12 @@ export function AddTransactionModal({
     if (!visible || !startWithReceiptPicker || didAutoPick.current) return;
     traceMovementStep('effect_auto_receipt_picker');
     didAutoPick.current = true;
+    if (!isReceiptOcrUiEnabled()) {
+      setManualFillMode(true);
+      return;
+    }
     receiptImage.showSourcePicker();
-  }, [visible, startWithReceiptPicker]);
+  }, [visible, startWithReceiptPicker, receiptImage]);
 
   useEffect(() => {
     if (!visible) {
@@ -680,13 +685,14 @@ export function AddTransactionModal({
           <Card variant="outlined" style={styles.hintCard}>
             <Text variant="bodyMedium">Ficheiro anexado</Text>
             <Text variant="caption" color="textSecondary">
-              Analisa com OCR para extrair valor, data e loja automaticamente — ou preenche
-              manualmente. O ficheiro fica sempre guardado no movimento.
+              {isReceiptOcrUiEnabled()
+                ? 'Analisa com OCR para extrair valor, data e loja automaticamente — ou preenche manualmente. O ficheiro fica sempre guardado no movimento.'
+                : 'Preenche os dados do movimento. O ficheiro fica guardado como anexo.'}
             </Text>
           </Card>
         )}
 
-        {hasReceipt && !manualFillMode && isProcessing && processPhaseLabel ? (
+        {hasReceipt && !manualFillMode && isReceiptOcrUiEnabled() && isProcessing && processPhaseLabel ? (
           <ReceiptOcrProcessingOverlay phaseLabel={processPhaseLabel} />
         ) : null}
 
@@ -704,7 +710,7 @@ export function AddTransactionModal({
           </Text>
         ) : null}
 
-        {hasReceipt && !manualFillMode ? (
+        {hasReceipt && !manualFillMode && isReceiptOcrUiEnabled() ? (
           <Button
             label={processPhaseLabel ?? 'Analisar com OCR'}
             onPress={handleProcessReceipt}

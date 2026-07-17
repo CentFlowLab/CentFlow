@@ -1,10 +1,16 @@
 import type { QuickAddActionId } from '@/components/layout/QuickAddMenuSheet';
+import { isReceiptOcrUiEnabled } from '@/lib/config/product-features';
 import {
   getContextualQuickAddActions,
   type QuickAddScreenContext,
 } from '@/lib/navigation/quick-add-context';
 
 import type { OnboardingAnswers, PrimaryObjectiveId, WowActionId } from './types';
+
+function withoutDisabledReceiptActions(actions: QuickAddActionId[]): QuickAddActionId[] {
+  if (isReceiptOcrUiEnabled()) return actions;
+  return actions.filter((action) => action !== 'receipt');
+}
 
 const FIRST_ACTION_MAP: Partial<Record<WowActionId, QuickAddActionId>> = {
   first_receipt: 'receipt',
@@ -74,12 +80,12 @@ export function getRankedQuickAddActions(
   context: QuickAddScreenContext,
   answers: OnboardingAnswers | null | undefined,
 ): QuickAddActionId[] {
-  const screenDefaults = getContextualQuickAddActions(context);
+  const screenDefaults = withoutDisabledReceiptActions(getContextualQuickAddActions(context));
   if (!answers?.completed || context !== 'home') {
     return screenDefaults;
   }
 
-  const allowed = homeAllowedActions(answers);
+  const allowed = withoutDisabledReceiptActions(homeAllowedActions(answers));
   const ranked: QuickAddActionId[] = [];
 
   const push = (id: QuickAddActionId) => {
@@ -103,5 +109,5 @@ export function getRankedQuickAddActions(
 
   for (const id of screenDefaults) push(id);
 
-  return ranked.length > 0 ? ranked : screenDefaults;
+  return withoutDisabledReceiptActions(ranked.length > 0 ? ranked : screenDefaults);
 }

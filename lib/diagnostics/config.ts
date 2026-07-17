@@ -1,7 +1,10 @@
 import { getAppVariant } from '@/lib/config/app-variant';
 
-/** Activo em development e beta — fase de testes. */
+/**
+ * CentFlow Doctor — apenas builds de desenvolvimento local.
+ * Nunca em beta/produção (testers externos não veem ferramentas internas).
+ */
 export function isDiagnosticsEnabled(): boolean {
-  const variant = getAppVariant();
-  return variant === 'development' || variant === 'beta';
+  if (typeof __DEV__ !== 'undefined' && __DEV__) return true;
+  return getAppVariant() === 'development';
 }

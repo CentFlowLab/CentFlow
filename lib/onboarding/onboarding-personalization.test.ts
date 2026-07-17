@@ -29,7 +29,7 @@ describe('resolveFirstAction', () => {
 });
 
 describe('getRankedQuickAddActions', () => {
-  it('coloca receipt primeiro para perfil de talões', () => {
+  it('omite receipt quando OCR UI está desligado (defeito)', () => {
     const ranked = getRankedQuickAddActions('home', {
       ...EMPTY_ONBOARDING_ANSWERS,
       completed: true,
@@ -37,7 +37,8 @@ describe('getRankedQuickAddActions', () => {
       profileTags: ['receipts_warranties'],
       firstAction: 'first_receipt',
     });
-    assert.equal(ranked[0], 'receipt');
+    assert.equal(ranked.includes('receipt'), false);
+    assert.ok(ranked.length > 0);
   });
 
   it('coloca credit primeiro quando há créditos no onboarding', () => {
