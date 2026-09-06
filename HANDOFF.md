@@ -1,7 +1,7 @@
 <!-- ⚠️ AUTO-GENERATED — não editar manualmente -->
 <!-- Gerado por: npm run handoff -->
-<!-- Última geração: 2026-07-17T17:51:41.459Z -->
-<!-- Git: e7bd7ea (2026-07-17T16:44:28+01:00) -->
+<!-- Última geração: 2026-09-06T23:34:38.445Z -->
+<!-- Git: 9e763a2 (2026-07-17T18:52:21+01:00) -->
 
 # CentFlow Mobile — Handoff
 
@@ -17,9 +17,9 @@
 | Campo | Valor |
 |-------|-------|
 | Fase atual | **Internal Beta — sprint coerência financeira/UX (sem OTA nesta entrega)** |
-| Última geração | 2026-07-17T17:51:41.459Z |
+| Última geração | 2026-09-06T23:34:38.445Z |
 | Path do projeto | `C:\Users\Emanuel\Documents\CentFlow` |
-| Git commit | `e7bd7ea` (2026-07-17T16:44:28+01:00) |
+| Git commit | `9e763a2` (2026-07-17T18:52:21+01:00) |
 
 ---
 
@@ -1131,6 +1131,7 @@ Token enviado automaticamente via `Authorization: Bearer` em `apiFetch`.
 - Sprint confiança — onboarding plano/OCR/IA/segurança; seleção múltipla acessível
 - Sprint confiança — Open Banking UI off + erros Edge Function traduzidos
 - Sprint confiança — Home prioridade única + movimentos recentes; Registar pagamento; tab Património
+- Polish — datas de dívida formatadas PT, erros técnicos fora de toasts, acção Produto removida, a11y no selector de período
 
 ### 🔲 Pendente
 - QA dispositivo — validar Home/Movimentos/Análises/Património em iPhone físico (LiveContainer)

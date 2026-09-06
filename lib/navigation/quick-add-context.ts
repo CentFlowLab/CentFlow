@@ -68,8 +68,6 @@ export function getQuickAddActionLabel(action: QuickAddActionId): string {
       return 'Novo ativo';
     case 'warranty':
       return 'Nova garantia';
-    case 'product':
-      return 'Produto';
     default:
       return 'Adicionar';
   }

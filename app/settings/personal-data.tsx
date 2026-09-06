@@ -34,11 +34,8 @@ export default function PersonalDataScreen() {
     try {
       await updateProfile.mutateAsync({ name: name.trim(), email: email.trim() });
       showToast('Dados guardados com sucesso.', 'success');
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Não foi possível guardar os dados.',
-        'error',
-      );
+    } catch {
+      showToast('Não foi possível guardar os dados. Tenta novamente.', 'error');
     }
   }
 

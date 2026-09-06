@@ -11,7 +11,7 @@ import {
 } from '@/lib/domain/financial/engine.selectors';
 import type { Credit } from '@/lib/domain/types';
 import { colors, spacing } from '@/lib/theme';
-import { formatCurrency, formatPercent } from '@/lib/utils/format';
+import { formatCurrency, formatDateShort, formatPercent } from '@/lib/utils/format';
 
 import { AnalysisExpandableSection } from './AnalysisExpandableSection';
 
@@ -75,7 +75,7 @@ export function AnalysisDebtTab() {
               ) : null}
               {card.nextPaymentDate ? (
                 <Text variant="caption" color="textSecondary">
-                  Próximo vencimento: {card.nextPaymentDate}
+                  Próximo vencimento: {formatDateShort(card.nextPaymentDate)}
                   {card.nextPaymentAmount
                     ? ` · ${formatCurrency(card.nextPaymentAmount)}`
                     : ''}
@@ -111,7 +111,7 @@ export function AnalysisDebtTab() {
               </View>
               {loan.nextPaymentDate ? (
                 <Text variant="caption" color="textSecondary">
-                  Próximo pagamento: {loan.nextPaymentDate}
+                  Próximo pagamento: {formatDateShort(loan.nextPaymentDate)}
                   {loan.nextPaymentAmount ? ` · ${formatCurrency(loan.nextPaymentAmount)}` : ''}
                 </Text>
               ) : null}

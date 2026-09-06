@@ -51,11 +51,8 @@ export default function ExportDataScreen() {
         centFlowScore: score,
       });
       showToast('Dados exportados com sucesso.', 'success');
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Não foi possível exportar os dados.',
-        'error',
-      );
+    } catch {
+      showToast('Não foi possível exportar os dados. Tenta novamente.', 'error');
     } finally {
       setExporting(false);
     }

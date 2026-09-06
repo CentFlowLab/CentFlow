@@ -10,7 +10,6 @@ export type QuickAddActionId =
   | 'movement'
   | 'receipt'
   | 'subscription'
-  | 'product'
   | 'goal'
   | 'credit'
   | 'asset'
@@ -81,14 +80,6 @@ const ALL_ITEMS: QuickAddItem[] = [
     icon: { ios: 'shield.fill', android: 'verified_user', web: 'verified_user' },
     color: colors.primary,
     bg: colors.primaryMuted,
-  },
-  {
-    id: 'product',
-    label: 'Produto',
-    description: 'Monitoriza preços e poupanças',
-    icon: { ios: 'tag.fill', android: 'sell', web: 'sell' },
-    color: colors.success,
-    bg: colors.successMuted,
   },
 ];
 

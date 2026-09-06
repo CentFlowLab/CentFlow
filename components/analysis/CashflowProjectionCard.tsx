@@ -60,7 +60,7 @@ export function CashflowProjectionCard({ width = 320 }: CashflowProjectionCardPr
     <Card variant="elevated" style={styles.card}>
       <Text variant="h3">Saldo previsto</Text>
       <Text variant="caption" color="textMuted" style={styles.subtitle}>
-        Cashflow projectado com mediana de gastos e recorrências conhecidas
+        Saldo projetado com a mediana de gastos e as recorrências conhecidas
       </Text>
 
       <Text variant="body" color="textSecondary" style={styles.supportText}>

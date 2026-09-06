@@ -1,13 +1,11 @@
 import { router } from 'expo-router';
 
-import { useToast } from '@/components/ui/Toast';
 import type { QuickAddActionId } from '@/components/layout/QuickAddMenuSheet';
 
 export type QuickAddHandlers = {
   onMovement?: () => void;
   onReceipt?: () => void;
   onSubscription?: () => void;
-  onProduct?: () => void;
   onGoal?: () => void;
   onCredit?: () => void;
   onAsset?: () => void;
@@ -15,8 +13,6 @@ export type QuickAddHandlers = {
 };
 
 export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
-  const { showToast } = useToast();
-
   return (action: QuickAddActionId) => {
     switch (action) {
       case 'movement':
@@ -38,14 +34,6 @@ export function useQuickAddActions(handlers: QuickAddHandlers = {}) {
           handlers.onSubscription();
         } else {
           router.push('/(tabs)/movimentos?view=subscricoes&action=new-subscription');
-        }
-        break;
-      case 'product':
-        if (handlers.onProduct) {
-          handlers.onProduct();
-        } else {
-          router.push('/(tabs)/creditos');
-          showToast('Regista movimentos para monitorizar preços.', 'info');
         }
         break;
       case 'goal':
