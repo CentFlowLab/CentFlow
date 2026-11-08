@@ -1,6 +1,5 @@
-# Compila um IPA iOS na cloud (EAS) e publica-o como artefacto.
-# Não submete à App Store nem ao TestFlight. Não cria nem altera credenciais Apple:
-# --freeze-credentials recusa o build se a assinatura guardada no EAS não existir.
+# IPA iOS sem assinatura, para o SideStore voltar a assinar.
+# Não pede sessão Apple, não cria certificados nem perfis, e não envia para a App Store.
 name: iOS IPA
 
 on:
@@ -11,17 +10,30 @@ permissions:
   actions: write
 
 concurrency:
-  group: ios-ipa-production
+  group: ios-ipa-sideload
   cancel-in-progress: false
 
 jobs:
   ipa:
-    name: Verificar e compilar iOS
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
+    name: Verificar e compilar IPA sem assinatura
+    runs-on: macos-26
+    timeout-minutes: 120
     steps:
       - name: Obter o código
         uses: actions/checkout@v5
+
+      - name: Confirmar o Xcode
+        shell: bash
+        run: |
+          version="$(xcodebuild -version | awk 'NR==1 { print $2 }')"
+          node -e '
+            const [major, minor] = process.argv[1].split(".").map(Number);
+            if (major < 26 || (major === 26 && minor < 4)) {
+              console.error("O Expo SDK 58 precisa de Xcode 26.4 ou mais recente. Encontrado: " + process.argv[1]);
+              process.exit(1);
+            }
+            console.log("Xcode " + process.argv[1]);
+          ' "$version"
 
       - name: Configurar Node.js
         uses: actions/setup-node@v6
@@ -35,13 +47,12 @@ jobs:
       - name: Verificações do projeto
         run: npm run check
 
-      - name: Confirmar a configuração iOS local
+      - name: Confirmar o Bundle Identifier
         shell: bash
         run: |
           node <<'EOF'
           const fs = require('node:fs');
           const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
-          const eas = JSON.parse(fs.readFileSync('eas.json', 'utf8'));
           const bundleId = app.expo?.ios?.bundleIdentifier;
           if (bundleId !== 'app.centflow.mobile') {
             console.error(
@@ -50,27 +61,7 @@ jobs:
             );
             process.exit(1);
           }
-          const profile = eas.build?.production;
-          if (
-            !profile ||
-            profile.distribution !== 'store' ||
-            profile.environment !== 'production' ||
-            profile.credentialsSource !== 'remote' ||
-            profile.ios?.simulator === true
-          ) {
-            console.error(
-              'O perfil production em eas.json tem de ser distribution=store, environment=production, credentialsSource=remote e sem simulador.',
-            );
-            process.exit(1);
-          }
-          const projectId = app.expo?.extra?.eas?.projectId;
-          if (typeof projectId !== 'string' || projectId.length === 0) {
-            console.error(
-              'Falta expo.extra.eas.projectId em app.json. Na pasta do repositório, com sessão Expo, corre `npx eas-cli@latest init` e faz commit só desse identificador. Não coloques certificados nem chaves no repositório.',
-            );
-            process.exit(1);
-          }
-          console.log('Configuração local aceite: ' + bundleId + ', perfil production.');
+          console.log('Bundle identifier aceite: ' + bundleId);
           EOF
 
       - name: Confirmar EXPO_TOKEN
@@ -80,7 +71,6 @@ jobs:
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
             echo "O secret EXPO_TOKEN não está configurado neste repositório."
-            echo "Cria um token em https://expo.dev/accounts/[conta]/settings/access-tokens e guarda-o em Settings > Secrets and variables > Actions."
             exit 1
           fi
           echo "EXPO_TOKEN está presente."
@@ -91,130 +81,162 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Confirmar variáveis de produção no EAS
+      - name: Obter as variáveis públicas de produção
         shell: bash
         run: |
-          eas env:list production --format short > eas-env-names.txt
+          eas env:pull production --non-interactive --path .env.local > /tmp/eas-env-pull.txt
           node <<'EOF'
           const fs = require('node:fs');
-          const text = fs.readFileSync('eas-env-names.txt', 'utf8').replace(/\u001b\[[0-9;]*m/g, '');
-          fs.unlinkSync('eas-env-names.txt');
+          const text = fs.readFileSync('.env.local', 'utf8');
           const names = text
             .split('\n')
-            .map((line) => line.split('=')[0]?.trim())
-            .filter((name) => name && !name.includes(' '));
+            .map((line) => line.trim())
+            .filter((line) => line && !line.startsWith('#'))
+            .map((line) => line.split('=')[0]);
           const required = ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY'];
           const missing = required.filter((name) => !names.includes(name));
           if (missing.length > 0) {
-            console.error(
-              'Faltam variáveis no ambiente production do EAS: ' +
-                missing.join(', ') +
-                '. Define-as com visibilidade sensitive (não secret) para entrarem na aplicação. Não uses .env.local neste workflow.',
-            );
+            console.error('Faltam variáveis de produção: ' + missing.join(', '));
             process.exit(1);
           }
-          const forbidden = names.filter((name) => /service_role/i.test(name));
-          if (forbidden.length > 0) {
-            console.error(
-              'O ambiente production tem uma variável service_role. Remove-a do EAS: essa chave não pode ser incluída na aplicação.',
-            );
+          if (names.some((name) => /service_role/i.test(name))) {
+            console.error('As variáveis de produção incluem service_role. Essa chave não pode entrar na aplicação.');
             process.exit(1);
           }
-          console.log('Variáveis de produção presentes: ' + required.join(', '));
+          console.log('Variáveis públicas de produção presentes: ' + required.join(', '));
           EOF
 
-      - name: Compilar o IPA no EAS
+      - name: Gerar o projeto iOS
+        shell: bash
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Desligar a assinatura e instalar CocoaPods
         shell: bash
         run: |
-          eas build \
-            --platform ios \
-            --profile production \
-            --non-interactive \
-            --wait \
-            --freeze-credentials \
-            --json \
-            --message "GitHub Actions ${GITHUB_SHA}" \
-            > eas-build.json
+          ruby -e 'require "xcodeproj"' >/dev/null 2>&1 || gem install xcodeproj --no-document
+          ruby <<'RUBY'
+          require 'xcodeproj'
 
-      - name: Descarregar o IPA
+          def disable_signing(path)
+            project = Xcodeproj::Project.open(path)
+            project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+                config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+                config.build_settings['CODE_SIGN_IDENTITY'] = ''
+                config.build_settings.delete('CODE_SIGN_ENTITLEMENTS')
+                config.build_settings.delete('DEVELOPMENT_TEAM')
+                config.build_settings.delete('PROVISIONING_PROFILE_SPECIFIER')
+              end
+            end
+            project.save
+          end
+
+          Dir['ios/*.xcodeproj'].each { |path| disable_signing(path) }
+          RUBY
+          (cd ios && pod install)
+          ruby <<'RUBY'
+          require 'xcodeproj'
+
+          def disable_signing(path)
+            project = Xcodeproj::Project.open(path)
+            project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+                config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+                config.build_settings['CODE_SIGN_IDENTITY'] = ''
+              end
+            end
+            project.save
+          end
+
+          Dir['ios/*.xcodeproj', 'ios/Pods/Pods.xcodeproj'].each { |path| disable_signing(path) }
+          RUBY
+
+      - name: Compilar para iPhone sem assinatura
         shell: bash
         run: |
-          node <<'EOF'
-          const fs = require('node:fs');
+          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
+          if [ -z "$workspace" ]; then
+            echo "O prebuild não criou um workspace iOS."
+            exit 1
+          fi
+          if ! xcodebuild -workspace "$workspace" -list | grep -q 'CentFlow'; then
+            echo "O scheme CentFlow não existe neste projeto."
+            xcodebuild -workspace "$workspace" -list
+            exit 1
+          fi
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme CentFlow \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/derived" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY= \
+            DEVELOPMENT_TEAM= \
+            build
 
-          async function main() {
-            let parsed;
-            try {
-              parsed = JSON.parse(fs.readFileSync('eas-build.json', 'utf8'));
-            } catch {
-              console.error(
-                'A saída JSON do EAS não foi reconhecida. O build não produziu um resultado utilizável.',
-              );
-              process.exit(1);
-            }
-            const build = Array.isArray(parsed)
-              ? (parsed.find((item) => item.platform === 'IOS') ?? parsed[0])
-              : parsed;
-            if (!build || build.status !== 'FINISHED') {
-              console.error(
-                'O build EAS não terminou com sucesso. Estado: ' + (build?.status ?? 'desconhecido'),
-              );
-              process.exit(1);
-            }
-            const ipaUrl = build.artifacts?.applicationArchiveUrl;
-            if (typeof ipaUrl !== 'string' || !ipaUrl.startsWith('https://')) {
-              console.error(
-                'O build terminou sem um URL HTTPS do IPA. Confirma a assinatura de distribuição no EAS.',
-              );
-              process.exit(1);
-            }
-            const owner = build.app?.ownerAccount?.name;
-            const slug = build.app?.slug;
-            if (!owner || !slug || !build.id) {
-              console.error('O resultado do EAS não inclui o endereço do build.');
-              process.exit(1);
-            }
-            const page = `https://expo.dev/accounts/${owner}/projects/${slug}/builds/${build.id}`;
-            let response;
-            try {
-              response = await fetch(ipaUrl);
-            } catch {
-              console.error('Não foi possível descarregar o IPA a partir do EAS.');
-              process.exit(1);
-            }
-            if (!response.ok) {
-              console.error('O EAS recusou o descarregamento do IPA (HTTP ' + response.status + ').');
-              process.exit(1);
-            }
-            const bytes = Buffer.from(await response.arrayBuffer());
-            if (bytes.length < 1024 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
-              console.error('O ficheiro descarregado não é um IPA.');
-              process.exit(1);
-            }
-            fs.writeFileSync('centflow.ipa', bytes);
-            fs.writeFileSync('eas-build-page-url.txt', page);
-            fs.unlinkSync('eas-build.json');
-            console.log('Build EAS: ' + page);
-            console.log('IPA descarregado (' + bytes.length + ' bytes).');
-          }
-
-          main().catch(() => {
-            console.error('Não foi possível descarregar o IPA a partir do EAS.');
-            process.exit(1);
-          });
-          EOF
+      - name: Empacotar o IPA
+        shell: bash
+        run: |
+          app="$(find "$RUNNER_TEMP/derived/Build/Products/Release-iphoneos" -maxdepth 1 -name '*.app' -type d -print -quit)"
+          if [ -z "$app" ]; then
+            echo "A compilação não produziu uma aplicação para iPhone."
+            exit 1
+          fi
+          bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")"
+          if [ "$bundle_id" != "app.centflow.mobile" ]; then
+            echo "Bundle identifier inesperado no IPA: $bundle_id"
+            exit 1
+          fi
+          if [ ! -x "$app/CentFlow" ]; then
+            echo "O executável CentFlow não está na aplicação."
+            exit 1
+          fi
+          if codesign -d "$app" >/dev/null 2>&1; then
+            echo "A aplicação ficou assinada. Este workflow só pode publicar um IPA sem assinatura."
+            exit 1
+          fi
+          if find "$app" -name '*.appex' -print -quit | grep -q .; then
+            echo "A aplicação contém uma extensão. Este empacotamento não a assina nem a valida."
+            exit 1
+          fi
+          while IFS= read -r -d '' signature; do
+            rm -rf "$signature"
+          done < <(find "$app" -name '_CodeSignature' -type d -print0)
+          find "$app" -name 'embedded.mobileprovision' -delete
+          find "$app" -name '*.entitlements' -delete
+          stage="$RUNNER_TEMP/ipa-stage"
+          rm -rf "$stage"
+          mkdir -p "$stage/Payload"
+          ditto "$app" "$stage/Payload/$(basename "$app")"
+          ditto -c -k --keepParent "$stage/Payload" "$RUNNER_TEMP/centflow-unsigned.ipa"
+          rm -f .env.local
+          if unzip -l "$RUNNER_TEMP/centflow-unsigned.ipa" | grep -E '(^|/)(\.env|\.env\.local|embedded\.mobileprovision)($|/)' ; then
+            echo "O IPA contém ficheiros de ambiente ou um perfil de provisionamento."
+            exit 1
+          fi
+          echo "IPA sem assinatura criado para $bundle_id."
           {
-            echo "### IPA iOS"
+            echo "### IPA sem assinatura"
             echo
-            echo "Build EAS: $(cat eas-build-page-url.txt)"
+            echo "Artefacto \`centflow-sideload-ipa\`, ficheiro \`centflow-unsigned.ipa\`."
             echo
-            echo "O ficheiro está no artefacto \`centflow-ios-ipa\` desta execução."
+            echo "Bundle Identifier: \`$bundle_id\`. Não foi enviado para a App Store nem para o TestFlight."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apagar variáveis locais
+        if: always()
+        shell: bash
+        run: rm -f .env.local
 
       - name: Publicar o IPA
         uses: actions/upload-artifact@v4
         with:
-          name: centflow-ios-ipa
-          path: centflow.ipa
+          name: centflow-sideload-ipa
+          path: ${{ runner.temp }}/centflow-unsigned.ipa
           if-no-files-found: error
           retention-days: 14
