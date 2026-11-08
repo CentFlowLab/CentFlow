@@ -1,4 +1,4 @@
-# IPA iOS sem assinatura, para o SideStore voltar a assinar.
+# IPA iOS sem assinatura, publicado numa Release e anunciado na fonte do SideStore.
 # Não pede sessão Apple, não cria certificados nem perfis, e não envia para a App Store.
 name: iOS IPA
 
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 concurrency:
@@ -18,6 +18,8 @@ jobs:
     name: Verificar e compilar IPA sem assinatura
     runs-on: macos-26
     timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Obter o código
         uses: actions/checkout@v5
@@ -63,6 +65,36 @@ jobs:
           }
           console.log('Bundle identifier aceite: ' + bundleId);
           EOF
+
+      - name: Reservar a compilação seguinte
+        id: build
+        shell: bash
+        run: |
+          tags="$(gh release list --limit 500 --json tagName --jq '.[].tagName' | tr '\n' ' ')"
+          plan="$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sideload-source-cli.mjs plan "$tags")"
+          printf '%s\n' "$plan" >> "$GITHUB_OUTPUT"
+          marketing="$(printf '%s\n' "$plan" | sed -n 's/^marketing_version=//p')"
+          build="$(printf '%s\n' "$plan" | sed -n 's/^build_number=//p')"
+          if [ -z "$marketing" ] || [ -z "$build" ]; then
+            echo "Não foi possível calcular a versão da compilação."
+            exit 1
+          fi
+          printf 'MARKETING_VERSION=%s\nBUILD_NUMBER=%s\n' "$marketing" "$build" >> "$GITHUB_ENV"
+          export MARKETING_VERSION="$marketing"
+          export BUILD_NUMBER="$build"
+          node <<'EOF'
+          const fs = require('node:fs');
+          if (!process.env.MARKETING_VERSION || !process.env.BUILD_NUMBER) {
+            console.error('Versão em falta.');
+            process.exit(1);
+          }
+          const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          app.expo.ios = app.expo.ios ?? {};
+          app.expo.version = process.env.MARKETING_VERSION;
+          app.expo.ios.buildNumber = process.env.BUILD_NUMBER;
+          fs.writeFileSync('app.json', JSON.stringify(app, null, 2) + '\n');
+          EOF
+          echo "Compilação ${build} da versão ${marketing}. O app.json só muda neste runner."
 
       - name: Confirmar EXPO_TOKEN
         env:
@@ -177,6 +209,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY= \
             DEVELOPMENT_TEAM= \
+            MARKETING_VERSION="$MARKETING_VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             build
 
       - name: Empacotar o IPA
@@ -190,6 +224,12 @@ jobs:
           bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")"
           if [ "$bundle_id" != "app.centflow.mobile" ]; then
             echo "Bundle identifier inesperado no IPA: $bundle_id"
+            exit 1
+          fi
+          short_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")"
+          bundle_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")"
+          if [ "$short_version" != "$MARKETING_VERSION" ] || [ "$bundle_version" != "$BUILD_NUMBER" ]; then
+            echo "A aplicação ficou ${short_version} (${bundle_version}) e a fonte espera ${MARKETING_VERSION} (${BUILD_NUMBER})."
             exit 1
           fi
           if [ ! -x "$app/CentFlow" ]; then
@@ -225,13 +265,55 @@ jobs:
             echo
             echo "Artefacto \`centflow-sideload-ipa\`, ficheiro \`centflow-unsigned.ipa\`."
             echo
-            echo "Bundle Identifier: \`$bundle_id\`. Não foi enviado para a App Store nem para o TestFlight."
+            echo "Bundle Identifier: \`$bundle_id\`. Versão \`$short_version\` (\`$bundle_version\`)."
+            echo
+            echo "Não foi enviado para a App Store nem para o TestFlight."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Apagar variáveis locais
         if: always()
         shell: bash
         run: rm -f .env.local
+
+      - name: Publicar a Release
+        shell: bash
+        run: |
+          tag="sideload-build-${BUILD_NUMBER}"
+          gh release create "$tag" \
+            --title "CentFlow ${MARKETING_VERSION} (${BUILD_NUMBER})" \
+            --notes "Compilação ${BUILD_NUMBER} da versão ${MARKETING_VERSION}. O identificador continua app.centflow.mobile, por isso atualizar por cima da instalação existente mantém a base de dados SQLite. Apagar a app e voltar a instalá-la remove esses dados. O SideStore mostra o botão de atualizar e pede confirmação; não instala sozinho. Este IPA não está assinado." \
+            "$RUNNER_TEMP/centflow-unsigned.ipa#centflow-unsigned.ipa"
+
+      - name: Atualizar a fonte do SideStore
+        shell: bash
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sideload-source-cli.mjs record \
+            "$RUNNER_TEMP/centflow-unsigned.ipa" \
+            "$MARKETING_VERSION" \
+            "$BUILD_NUMBER" \
+            "$(date -u +%Y-%m-%d)"
+          git checkout -- app.json
+          git add -- sideload/source.json
+          if [ "$(git diff --cached --name-only)" != "sideload/source.json" ]; then
+            echo "A publicação tentou incluir outros ficheiros."
+            git diff --cached --name-only
+            exit 1
+          fi
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "ci: publish sideload ${MARKETING_VERSION} (${BUILD_NUMBER})"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          url='https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json'
+          link="sidestore://source?url=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$url")"
+          {
+            echo "### Fonte SideStore"
+            echo
+            echo "URL: $url"
+            echo
+            echo "Adicionar no SideStore: \`$link\`"
+            echo
+            echo "O botão de atualizar compara a versão instalada com a primeira entrada de \`versions\`. Não instala sozinho."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publicar o IPA
         uses: actions/upload-artifact@v4
