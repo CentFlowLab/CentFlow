@@ -1,6 +1,7 @@
-# Ligação ao projeto alojado. Não contém credenciais.
+# Produção. Não contém credenciais. O staging não está ligado aqui.
 project_id = "slfgslfzolfvqavuccom"
 
 # A função confirma a sessão com `auth.getUser()`; o JWT da plataforma bloqueia o OPTIONS da web.
+# O CORS permitido está no código (origins locais + ALLOWED_WEB_ORIGINS). Não voltar a usar `*`.
 [functions.delete-account]
 verify_jwt = false

@@ -34,6 +34,7 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+!.env.staging.example
 
 # estado local do Supabase CLI (ligação ao projeto; sem segredos, mas não é código)
 supabase/.temp/
