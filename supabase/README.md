@@ -20,8 +20,9 @@ referência de produção, um URL de produção e um alvo vazio:
 npm run staging:guard -- qlimqcgrgaqzwjmafora
 ```
 
-No staging estão aplicadas `20261108000100` a `20261108000500`. Na produção só
-`20261108000100` e `20261108000200`. Não correr `db push` sem autorização para esse passo.
+No staging estão aplicadas `20261108000100` a `20261108000700`, ensaiadas em 2026-11-08.
+Na produção só `20261108000100` e `20261108000200`. Não correr `db push` sem autorização
+para esse passo.
 Quando for autorizado, o destino tem de ser explícito (`--remote=qlimqcgrgaqzwjmafora` no
 staging) e o guard tem de aceitar esse mesmo valor. Não usar `supabase link` para trocar o
 projeto ligado.
@@ -50,8 +51,8 @@ As migrações em `migrations/` criam `profiles`, `sync_metadata`, `accounts`, `
 quando a categoria é eliminada. Os testes em `__tests__/server-test.ts` correm as mesmas
 migrações contra PostgreSQL real (PGlite).
 
-`20261108000300` a `20261108000500` estão no staging e não estão na produção. Não as publicar
-na produção sem autorização.
+`20261108000300` a `20261108000700` estão no staging e não estão na produção. Não as publicar
+na produção sem autorização, cópia de segurança e a ordem das migrations.
 No dashboard, Database › Settings › Exposed schemas tem de continuar só com `public`. O esquema
 `private` não pode ser exposto: é aí que corre a escrita interna.
 

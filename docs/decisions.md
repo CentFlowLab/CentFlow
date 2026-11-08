@@ -201,9 +201,9 @@ A `20261108000500` fecha o orçamento ativo quando a categoria é eliminada. O e
 continua fora do PostgREST. `authenticated` só tem `SELECT` em `budgets`; as escritas passam
 por `sync_push`.
 **Onde está aplicado:** no staging (`qlimqcgrgaqzwjmafora`) estão aplicadas `20261108000100` a
-`20261108000500`. Na produção (`slfgslfzolfvqavuccom`) só estão `20261108000100` e
-`20261108000200`. Não aplicar `00300`–`00500` na produção sem autorização explícita, cópia de
-segurança e a ordem das migrations. O trigger `c_close_budgets` foi ensaiado no staging em
+`20261108000700`, incluindo subscrições e objetivos, ensaiadas em 2026-11-08. Na produção
+(`slfgslfzolfvqavuccom`) só estão `20261108000100` e `20261108000200`. Não aplicar `00300`–`00700`
+na produção sem autorização explícita, cópia de segurança e a ordem das migrations. O trigger `c_close_budgets` foi ensaiado no staging em
 2026-11-08: eliminar a categoria fechou o orçamento (versão 2), o movimento noutra categoria
 manteve-se, e o segundo utilizador não viu linhas. Os utilizadores de teste e os dados foram
 apagados no fim. A produção não foi alterada.
@@ -218,8 +218,9 @@ desse anual por 12. Guardar uma subscrição não cria movimentos nem altera sal
 **Não é a subscrição da CentFlow.** Esta tabela não tem relação com um paywall, um plano pago
 ou a cobrança da própria aplicação.
 **Consequências:** a migration `20261108000600` entra em `sync_push`, `sync_pull_v2`,
-`sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Ainda não foi aplicada
-no staging nem na produção.
+`sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Está aplicada no
+staging desde 2026-11-08 e foi ensaiada (criar, editar, pausar, conflito de versão, eliminar
+e isolamento). Não está na produção.
 
 ## ADR-023 — Objetivos de poupança somam contribuições
 
@@ -230,8 +231,9 @@ não tem coluna de total. Corrigir um engano é apagar a contribuição. A moeda
 bloqueada quando já há contribuições. Uma contribuição não cria movimentos nem altera saldos.
 **Consequências:** a migration `20261108000700` entra em `sync_push`, `sync_pull_v2`,
 `sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Apagar o objetivo
-elimina logicamente as contribuições ainda ativas. Ainda não foi aplicada no staging nem na
-produção.
+elimina logicamente as contribuições ainda ativas. Está aplicada no staging desde 2026-11-08
+e foi ensaiada (contribuições, bloqueio da moeda, fecho ao eliminar o objetivo e isolamento).
+Não está na produção.
 
 ## Decisões pendentes
 
