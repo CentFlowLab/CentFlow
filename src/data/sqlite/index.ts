@@ -1,6 +1,7 @@
 import type { SqlDatabase } from '../db/sql-database';
 import type { Repositories } from '../repositories/types';
 import { createSqliteAccountRepository } from './account-repository';
+import { createSqliteBudgetRepository } from './budget-repository';
 import { createSqliteCategoryRepository } from './category-repository';
 import { createChangeHub, type ChangeHub, type SqliteRepositoryContext } from './context';
 import { createSqliteEntryRepository } from './entry-repository';
@@ -27,6 +28,7 @@ export function createSqliteRepositories(
 
   return {
     accounts: createSqliteAccountRepository(context),
+    budgets: createSqliteBudgetRepository(context),
     categories: createSqliteCategoryRepository(context),
     entries: createSqliteEntryRepository(context),
     subscribe: changes.subscribe,

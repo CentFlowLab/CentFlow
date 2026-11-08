@@ -72,6 +72,34 @@ describe('mergeRecords', () => {
     expect(mergeRecords('entries', entry, a, b)).toEqual({ kind: 'same' });
   });
 
+  it('combines budget fields edited on different sides', () => {
+    const base = {
+      category_id: 'cat',
+      amount: 5000,
+      currency: 'EUR',
+      period: 'monthly',
+      starts_on: '2026-11-01',
+      deleted_at: null,
+    };
+    expect(
+      mergeRecords('budgets', base, { ...base, amount: 7000 }, { ...base, period: 'yearly' }),
+    ).toEqual({
+      kind: 'merged',
+      data: { ...base, amount: 7000, period: 'yearly' },
+    });
+    expect(
+      mergeRecords('budgets', base, { ...base, amount: 7000 }, { ...base, amount: 9000 }).kind,
+    ).toBe('conflict');
+    expect(
+      mergeRecords(
+        'budgets',
+        base,
+        { ...base, amount: 7000 },
+        { ...base, deleted_at: '2026-11-08T00:00:00.000Z' },
+      ).kind,
+    ).toBe('conflict');
+  });
+
   it('treats any difference without a common base as a conflict', () => {
     expect(mergeRecords('entries', null, entry, entry)).toEqual({ kind: 'same' });
     expect(mergeRecords('entries', null, entry, { ...entry, amount: 1 })).toEqual({

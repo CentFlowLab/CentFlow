@@ -57,6 +57,7 @@ export const REJECTION_CODES = [
   'account_in_use',
   'type_locked',
   'category_in_use',
+  'duplicate_budget',
 ] as const;
 export type RejectionCode = (typeof REJECTION_CODES)[number] | 'invalid';
 
@@ -182,9 +183,27 @@ export function createSyncEngine({
    * posterior cuja versão base coincida por acaso com a do servidor. Grupos que tocam registos
    * bloqueados (rejeitados ou abortados) são saltados para não travarem o resto da fila.
    */
+  /**
+   * A categoria só parte depois de o apagamento do orçamento estar confirmado.
+   * No mesmo grupo atómico a ordem da fila chega: o orçamento é aplicado primeiro.
+   */
+  function categoryDeleteWaits(
+    group: readonly OutboxOperation[],
+    budgetDeletes: readonly { seq: number; txId: string | null; categoryId: string }[],
+  ): boolean {
+    return group.some((op) => {
+      if (op.entity !== 'categories' || op.data.deleted_at == null) return false;
+      return budgetDeletes.some(
+        (budget) =>
+          budget.categoryId === op.recordId && budget.seq < op.seq && budget.txId !== op.txId,
+      );
+    });
+  }
+
   async function pushRound(): Promise<boolean> {
     const seen = new Set<string>();
     const stuck = new Set<string>();
+    const budgetDeletes = await store.pendingBudgetDeletes();
     let after = 0;
     let progressed = false;
     for (;;) {
@@ -197,6 +216,10 @@ export function createSyncEngine({
         const keys = group.map((op) => recordKey(op.entity, op.recordId));
         if (keys.some((key) => stuck.has(key))) {
           for (const key of keys) stuck.add(key);
+          examined = group.at(-1)!.seq;
+          continue;
+        }
+        if (categoryDeleteWaits(group, budgetDeletes)) {
           examined = group.at(-1)!.seq;
           continue;
         }
@@ -288,7 +311,7 @@ export function createSyncEngine({
       store.state(),
     ]);
     if (server.last_seq !== state.pullCursor) return true;
-    return (['accounts', 'categories', 'entries'] as const).every(
+    return (['accounts', 'categories', 'budgets', 'entries'] as const).every(
       (entity) =>
         server[entity].live === local[entity].live &&
         server[entity].deleted === local[entity].deleted,

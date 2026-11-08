@@ -1,5 +1,5 @@
-import { ModulePlaceholderScreen } from '@/features/modules/ModulePlaceholderScreen';
+import { BudgetsScreen } from '@/features/budgets/BudgetsScreen';
 
 export default function BudgetsRoute() {
-  return <ModulePlaceholderScreen module="budgets" />;
+  return <BudgetsScreen />;
 }

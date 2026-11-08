@@ -16,6 +16,10 @@ export type CategoryType = (typeof CATEGORY_TYPES)[number];
 export const ENTRY_TYPES = ['expense', 'income', 'transfer'] as const;
 export type EntryType = (typeof ENTRY_TYPES)[number];
 
+/** Um orçamento ativo por categoria: períodos sobrepostos contariam duas vezes a mesma despesa. */
+export const BUDGET_PERIODS = ['weekly', 'monthly', 'yearly'] as const;
+export type BudgetPeriod = (typeof BUDGET_PERIODS)[number];
+
 type SyncMetadata = {
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -39,6 +43,16 @@ export type Category = SyncMetadata & {
   icon: string;
   /** Chave da paleta de categorias (ex.: "indigo"), não um valor hexadecimal. */
   color: string;
+};
+
+export type Budget = SyncMetadata & {
+  id: Id;
+  categoryId: Id;
+  /** Limite em unidades mínimas. Sempre positivo. */
+  amount: number;
+  currency: CurrencyCode;
+  period: BudgetPeriod;
+  startsOn: CalendarDate;
 };
 
 export type Entry = SyncMetadata & {
@@ -66,4 +80,8 @@ export type EntryInput = Pick<
   | 'destinationAccountId'
   | 'date'
   | 'notes'
+>;
+export type BudgetInput = Pick<
+  Budget,
+  'categoryId' | 'amount' | 'currency' | 'period' | 'startsOn'
 >;

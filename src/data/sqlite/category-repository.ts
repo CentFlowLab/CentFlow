@@ -143,23 +143,39 @@ export function createSqliteCategoryRepository(
     },
 
     delete(id, { reassignTo } = {}) {
-      return write(context, ['categories', 'entries'], () =>
+      return write(context, ['categories', 'entries', 'budgets'], () =>
         db.transaction(async (tx) => {
           const existing = await findActive(tx, id);
           if (!existing) throw new NotFoundError('category', id);
           const timestamp = context.now();
           const count = await countEntries(tx, id);
+          let destination: Id | null = null;
           if (count > 0) {
             if (!reassignTo) throw new CategoryInUseError(count);
+            destination = reassignTo;
             const target = reassignTo === id ? null : await findActive(tx, reassignTo);
             if (!target) throw new ValidationError({ categoryId: 'categoryNotFound' });
             if (target.type !== existing.type) {
               throw new ValidationError({ categoryId: 'categoryTypeMismatch' });
             }
+          }
+          // O orçamento sai primeiro e noutro grupo: o envio espera a confirmação
+          // antes de apagar a categoria. A transação local continua atómica.
+          const closed = await tx.run(
+            `UPDATE budgets SET deleted_at = ?, updated_at = ?
+             WHERE category_id = ? AND deleted_at IS NULL`,
+            [timestamp, timestamp, id],
+          );
+          if (closed.changes > 0) {
+            await tx.run(
+              `UPDATE sync_state SET current_tx = lower(hex(randomblob(16))) WHERE id = 1`,
+            );
+          }
+          if (destination) {
             await tx.run(
               `UPDATE entries SET category_id = ?, updated_at = ?
                WHERE category_id = ? AND deleted_at IS NULL`,
-              [reassignTo, timestamp, id],
+              [destination, timestamp, id],
             );
           }
           await tx.run('UPDATE categories SET deleted_at = ?, updated_at = ? WHERE id = ?', [

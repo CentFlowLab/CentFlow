@@ -2,6 +2,7 @@ import { initializeDatabase } from '@/data/db/initialize';
 import {
   getSchemaVersion,
   LATEST_SCHEMA_VERSION,
+  MIGRATIONS,
   migrate,
   SchemaTooNewError,
   type Migration,
@@ -78,6 +79,7 @@ describe('database initialization', () => {
     );
     expect(tables.map((table) => table.name)).toEqual([
       'accounts',
+      'budgets',
       'categories',
       'entries',
       'meta',
@@ -139,6 +141,50 @@ describe('database initialization', () => {
     await expect(migrate(db, migrations)).rejects.toThrow();
     expect(await getSchemaVersion(db)).toBe(1);
     expect(await db.first("SELECT name FROM sqlite_master WHERE name = 'b'")).toBeNull();
+    await db.close();
+  });
+
+  it('keeps budgets and pending operations when upgrading from schema v3', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 3),
+    );
+    expect(await getSchemaVersion(db)).toBe(3);
+    await db.run(
+      `INSERT INTO categories (id, name, type, icon, color, created_at, updated_at)
+       VALUES ('c1', 'Mercado', 'expense', 'cart-outline', 'green', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO budgets
+         (id, category_id, amount, currency, period, starts_on, created_at, updated_at)
+       VALUES ('b1', 'c1', 5000, 'EUR', 'monthly', '2026-11-01', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO sync_outbox (op_id, entity, record_id, base_version, data, created_at)
+       VALUES ('op-1', 'categories', 'c1', 0, '{}', ?)`,
+      [NOW],
+    );
+
+    await migrate(db, MIGRATIONS);
+
+    expect(await getSchemaVersion(db)).toBe(4);
+    expect(await db.first('SELECT amount, version FROM budgets WHERE id = ?', ['b1'])).toEqual({
+      amount: 5000,
+      version: 0,
+    });
+    expect(
+      await db.first('SELECT entity, record_id FROM sync_outbox WHERE op_id = ?', ['op-1']),
+    ).toEqual({ entity: 'categories', record_id: 'c1' });
+    expect(
+      await db.first<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM sqlite_master
+          WHERE type = 'trigger' AND name = 'sync_budgets_insert'`,
+      ),
+    ).toEqual({ n: 1 });
     await db.close();
   });
 });

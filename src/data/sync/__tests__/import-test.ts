@@ -82,6 +82,13 @@ async function anonymousSpace(): Promise<LocalStore> {
     categoryId: null,
     destinationAccountId: cash.id,
   });
+  await repos.budgets.create({
+    categoryId: gym.id,
+    amount: 8000,
+    currency: 'EUR',
+    period: 'monthly',
+    startsOn: '2026-11-01',
+  });
   return store;
 }
 
@@ -121,14 +128,17 @@ describe('import of data created without an account', () => {
       engine: account.engine,
       transport: account.transport,
     });
-    expect(result).toEqual({ status: 'confirmed', imported: 6 });
+    expect(result).toEqual({ status: 'confirmed', imported: 7 });
     expect(await totals(account)).toEqual(before);
     expect(await serverLive(user, 'accounts')).toBe(2);
     expect(await serverLive(user, 'entries')).toBe(3);
     expect(await serverLive(user, 'categories')).toBe(16);
+    expect(await serverLive(user, 'budgets')).toBe(1);
     expect(await totals(anonymous)).toEqual({ accounts: 0, entries: 0, balance: 0 });
     // As categorias base continuam disponíveis no uso sem conta.
     expect((await anonymous.repositories.categories.list()).length).toBe(15);
+    expect(await account.repositories.budgets.list()).toHaveLength(1);
+    expect(await anonymous.repositories.budgets.list()).toHaveLength(0);
     expect(await shouldOfferImport(anonymous, account)).toBe(false);
   });
 
@@ -144,7 +154,7 @@ describe('import of data created without an account', () => {
       engine: account.engine,
       transport: account.transport,
     });
-    expect(first).toMatchObject({ status: 'pending', imported: 6 });
+    expect(first).toMatchObject({ status: 'pending', imported: 7 });
     // Nada é apagado antes da confirmação.
     expect((await totals(anonymous)).entries).toBe(3);
 
@@ -166,10 +176,74 @@ describe('import of data created without an account', () => {
       engine: account.engine,
       transport: account.transport,
     });
-    expect(third).toEqual({ status: 'confirmed', imported: 6 });
+    expect(third).toEqual({ status: 'confirmed', imported: 7 });
     expect(await serverLive(user, 'entries')).toBe(3);
     expect(await serverLive(user, 'accounts')).toBe(2);
     expect((await totals(account)).entries).toBe(3);
+  });
+
+  it('keeps an anonymous edit made after the copy and uploads it once', async () => {
+    const user = await server.createUser(randomUUID());
+    const anonymous = await anonymousSpace();
+    const account = await accountDevice(user);
+    account.transport.online = false;
+    const copied = await runImport({
+      anonymous,
+      account,
+      engine: account.engine,
+      transport: account.transport,
+    });
+    expect(copied).toMatchObject({ status: 'pending', imported: 7 });
+    expect((await totals(anonymous)).entries).toBe(3);
+
+    const page = await anonymous.repositories.entries.list({ limit: 50 });
+    const expense = page.items.find((item) => item.amount === 3500);
+    if (!expense) throw new Error('missing expense');
+    await anonymous.repositories.entries.update(expense.id, {
+      type: expense.type,
+      amount: 9900,
+      description: expense.description,
+      notes: expense.notes,
+      accountId: expense.accountId,
+      categoryId: expense.categoryId,
+      destinationAccountId: expense.destinationAccountId,
+      date: expense.date,
+    });
+    const bank = (await anonymous.repositories.accounts.list()).find(
+      (item) => item.name === 'Banco',
+    );
+    const gym = (await anonymous.repositories.categories.list()).find(
+      (item) => item.name === 'Ginásio',
+    );
+    if (!bank || !gym) throw new Error('missing account or category');
+    await anonymous.repositories.entries.create({
+      type: 'expense',
+      amount: 500,
+      description: '',
+      notes: '',
+      accountId: bank.id,
+      categoryId: gym.id,
+      destinationAccountId: null,
+      date: '2026-11-02',
+    });
+
+    account.transport.online = true;
+    const resumed = await runImport({
+      anonymous,
+      account,
+      engine: account.engine,
+      transport: account.transport,
+    });
+    expect(resumed).toEqual({ status: 'confirmed', imported: 8 });
+    const amounts = (await account.repositories.entries.list({ limit: 50 })).items.map(
+      (item) => item.amount,
+    );
+    expect(amounts.filter((amount) => amount === 9900)).toHaveLength(1);
+    expect(amounts.filter((amount) => amount === 3500)).toHaveLength(0);
+    expect(amounts.filter((amount) => amount === 500)).toHaveLength(1);
+    expect(await serverLive(user, 'entries')).toBe(4);
+    expect((await totals(anonymous)).entries).toBe(0);
+    expect((await anonymous.repositories.categories.list()).length).toBe(15);
   });
 
   it('can be cancelled before confirmation without touching the anonymous data', async () => {
@@ -181,6 +255,8 @@ describe('import of data created without an account', () => {
 
     expect(await cancelImport(account)).toBe(true);
     expect(await totals(account)).toEqual({ accounts: 0, entries: 0, balance: 0 });
+    expect(await account.repositories.budgets.list()).toHaveLength(0);
+    expect(await anonymous.repositories.budgets.list()).toHaveLength(1);
     expect((await totals(anonymous)).entries).toBe(3);
     expect(await getImportState(account)).toEqual({ state: 'declined' });
 

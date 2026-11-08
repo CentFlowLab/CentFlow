@@ -260,5 +260,29 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
         amount: row.amount,
       }));
     },
+
+    async listExpenses({ from, to }) {
+      const rows = await db.all<{
+        category_id: string;
+        currency: string;
+        date: string;
+        amount: number;
+      }>(
+        `SELECT e.category_id AS category_id, a.currency AS currency, e.date AS date,
+           e.amount AS amount
+         FROM entries e
+         JOIN accounts a ON a.id = e.account_id
+         WHERE e.deleted_at IS NULL AND a.deleted_at IS NULL AND e.type = 'expense'
+           AND e.category_id IS NOT NULL AND e.date >= ? AND e.date <= ?`,
+        [from, to],
+      );
+      return rows.map((row) => ({
+        type: 'expense' as const,
+        categoryId: row.category_id,
+        currency: row.currency,
+        date: row.date,
+        amount: row.amount,
+      }));
+    },
   };
 }

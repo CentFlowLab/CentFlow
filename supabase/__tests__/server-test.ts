@@ -15,6 +15,8 @@ const ACCOUNT_USD = '10000000-0000-4000-8000-000000000003';
 const GROCERIES = '20000000-0000-4000-8000-000000000001';
 const SALARY = '20000000-0000-4000-8000-000000000002';
 const ENTRY = '30000000-0000-4000-8000-000000000001';
+const BUDGET = '50000000-0000-4000-8000-000000000001';
+const BUDGET_2 = '50000000-0000-4000-8000-000000000002';
 
 type OpResult = {
   op_id: string;
@@ -33,7 +35,7 @@ function opId(): string {
 type Op = {
   op_id: string;
   tx_id: string | null;
-  entity: 'accounts' | 'categories' | 'entries';
+  entity: 'accounts' | 'categories' | 'budgets' | 'entries';
   record_id: string;
   base_version: number;
   data: Record<string, unknown>;
@@ -100,6 +102,26 @@ function entryOp(id: string, base: number, data: Partial<Record<string, unknown>
   };
 }
 
+function budgetOp(id: string, base: number, data: Partial<Record<string, unknown>> = {}): Op {
+  return {
+    op_id: opId(),
+    tx_id: null,
+    entity: 'budgets',
+    record_id: id,
+    base_version: base,
+    data: {
+      category_id: GROCERIES,
+      amount: 5000,
+      currency: 'EUR',
+      period: 'monthly',
+      starts_on: '2026-11-01',
+      deleted_at: null,
+      created_at: '2026-11-01T10:00:00.000Z',
+      ...data,
+    },
+  };
+}
+
 async function push(session: ServerSession, ops: Op[]): Promise<OpResult[]> {
   return (await session.rpc<PushResponse>('sync_push', { p_ops: ops })).results;
 }
@@ -130,10 +152,12 @@ describe('schema', () => {
         where relnamespace = 'public'::regnamespace and relkind = 'r' order by relname`,
     );
     expect(rows).toEqual(
-      ['accounts', 'categories', 'entries', 'profiles', 'sync_metadata'].map((relname) => ({
-        relname,
-        relrowsecurity: true,
-      })),
+      ['accounts', 'budgets', 'categories', 'entries', 'profiles', 'sync_metadata'].map(
+        (relname) => ({
+          relname,
+          relrowsecurity: true,
+        }),
+      ),
     );
   });
 
@@ -149,6 +173,7 @@ describe('schema', () => {
     );
     expect(rows).toEqual([
       { table_name: 'accounts', column_name: 'initial_balance', data_type: 'bigint' },
+      { table_name: 'budgets', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'entries', column_name: 'amount', data_type: 'bigint' },
     ]);
   });
@@ -172,7 +197,14 @@ describe('row level security', () => {
   });
 
   it('hides other users rows from select', async () => {
-    for (const table of ['accounts', 'categories', 'entries', 'profiles', 'sync_metadata']) {
+    for (const table of [
+      'accounts',
+      'budgets',
+      'categories',
+      'entries',
+      'profiles',
+      'sync_metadata',
+    ]) {
       const rows = await bob.query(
         `select * from public.${table} where ${table === 'profiles' ? 'id' : 'user_id'} = $1`,
         [A],
@@ -182,11 +214,9 @@ describe('row level security', () => {
   });
 
   it('prevents updating another users rows', async () => {
-    const updated = await bob.query(
-      `update public.entries set amount = 1, version = version where user_id = $1 returning id`,
-      [A],
-    );
-    expect(updated).toEqual([]);
+    await expect(
+      bob.query(`update public.entries set amount = 1 where user_id = $1`, [A]),
+    ).rejects.toThrow(/permission denied/);
     expect(await alice.query('select amount from public.entries')).toEqual([{ amount: 4230 }]);
   });
 
@@ -197,7 +227,7 @@ describe('row level security', () => {
          values ($1, $2, 'Roubo', 'bank', 'EUR')`,
         [A, ACCOUNT_2],
       ),
-    ).rejects.toThrow(/row-level security/);
+    ).rejects.toThrow(/permission denied/);
   });
 
   it('prevents referencing another users account or category', async () => {
@@ -294,11 +324,31 @@ describe('versions and idempotency', () => {
     expect(await alice.query('select amount from public.entries')).toEqual([{ amount: 6000 }]);
   });
 
-  it('enforces compare-and-swap on direct table updates too', async () => {
+  it('refuses direct writes and hides sync_apply_op from the public schema', async () => {
     await push(alice, [entryOp(ENTRY, 0)]);
-    await expect(alice.query('update public.entries set amount = 1, version = 7')).rejects.toThrow(
-      /version_conflict/,
+    await expect(alice.query('update public.entries set amount = 1')).rejects.toThrow(
+      /permission denied/,
     );
+    await expect(
+      alice.query(
+        `insert into public.entries (id, type, amount, description, account_id, category_id, date)
+         values ($1, 'expense', 1, '', $2, $3, '2026-11-01')`,
+        ['30000000-0000-4000-8000-000000000099', ACCOUNT, GROCERIES],
+      ),
+    ).rejects.toThrow(/permission denied/);
+    await expect(alice.query(`select public.sync_apply_op('{}'::jsonb)`)).rejects.toThrow(
+      /sync_apply_op/,
+    );
+    await expect(alice.query(`select sync_apply_op('{}'::jsonb)`)).rejects.toThrow(/sync_apply_op/);
+    expect(
+      await server.pg.query(
+        `select n.nspname as schema
+           from pg_proc p
+           join pg_namespace n on n.oid = p.pronamespace
+          where p.proname = 'sync_apply_op'`,
+      ),
+    ).toEqual([{ schema: 'private' }]);
+    expect(await alice.query('select amount from public.entries')).toEqual([{ amount: 4230 }]);
   });
 
   it('never recreates a missing row from an edit', async () => {
@@ -357,7 +407,15 @@ describe('financial integrity on the server', () => {
   ])('rejects %s', async (_, data) => {
     const [result] = await push(alice, [entryOp(ENTRY, 0, data)]);
     expect(result!.status).toBe('rejected');
+    expect(result).not.toHaveProperty('code');
+    expect(JSON.stringify(result)).not.toMatch(/constraint|42\.30|violates/i);
     expect(await alice.query('select id from public.entries')).toEqual([]);
+  });
+
+  it('hides the rejected literal from the public error', async () => {
+    const [result] = await push(alice, [entryOp(ENTRY, 0, { amount: '42.30' })]);
+    expect(result).toMatchObject({ status: 'rejected', reason: 'invalid' });
+    expect(JSON.stringify(result)).not.toContain('42.30');
   });
 
   it('rejects deleting an account or category that still has entries', async () => {
@@ -445,14 +503,14 @@ describe('purge of deleted rows', () => {
     await push(alice, [entryOp(ENTRY, 1, { deleted_at: new Date().toISOString() })]);
 
     expect(await server.pg.query(`select public.purge_deleted()`)).toEqual([
-      { purge_deleted: { entries: 0, categories: 0, accounts: 0 } },
+      { purge_deleted: { entries: 0, budgets: 0, categories: 0, accounts: 0 } },
     ]);
 
     await server.pg.query(
       `update public.entries set deleted_at = now() - interval '200 days', version = version`,
     );
     expect(await server.pg.query(`select public.purge_deleted()`)).toEqual([
-      { purge_deleted: { entries: 1, categories: 0, accounts: 0 } },
+      { purge_deleted: { entries: 1, budgets: 0, categories: 0, accounts: 0 } },
     ]);
     await expect(server.pg.query(`select public.purge_deleted(interval '1 day')`)).rejects.toThrow(
       /retention_too_short/,
@@ -463,5 +521,215 @@ describe('purge of deleted rows', () => {
     // A edição de um registo purgado nunca o recria.
     const [result] = await push(alice, [entryOp(ENTRY, 2, { amount: 1 })]);
     expect(result).toMatchObject({ status: 'conflict', reason: 'missing' });
+  });
+
+  it('rejects purge_deleted for an authenticated caller even if execute was granted', async () => {
+    await expect(alice.query('select public.purge_deleted()')).rejects.toThrow(/permission denied/);
+    await server.pg.query(
+      'grant execute on function public.purge_deleted(interval) to authenticated',
+    );
+    await expect(alice.query('select public.purge_deleted()')).rejects.toThrow(/not_authorized/);
+    await server.pg.query(
+      'revoke execute on function public.purge_deleted(interval) from authenticated',
+    );
+  });
+});
+
+describe('budgets', () => {
+  beforeEach(() => seedBasics(alice));
+
+  it('creates, updates and soft-deletes without touching entries', async () => {
+    await push(alice, [entryOp(ENTRY, 0)]);
+    const created = budgetOp(BUDGET, 0);
+    expect((await push(alice, [created]))[0]).toMatchObject({ status: 'applied' });
+    expect((await push(alice, [created]))[0]).toMatchObject({ status: 'duplicate' });
+    expect((await push(alice, [budgetOp(BUDGET, 1, { amount: 8000 })]))[0]).toMatchObject({
+      status: 'applied',
+    });
+    const [stale] = await push(alice, [budgetOp(BUDGET, 1, { amount: 1000 })]);
+    expect(stale).toMatchObject({ status: 'conflict', reason: 'version' });
+    const [removed] = await push(alice, [
+      budgetOp(BUDGET, 2, { amount: 8000, deleted_at: new Date().toISOString() }),
+    ]);
+    expect(removed).toMatchObject({ status: 'applied' });
+    expect(await alice.query('select id, amount from public.entries')).toEqual([
+      { id: ENTRY, amount: 4230 },
+    ]);
+    expect(await alice.query('select deleted_at is not null as gone from public.budgets')).toEqual([
+      { gone: true },
+    ]);
+  });
+
+  it('rejects a second active budget for the same category and an income category', async () => {
+    await push(alice, [budgetOp(BUDGET, 0)]);
+    const [duplicate] = await push(alice, [budgetOp(BUDGET_2, 0)]);
+    expect(duplicate).toMatchObject({ status: 'rejected', reason: 'duplicate_budget' });
+    await push(alice, [
+      categoryOp(SALARY, 0, { name: 'Salário', type: 'income', system_key: null }),
+    ]);
+    const [income] = await push(alice, [budgetOp(BUDGET_2, 0, { category_id: SALARY })]);
+    expect(income).toMatchObject({ status: 'rejected', reason: 'category_type_mismatch' });
+  });
+
+  it('isolates budgets per user and keeps the old pull free of them', async () => {
+    await push(alice, [budgetOp(BUDGET, 0)]);
+    expect(await bob.query('select id from public.budgets')).toEqual([]);
+    await expect(
+      bob.query(`update public.budgets set amount = 1 where user_id = $1`, [A]),
+    ).rejects.toThrow(/permission denied/);
+    await expect(
+      alice.query(
+        `insert into public.budgets (user_id, id, category_id, amount, currency, period, starts_on)
+         values ($1, $2, $3, 100, 'EUR', 'monthly', '2026-11-01')`,
+        [A, BUDGET_2, GROCERIES],
+      ),
+    ).rejects.toThrow(/permission denied/);
+
+    type Pull = { changes: { entity: string }[] };
+    const legacy = await alice.rpc<Pull>('sync_pull', { p_since: 0 });
+    expect(legacy.changes.map((change) => change.entity)).not.toContain('budgets');
+    const current = await alice.rpc<Pull>('sync_pull_v2', { p_since: 0 });
+    expect(current.changes.map((change) => change.entity)).toContain('budgets');
+    expect((await bob.rpc<Pull>('sync_pull_v2', { p_since: 0 })).changes).toEqual([]);
+    await expect(server.anonymous().query('select * from public.budgets')).rejects.toThrow(
+      /permission denied/,
+    );
+  });
+
+  it('closes the active budget when an older app deletes the category', async () => {
+    await push(alice, [categoryOp(SALARY, 0, { name: 'Casa', system_key: null })]);
+    await push(alice, [entryOp(ENTRY, 0, { category_id: SALARY })]);
+    await push(alice, [budgetOp(BUDGET, 0)]);
+    const [before] = await alice.query<{ last_seq: number }>(
+      'select last_seq::int as last_seq from public.sync_metadata',
+    );
+    const removal = categoryOp(GROCERIES, 1, { deleted_at: '2026-11-08T12:00:00.000Z' });
+    const [removed] = await push(alice, [removal]);
+    expect(removed).toMatchObject({ status: 'applied' });
+
+    const [budget] = await alice.query<{
+      version: number;
+      server_seq: number;
+      gone: boolean;
+      same: boolean;
+    }>(
+      `select version::int, server_seq::int, deleted_at is not null as gone,
+              deleted_at = '2026-11-08T12:00:00.000Z'::timestamptz as same
+         from public.budgets where id = $1`,
+      [BUDGET],
+    );
+    const [category] = await alice.query<{ version: number; server_seq: number }>(
+      'select version::int, server_seq::int from public.categories where id = $1',
+      [GROCERIES],
+    );
+    const [meta] = await alice.query<{ last_seq: number }>(
+      'select last_seq::int as last_seq from public.sync_metadata',
+    );
+    expect(budget).toMatchObject({ version: 2, gone: true, same: true });
+    expect(budget!.server_seq).toBeGreaterThan(before!.last_seq);
+    expect(budget!.server_seq).toBe(category!.server_seq + 1);
+    expect(meta!.last_seq).toBe(budget!.server_seq);
+    expect(await alice.query('select id, amount, category_id from public.entries')).toEqual([
+      { id: ENTRY, amount: 4230, category_id: SALARY },
+    ]);
+
+    type Pull = {
+      changes: { entity: string; server_seq: number; row: { deleted_at: string | null } }[];
+    };
+    const page = await alice.rpc<Pull>('sync_pull_v2', { p_since: category!.server_seq - 1 });
+    const budgetChange = page.changes.find((change) => change.entity === 'budgets');
+    expect(budgetChange?.server_seq).toBe(budget!.server_seq);
+    expect(budgetChange?.row.deleted_at).toEqual(expect.any(String));
+
+    expect((await push(alice, [removal]))[0]).toMatchObject({ status: 'duplicate' });
+    expect(
+      await alice.query<{ version: number }>(
+        'select version::int from public.budgets where id = $1',
+        [BUDGET],
+      ),
+    ).toEqual([{ version: 2 }]);
+    const [again] = await push(alice, [
+      categoryOp(GROCERIES, 2, { deleted_at: '2026-11-08T13:00:00.000Z' }),
+    ]);
+    expect(again).toMatchObject({ status: 'applied' });
+    expect(
+      await alice.query<{ version: number; n: number }>(
+        `select version::int, count(*)::int as n from public.budgets group by version`,
+      ),
+    ).toEqual([{ version: 2, n: 1 }]);
+  });
+
+  it('leaves a category without a budget, and one that still has entries', async () => {
+    const [removed] = await push(alice, [
+      categoryOp(GROCERIES, 1, { deleted_at: '2026-11-08T12:00:00.000Z' }),
+    ]);
+    expect(removed).toMatchObject({ status: 'applied' });
+    expect(await alice.query('select id from public.budgets')).toEqual([]);
+
+    await push(alice, [categoryOp(SALARY, 0, { name: 'Casa', system_key: null })]);
+    await push(alice, [budgetOp(BUDGET, 0, { category_id: SALARY })]);
+    await push(alice, [entryOp(ENTRY, 0, { category_id: SALARY })]);
+    const [blocked] = await push(alice, [
+      categoryOp(SALARY, 1, {
+        name: 'Casa',
+        system_key: null,
+        deleted_at: '2026-11-08T12:00:00.000Z',
+      }),
+    ]);
+    expect(blocked).toMatchObject({ status: 'rejected', reason: 'category_in_use' });
+    expect(
+      await alice.query<{ gone: boolean; version: number }>(
+        'select deleted_at is not null as gone, version::int from public.budgets',
+      ),
+    ).toEqual([{ gone: false, version: 1 }]);
+    expect(await alice.query('select count(*)::int as n from public.entries')).toEqual([{ n: 1 }]);
+  });
+
+  it('does not tombstone a budget twice or lose a compare-and-swap', async () => {
+    await push(alice, [budgetOp(BUDGET, 0)]);
+    const [first] = await push(alice, [
+      budgetOp(BUDGET, 1, { deleted_at: '2026-11-08T11:00:00.000Z' }),
+    ]);
+    expect(first).toMatchObject({ status: 'applied' });
+    const [removed] = await push(alice, [
+      categoryOp(GROCERIES, 1, { deleted_at: '2026-11-08T12:00:00.000Z' }),
+    ]);
+    expect(removed).toMatchObject({ status: 'applied' });
+    expect(
+      await alice.query(
+        `select version::int as version,
+                deleted_at = '2026-11-08T11:00:00.000Z'::timestamptz as same
+           from public.budgets`,
+      ),
+    ).toEqual([{ version: 2, same: true }]);
+
+    await push(alice, [categoryOp(SALARY, 0, { name: 'Casa', system_key: null })]);
+    await push(alice, [budgetOp(BUDGET_2, 0, { category_id: SALARY, amount: 8000 })]);
+    await push(alice, [
+      categoryOp(SALARY, 1, {
+        name: 'Casa',
+        system_key: null,
+        deleted_at: '2026-11-08T12:00:00.000Z',
+      }),
+    ]);
+    const [stale] = await push(alice, [
+      budgetOp(BUDGET_2, 1, { category_id: SALARY, amount: 1000 }),
+    ]);
+    expect(stale).toMatchObject({ status: 'conflict', reason: 'version' });
+    expect(
+      await alice.query<{ version: number; gone: boolean; n: number }>(
+        `select version::int as version, deleted_at is not null as gone, count(*)::int as n
+           from public.budgets where id = $1
+          group by version, deleted_at is not null`,
+        [BUDGET_2],
+      ),
+    ).toEqual([{ version: 2, gone: true, n: 1 }]);
+    const [revive] = await push(alice, [
+      budgetOp(BUDGET_2, 2, { category_id: SALARY, amount: 1000 }),
+    ]);
+    expect(revive).toMatchObject({ status: 'rejected', reason: 'category_unavailable' });
+    expect(
+      await alice.query('select count(*)::int as n from public.budgets where id = $1', [BUDGET_2]),
+    ).toEqual([{ n: 1 }]);
   });
 });

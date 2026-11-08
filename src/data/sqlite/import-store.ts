@@ -1,9 +1,9 @@
 import type { SyncEntity } from '@/core/sync';
 
-import type { SqlDatabase, SqlValue } from '../db/sql-database';
+import type { SqlDatabase, SqlExecutor, SqlValue } from '../db/sql-database';
 import { SYNC_ENTITIES } from './sync-store';
 
-export type ImportRecord = { entity: SyncEntity; id: string };
+export type ImportRecord = { entity: SyncEntity; id: string; fingerprint: string };
 
 export type ImportState =
   | { state: 'none' }
@@ -14,6 +14,19 @@ export type ImportState =
   | { state: 'confirmed'; records: ImportRecord[]; sourceCleared: boolean };
 
 const META_KEY = 'import.anonymous';
+
+/** Outro orçamento ativo já ocupa a categoria: não se copia nem se apaga nenhum dos dois. */
+async function budgetCategoryTaken(
+  tx: SqlExecutor,
+  categoryId: SqlValue,
+  exceptId: string,
+): Promise<boolean> {
+  const row = await tx.first<{ id: string }>(
+    'SELECT id FROM budgets WHERE category_id = ? AND deleted_at IS NULL AND id <> ?',
+    [categoryId, exceptId],
+  );
+  return row !== null;
+}
 
 const COPY_COLUMNS: Record<SyncEntity, readonly string[]> = {
   accounts: [
@@ -27,6 +40,16 @@ const COPY_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'updated_at',
   ],
   categories: ['id', 'name', 'type', 'icon', 'color', 'system_key', 'created_at', 'updated_at'],
+  budgets: [
+    'id',
+    'category_id',
+    'amount',
+    'currency',
+    'period',
+    'starts_on',
+    'created_at',
+    'updated_at',
+  ],
   entries: [
     'id',
     'type',
@@ -42,6 +65,18 @@ const COPY_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'updated_at',
   ],
 };
+
+/** Conteúdo copiado, sem `updated_at` (muda só por se tocar no registo). */
+export function contentFingerprint(entity: SyncEntity, row: Record<string, SqlValue>): string {
+  const pairs = COPY_COLUMNS[entity]
+    .filter((column) => column !== 'updated_at')
+    .map((column) => [column, row[column] ?? null]);
+  return JSON.stringify(pairs);
+}
+
+function recordKey(record: ImportRecord): string {
+  return `${record.entity}:${record.id}`;
+}
 
 export async function readImportState(db: SqlDatabase): Promise<ImportState> {
   const row = await db.first<{ value: string }>('SELECT value FROM meta WHERE key = ?', [META_KEY]);
@@ -60,9 +95,33 @@ export async function hasUserData(db: SqlDatabase): Promise<boolean> {
   const row = await db.first<{ n: number }>(
     `SELECT (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL)
           + (SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL)
-          + (SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL AND system_key IS NULL) AS n`,
+          + (SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL AND system_key IS NULL)
+          + (SELECT COUNT(*) FROM budgets WHERE deleted_at IS NULL) AS n`,
   );
   return (row?.n ?? 0) > 0;
+}
+
+/**
+ * Dados sem conta que ainda podem entrar na conta. Um orçamento cuja categoria já tem limite
+ * na conta não conta: fica no dispositivo, sem apagar nenhum dos dois.
+ */
+export async function hasFreshUserData(source: SqlDatabase, target: SqlDatabase): Promise<boolean> {
+  const structural = await source.first<{ n: number }>(
+    `SELECT (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL)
+          + (SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL)
+          + (SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL AND system_key IS NULL) AS n`,
+  );
+  if ((structural?.n ?? 0) > 0) return true;
+  const sourceBudgets = await source.all<{ id: string; category_id: string }>(
+    'SELECT id, category_id FROM budgets WHERE deleted_at IS NULL',
+  );
+  if (sourceBudgets.length === 0) return false;
+  const targetBudgets = await target.all<{ id: string; category_id: string }>(
+    'SELECT id, category_id FROM budgets WHERE deleted_at IS NULL',
+  );
+  const present = new Set(targetBudgets.map((budget) => budget.id));
+  const taken = new Set(targetBudgets.map((budget) => budget.category_id));
+  return sourceBudgets.some((budget) => !present.has(budget.id) && !taken.has(budget.category_id));
 }
 
 /**
@@ -77,6 +136,7 @@ export async function copyRecords(
   const rows: Record<SyncEntity, Record<string, SqlValue>[]> = {
     accounts: [],
     categories: [],
+    budgets: [],
     entries: [],
   };
   for (const entity of SYNC_ENTITIES) {
@@ -90,12 +150,20 @@ export async function copyRecords(
     for (const entity of SYNC_ENTITIES) {
       const columns = COPY_COLUMNS[entity];
       for (const row of rows[entity]) {
+        if (
+          entity === 'budgets' &&
+          (await budgetCategoryTaken(tx, row.category_id ?? null, String(row.id)))
+        ) {
+          continue;
+        }
         const result = await tx.run(
           `INSERT OR IGNORE INTO ${entity} (${columns.join(', ')})
            VALUES (${columns.map(() => '?').join(', ')})`,
           columns.map((column) => row[column] ?? null),
         );
-        if (result.changes > 0) copied.push({ entity, id: String(row.id) });
+        if (result.changes > 0) {
+          copied.push({ entity, id: String(row.id), fingerprint: contentFingerprint(entity, row) });
+        }
       }
     }
     const state: ImportState = { state: 'copied', records: copied };
@@ -122,15 +190,119 @@ export async function unsettledCount(db: SqlDatabase, records: ImportRecord[]): 
   return count;
 }
 
-function byEntity(records: ImportRecord[], entity: SyncEntity): string[] {
-  return records.filter((record) => record.entity === entity).map((record) => record.id);
+function byEntity(records: ImportRecord[], entity: SyncEntity): ImportRecord[] {
+  return records.filter((record) => record.entity === entity);
 }
 
-/** Depois da confirmação: remove do espaço sem conta exatamente o que foi importado. */
+async function readRow(
+  db: SqlExecutor,
+  entity: SyncEntity,
+  id: string,
+): Promise<Record<string, SqlValue> | null> {
+  return db.first<Record<string, SqlValue>>(
+    `SELECT ${COPY_COLUMNS[entity].join(', ')} FROM ${entity} WHERE id = ? AND deleted_at IS NULL`,
+    [id],
+  );
+}
+
+async function writeCopiedRow(
+  tx: SqlExecutor,
+  entity: SyncEntity,
+  row: Record<string, SqlValue>,
+): Promise<boolean> {
+  const columns = COPY_COLUMNS[entity];
+  const inserted = await tx.run(
+    `INSERT OR IGNORE INTO ${entity} (${columns.join(', ')})
+     VALUES (${columns.map(() => '?').join(', ')})`,
+    columns.map((column) => row[column] ?? null),
+  );
+  if (inserted.changes > 0) return true;
+  const existing = await tx.first<{ id: string }>(`SELECT id FROM ${entity} WHERE id = ?`, [
+    row.id ?? null,
+  ]);
+  if (!existing) return false;
+  const assignments = columns.filter((column) => column !== 'id' && column !== 'created_at');
+  await tx.run(
+    `UPDATE ${entity} SET ${assignments.map((column) => `${column} = ?`).join(', ')} WHERE id = ?`,
+    [...assignments.map((column) => row[column] ?? null), row.id ?? null],
+  );
+  return true;
+}
+
+/**
+ * Traz para a conta o que mudou ou apareceu na origem desde a cópia.
+ * Não substitui uma linha da conta que já divergiu do instantâneo importado.
+ */
+export async function absorbSourceChanges(
+  source: SqlDatabase,
+  target: SqlDatabase,
+  records: ImportRecord[],
+): Promise<ImportRecord[]> {
+  const next = records.map((record) => ({ ...record }));
+  const known = new Map(next.map((record) => [recordKey(record), record]));
+
+  await target.transaction(async (tx) => {
+    for (const entity of SYNC_ENTITIES) {
+      const rows = await source.all<Record<string, SqlValue>>(
+        `SELECT ${COPY_COLUMNS[entity].join(', ')} FROM ${entity} WHERE deleted_at IS NULL`,
+      );
+      for (const row of rows) {
+        const id = String(row.id);
+        const sourceFingerprint = contentFingerprint(entity, row);
+        const current = known.get(`${entity}:${id}`);
+        if (!current) {
+          if (entity === 'categories' && row.system_key != null) continue;
+          if (
+            entity === 'budgets' &&
+            (await budgetCategoryTaken(tx, row.category_id ?? null, id))
+          ) {
+            continue;
+          }
+          if (!(await writeCopiedRow(tx, entity, row))) continue;
+          const created: ImportRecord = { entity, id, fingerprint: sourceFingerprint };
+          next.push(created);
+          known.set(`${entity}:${id}`, created);
+          continue;
+        }
+        if (current.fingerprint === sourceFingerprint) continue;
+        const targetRow = await readRow(tx, entity, id);
+        const targetFingerprint = targetRow ? contentFingerprint(entity, targetRow) : null;
+        if (targetFingerprint === sourceFingerprint) {
+          current.fingerprint = sourceFingerprint;
+          continue;
+        }
+        if (
+          targetFingerprint !== null &&
+          current.fingerprint &&
+          targetFingerprint !== current.fingerprint
+        ) {
+          continue;
+        }
+        if (entity === 'budgets' && (await budgetCategoryTaken(tx, row.category_id ?? null, id))) {
+          continue;
+        }
+        if (!(await writeCopiedRow(tx, entity, row))) continue;
+        current.fingerprint = sourceFingerprint;
+      }
+    }
+    await tx.run('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', [
+      META_KEY,
+      JSON.stringify({ state: 'copied', records: next } satisfies ImportState),
+    ]);
+  });
+  return next;
+}
+
+/**
+ * Remove da origem só as linhas cujo conteúdo ainda é o que foi confirmado.
+ * Categorias de sistema ficam no uso sem conta. Devolve quantas linhas mudaram
+ * outra vez e por isso não foram apagadas.
+ */
 export async function clearImportedFromSource(
   source: SqlDatabase,
   records: ImportRecord[],
-): Promise<void> {
+): Promise<{ pending: number }> {
+  let pending = 0;
   await source.transaction(async (tx) => {
     for (const entity of [...SYNC_ENTITIES].reverse()) {
       const guard =
@@ -139,13 +311,25 @@ export async function clearImportedFromSource(
                WHERE e.account_id = accounts.id OR e.destination_account_id = accounts.id)`
           : entity === 'categories'
             ? `AND system_key IS NULL
-               AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.category_id = categories.id)`
+               AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.category_id = categories.id)
+               AND NOT EXISTS (SELECT 1 FROM budgets b
+                 WHERE b.category_id = categories.id AND b.deleted_at IS NULL)`
             : '';
-      for (const id of byEntity(records, entity)) {
-        await tx.run(`DELETE FROM ${entity} WHERE id = ? ${guard}`, [id]);
+      for (const record of byEntity(records, entity)) {
+        const row = await readRow(tx, entity, record.id);
+        if (!row) continue;
+        if (!record.fingerprint || contentFingerprint(entity, row) !== record.fingerprint) {
+          pending += 1;
+          continue;
+        }
+        const removed = await tx.run(`DELETE FROM ${entity} WHERE id = ? ${guard}`, [record.id]);
+        const systemCategory =
+          entity === 'categories' && row.system_key !== null && row.system_key !== undefined;
+        if (removed.changes === 0 && !systemCategory) pending += 1;
       }
     }
   });
+  return { pending };
 }
 
 /**
@@ -157,7 +341,7 @@ export async function revertCopy(target: SqlDatabase, records: ImportRecord[]): 
   await target.transaction(async (tx) => {
     const now = new Date().toISOString();
     for (const entity of [...SYNC_ENTITIES].reverse()) {
-      for (const id of byEntity(records, entity)) {
+      for (const { id } of byEntity(records, entity)) {
         const row = await tx.first<{ version: number }>(
           `SELECT version FROM ${entity} WHERE id = ?`,
           [id],
@@ -168,7 +352,9 @@ export async function revertCopy(target: SqlDatabase, records: ImportRecord[]): 
             ? `AND NOT EXISTS (SELECT 1 FROM entries e
                  WHERE e.account_id = accounts.id OR e.destination_account_id = accounts.id)`
             : entity === 'categories'
-              ? `AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.category_id = categories.id)`
+              ? `AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.category_id = categories.id)
+                 AND NOT EXISTS (SELECT 1 FROM budgets b
+                   WHERE b.category_id = categories.id AND b.deleted_at IS NULL)`
               : '';
         const removed =
           row.version === 0

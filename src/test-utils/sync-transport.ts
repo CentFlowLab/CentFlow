@@ -41,7 +41,7 @@ export function createTestTransport(session: ServerSession): TestTransport {
     },
     async pull(since, limit) {
       guard();
-      return session.rpc<PullPage>('sync_pull', { p_since: since, p_limit: limit });
+      return session.rpc<PullPage>('sync_pull_v2', { p_since: since, p_limit: limit });
     },
     async fetchRows(entity: SyncEntity, ids) {
       guard();

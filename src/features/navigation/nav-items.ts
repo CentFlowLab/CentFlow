@@ -39,12 +39,16 @@ const IMPLEMENTED: readonly NavKey[] = [
   'dashboard',
   'transactions',
   'accounts',
+  'budgets',
   'categories',
   'settings',
 ];
 
 /** Áreas com ecrã próprio ainda por implementar. */
-export type PlannedModule = Exclude<DescribedArea, 'transactions' | 'accounts' | 'categories'>;
+export type PlannedModule = Exclude<
+  DescribedArea,
+  'transactions' | 'accounts' | 'categories' | 'budgets'
+>;
 
 export function isPlannedModule(key: NavKey): key is PlannedModule {
   return !IMPLEMENTED.includes(key);

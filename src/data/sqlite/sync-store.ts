@@ -6,7 +6,13 @@ import type { DataEntity } from '../repositories/types';
 import type { PullChange, ServerRow } from '../sync/transport';
 
 /** Ordem de aplicação: uma linha nunca chega antes daquilo de que depende. */
-export const SYNC_ENTITIES: readonly SyncEntity[] = ['accounts', 'categories', 'entries'];
+/** Categorias antes de orçamentos; orçamentos antes de serem apagados com as categorias. */
+export const SYNC_ENTITIES: readonly SyncEntity[] = [
+  'accounts',
+  'categories',
+  'budgets',
+  'entries',
+];
 
 export type OutboxOperation = {
   seq: number;
@@ -67,6 +73,17 @@ const COLUMNS: Record<SyncEntity, readonly string[]> = {
     'icon',
     'color',
     'system_key',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  ],
+  budgets: [
+    'id',
+    'category_id',
+    'amount',
+    'currency',
+    'period',
+    'starts_on',
     'created_at',
     'updated_at',
     'deleted_at',
@@ -140,6 +157,15 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
     { force }: { force: boolean },
   ): Promise<boolean> {
     const row = normalizeServerRow(raw);
+    // Outro limite ativo da mesma categoria cede o lugar à linha do servidor. A operação
+    // pendente desse limite, se existir, fica na fila e o conflito conserva a versão local.
+    if (entity === 'budgets' && row.deleted_at == null && row.category_id != null) {
+      await tx.run(
+        `UPDATE budgets SET deleted_at = ?, updated_at = ?
+          WHERE category_id = ? AND deleted_at IS NULL AND id <> ?`,
+        [now(), now(), row.category_id, row.id],
+      );
+    }
     const columns = [...COLUMNS[entity], 'version', 'server_seq', 'synced_at'];
     const values: SyncValue[] = [
       ...COLUMNS[entity].map((column) => row[column] ?? null),
@@ -175,6 +201,13 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
     id: string,
     data: SyncRecord,
   ): Promise<void> {
+    if (entity === 'budgets' && (data.deleted_at ?? null) === null && data.category_id != null) {
+      await tx.run(
+        `UPDATE budgets SET deleted_at = ?, updated_at = ?
+          WHERE category_id = ? AND deleted_at IS NULL AND id <> ?`,
+        [now(), now(), data.category_id, id],
+      );
+    }
     const fields = SYNC_FIELDS[entity];
     const assignments = fields.map((field) => `${field} = ?`);
     const values: SyncValue[] = fields.map((field) => data[field] ?? null);
@@ -272,6 +305,22 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
     async pendingCount(): Promise<number> {
       const row = await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM sync_outbox');
       return row?.n ?? 0;
+    },
+
+    /** Apagamentos de orçamento ainda por confirmar, para não os ultrapassar. */
+    async pendingBudgetDeletes(): Promise<
+      { seq: number; txId: string | null; categoryId: string }[]
+    > {
+      const rows = await db.all<{ seq: number; tx_id: string | null; category_id: string }>(
+        `SELECT seq, tx_id, json_extract(data, '$.category_id') AS category_id
+           FROM sync_outbox
+          WHERE entity = 'budgets'
+            AND json_type(data, '$.deleted_at') = 'text'
+          ORDER BY seq`,
+      );
+      return rows
+        .filter((row) => row.category_id != null)
+        .map((row) => ({ seq: row.seq, txId: row.tx_id, categoryId: row.category_id }));
     },
 
     async openConflictCount(): Promise<number> {
@@ -461,7 +510,8 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
                   ? `AND NOT EXISTS (SELECT 1 FROM entries e
                        WHERE e.account_id = accounts.id OR e.destination_account_id = accounts.id)`
                   : entity === 'categories'
-                    ? `AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.category_id = categories.id)`
+                    ? `AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.category_id = categories.id)
+                       AND NOT EXISTS (SELECT 1 FROM budgets b WHERE b.category_id = categories.id)`
                     : '';
               // Já confirmadas e purgadas no servidor: a eliminação foi definitiva.
               const purged = await tx.run(
@@ -554,6 +604,10 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
           [now(), resolution, conflict.id],
         );
         if (resolution === 'keepLocal' && conflict.local) {
+          await tx.run('DELETE FROM sync_outbox WHERE entity = ? AND record_id = ?', [
+            conflict.entity,
+            conflict.recordId,
+          ]);
           if (conflict.reason === 'missing') {
             await asRemote(tx, () =>
               tx.run(`UPDATE ${conflict.entity} SET version = 0, server_seq = NULL WHERE id = ?`, [

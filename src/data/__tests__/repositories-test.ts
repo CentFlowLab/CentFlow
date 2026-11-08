@@ -2,6 +2,7 @@ import {
   computeBalances,
   DEFAULT_CATEGORIES,
   flowsFromEntries,
+  spentAmount,
   ValidationError,
   type Account,
   type Category,
@@ -452,6 +453,116 @@ describe('change notifications', () => {
     unsubscribe();
     await repos.accounts.setArchived(savings.id, true);
     expect(events).toEqual([['entries'], ['entries']]);
+  });
+});
+
+describe('budgets', () => {
+  const input = () => ({
+    categoryId: food.id,
+    amount: 10_000,
+    currency: 'EUR' as const,
+    period: 'monthly' as const,
+    startsOn: '2026-01-01',
+  });
+
+  it('creates, edits, rejects a second budget for the same category and deletes', async () => {
+    const budget = await repos.budgets.create(input());
+    expect(await repos.budgets.get(budget.id)).toEqual(budget);
+    await expect(repos.budgets.create(input())).rejects.toMatchObject({
+      errors: { categoryId: 'duplicateCategory' },
+    });
+    const updated = await repos.budgets.update(budget.id, {
+      ...input(),
+      amount: 8000,
+      period: 'weekly',
+    });
+    expect(updated.amount).toBe(8000);
+    expect(updated.period).toBe('weekly');
+    await repos.budgets.delete(budget.id);
+    expect(await repos.budgets.get(budget.id)).toBeNull();
+    expect(await repos.budgets.list()).toEqual([]);
+  });
+
+  it('rejects an income category', async () => {
+    await expect(repos.budgets.create({ ...input(), categoryId: salary.id })).rejects.toMatchObject(
+      {
+        errors: { categoryId: 'categoryTypeMismatch' },
+      },
+    );
+  });
+
+  it('removes the budget when its category is deleted', async () => {
+    await repos.budgets.create(input());
+    await repos.categories.delete(food.id);
+    expect(await repos.budgets.list()).toEqual([]);
+  });
+
+  it('follows real expenses and ignores income, transfers, other currencies and other months', async () => {
+    const usd = await repos.accounts.create({
+      name: 'Dólares',
+      type: 'cash',
+      currency: 'USD',
+      initialBalance: 0,
+    });
+    const rent = await repos.categories.create({
+      name: 'Renda',
+      type: 'expense',
+      icon: 'home',
+      color: 'indigo',
+    });
+    const range = { from: '2026-11-01', to: '2026-11-30' };
+    const window = { start: range.from, end: range.to };
+    await repos.entries.create(baseExpense());
+    await repos.entries.create({
+      ...baseExpense(),
+      type: 'income',
+      amount: 5000,
+      categoryId: salary.id,
+    });
+    await repos.entries.create({
+      type: 'transfer',
+      amount: 700,
+      description: 'Mover',
+      categoryId: null,
+      accountId: bank.id,
+      destinationAccountId: savings.id,
+      date: '2026-11-08',
+      notes: null,
+    });
+    await repos.entries.create({ ...baseExpense(), amount: 4000, categoryId: rent.id });
+    const foreign = await repos.entries.create({
+      ...baseExpense(),
+      amount: 9000,
+      accountId: usd.id,
+    });
+    const edited = await repos.entries.create({
+      ...baseExpense(),
+      amount: 100,
+      date: '2026-11-09',
+    });
+    await repos.entries.update(edited.id, { ...baseExpense(), amount: 300, date: '2026-11-09' });
+
+    const november = await repos.entries.listExpenses(range);
+    expect(spentAmount(november, { categoryId: food.id, currency: 'EUR' }, window)).toBe(1550);
+    expect(spentAmount(november, { categoryId: food.id, currency: 'USD' }, window)).toBe(9000);
+
+    await repos.entries.delete(foreign.id);
+    await repos.entries.delete(edited.id);
+    const after = await repos.entries.listExpenses(range);
+    expect(spentAmount(after, { categoryId: food.id, currency: 'EUR' }, window)).toBe(1250);
+    expect(spentAmount(after, { categoryId: food.id, currency: 'USD' }, window)).toBe(0);
+
+    const december = await repos.entries.listExpenses({ from: '2026-12-01', to: '2026-12-31' });
+    expect(
+      spentAmount(
+        december,
+        { categoryId: food.id, currency: 'EUR' },
+        {
+          start: '2026-12-01',
+          end: '2026-12-31',
+        },
+      ),
+    ).toBe(0);
   });
 });
 

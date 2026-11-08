@@ -89,6 +89,32 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'sync: versions, outbox triggers, inbox, conflicts, fixed default category ids',
     sql: migrationV2(),
   },
+  {
+    version: 3,
+    description: 'local budgets (one active limit per category; not enrolled in sync)',
+    sql: `
+      -- Limites locais. Não entram na fila de sincronização: o CHECK publicado das tabelas
+      -- sync_* só aceita accounts, categories e entries, e uma migração publicada não se altera.
+      CREATE TABLE budgets (
+        id TEXT PRIMARY KEY NOT NULL,
+        category_id TEXT NOT NULL REFERENCES categories (id) ON DELETE RESTRICT,
+        amount INTEGER NOT NULL CHECK (typeof(amount) = 'integer' AND amount > 0),
+        currency TEXT NOT NULL CHECK (length(currency) = 3 AND currency = upper(currency)),
+        period TEXT NOT NULL CHECK (period IN ('weekly', 'monthly', 'yearly')),
+        starts_on TEXT NOT NULL CHECK (starts_on GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        synced_at TEXT
+      );
+      CREATE UNIQUE INDEX idx_budgets_category ON budgets (category_id) WHERE deleted_at IS NULL;
+    `,
+  },
+  {
+    version: 4,
+    description: 'enroll budgets in the sync outbox, inbox and conflicts',
+    sql: migrationV4(),
+  },
 ];
 
 /**
@@ -298,6 +324,156 @@ function migrationV2(): string {
     CREATE INDEX idx_sync_conflicts_open ON sync_conflicts (created_at) WHERE resolved_at IS NULL;
 
     ${triggers.join('\n')}
+  `;
+}
+
+/** v4 — orçamentos passam a usar a mesma fila das outras entidades. */
+function migrationV4(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const columns = [
+    'category_id',
+    'amount',
+    'currency',
+    'period',
+    'starts_on',
+    'created_at',
+    'deleted_at',
+  ];
+  const json = (row: 'NEW' | 'OLD', fields: readonly string[]) =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const entities = `('accounts', 'categories', 'budgets', 'entries')`;
+  const synced = {
+    accounts: [
+      'name',
+      'type',
+      'currency',
+      'initial_balance',
+      'archived_at',
+      'created_at',
+      'deleted_at',
+    ],
+    categories: ['name', 'type', 'icon', 'color', 'system_key', 'created_at', 'deleted_at'],
+    budgets: columns,
+    entries: [
+      'type',
+      'amount',
+      'description',
+      'notes',
+      'category_id',
+      'account_id',
+      'destination_account_id',
+      'date',
+      'created_at',
+      'deleted_at',
+    ],
+  } as const;
+  const triggers = Object.entries(synced)
+    .map(([table, fields]) => {
+      const nextBase = `COALESCE(
+        (SELECT base_version + 1 FROM sync_outbox
+          WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+        OLD.version)`;
+      const insertBase = `COALESCE(
+        (SELECT base_version + 1 FROM sync_outbox
+          WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+        NEW.version)`;
+      return `
+        DROP TRIGGER IF EXISTS sync_${table}_insert;
+        DROP TRIGGER IF EXISTS sync_${table}_update;
+        CREATE TRIGGER sync_${table}_insert AFTER INSERT ON ${table}
+        WHEN ${tracking}
+        BEGIN
+          INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+          VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+            ${insertBase}, NULL, ${json('NEW', fields)}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+        END;
+        CREATE TRIGGER sync_${table}_update AFTER UPDATE ON ${table}
+        WHEN ${tracking}
+        BEGIN
+          INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+          VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+            ${nextBase}, ${json('OLD', fields)}, ${json('NEW', fields)},
+            strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+        END;`;
+    })
+    .join('\n');
+
+  return `
+    ALTER TABLE budgets ADD COLUMN version INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE budgets ADD COLUMN server_seq INTEGER;
+
+    -- Os triggers referenciam sync_outbox. Têm de sair antes de a tabela ser recriada,
+    -- senão o RENAME tenta recompilá-los contra uma tabela que já não existe.
+    DROP TRIGGER IF EXISTS sync_accounts_insert;
+    DROP TRIGGER IF EXISTS sync_accounts_update;
+    DROP TRIGGER IF EXISTS sync_categories_insert;
+    DROP TRIGGER IF EXISTS sync_categories_update;
+    DROP TRIGGER IF EXISTS sync_entries_insert;
+    DROP TRIGGER IF EXISTS sync_entries_update;
+
+    CREATE TABLE sync_outbox_v4 (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      op_id TEXT NOT NULL UNIQUE,
+      tx_id TEXT,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      record_id TEXT NOT NULL,
+      base_version INTEGER NOT NULL CHECK (base_version >= 0),
+      base TEXT,
+      data TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      created_at TEXT NOT NULL
+    );
+    INSERT INTO sync_outbox_v4
+      (seq, op_id, tx_id, entity, record_id, base_version, base, data, attempts, last_error, created_at)
+      SELECT seq, op_id, tx_id, entity, record_id, base_version, base, data, attempts, last_error, created_at
+        FROM sync_outbox;
+    DROP TABLE sync_outbox;
+    ALTER TABLE sync_outbox_v4 RENAME TO sync_outbox;
+    CREATE INDEX idx_sync_outbox_record ON sync_outbox (entity, record_id, seq);
+
+    CREATE TABLE sync_inbox_v4 (
+      server_seq INTEGER PRIMARY KEY,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      data TEXT NOT NULL
+    );
+    INSERT INTO sync_inbox_v4 (server_seq, entity, data)
+      SELECT server_seq, entity, data FROM sync_inbox;
+    DROP TABLE sync_inbox;
+    ALTER TABLE sync_inbox_v4 RENAME TO sync_inbox;
+
+    CREATE TABLE sync_conflicts_v4 (
+      id TEXT PRIMARY KEY NOT NULL,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      record_id TEXT NOT NULL,
+      reason TEXT NOT NULL CHECK (reason IN ('version', 'missing', 'rejected')),
+      detail TEXT,
+      base_data TEXT,
+      local_data TEXT,
+      server_data TEXT,
+      created_at TEXT NOT NULL,
+      resolved_at TEXT,
+      resolution TEXT CHECK (resolution IS NULL OR resolution IN ('keepLocal', 'keepServer'))
+    );
+    INSERT INTO sync_conflicts_v4
+      (id, entity, record_id, reason, detail, base_data, local_data, server_data, created_at,
+       resolved_at, resolution)
+      SELECT id, entity, record_id, reason, detail, base_data, local_data, server_data, created_at,
+             resolved_at, resolution
+        FROM sync_conflicts;
+    DROP TABLE sync_conflicts;
+    ALTER TABLE sync_conflicts_v4 RENAME TO sync_conflicts;
+    CREATE INDEX idx_sync_conflicts_open ON sync_conflicts (created_at) WHERE resolved_at IS NULL;
+
+    ${triggers}
+
+    -- Limites já gravados numa conta com sincronização ligada entram na fila uma vez.
+    UPDATE budgets SET updated_at = updated_at
+     WHERE version = 0 AND ${tracking};
   `;
 }
 

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
-import type { Account, Category } from '@/core/finance';
+import { assessBudget, type Account, type Category } from '@/core/finance';
+import { createSyncEngine, SyncTransportError } from '@/data/sync';
 import {
   createTestServer,
   type ServerSession,
@@ -411,5 +412,400 @@ describe('sync engine', () => {
 
     expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0 });
     expect((await phone.repositories.entries.get(entry.id))?.amount).toBe(10);
+  });
+});
+
+function budgetInput(categoryId: string, amount = 5000) {
+  return {
+    categoryId,
+    amount,
+    currency: 'EUR',
+    period: 'monthly' as const,
+    startsOn: '2026-11-01',
+  };
+}
+
+describe('budget sync', () => {
+  it('keeps an offline budget and uploads it once', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { category } = await setup(phone);
+    phone.transport.online = false;
+    const created = await phone.repositories.budgets.create(budgetInput(category.id));
+    expect(await phone.engine.sync()).toMatchObject({ status: 'offline' });
+    expect(await phone.repositories.budgets.list()).toHaveLength(1);
+    expect(await serverCount(user, 'budgets')).toBe(0);
+
+    phone.transport.online = true;
+    expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+    expect(await phone.engine.sync()).toMatchObject({ pending: 0, conflicts: 0 });
+    expect(await serverCount(user, 'budgets')).toBe(1);
+    await laptop.engine.sync();
+    expect(await laptop.repositories.budgets.list()).toEqual([
+      expect.objectContaining({ id: created.id, amount: 5000, categoryId: category.id }),
+    ]);
+  });
+
+  it('merges distinct fields and keeps a conflicting edit', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { category } = await setup(phone);
+    const created = await phone.repositories.budgets.create(budgetInput(category.id, 5000));
+    await phone.engine.sync();
+    await laptop.engine.sync();
+
+    await phone.repositories.budgets.update(created.id, budgetInput(category.id, 7000));
+    await laptop.repositories.budgets.update(created.id, {
+      ...budgetInput(category.id, 5000),
+      period: 'yearly',
+    });
+    await phone.engine.sync();
+    expect(await laptop.engine.sync()).toMatchObject({ pending: 0, conflicts: 0 });
+    await phone.engine.sync();
+    for (const each of [phone, laptop]) {
+      expect(await each.repositories.budgets.get(created.id)).toMatchObject({
+        amount: 7000,
+        period: 'yearly',
+      });
+    }
+  });
+
+  it('does not let an older edit replace a newer one', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { category } = await setup(phone);
+    const created = await phone.repositories.budgets.create(budgetInput(category.id, 5000));
+    await phone.engine.sync();
+    await laptop.engine.sync();
+
+    await phone.repositories.budgets.update(created.id, budgetInput(category.id, 6000));
+    await laptop.repositories.budgets.update(created.id, budgetInput(category.id, 9000));
+    await phone.engine.sync();
+    expect(await laptop.engine.sync()).toMatchObject({ conflicts: 1 });
+    const [conflict] = await laptop.engine.listConflicts();
+    expect(conflict).toMatchObject({
+      entity: 'budgets',
+      recordId: created.id,
+      reason: 'version',
+      local: { amount: 9000 },
+      server: { amount: 6000 },
+    });
+    await laptop.engine.resolveConflict(conflict!.id, 'keepLocal');
+    await laptop.engine.sync();
+    await phone.engine.sync();
+    expect((await phone.repositories.budgets.get(created.id))?.amount).toBe(9000);
+  });
+
+  it('propagates a deletion and does not bring the budget back', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { account, category } = await setup(phone);
+    const created = await phone.repositories.budgets.create(budgetInput(category.id));
+    await phone.repositories.entries.create(expense(account, category, 1500, 'Pão'));
+    await phone.engine.sync();
+    await laptop.engine.sync();
+
+    laptop.transport.online = false;
+    await laptop.repositories.budgets.delete(created.id);
+    expect(await laptop.repositories.budgets.list()).toHaveLength(0);
+    expect((await laptop.repositories.entries.list()).total).toBe(1);
+    laptop.transport.online = true;
+    await laptop.engine.sync();
+    await phone.engine.sync();
+    expect(await phone.repositories.budgets.list()).toHaveLength(0);
+    expect((await phone.repositories.entries.list()).total).toBe(1);
+    await phone.engine.sync();
+    await laptop.engine.sync();
+    expect(await serverCount(user, 'budgets')).toBe(0);
+    expect(await serverCount(user, 'entries')).toBe(1);
+    expect(await laptop.repositories.budgets.list()).toHaveLength(0);
+  });
+
+  it('rejects a second active budget for the same category without losing either copy', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { category } = await setup(phone);
+    await phone.engine.sync();
+    await laptop.engine.sync();
+    const winner = await phone.repositories.budgets.create(budgetInput(category.id, 4000));
+    await phone.engine.sync();
+    const other = await laptop.repositories.budgets.create(budgetInput(category.id, 9000));
+    const synced = await laptop.engine.sync();
+    expect(synced.conflicts).toBe(1);
+    expect(await serverCount(user, 'budgets')).toBe(1);
+    const [conflict] = await laptop.engine.listConflicts();
+    expect(conflict).toMatchObject({
+      reason: 'rejected',
+      detail: 'duplicate_budget',
+      recordId: other.id,
+      local: { amount: 9000 },
+    });
+    await laptop.engine.resolveConflict(conflict!.id, 'keepLocal');
+    await laptop.engine.sync();
+    await phone.engine.sync();
+    expect(await serverCount(user, 'budgets')).toBe(1);
+    expect((await phone.repositories.budgets.get(other.id))?.amount).toBe(9000);
+    expect(await phone.repositories.budgets.get(winner.id)).toBeNull();
+  });
+
+  it('counts only real expenses after the budget arrives on another device', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { account, category } = await setup(phone);
+    const cash = await phone.repositories.accounts.create({
+      name: 'Dinheiro',
+      type: 'cash',
+      currency: 'EUR',
+      initialBalance: 0,
+    });
+    const income = await phone.repositories.categories.create({
+      name: 'Salário',
+      type: 'income',
+      icon: 'briefcase-outline',
+      color: 'blue',
+    });
+    await phone.repositories.budgets.create(budgetInput(category.id, 10000));
+    await phone.repositories.entries.create(expense(account, category, 4230, 'Compras'));
+    await phone.repositories.entries.create({
+      ...expense(account, income, 20000, 'Salário'),
+      type: 'income',
+    });
+    await phone.repositories.entries.create({
+      type: 'transfer',
+      amount: 500,
+      description: '',
+      notes: '',
+      accountId: account.id,
+      categoryId: null,
+      destinationAccountId: cash.id,
+      date: '2026-11-08',
+    });
+    await phone.engine.sync();
+    await laptop.engine.sync();
+
+    const budget = (await laptop.repositories.budgets.list())[0];
+    const accounts = await laptop.repositories.accounts.list();
+    const currency = new Map(accounts.map((item) => [item.id, item.currency]));
+    const lines = (await laptop.repositories.entries.list({ limit: 20 })).items.map((item) => ({
+      type: item.type,
+      amount: item.amount,
+      categoryId: item.categoryId,
+      currency: currency.get(item.accountId) ?? '',
+      date: item.date,
+    }));
+    expect(budget).toBeDefined();
+    expect(
+      assessBudget(
+        {
+          categoryId: budget!.categoryId,
+          currency: budget!.currency,
+          period: budget!.period,
+          startsOn: budget!.startsOn,
+          amount: budget!.amount,
+        },
+        lines,
+        '2026-11-08',
+      ).figures.spent,
+    ).toBe(4230);
+  });
+
+  it('downloads a budget that an older cursor had skipped', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { category } = await setup(phone);
+    const created = await phone.repositories.budgets.create(budgetInput(category.id, 6400));
+    await phone.engine.sync();
+    const counts = await phone.transport.counts();
+    await laptop.db.run('UPDATE sync_state SET pull_cursor = ? WHERE id = 1', [counts.last_seq]);
+
+    expect(await laptop.repositories.budgets.list()).toHaveLength(0);
+    expect(await laptop.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+    expect(await laptop.repositories.budgets.get(created.id)).toMatchObject({ amount: 6400 });
+  });
+
+  it('removes the budget when its category is deleted and keeps the transactions', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { account, category } = await setup(phone);
+    const other = await phone.repositories.categories.create({
+      name: 'Casa',
+      type: 'expense',
+      icon: 'home-outline',
+      color: 'indigo',
+    });
+    await phone.repositories.budgets.create(budgetInput(category.id));
+    await phone.repositories.entries.create(expense(account, other, 1500, 'Renda'));
+    await phone.engine.sync();
+    await laptop.engine.sync();
+
+    await phone.repositories.categories.delete(category.id);
+    expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+    await laptop.engine.sync();
+    expect(await laptop.repositories.budgets.list()).toHaveLength(0);
+    expect((await laptop.repositories.entries.list()).total).toBe(1);
+    expect(await serverCount(user, 'entries')).toBe(1);
+    expect(await serverCount(user, 'budgets')).toBe(0);
+    expect(
+      await user.query<{ version: number; n: number }>(
+        'select version::int as version, count(*)::int as n from public.budgets group by version',
+      ),
+    ).toEqual([{ version: 2, n: 1 }]);
+  });
+
+  it('sends the budget deletion and waits before deleting the category', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const { category } = await setup(phone);
+    await phone.repositories.budgets.create(budgetInput(category.id));
+    await phone.engine.sync();
+
+    await phone.repositories.categories.delete(category.id);
+    const queued = await phone.db.all<{ entity: string; tx_id: string }>(
+      'SELECT entity, tx_id FROM sync_outbox ORDER BY seq',
+    );
+    expect(queued.map((row) => row.entity)).toEqual(['budgets', 'categories']);
+    expect(queued[0]!.tx_id).not.toBe(queued[1]!.tx_id);
+
+    const pushes: string[][] = [];
+    const engine = createSyncEngine({
+      store: phone.sync,
+      transport: {
+        ...phone.transport,
+        push: async (ops) => {
+          pushes.push(ops.map((op) => op.entity));
+          if (pushes.length > 1) throw new SyncTransportError('network');
+          return phone.transport.push(ops);
+        },
+      },
+    });
+    expect(await engine.sync()).toMatchObject({ status: 'offline' });
+    expect(pushes[0]).toEqual(['budgets']);
+    expect(await serverCount(user, 'budgets')).toBe(0);
+    expect(
+      await user.query<{ live: boolean }>(
+        'select deleted_at is null as live from public.categories',
+      ),
+    ).toEqual([{ live: true }]);
+    expect(await phone.repositories.categories.list()).toEqual([]);
+
+    expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+    expect(
+      await user.query<{ live: boolean }>(
+        'select deleted_at is null as live from public.categories',
+      ),
+    ).toEqual([{ live: false }]);
+    expect(
+      await user.query<{ version: number; n: number }>(
+        'select version::int as version, count(*)::int as n from public.budgets group by version',
+      ),
+    ).toEqual([{ version: 2, n: 1 }]);
+  });
+
+  it('deletes a category that has no budget and keeps reassigned transactions', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { account, category } = await setup(phone);
+    const other = await phone.repositories.categories.create({
+      name: 'Casa',
+      type: 'expense',
+      icon: 'home-outline',
+      color: 'indigo',
+    });
+    const spare = await phone.repositories.categories.create({
+      name: 'Lazer',
+      type: 'expense',
+      icon: 'film-outline',
+      color: 'purple',
+    });
+    await phone.repositories.entries.create(expense(account, category, 1500, 'Pão'));
+    await phone.engine.sync();
+    await laptop.engine.sync();
+
+    await phone.repositories.categories.delete(spare.id);
+    await phone.repositories.categories.delete(category.id, { reassignTo: other.id });
+    expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+    await laptop.engine.sync();
+    expect(await serverCount(user, 'budgets')).toBe(0);
+    expect(await serverCount(user, 'entries')).toBe(1);
+    expect((await laptop.repositories.entries.list()).items[0]?.categoryId).toBe(other.id);
+  });
+
+  it('keeps one deleted budget when the other device still has an edit', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { account, category } = await setup(phone);
+    const other = await phone.repositories.categories.create({
+      name: 'Casa',
+      type: 'expense',
+      icon: 'home-outline',
+      color: 'indigo',
+    });
+    const created = await phone.repositories.budgets.create(budgetInput(category.id, 5000));
+    await phone.repositories.entries.create(expense(account, other, 1500, 'Renda'));
+    await phone.engine.sync();
+    await laptop.engine.sync();
+
+    laptop.transport.online = false;
+    await laptop.repositories.budgets.update(created.id, budgetInput(category.id, 9000));
+    laptop.transport.online = true;
+    await phone.repositories.categories.delete(category.id);
+    expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+
+    expect(await laptop.engine.sync()).toMatchObject({ conflicts: 1 });
+    const [conflict] = await laptop.engine.listConflicts();
+    expect(conflict).toMatchObject({ entity: 'budgets', recordId: created.id, reason: 'version' });
+    await laptop.engine.resolveConflict(conflict!.id, 'keepServer');
+    await laptop.engine.sync();
+    expect(await laptop.repositories.budgets.list()).toHaveLength(0);
+    expect(await laptop.repositories.categories.get(category.id)).toBeNull();
+    expect((await laptop.repositories.entries.list()).total).toBe(1);
+    expect(
+      await user.query<{ version: number; gone: number; n: number }>(
+        `select version::int as version,
+                count(*) filter (where deleted_at is not null)::int as gone,
+                count(*)::int as n
+           from public.budgets
+          group by version`,
+      ),
+    ).toEqual([{ version: 2, gone: 1, n: 1 }]);
+  });
+
+  it('does not report success when the new pull is unavailable', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const { category } = await setup(phone);
+    await phone.repositories.budgets.create(budgetInput(category.id));
+    const engine = createSyncEngine({
+      store: phone.sync,
+      transport: {
+        ...phone.transport,
+        pull: async () => {
+          throw new SyncTransportError('server', 'PGRST202');
+        },
+      },
+    });
+    expect(await engine.sync()).toMatchObject({ status: 'error' });
+    expect(await phone.repositories.budgets.list()).toHaveLength(1);
+  });
+
+  it('does not duplicate a budget when the push response is lost', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const { category } = await setup(phone);
+    await phone.repositories.budgets.create(budgetInput(category.id, 3200));
+    phone.transport.dropNextPushResponse = true;
+    expect((await phone.engine.sync()).status).toBe('offline');
+    expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+    expect(await serverCount(user, 'budgets')).toBe(1);
   });
 });

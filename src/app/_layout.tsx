@@ -22,6 +22,8 @@ export default function RootLayout() {
         <Stack.Screen name="account/[id]" options={MODAL} />
         <Stack.Screen name="category/new" options={MODAL} />
         <Stack.Screen name="category/[id]" options={MODAL} />
+        <Stack.Screen name="budget/new" options={MODAL} />
+        <Stack.Screen name="budget/[id]" options={MODAL} />
         <Stack.Screen name="auth/sign-in" options={MODAL} />
         <Stack.Screen name="auth/sign-up" options={MODAL} />
         <Stack.Screen name="auth/forgot-password" options={MODAL} />

@@ -2,10 +2,12 @@ import { isCurrencyCode, MAX_AMOUNT_MINOR } from '../money';
 import { isValidCalendarDate } from './dates';
 import {
   ACCOUNT_TYPES,
+  BUDGET_PERIODS,
   CATEGORY_TYPES,
   ENTRY_TYPES,
   type Account,
   type AccountInput,
+  type BudgetInput,
   type Category,
   type CategoryInput,
   type EntryInput,
@@ -33,7 +35,8 @@ export type ValidationCode =
   | 'currencyMismatch'
   | 'currencyLocked'
   | 'typeLocked'
-  | 'invalidDate';
+  | 'invalidDate'
+  | 'duplicateCategory';
 
 export type ValidationErrors<Field extends string> = Partial<Record<Field, ValidationCode>>;
 
@@ -159,4 +162,20 @@ export function normalizeEntryInput(input: EntryInput): EntryInput {
     categoryId: input.type === 'transfer' ? null : input.categoryId,
     destinationAccountId: input.type === 'transfer' ? input.destinationAccountId : null,
   };
+}
+
+export type BudgetField = keyof BudgetInput;
+
+export function validateBudgetInput(input: BudgetInput): ValidationErrors<BudgetField> {
+  const errors: ValidationErrors<BudgetField> = {};
+  if (input.categoryId.trim() === '') errors.categoryId = 'categoryRequired';
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) {
+    errors.amount = 'amountNotPositive';
+  } else if (input.amount > MAX_AMOUNT_MINOR) {
+    errors.amount = 'amountTooLarge';
+  }
+  if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
+  if (!(BUDGET_PERIODS as readonly string[]).includes(input.period)) errors.period = 'invalid';
+  if (!isValidCalendarDate(input.startsOn)) errors.startsOn = 'invalidDate';
+  return errors;
 }

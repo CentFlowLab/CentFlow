@@ -20,12 +20,14 @@ async function handle({ kind, sql, params, identity }) {
     return (await db.query(sql, params ?? [])).rows;
   }
   await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [identity.sub ?? '']);
+  await db.query(`select set_config('request.jwt.claim.role', $1, false)`, [identity.role]);
   await db.exec(`set role ${identity.role}`);
   try {
     return (await db.query(sql, params ?? [])).rows;
   } finally {
     await db.exec('reset role');
     await db.query(`select set_config('request.jwt.claim.sub', '', false)`);
+    await db.query(`select set_config('request.jwt.claim.role', '', false)`);
   }
 }
 

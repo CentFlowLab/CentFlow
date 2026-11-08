@@ -51,6 +51,7 @@ export type TestServer = {
 const RPC_SIGNATURES: Record<string, string[]> = {
   sync_push: ['p_ops::jsonb'],
   sync_pull: ['p_since::bigint', 'p_limit::int'],
+  sync_pull_v2: ['p_since::bigint', 'p_limit::int'],
   sync_verify: ['p_records::jsonb'],
   sync_counts: [],
 };

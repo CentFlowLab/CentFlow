@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Fragment, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import {
   addMonths,
@@ -10,6 +10,7 @@ import {
   monthOf,
   monthRange,
   pickPrimaryCurrency,
+  referenceForMonth,
   totalsByCurrency,
   type MonthKey,
 } from '@/core/finance';
@@ -23,14 +24,17 @@ import {
   CategoryIcon,
   Divider,
   EmptyState,
+  Icon,
   IconButton,
   Screen,
   Section,
   Text,
+  type IconName,
 } from '@/ui/components';
 import { useBreakpoint } from '@/ui/layout/useBreakpoint';
 import { categorySwatch, radius, spacing, useTheme } from '@/ui/theme';
 
+import { BudgetSummary } from '../budgets/BudgetSummary';
 import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
@@ -125,7 +129,7 @@ export function DashboardScreen() {
   const monthLabel = capitalize(formatMonthYear(monthKeyToLocalDate(month)));
   const isWide = breakpoint !== 'compact';
 
-  const kpis = [
+  const summaryCards = [
     {
       key: 'income',
       label: t('dashboard.monthIncome'),
@@ -136,23 +140,27 @@ export function DashboardScreen() {
       key: 'expense',
       label: t('dashboard.monthExpenses'),
       value: money(summary.expense),
-      tone: 'primary' as const,
+      tone: 'negative' as const,
     },
+  ];
+  const quickActions: readonly {
+    key: string;
+    label: string;
+    icon: IconName;
+    href: '/new-transaction' | '/accounts' | '/categories';
+  }[] = [
     {
-      key: 'net',
-      label: t('dashboard.netSavings'),
-      value: formatMoney({ amountMinor: summary.net, currency }, { signDisplay: 'exceptZero' }),
-      tone: summary.net < 0 ? ('negative' as const) : ('primary' as const),
+      key: 'add',
+      label: t('dashboard.addEntry'),
+      icon: 'add',
+      href: NEW_TRANSACTION_HREF,
     },
+    { key: 'accounts', label: t('nav.accounts'), icon: 'wallet-outline', href: '/accounts' },
     {
-      key: 'rate',
-      label: t('dashboard.savingsRate'),
-      value: summary.savingsRate === null ? '—' : formatPercent(summary.savingsRate, 1),
-      hint: summary.savingsRate === null ? t('dashboard.savingsRateUndefined') : undefined,
-      tone:
-        summary.savingsRate !== null && summary.savingsRate < 0
-          ? ('negative' as const)
-          : ('primary' as const),
+      key: 'categories',
+      label: t('nav.categories'),
+      icon: 'pricetags-outline',
+      href: '/categories',
     },
   ];
 
@@ -290,6 +298,26 @@ export function DashboardScreen() {
         <Text variant="amountHero" tabular numberOfLines={1} adjustsFontSizeToFit>
           {money(totals.get(currency) ?? 0)}
         </Text>
+        <Text variant="footnote" tone={summary.net < 0 ? 'negative' : 'positive'} tabular>
+          {formatMoney({ amountMinor: summary.net, currency }, { signDisplay: 'exceptZero' })}
+        </Text>
+        {summary.savingsRate === null ? (
+          <Text variant="caption" tone="tertiary">
+            {t('dashboard.savingsRateUndefined')}
+          </Text>
+        ) : (
+          <View style={styles.rate}>
+            <Text
+              variant="footnote"
+              tone={summary.savingsRate < 0 ? 'negative' : 'positive'}
+              tabular>
+              {formatPercent(summary.savingsRate, 1)}
+            </Text>
+            <Text variant="caption" tone="secondary">
+              {t('dashboard.savingsRate')}
+            </Text>
+          </View>
+        )}
         <Text variant="caption" tone="tertiary">
           {t('dashboard.totalBalanceHint', { currency })}
         </Text>
@@ -300,23 +328,42 @@ export function DashboardScreen() {
         ) : null}
       </Card>
 
+      <View style={styles.actions}>
+        {quickActions.map((action) => (
+          <Pressable
+            key={action.key}
+            accessibilityRole="button"
+            accessibilityLabel={action.label}
+            onPress={() => router.push(action.href)}
+            style={({ pressed }) => [styles.action, { opacity: pressed ? 0.7 : 1 }]}>
+            <View
+              style={[
+                styles.actionIcon,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}>
+              <Icon name={action.icon} size={22} color="primaryText" />
+            </View>
+            <Text variant="caption" tone="secondary" align="center" numberOfLines={2}>
+              {action.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <View style={styles.kpis}>
-        {kpis.map((kpi) => (
-          <Card key={kpi.key} style={[styles.kpi, { flexBasis: isWide ? 200 : 150 }]}>
+        {summaryCards.map((kpi) => (
+          <Card key={kpi.key} style={[styles.kpi, { flexBasis: isWide ? 240 : 140 }]}>
             <Text variant="footnote" tone="secondary" numberOfLines={1}>
               {kpi.label}
             </Text>
-            <Text variant="title3" tone={kpi.tone} tabular numberOfLines={1} adjustsFontSizeToFit>
+            <Text variant="title2" tone={kpi.tone} tabular numberOfLines={1} adjustsFontSizeToFit>
               {kpi.value}
             </Text>
-            {kpi.hint ? (
-              <Text variant="caption" tone="tertiary" numberOfLines={2}>
-                {kpi.hint}
-              </Text>
-            ) : null}
           </Card>
         ))}
       </View>
+
+      <BudgetSummary reference={referenceForMonth(month, today)} />
 
       {breakpoint === 'expanded' ? (
         <View style={styles.columns}>
@@ -386,7 +433,31 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   hero: {
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  rate: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  action: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  actionIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   kpis: {
     flexDirection: 'row',

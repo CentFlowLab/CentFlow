@@ -7,6 +7,9 @@ import type {
   CategoryInput,
   CategoryType,
   DefaultCategory,
+  Budget,
+  BudgetCandidate,
+  BudgetInput,
   Entry,
   EntryInput,
   EntryType,
@@ -89,14 +92,29 @@ export interface EntryRepository {
   update(id: Id, input: EntryInput): Promise<Entry>;
   delete(id: Id): Promise<void>;
   aggregate(range: { from: CalendarDate; to: CalendarDate }): Promise<EntryAggregate[]>;
+  /**
+   * Despesas reais no intervalo, com a moeda da conta.
+   * Não altera saldos: rendimentos e transferências ficam de fora.
+   */
+  listExpenses(range: { from: CalendarDate; to: CalendarDate }): Promise<BudgetCandidate[]>;
 }
 
-export type DataEntity = 'accounts' | 'categories' | 'entries';
+export interface BudgetRepository {
+  list(): Promise<Budget[]>;
+  get(id: Id): Promise<Budget | null>;
+  /** Falha se a categoria não for de despesa ou se já tiver um orçamento ativo. */
+  create(input: BudgetInput): Promise<Budget>;
+  update(id: Id, input: BudgetInput): Promise<Budget>;
+  delete(id: Id): Promise<void>;
+}
+
+export type DataEntity = 'accounts' | 'budgets' | 'categories' | 'entries';
 
 export interface Repositories {
   accounts: AccountRepository;
   categories: CategoryRepository;
   entries: EntryRepository;
+  budgets: BudgetRepository;
   /** Notifica após cada escrita confirmada. Devolve a função para cancelar. */
   subscribe(listener: (entities: readonly DataEntity[]) => void): () => void;
 }

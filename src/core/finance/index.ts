@@ -1,4 +1,5 @@
 export * from './balances';
+export * from './budgets';
 export * from './dates';
 export * from './default-categories';
 export * from './overview';
