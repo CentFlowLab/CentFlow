@@ -58,17 +58,28 @@ No dashboard, Database › Settings › Exposed schemas tem de continuar só com
 
 ## Configuração no dashboard
 
-1. Authentication › URL configuration: adicionar `centflow://auth/callback`,
-   `centflow://auth/reset-password` e o origin da PWA.
-2. Authentication › Providers › Email: confirmação por email ligada (a app trata o caso em que
-   a sessão só existe depois da confirmação).
-3. Authentication › Providers › Apple: só necessário para Sign in with Apple. No iOS usa-se o
+A proposta está em `config.toml` (`[auth]`, confirmação por email, palavra-passe mínima de 8
+e SMTP do Resend via `env()`). **Não foi aplicada** a staging nem a produção: não correr
+`config push` sem autorização. O CLI lê as variáveis de um `.env` na raiz, que não entra no git.
+Enquanto o push não for autorizado, o que muda o projeto alojado é o painel:
+
+1. Authentication › URL configuration: `Site URL` igual à origem real da PWA (hoje o staging
+   ainda tem `http://localhost:3000`). Em Redirect URLs, as entradas exatas
+   `centflow://auth/callback`, `centflow://auth/reset-password`,
+   `https://<origem>/auth/callback` e `https://<origem>/auth/reset-password`.
+2. Authentication › Providers › Email: confirmação por email ligada e comprimento mínimo da
+   palavra-passe 8 (a app trata o caso em que a sessão só existe depois da confirmação).
+3. Authentication › Emails › SMTP: servidor próprio do Resend (`smtp.resend.com`, porta 465,
+   utilizador `resend`). A chave da API e o endereço de envio (domínio já verificado no Resend)
+   ficam só no painel ou num `.env` ignorado. Sem isto, o correio integrado só envia para
+   membros da organização e recusa muitos endereços.
+4. Authentication › Providers › Apple: só necessário para Sign in with Apple. No iOS usa-se o
    fluxo nativo (`signInWithIdToken`). Na web, definir `EXPO_PUBLIC_AUTH_APPLE_ENABLED=true`
    depois de configurar o Services ID.
-4. Database › Cron (opcional): `select public.purge_deleted();` uma vez por semana. A retenção
+5. Database › Cron (opcional): `select public.purge_deleted();` uma vez por semana. A retenção
    mínima é 30 dias; o valor por omissão é 180. A função recusa um JWT que não seja
    `service_role`. `anon` e `authenticated` não têm `EXECUTE`.
-5. Edge Functions › Secrets: `ALLOWED_WEB_ORIGINS` com os origins reais da PWA, separados por
+6. Edge Functions › Secrets: `ALLOWED_WEB_ORIGINS` com os origins reais da PWA, separados por
    vírgulas (por exemplo `https://app.centflow.example`). Sem esta variável, a web só é aceite
    em `localhost:8081` e `localhost:19006`. O CORS não protege a aplicação nativa.
 

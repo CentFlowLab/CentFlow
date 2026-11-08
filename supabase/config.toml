@@ -1,5 +1,36 @@
 # Produção. Não contém credenciais. O staging não está ligado aqui.
+# Esta secção de auth é a proposta. Não foi aplicada: não correr `config push`
+# sem autorização. Os segredos ficam em variáveis de ambiente, nunca neste ficheiro.
 project_id = "slfgslfzolfvqavuccom"
+
+[auth]
+# Origem da PWA, quando existir. Hoje não há domínio publicado (ver D-7).
+site_url = "env(CENTFLOW_AUTH_SITE_URL)"
+# URLs exatas. O esquema nativo é fixo; a web depende da origem real.
+additional_redirect_urls = [
+  "centflow://auth/callback",
+  "centflow://auth/reset-password",
+  "env(CENTFLOW_PWA_AUTH_CALLBACK)",
+  "env(CENTFLOW_PWA_AUTH_RESET)",
+]
+enable_signup = true
+# Igual ao mínimo pedido no ecrã (8). O servidor recusa abaixo disto com weak_password.
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+# O correio integrado do Supabase limita o ritmo; com SMTP próprio pode ser mais curto.
+max_frequency = "1m"
+
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "env(RESEND_FROM_EMAIL)"
+sender_name = "CentFlow"
 
 # A função confirma a sessão com `auth.getUser()`; o JWT da plataforma bloqueia o OPTIONS da web.
 # O CORS permitido está no código (origins locais + ALLOWED_WEB_ORIGINS). Não voltar a usar `*`.
