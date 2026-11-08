@@ -19,7 +19,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
-    "staging:guard": "node scripts/assert-staging-target.mjs"
+    "staging:guard": "node scripts/assert-staging-target.mjs",
+    "production:guard": "node scripts/assert-production-target.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

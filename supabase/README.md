@@ -6,6 +6,13 @@ Migrações, políticas RLS e a função de eliminação de conta. **Nunca** col
 ## Produção
 
 O projeto ligado é CentFlow, referência `slfgslfzolfvqavuccom`. Não o usar para ensaios.
+Qualquer comando destinado à produção tem de passar primeiro pelo guard. Ele só aceita essa
+referência quando o comando inclui a confirmação `CONFIRMO-PRODUCAO` e recusa staging, outro
+projeto ou um alvo vazio. O plano está em [docs/release-fase3.md](../docs/release-fase3.md).
+
+```bash
+npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
+```
 
 ## Staging
 
