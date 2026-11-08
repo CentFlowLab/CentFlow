@@ -12,7 +12,20 @@
       "localizedDescription": "Registo de contas e movimentos neste iPhone. As atualizações mantêm o identificador app.centflow.mobile, por isso a base de dados local continua na instalação existente. O SideStore mostra o botão de atualizar e pede confirmação; não instala uma versão nova sozinho.",
       "iconURL": "https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/assets/icon.png",
       "tintColor": "#4B45E6",
-      "versions": []
+      "versions": [
+        {
+          "version": "0.1.0",
+          "buildVersion": "1",
+          "date": "2026-11-08",
+          "localizedDescription": "Primeira compilação para instalar pelo SideStore.",
+          "downloadURL": "https://github.com/CentFlowLab/CentFlow/releases/download/sideload-build-1/centflow-unsigned.ipa",
+          "size": 12795578,
+          "minOSVersion": "16.4"
+        }
+      ],
+      "version": "0.1.0",
+      "downloadURL": "https://github.com/CentFlowLab/CentFlow/releases/download/sideload-build-1/centflow-unsigned.ipa",
+      "size": 12795578
     }
   ],
   "news": []
