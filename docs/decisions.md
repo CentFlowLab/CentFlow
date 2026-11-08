@@ -262,7 +262,8 @@ enviados quando o token existir no CI e essa opção for retirada.
 ## ADR-026 — O nome público é Miven e a origem é miven.pt
 
 **Decisão:** o nome visível da aplicação, do pacote npm, do esquema (`miven://`) e do projeto
-Sentry é Miven. A origem da PWA é `https://miven.pt`, também aceite em `https://www.miven.pt`.
+Sentry é Miven. O slug Expo continua `centflow`, porque o projeto EAS já está registado com ele.
+A origem da PWA é `https://miven.pt`, também aceite em `https://www.miven.pt`.
 A proposta em `supabase/config.toml` usa estes endereços. Não foi aplicada no painel.
 **Consequências:** o identificador nativo continua `app.centflow.mobile` e a fonte SideStore
 continua `app.centflow.source`, porque as compilações já publicadas e a base de dados local
