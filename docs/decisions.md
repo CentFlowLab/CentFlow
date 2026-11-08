@@ -203,8 +203,10 @@ por `sync_push`.
 **Onde está aplicado:** no staging (`qlimqcgrgaqzwjmafora`) estão aplicadas `20261108000100` a
 `20261108000500`. Na produção (`slfgslfzolfvqavuccom`) só estão `20261108000100` e
 `20261108000200`. Não aplicar `00300`–`00500` na produção sem autorização explícita, cópia de
-segurança e a ordem das migrations. O trigger `c_close_budgets` foi inspecionado no staging e
-coberto em PGlite; o ensaio com linhas reais ainda não foi feito.
+segurança e a ordem das migrations. O trigger `c_close_budgets` foi ensaiado no staging em
+2026-11-08: eliminar a categoria fechou o orçamento (versão 2), o movimento noutra categoria
+manteve-se, e o segundo utilizador não viu linhas. Os utilizadores de teste e os dados foram
+apagados no fim. A produção não foi alterada.
 
 ## Decisões pendentes
 
