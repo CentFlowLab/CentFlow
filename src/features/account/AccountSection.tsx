@@ -3,22 +3,30 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import {
-  cancelImport,
-  deleteLocalSpace,
-  getImportState,
-  type ImportState,
-  type SyncStatus,
-} from '@/data';
+import { cancelImport, getImportState, type ImportState, type SyncStatus } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import { Badge, Button, Card, Dialog, Divider, ListItem, Section, Text } from '@/ui/components';
+import { appStorage } from '@/lib/storage/key-value-store';
+import {
+  Badge,
+  Button,
+  Card,
+  Dialog,
+  Divider,
+  ListItem,
+  Section,
+  Text,
+  TextField,
+} from '@/ui/components';
 import { spacing } from '@/ui/theme';
 
 import { useActiveSpace } from '../app-shell/DataGate';
 import { useAuth } from './AuthProvider';
+import { isAppleSignInAvailable } from './apple-sign-in';
+import { markPendingAccountDeletion } from './pending-account-deletion';
 import { useSync } from './SyncProvider';
 
 type DialogKind = 'signOutPending' | 'delete' | 'deleteFailed' | 'cancelImport' | null;
+type DeleteFailure = 'deleteFailed' | 'deleteReauthFailed';
 
 const STATUS_TONE: Record<SyncStatus, 'positive' | 'neutral' | 'warning' | 'negative'> = {
   idle: 'positive',
@@ -75,7 +83,19 @@ function SignedInAccount({ user }: { user: { id: string; email: string | null } 
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [busy, setBusy] = useState(false);
   const [importState, setImportState] = useState<ImportState | null>(null);
-  const [pendingDeletion, setPendingDeletion] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  const [failure, setFailure] = useState<DeleteFailure>('deleteFailed');
+
+  useEffect(() => {
+    let active = true;
+    void isAppleSignInAvailable().then((available) => {
+      if (active) setAppleAvailable(available);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (space.kind !== 'user') return;
@@ -87,14 +107,6 @@ function SignedInAccount({ user }: { user: { id: string; email: string | null } 
       active = false;
     };
   }, [space, store, snapshot]);
-
-  // A cópia local da conta eliminada só é apagada depois de a app ter saído desse espaço.
-  useEffect(() => {
-    if (!pendingDeletion || space.kind !== 'anonymous') return;
-    void deleteLocalSpace({ kind: 'user', userId: pendingDeletion })
-      .catch(() => console.warn('[account] local copy cleanup failed'))
-      .finally(() => setPendingDeletion(null));
-  }, [pendingDeletion, space]);
 
   const status = snapshot?.status ?? 'syncing';
   const pending = snapshot?.pending ?? 0;
@@ -113,14 +125,30 @@ function SignedInAccount({ user }: { user: { id: string; email: string | null } 
   const deleteAccount = async () => {
     if (!client) return;
     setBusy(true);
-    const userId = user.id;
-    const { error } = await client.functions.invoke('delete-account', { method: 'POST' });
-    if (error) {
+    const reauth = password
+      ? await actions.signIn(user.email ?? '', password)
+      : appleAvailable
+        ? await actions.reauthenticateWithApple()
+        : ({ ok: false, error: 'invalidCredentials' } as const);
+    if (!reauth.ok) {
       setBusy(false);
+      if (reauth.error === 'cancelled') return;
+      setFailure('deleteReauthFailed');
       setDialog('deleteFailed');
       return;
     }
-    setPendingDeletion(userId);
+    const { error } = await client.functions.invoke('delete-account', {
+      method: 'POST',
+      body: { confirm: 'DELETE' },
+    });
+    if (error) {
+      setBusy(false);
+      setFailure('deleteFailed');
+      setDialog('deleteFailed');
+      return;
+    }
+    await markPendingAccountDeletion(appStorage, user.id);
+    setPassword('');
     await actions.signOut();
     setBusy(false);
     setDialog(null);
@@ -237,12 +265,28 @@ function SignedInAccount({ user }: { user: { id: string; email: string | null } 
             onPress: deleteAccount,
           },
           { label: t('common.cancel'), variant: 'ghost', onPress: () => setDialog(null) },
-        ]}
-      />
+        ]}>
+        <TextField
+          label={t('account.deletePassword')}
+          helperText={
+            appleAvailable ? t('account.deleteAppleHint') : t('account.deletePasswordHint')
+          }
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          editable={!busy}
+        />
+      </Dialog>
       <Dialog
         visible={dialog === 'deleteFailed'}
         title={t('account.deleteAccount')}
-        message={t('account.deleteFailed')}
+        message={
+          failure === 'deleteReauthFailed'
+            ? t('account.deleteReauthFailed')
+            : t('account.deleteFailed')
+        }
         onDismiss={() => setDialog(null)}
         actions={[{ label: t('common.ok'), onPress: () => setDialog(null) }]}
       />

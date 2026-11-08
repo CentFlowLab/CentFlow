@@ -450,8 +450,12 @@ const es: Translation = {
     deleteMessage:
       'La cuenta y todos los datos guardados en el servidor se eliminan de inmediato, así como la copia de esta cuenta en este dispositivo. Los datos del uso sin cuenta no se ven afectados. Esta acción no se puede deshacer.',
     deleteConfirm: 'Eliminar cuenta definitivamente',
+    deletePassword: 'Contraseña',
+    deletePasswordHint: 'Escribe la contraseña para confirmar que eres tú.',
+    deleteAppleHint: 'Escribe la contraseña o déjala en blanco para confirmar con Apple.',
     deleteFailed:
       'No se ha podido eliminar la cuenta. Comprueba la conexión y vuelve a intentarlo.',
+    deleteReauthFailed: 'La confirmación ha fallado. La cuenta no se ha eliminado.',
   },
   importData: {
     title: '¿Añadir los datos de este dispositivo a la cuenta?',

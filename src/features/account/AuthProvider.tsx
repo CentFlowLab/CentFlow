@@ -81,6 +81,11 @@ export type AuthActions = {
   exchangeCode(code: string): Promise<AuthResult>;
   updatePassword(password: string): Promise<AuthResult>;
   signInWithApple(): Promise<AuthResult>;
+  /**
+   * Volta a autenticar com a Apple antes de eliminar a conta.
+   * Cancelar não conta como sucesso.
+   */
+  reauthenticateWithApple(): Promise<AuthResult | { ok: false; error: 'cancelled' }>;
   /** Token de acesso atual, para chamadas a funções do servidor. */
   accessToken(): Promise<string | null>;
 };
@@ -100,6 +105,7 @@ function createActions(client: SupabaseClient | null): AuthActions {
       exchangeCode: unavailable,
       updatePassword: unavailable,
       signInWithApple: unavailable,
+      reauthenticateWithApple: unavailable,
       accessToken: async () => null,
     };
   }
@@ -160,6 +166,15 @@ function createActions(client: SupabaseClient | null): AuthActions {
         }
       }),
     accessToken: async () => (await auth.getSession()).data.session?.access_token ?? null,
+    reauthenticateWithApple: async () => {
+      try {
+        await performAppleSignIn(client);
+        return ok(undefined);
+      } catch (error) {
+        if (error instanceof AppleSignInCancelledError) return { ok: false, error: 'cancelled' };
+        return fail(error as Error);
+      }
+    },
   };
 }
 

@@ -446,7 +446,11 @@ const ptPT = {
     deleteMessage:
       'A conta e todos os dados guardados no servidor são eliminados de imediato, bem como a cópia desta conta neste dispositivo. Os dados do uso sem conta não são afetados. Esta ação não pode ser anulada.',
     deleteConfirm: 'Eliminar conta definitivamente',
+    deletePassword: 'Palavra-passe',
+    deletePasswordHint: 'Escreve a palavra-passe para confirmar que és tu.',
+    deleteAppleHint: 'Escreve a palavra-passe ou deixa em branco para confirmar com a Apple.',
     deleteFailed: 'Não foi possível eliminar a conta. Verifica a ligação e tenta novamente.',
+    deleteReauthFailed: 'A confirmação falhou. A conta não foi eliminada.',
   },
   importData: {
     title: 'Juntar os dados deste dispositivo à conta?',

@@ -446,7 +446,11 @@ const en: Translation = {
     deleteMessage:
       "Your account and all data stored on the server are deleted immediately, along with this account's copy on this device. Data used without an account is not affected. This cannot be undone.",
     deleteConfirm: 'Permanently delete account',
+    deletePassword: 'Password',
+    deletePasswordHint: 'Enter your password to confirm it is you.',
+    deleteAppleHint: 'Enter your password, or leave it blank to confirm with Apple.',
     deleteFailed: 'Could not delete the account. Check your connection and try again.',
+    deleteReauthFailed: 'Confirmation failed. The account was not deleted.',
   },
   importData: {
     title: "Add this device's data to your account?",

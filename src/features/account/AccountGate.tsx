@@ -1,12 +1,14 @@
-import type { PropsWithChildren } from 'react';
+import { useEffect, useState, type PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { ANONYMOUS_SPACE, type LocalSpace } from '@/data';
+import { ANONYMOUS_SPACE, deleteLocalSpace, type LocalSpace } from '@/data';
+import { appStorage } from '@/lib/storage/key-value-store';
 import { useTheme } from '@/ui/theme';
 
 import { DataGate } from '../app-shell/DataGate';
 import { useAuth } from './AuthProvider';
+import { resumePendingAccountDeletion } from './pending-account-deletion';
 import { SyncProvider } from './SyncProvider';
 
 /**
@@ -16,9 +18,31 @@ import { SyncProvider } from './SyncProvider';
 export function AccountGate({ children }: PropsWithChildren) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { state } = useAuth();
+  const { state, actions } = useAuth();
+  const [resumeSettled, setResumeSettled] = useState(false);
+  const userId = state.status === 'signedIn' ? state.user.id : null;
 
-  if (state.status === 'loading') {
+  useEffect(() => {
+    if (state.status === 'loading') return;
+    let active = true;
+    void resumePendingAccountDeletion({
+      storage: appStorage,
+      currentUserId: userId,
+      signOut: async () => {
+        await actions.signOut();
+      },
+      deleteSpace: (id) => deleteLocalSpace({ kind: 'user', userId: id }),
+    })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setResumeSettled(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [actions, state.status, userId]);
+
+  if (state.status === 'loading' || !resumeSettled) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} accessibilityLabel={t('database.opening')} />
