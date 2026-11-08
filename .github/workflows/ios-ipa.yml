@@ -193,14 +193,14 @@ jobs:
             echo "O prebuild não criou um workspace iOS."
             exit 1
           fi
-          if ! xcodebuild -workspace "$workspace" -list | grep -q 'CentFlow'; then
-            echo "O scheme CentFlow não existe neste projeto."
+          if ! xcodebuild -workspace "$workspace" -list | grep -q 'Miven'; then
+            echo "O scheme Miven não existe neste projeto."
             xcodebuild -workspace "$workspace" -list
             exit 1
           fi
           xcodebuild \
             -workspace "$workspace" \
-            -scheme CentFlow \
+            -scheme Miven \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
@@ -232,8 +232,8 @@ jobs:
             echo "A aplicação ficou ${short_version} (${bundle_version}) e a fonte espera ${MARKETING_VERSION} (${BUILD_NUMBER})."
             exit 1
           fi
-          if [ ! -x "$app/CentFlow" ]; then
-            echo "O executável CentFlow não está na aplicação."
+          if [ ! -x "$app/Miven" ]; then
+            echo "O executável Miven não está na aplicação."
             exit 1
           fi
           if codesign -d "$app" >/dev/null 2>&1; then
@@ -280,7 +280,7 @@ jobs:
         run: |
           tag="sideload-build-${BUILD_NUMBER}"
           gh release create "$tag" \
-            --title "CentFlow ${MARKETING_VERSION} (${BUILD_NUMBER})" \
+            --title "Miven ${MARKETING_VERSION} (${BUILD_NUMBER})" \
             --notes "Compilação ${BUILD_NUMBER} da versão ${MARKETING_VERSION}. O identificador continua app.centflow.mobile, por isso atualizar por cima da instalação existente mantém a base de dados SQLite. Apagar a app e voltar a instalá-la remove esses dados. O SideStore mostra o botão de atualizar e pede confirmação; não instala sozinho. Este IPA não está assinado." \
             "$RUNNER_TEMP/centflow-unsigned.ipa#centflow-unsigned.ipa"
 

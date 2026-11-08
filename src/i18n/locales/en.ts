@@ -2,7 +2,7 @@ import type { Translation } from './pt-PT';
 
 const en: Translation = {
   app: {
-    name: 'CentFlow',
+    name: 'Miven',
     tagline: 'Your money, under control.',
   },
   common: {
@@ -113,7 +113,7 @@ const en: Translation = {
   },
   more: {
     title: 'More',
-    subtitle: 'Every area of CentFlow',
+    subtitle: 'Every area of Miven',
   },
   settings: {
     title: 'Settings',
@@ -534,14 +534,13 @@ const en: Translation = {
         'The server did not send the security headers (COOP/COEP) required to store data in this browser. Your data was not affected.',
     },
     otherTab: {
-      title: 'CentFlow is open in another tab',
+      title: 'Miven is open in another tab',
       description:
         'To protect your data, only one tab can use it at a time. Close the other tab and try again.',
     },
     schemaTooNew: {
       title: 'Update the app',
-      description:
-        'Your data was saved by a newer version of CentFlow. Update the app to continue.',
+      description: 'Your data was saved by a newer version of Miven. Update the app to continue.',
     },
     wrongOwner: {
       title: 'This data belongs to another account',

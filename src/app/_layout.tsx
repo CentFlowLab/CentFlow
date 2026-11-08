@@ -1,17 +1,20 @@
+import '@/lib/sentry';
 import '@/i18n';
 
+import * as Sentry from '@sentry/react-native';
 import { Stack } from 'expo-router';
 
 import { AppProviders } from '@/features/app-shell/AppProviders';
+import { RootErrorBoundary } from '@/features/app-shell/RootErrorBoundary';
 
-export { RootErrorBoundary as ErrorBoundary } from '@/features/app-shell/RootErrorBoundary';
+export const ErrorBoundary = Sentry.wrapExpoRouterErrorBoundary(RootErrorBoundary);
 
 /** Abrir um formulário diretamente por URL (ou recarregar a página) mantém as tabs por baixo. */
 export const unstable_settings = { anchor: '(tabs)' };
 
 const MODAL = { presentation: 'modal' } as const;
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <AppProviders>
       <Stack screenOptions={{ headerShown: false }}>
@@ -39,3 +42,5 @@ export default function RootLayout() {
     </AppProviders>
   );
 }
+
+export default Sentry.wrap(RootLayout);

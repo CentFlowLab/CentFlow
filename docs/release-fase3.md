@@ -28,13 +28,13 @@ npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
 ```
 
 O guard não executa o comando do Supabase. Recusa a frase em falta, o staging, outro projeto,
-um alvo vazio, e um `EXPO_PUBLIC_SUPABASE_URL` ou `CENTFLOW_PRODUCTION_TARGET` que não seja a
+um alvo vazio, e um `EXPO_PUBLIC_SUPABASE_URL` ou `MIVEN_PRODUCTION_TARGET` que não seja a
 produção. Não carregar `.env.local` nem `.env.staging` na mesma shell.
 
 - A proposta de auth em `supabase/config.toml` **não** entra neste `db push`. Não correr
   `config push`. Antes de abrir o registo a pessoas reais, configurar à mão no painel da
   produção o que está descrito em `supabase/README.md`: URL do site, redirects
-  (`centflow://auth/callback`, `centflow://auth/reset-password` e os URLs exatos da PWA),
+  (`miven://auth/callback`, `miven://auth/reset-password`, `https://miven.pt` e `https://www.miven.pt`),
   confirmação por email, palavra-passe mínima de 8, e SMTP do Resend. Sem isto, o registo
   volta a falhar no correio integrado.
 
@@ -47,7 +47,7 @@ Antes de qualquer comando que altere a produção:
 
 ```bash
 npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
-npx supabase db dump --remote=slfgslfzolfvqavuccom -f centflow-pre-fase3.sql
+npx supabase db dump --remote=slfgslfzolfvqavuccom -f miven-pre-fase3.sql
 ```
 
 O ficheiro do dump não entra no git. Não avançar para o dry-run enquanto a cópia não estiver

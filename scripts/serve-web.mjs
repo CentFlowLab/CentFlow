@@ -42,5 +42,5 @@ createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' });
   createReadStream(file).pipe(res);
 }).listen(port, () => {
-  console.log(`CentFlow (build web) em http://localhost:${port}`);
+  console.log(`Miven (build web) em http://localhost:${port}`);
 });

@@ -1,4 +1,4 @@
-// Gera todos os ícones da marca CentFlow a partir de geometria (SDF) sem dependências externas.
+// Gera todos os ícones da marca Miven a partir de geometria (SDF) sem dependências externas.
 // Uso: node scripts/generate-brand-assets.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

@@ -55,6 +55,8 @@ describe('delete account confirmation', () => {
 
   it('allows only the web origins the app actually uses', () => {
     expect(isAllowedWebOrigin('http://localhost:8081', [])).toBe(true);
+    expect(isAllowedWebOrigin('https://miven.pt', [])).toBe(true);
+    expect(isAllowedWebOrigin('https://www.miven.pt', [])).toBe(true);
     expect(isAllowedWebOrigin('https://app.example', ['https://app.example'])).toBe(true);
     expect(isAllowedWebOrigin('https://evil.example', [])).toBe(false);
     expect(isAllowedWebOrigin(null, [])).toBe(false);

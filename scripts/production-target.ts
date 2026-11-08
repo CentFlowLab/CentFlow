@@ -32,13 +32,13 @@ export function assertProductionTarget(target: string): void {
  */
 export function assertProductionCommand(
   args: readonly string[],
-  env: { CENTFLOW_PRODUCTION_TARGET?: string; EXPO_PUBLIC_SUPABASE_URL?: string },
+  env: { MIVEN_PRODUCTION_TARGET?: string; EXPO_PUBLIC_SUPABASE_URL?: string },
 ): void {
   const tokens = args.map((arg) => arg.trim()).filter((arg) => arg.length > 0);
   if (!tokens.includes(PRODUCTION_CONFIRMATION)) throw new ProductionTargetError();
   const command = tokens.filter((arg) => arg !== PRODUCTION_CONFIRMATION).join(' ');
   assertProductionTarget(command);
-  for (const inherited of [env.CENTFLOW_PRODUCTION_TARGET, env.EXPO_PUBLIC_SUPABASE_URL]) {
+  for (const inherited of [env.MIVEN_PRODUCTION_TARGET, env.EXPO_PUBLIC_SUPABASE_URL]) {
     if (inherited != null && inherited.trim() !== '') assertProductionTarget(inherited);
   }
 }

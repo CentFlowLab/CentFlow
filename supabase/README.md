@@ -5,7 +5,7 @@ Migrações, políticas RLS e a função de eliminação de conta. **Nunca** col
 
 ## Produção
 
-O projeto ligado é CentFlow, referência `slfgslfzolfvqavuccom`. Não o usar para ensaios.
+O projeto ligado é a produção do Miven, referência `slfgslfzolfvqavuccom`. Não o usar para ensaios.
 Qualquer comando destinado à produção tem de passar primeiro pelo guard. Ele só aceita essa
 referência quando o comando inclui a confirmação `CONFIRMO-PRODUCAO` e recusa staging, outro
 projeto ou um alvo vazio. O plano está em [docs/release-fase3.md](../docs/release-fase3.md).
@@ -16,7 +16,7 @@ npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
 
 ## Staging
 
-O projeto de staging é CentFlow-Staging, referência `qlimqcgrgaqzwjmafora`. Não está ligado
+O projeto de staging é o staging do Miven, referência `qlimqcgrgaqzwjmafora`. Não está ligado
 em `config.toml`. A app de staging usa `.env.staging`, copiado de `.env.staging.example`,
 e não substitui `.env.local`.
 
@@ -39,7 +39,7 @@ projeto ligado.
 Estes comandos usam o projeto ligado, que é a produção. Não os executar sem autorização
 explícita, e nunca para ensaiar as migrations pendentes.
 
-Correr **na pasta do repositório** (`CentFlow`), não em `C:\WINDOWS\System32`. Na CLI 3,
+Correr **na pasta do repositório**, não em `C:\WINDOWS\System32`. Na CLI 3,
 `db push` sem `--remote` tenta a base local (Docker em `127.0.0.1:54322`).
 
 ```bash
@@ -70,10 +70,11 @@ e SMTP do Resend via `env()`). **Não foi aplicada** a staging nem a produção:
 `config push` sem autorização. O CLI lê as variáveis de um `.env` na raiz, que não entra no git.
 Enquanto o push não for autorizado, o que muda o projeto alojado é o painel:
 
-1. Authentication › URL configuration: `Site URL` igual à origem real da PWA (hoje o staging
-   ainda tem `http://localhost:3000`). Em Redirect URLs, as entradas exatas
-   `centflow://auth/callback`, `centflow://auth/reset-password`,
-   `https://<origem>/auth/callback` e `https://<origem>/auth/reset-password`.
+1. Authentication › URL configuration: `Site URL` = `https://miven.pt`. Em Redirect URLs, as
+   entradas exatas `miven://auth/callback`, `miven://auth/reset-password`,
+   `https://miven.pt/auth/callback`, `https://miven.pt/auth/reset-password`,
+   `https://www.miven.pt/auth/callback` e `https://www.miven.pt/auth/reset-password`.
+   O staging ainda tem `http://localhost:3000` e esta proposta não foi aplicada.
 2. Authentication › Providers › Email: confirmação por email ligada e comprimento mínimo da
    palavra-passe 8 (a app trata o caso em que a sessão só existe depois da confirmação).
 3. Authentication › Emails › SMTP: servidor próprio do Resend (`smtp.resend.com`, porta 465,
@@ -87,8 +88,9 @@ Enquanto o push não for autorizado, o que muda o projeto alojado é o painel:
    mínima é 30 dias; o valor por omissão é 180. A função recusa um JWT que não seja
    `service_role`. `anon` e `authenticated` não têm `EXECUTE`.
 6. Edge Functions › Secrets: `ALLOWED_WEB_ORIGINS` com os origins reais da PWA, separados por
-   vírgulas (por exemplo `https://app.centflow.example`). Sem esta variável, a web só é aceite
-   em `localhost:8081` e `localhost:19006`. O CORS não protege a aplicação nativa.
+   vírgulas. A app já aceita `https://miven.pt` e `https://www.miven.pt`. Sem o segredo, a web em
+   desenvolvimento só é aceite em `localhost:8081` e `localhost:19006`. O CORS não protege a
+   aplicação nativa.
 
 ## Função `delete-account`
 

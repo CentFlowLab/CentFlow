@@ -1,6 +1,6 @@
 const ptPT = {
   app: {
-    name: 'CentFlow',
+    name: 'Miven',
     tagline: 'O teu dinheiro, sob controlo.',
   },
   common: {
@@ -111,7 +111,7 @@ const ptPT = {
   },
   more: {
     title: 'Mais',
-    subtitle: 'Todas as áreas do CentFlow',
+    subtitle: 'Todas as áreas do Miven',
   },
   settings: {
     title: 'Definições',
@@ -529,14 +529,14 @@ const ptPT = {
         'O servidor não enviou os cabeçalhos de segurança necessários (COOP/COEP) para guardar dados neste navegador. Os teus dados não foram afetados.',
     },
     otherTab: {
-      title: 'O CentFlow está aberto noutro separador',
+      title: 'O Miven está aberto noutro separador',
       description:
         'Para proteger os teus dados, só um separador pode usá-los de cada vez. Fecha o outro separador e tenta novamente.',
     },
     schemaTooNew: {
       title: 'Atualiza a aplicação',
       description:
-        'Os teus dados foram guardados por uma versão mais recente do CentFlow. Atualiza a aplicação para continuar.',
+        'Os teus dados foram guardados por uma versão mais recente do Miven. Atualiza a aplicação para continuar.',
     },
     wrongOwner: {
       title: 'Estes dados pertencem a outra conta',

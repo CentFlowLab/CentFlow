@@ -2,7 +2,7 @@ import type { Translation } from './pt-PT';
 
 const es: Translation = {
   app: {
-    name: 'CentFlow',
+    name: 'Miven',
     tagline: 'Tu dinero, bajo control.',
   },
   common: {
@@ -114,7 +114,7 @@ const es: Translation = {
   },
   more: {
     title: 'Más',
-    subtitle: 'Todas las áreas de CentFlow',
+    subtitle: 'Todas las áreas de Miven',
   },
   settings: {
     title: 'Ajustes',
@@ -535,14 +535,14 @@ const es: Translation = {
         'El servidor no ha enviado las cabeceras de seguridad (COOP/COEP) necesarias para guardar datos en este navegador. Tus datos no se han visto afectados.',
     },
     otherTab: {
-      title: 'CentFlow está abierto en otra pestaña',
+      title: 'Miven está abierto en otra pestaña',
       description:
         'Para proteger tus datos, solo una pestaña puede usarlos a la vez. Cierra la otra pestaña e inténtalo de nuevo.',
     },
     schemaTooNew: {
       title: 'Actualiza la aplicación',
       description:
-        'Tus datos se guardaron con una versión más reciente de CentFlow. Actualiza la aplicación para continuar.',
+        'Tus datos se guardaron con una versión más reciente de Miven. Actualiza la aplicación para continuar.',
     },
     wrongOwner: {
       title: 'Estos datos pertenecen a otra cuenta',

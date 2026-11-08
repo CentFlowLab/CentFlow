@@ -46,7 +46,7 @@ describe('DataGate', () => {
         <Text>App pronta</Text>
       </DataGate>,
     );
-    expect(await screen.findByText('O CentFlow está aberto noutro separador')).toBeOnTheScreen();
+    expect(await screen.findByText('O Miven está aberto noutro separador')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'Tentar novamente' }));
     expect(await screen.findByText('App pronta')).toBeOnTheScreen();
     expect(open).toHaveBeenCalledTimes(2);

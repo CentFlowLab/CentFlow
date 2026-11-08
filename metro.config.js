@@ -1,8 +1,8 @@
 // https://docs.expo.dev/versions/latest/sdk/sqlite/#web-setup
 const { ServerResponse } = require('node:http');
-const { getDefaultConfig } = require('expo/metro-config');
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 // expo-sqlite na web carrega o SQLite como WebAssembly.
 if (!config.resolver.assetExts.includes('wasm')) {

@@ -12,6 +12,8 @@ export const DEFAULT_WEB_ORIGINS = [
   'http://127.0.0.1:8081',
   'http://localhost:19006',
   'http://127.0.0.1:19006',
+  'https://miven.pt',
+  'https://www.miven.pt',
 ] as const;
 
 export type DeleteAccountError = 'confirmation_required' | 'reauth_required';

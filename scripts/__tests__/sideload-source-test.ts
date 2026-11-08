@@ -11,15 +11,15 @@ import {
 
 function source(builds: string[] = []): SideloadSource {
   return {
-    name: 'CentFlow',
+    name: 'Miven',
     identifier: SOURCE_ID,
     sourceURL: SOURCE_URL,
     nsfw: false,
     apps: [
       {
-        name: 'CentFlow',
+        name: 'Miven',
         bundleIdentifier: BUNDLE_ID,
-        developerName: 'CentFlow',
+        developerName: 'Miven',
         subtitle: 'O teu dinheiro, sob controlo.',
         localizedDescription: 'Descrição',
         iconURL: 'https://example.test/icon.png',

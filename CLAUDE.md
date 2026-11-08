@@ -1,4 +1,4 @@
-# CLAUDE.md — Instruções técnicas do CentFlow
+# CLAUDE.md — Instruções técnicas do Miven
 
 Documento de referência para quem desenvolve no projeto (pessoas e agentes de IA). Ler também
 [AGENTS.md](AGENTS.md) (regras Expo), [docs/architecture.md](docs/architecture.md) e

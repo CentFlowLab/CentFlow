@@ -20,7 +20,7 @@ export type EntryType = (typeof ENTRY_TYPES)[number];
 export const BUDGET_PERIODS = ['weekly', 'monthly', 'yearly'] as const;
 export type BudgetPeriod = (typeof BUDGET_PERIODS)[number];
 
-/** Despesa recorrente do utilizador. Não é a subscrição paga da CentFlow. */
+/** Despesa recorrente do utilizador. Não é a subscrição paga do Miven. */
 export const SUBSCRIPTION_PERIODS = BUDGET_PERIODS;
 export type SubscriptionPeriod = BudgetPeriod;
 export const SUBSCRIPTION_STATUSES = ['active', 'paused', 'cancelled'] as const;

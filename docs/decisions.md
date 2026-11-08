@@ -215,7 +215,7 @@ unidades mínimas, moeda, periodicidade, estado, data de início e próxima data
 opcional). O estado é `active`, `paused` ou `cancelled`. O custo mensal e anual soma só as
 ativas: o anual é exato (semana × 52, mês × 12 ou o valor anual) e o mensal é a divisão inteira
 desse anual por 12. Guardar uma subscrição não cria movimentos nem altera saldos.
-**Não é a subscrição da CentFlow.** Esta tabela não tem relação com um paywall, um plano pago
+**Não é a subscrição do Miven.** Esta tabela não tem relação com um paywall, um plano pago
 ou a cobrança da própria aplicação.
 **Consequências:** a migration `20261108000600` entra em `sync_push`, `sync_pull_v2`,
 `sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Está aplicada no
@@ -248,12 +248,34 @@ contribuições. Exportação, partilha e IA ficam para fases seguintes.
 início não mostra números. Sem contas, movimentos, orçamentos, subscrições ou objetivos, o ecrã
 diz que não há dados.
 
+## ADR-025 — Erros da app vão para o Sentry
+
+**Decisão:** a app Expo usa `@sentry/react-native` no projeto `miven` da organização `miven-la`
+(região `de.sentry.io`). A DSN pública fica em `EXPO_PUBLIC_SENTRY_DSN`; o token de upload de
+source maps fica só em `SENTRY_AUTH_TOKEN`, fora do git. O cliente não envia PII por omissão e o
+replay mantém o mascaramento de texto e imagens, porque os ecrãs mostram valores. Em
+desenvolvimento as amostras de tracing e profiling são 100%; em produção, 20%.
+**Consequências:** sem DSN o SDK fica desligado, por isso os testes não enviam eventos. O plugin
+tem `disableAutoUpload`, porque a compilação do IPA não tem o token. Os mapas passam a ser
+enviados quando o token existir no CI e essa opção for retirada.
+
+## ADR-026 — O nome público é Miven e a origem é miven.pt
+
+**Decisão:** o nome visível da aplicação, do pacote npm, do esquema (`miven://`) e do projeto
+Sentry é Miven. A origem da PWA é `https://miven.pt`, também aceite em `https://www.miven.pt`.
+A proposta em `supabase/config.toml` usa estes endereços. Não foi aplicada no painel.
+**Consequências:** o identificador nativo continua `app.centflow.mobile` e a fonte SideStore
+continua `app.centflow.source`, porque as compilações já publicadas e a base de dados local
+dependem deles. Os ficheiros `centflow.db` e `centflow-u-<userId>.db` também ficam. O
+repositório GitHub e os projetos Supabase não foram renomeados. O alojamento de miven.pt
+continua por escolher.
+
 ## Decisões pendentes
 
-| ID  | Decisão                                        | Opções / recomendação                                                                                                                                              | Quando            |
-| --- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| D-3 | Identificadores de app (`app.centflow.mobile`) | Confirmar domínio/organização antes da primeira submissão às lojas — não pode mudar depois.                                                                        | Antes de publicar |
-| D-4 | Licença e entidade legal                       | Proprietária por omissão. Definir titular dos direitos e termos/privacidade (RGPD).                                                                                | Antes de publicar |
-| D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                         | Fase 5            |
-| D-6 | Fornecedor de IA/OCR                           | Executar sempre em Edge Functions; escolher pelo custo, privacidade (UE) e qualidade.                                                                              | Fase 5            |
-| D-7 | Alojamento da PWA                              | Qualquer alojamento estático que permita cabeçalhos (Vercel, Netlify, Cloudflare Pages, EAS Hosting); tem de enviar COOP/COEP (ADR-015). Confirmar suporte Safari. | Fase 2            |
+| ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
+| --- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| D-3 | Identificadores de app (`app.centflow.mobile`) | Mantidos: já há compilações SideStore. O nome público e o domínio ficaram decididos no ADR-026. Não mudar o identificador depois da primeira submissão às lojas. | Antes de publicar |
+| D-4 | Licença e entidade legal                       | Proprietária por omissão. Definir titular dos direitos e termos/privacidade (RGPD).                                                                              | Antes de publicar |
+| D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                       | Fase 5            |
+| D-6 | Fornecedor de IA/OCR                           | Executar sempre em Edge Functions; escolher pelo custo, privacidade (UE) e qualidade.                                                                            | Fase 5            |
+| D-7 | Alojamento da PWA                              | O domínio é miven.pt. Falta escolher o alojamento estático com COOP/COEP (ADR-015): Vercel, Netlify, Cloudflare Pages ou EAS Hosting. Confirmar suporte Safari.  | Fase 2            |

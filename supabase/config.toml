@@ -4,14 +4,16 @@
 project_id = "slfgslfzolfvqavuccom"
 
 [auth]
-# Origem da PWA, quando existir. Hoje não há domínio publicado (ver D-7).
-site_url = "env(CENTFLOW_AUTH_SITE_URL)"
-# URLs exatas. O esquema nativo é fixo; a web depende da origem real.
+# Origem pública: miven.pt. Não foi aplicada no painel. Não correr `config push`.
+site_url = "https://miven.pt"
+# URLs exatas, com e sem www. O esquema nativo é o da app.
 additional_redirect_urls = [
-  "centflow://auth/callback",
-  "centflow://auth/reset-password",
-  "env(CENTFLOW_PWA_AUTH_CALLBACK)",
-  "env(CENTFLOW_PWA_AUTH_RESET)",
+  "miven://auth/callback",
+  "miven://auth/reset-password",
+  "https://miven.pt/auth/callback",
+  "https://miven.pt/auth/reset-password",
+  "https://www.miven.pt/auth/callback",
+  "https://www.miven.pt/auth/reset-password",
 ]
 enable_signup = true
 # Igual ao mínimo pedido no ecrã (8). O servidor recusa abaixo disto com weak_password.
@@ -30,7 +32,7 @@ port = 465
 user = "resend"
 pass = "env(RESEND_API_KEY)"
 admin_email = "env(RESEND_FROM_EMAIL)"
-sender_name = "CentFlow"
+sender_name = "Miven"
 
 # A função confirma a sessão com `auth.getUser()`; o JWT da plataforma bloqueia o OPTIONS da web.
 # O CORS permitido está no código (origins locais + ALLOWED_WEB_ORIGINS). Não voltar a usar `*`.

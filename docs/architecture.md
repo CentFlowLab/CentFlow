@@ -1,4 +1,4 @@
-# Arquitetura do CentFlow
+# Arquitetura do Miven
 
 ## Visão geral
 

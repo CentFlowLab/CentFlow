@@ -1,5 +1,14 @@
 import mockAsyncStorage from '@react-native-async-storage/async-storage/jest/async-storage-mock';
 
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  wrap: (component: unknown) => component,
+  mobileReplayIntegration: jest.fn(() => ({})),
+  feedbackIntegration: jest.fn(() => ({})),
+  captureException: jest.fn(),
+  wrapExpoRouterErrorBoundary: (component: unknown) => component,
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 
 // Locale determinístico: os testes não dependem do idioma da máquina.
@@ -23,7 +32,7 @@ jest.mock('expo-linking', () => {
   const actual = jest.requireActual<typeof import('expo-linking')>('expo-linking');
   return {
     ...actual,
-    createURL: (path: string) => `centflow://${String(path).replace(/^\//, '')}`,
+    createURL: (path: string) => `miven://${String(path).replace(/^\//, '')}`,
   };
 });
 

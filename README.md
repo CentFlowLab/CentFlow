@@ -1,8 +1,8 @@
-# CentFlow
+# Miven
 
 **O teu dinheiro, sob controlo.**
 
-CentFlow é uma aplicação de gestão financeira pessoal para iOS, Android e Web (PWA instalável em
+Miven é uma aplicação de gestão financeira pessoal para iOS, Android e Web (PWA instalável em
 Windows, macOS e Linux). Centraliza rendimentos, despesas, orçamentos, subscrições, património,
 veículos e documentos, com o objetivo de automatizar ao máximo o registo de informação.
 
