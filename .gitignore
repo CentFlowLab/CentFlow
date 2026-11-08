@@ -35,6 +35,9 @@ yarn-error.*
 .env.*
 !.env.example
 
+# estado local do Supabase CLI (ligação ao projeto; sem segredos, mas não é código)
+supabase/.temp/
+
 # testes
 coverage/
 

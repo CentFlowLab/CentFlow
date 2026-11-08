@@ -5,11 +5,14 @@ Migrações, políticas RLS e a função de eliminação de conta. **Nunca** col
 
 ## Aplicar as migrações ao projeto alojado
 
+Correr **na pasta do repositório** (`CentFlow`), não em `C:\WINDOWS\System32`. Na CLI 3,
+`db push` sem `--remote` tenta a base local (Docker em `127.0.0.1:54322`).
+
 ```bash
 npx supabase login
-npx supabase link --project-ref slfgslfzolfvqavuccom
-npx supabase db push
-npx supabase functions deploy delete-account --use-api
+npx supabase link --project-ref slfgslfzolfvqavuccom --yes
+npx supabase db push --remote --yes
+npx supabase functions deploy delete-account --use-api --yes
 ```
 
 As duas migrações em `migrations/` criam `profiles`, `sync_metadata`, `accounts`, `categories`,
