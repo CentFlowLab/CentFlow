@@ -6,10 +6,11 @@ CentFlow é uma aplicação de gestão financeira pessoal para iOS, Android e We
 Windows, macOS e Linux). Centraliza rendimentos, despesas, orçamentos, subscrições, património,
 veículos e documentos, com o objetivo de automatizar ao máximo o registo de informação.
 
-> Estado atual: **Fase 2 — autenticação e sincronização.** A app continua a funcionar sem conta
-> (dados só neste dispositivo). Com conta, os mesmos dados sincronizam entre iOS, Android e Web,
-> incluindo offline. As áreas das fases seguintes aparecem marcadas como "Em breve". Nenhum valor
-> apresentado é fictício.
+> Estado atual: **Fase 3 — orçamentos, subscrições, objetivos e relatórios, em curso.** Os
+> orçamentos já funcionam no dispositivo e entram na sincronização. Subscrições, objetivos de
+> poupança e relatórios continuam «Em breve». A app continua a funcionar sem conta (dados só
+> neste dispositivo). Com conta, os mesmos dados sincronizam entre iOS, Android e Web, incluindo
+> offline. Nenhum valor apresentado é fictício.
 
 ## Funcionalidades (Fase 1)
 
@@ -47,7 +48,7 @@ veículos e documentos, com o objetivo de automatizar ao máximo o registo de in
 | 0    | Projeto, design system, navegação adaptativa, i18n, tema claro/escuro, testes       | ✅ Concluída |
 | 1    | MVP local: contas, movimentos, transferências, categorias, dashboard, resumo mensal | ✅ Concluída |
 | 2    | Supabase: autenticação, base de dados com RLS, sincronização, migração de dados     | ✅ Concluída |
-| 3    | Orçamentos, subscrições, objetivos de poupança, relatórios                          | —            |
+| 3    | Orçamentos, subscrições, objetivos de poupança, relatórios                          | Em curso     |
 | 4    | Património, investimentos, veículos, documentos e garantias                         | —            |
 | 5    | IA, OCR, automação, Open Banking, alertas inteligentes                              | —            |
 

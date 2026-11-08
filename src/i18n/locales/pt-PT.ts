@@ -80,7 +80,7 @@ const ptPT = {
       description: 'Organiza despesas e rendimentos com categorias próprias.',
     },
     budgets: {
-      description: 'Limites mensais por categoria e objetivos de poupança com progresso.',
+      description: 'Limites por categoria, semanais, mensais ou anuais, com o progresso do gasto.',
     },
     subscriptions: {
       description: 'Pagamentos recorrentes, próximas datas e custo mensal e anual.',

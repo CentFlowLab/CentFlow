@@ -82,7 +82,7 @@ const en: Translation = {
       description: 'Organise expenses and income with your own categories.',
     },
     budgets: {
-      description: 'Monthly limits per category and savings goals with progress tracking.',
+      description: 'Weekly, monthly or yearly limits per category, with spending progress.',
     },
     subscriptions: {
       description: 'Recurring payments, upcoming dates and monthly and yearly cost.',

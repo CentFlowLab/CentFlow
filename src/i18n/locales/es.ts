@@ -82,7 +82,8 @@ const es: Translation = {
       description: 'Organiza gastos e ingresos con tus propias categorías.',
     },
     budgets: {
-      description: 'Límites mensuales por categoría y objetivos de ahorro con progreso.',
+      description:
+        'Límites semanales, mensuales o anuales por categoría, con el progreso del gasto.',
     },
     subscriptions: {
       description: 'Pagos recurrentes, próximas fechas y coste mensual y anual.',

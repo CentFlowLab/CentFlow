@@ -182,6 +182,30 @@ a chave administrativa nunca pode ir para o cliente.
 **Dependências novas:** `@supabase/supabase-js`, `expo-secure-store`, `expo-network`,
 `expo-apple-authentication`; nos testes, `@electric-sql/pglite`.
 
+## ADR-021 — Orçamentos no mesmo protocolo de sincronização
+
+**Decisão:** a tabela `public.budgets` entra no protocolo existente (`sync_push`,
+`sync_pull_v2`, compare-and-swap por `version`, fila `sync_outbox`, fusão a três vias).
+Não há uma segunda fila nem last-write-wins por `updated_at` — o carimbo de tempo é do
+servidor e não decide conflitos. A eliminação é lógica. Um índice único parcial impede dois
+orçamentos ativos para o mesmo `(user_id, category_id)`.
+**Cliente antigo:** `sync_pull` publicado não devolve orçamentos, por isso uma app que ainda
+não foi atualizada continua a sincronizar contas, categorias e movimentos. A app nova usa
+`sync_pull_v2`. Se o cursor tiver saltado uma sequência, as contagens não coincidem e há uma
+ressincronização completa.
+**Importação sem conta:** o orçamento segue o mesmo caminho que os outros registos, com o
+mesmo id. Se a conta já tem um limite ativo para essa categoria, nenhum dos dois é apagado;
+o da origem fica no dispositivo.
+**Consequências:** a migração `20261108000400` só pode ser aplicada depois da `20261108000300`.
+A `20261108000500` fecha o orçamento ativo quando a categoria é eliminada. O esquema `private`
+continua fora do PostgREST. `authenticated` só tem `SELECT` em `budgets`; as escritas passam
+por `sync_push`.
+**Onde está aplicado:** no staging (`qlimqcgrgaqzwjmafora`) estão aplicadas `20261108000100` a
+`20261108000500`. Na produção (`slfgslfzolfvqavuccom`) só estão `20261108000100` e
+`20261108000200`. Não aplicar `00300`–`00500` na produção sem autorização explícita, cópia de
+segurança e a ordem das migrations. O trigger `c_close_budgets` foi inspecionado no staging e
+coberto em PGlite; o ensaio com linhas reais ainda não foi feito.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                              | Quando            |

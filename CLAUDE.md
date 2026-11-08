@@ -6,8 +6,12 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 
 ## Estado
 
-Fase 2 (autenticação e sincronização) concluída. **Não avançar de fase sem aprovação explícita
-do responsável do produto.** Não fazer `git push` sem autorização.
+Fases 0, 1 e 2 concluídas. Fase 3 (orçamentos, subscrições, objetivos de poupança, relatórios)
+em curso, com aprovação do responsável: os orçamentos estão no cliente e no staging; subscrições,
+objetivos e relatórios ainda não. **Não avançar para as Fases 4 e 5 sem aprovação explícita.**
+Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
+aplicar migrations remotas sem autorização explícita para esse passo. Staging:
+`qlimqcgrgaqzwjmafora`.
 
 ## Comandos obrigatórios antes de dar uma tarefa por concluída
 
