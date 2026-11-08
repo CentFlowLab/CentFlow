@@ -311,7 +311,7 @@ export function createSyncEngine({
       store.state(),
     ]);
     if (server.last_seq !== state.pullCursor) return true;
-    return (['accounts', 'categories', 'budgets', 'entries'] as const).every(
+    return (['accounts', 'categories', 'budgets', 'subscriptions', 'entries'] as const).every(
       (entity) =>
         server[entity].live === local[entity].live &&
         server[entity].deleted === local[entity].deleted,

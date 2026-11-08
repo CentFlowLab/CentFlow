@@ -7,8 +7,9 @@ Windows, macOS e Linux). Centraliza rendimentos, despesas, orçamentos, subscri�
 veículos e documentos, com o objetivo de automatizar ao máximo o registo de informação.
 
 > Estado atual: **Fase 3 — orçamentos, subscrições, objetivos e relatórios, em curso.** Os
-> orçamentos já funcionam no dispositivo e entram na sincronização. Subscrições, objetivos de
-> poupança e relatórios continuam «Em breve». A app continua a funcionar sem conta (dados só
+> orçamentos já funcionam no dispositivo e entram na sincronização. As subscrições também já
+> funcionam no dispositivo; a migration ainda não foi aplicada na cloud. Objetivos de poupança
+> e relatórios continuam «Em breve». A app continua a funcionar sem conta (dados só
 > neste dispositivo). Com conta, os mesmos dados sincronizam entre iOS, Android e Web, incluindo
 > offline. Nenhum valor apresentado é fictício.
 

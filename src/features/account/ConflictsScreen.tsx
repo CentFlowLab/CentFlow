@@ -35,6 +35,16 @@ function useDescribe() {
     if (conflict.entity === 'accounts' || conflict.entity === 'categories') {
       return { title: String(version.name ?? '') };
     }
+    if (conflict.entity === 'subscriptions') {
+      const amount =
+        typeof version.amount === 'number' && typeof version.currency === 'string'
+          ? formatMoney({ amountMinor: version.amount, currency: version.currency })
+          : null;
+      return {
+        title: String(version.name || t('conflicts.entities.subscriptions')),
+        detail: amount ?? undefined,
+      };
+    }
     if (conflict.entity === 'budgets') {
       const category = lookups?.categories.get(String(version.category_id));
       const amount =

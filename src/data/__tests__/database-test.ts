@@ -83,6 +83,7 @@ describe('database initialization', () => {
       'categories',
       'entries',
       'meta',
+      'subscriptions',
       'sync_conflicts',
       'sync_inbox',
       'sync_outbox',
@@ -171,7 +172,7 @@ describe('database initialization', () => {
 
     await migrate(db, MIGRATIONS);
 
-    expect(await getSchemaVersion(db)).toBe(4);
+    expect(await getSchemaVersion(db)).toBe(5);
     expect(await db.first('SELECT amount, version FROM budgets WHERE id = ?', ['b1'])).toEqual({
       amount: 5000,
       version: 0,

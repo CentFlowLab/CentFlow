@@ -115,6 +115,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'enroll budgets in the sync outbox, inbox and conflicts',
     sql: migrationV4(),
   },
+  {
+    version: 5,
+    description: 'subscriptions: recurring user expenses, enrolled in sync',
+    sql: migrationV5(),
+  },
 ];
 
 /**
@@ -474,6 +479,179 @@ function migrationV4(): string {
     -- Limites já gravados numa conta com sincronização ligada entram na fila uma vez.
     UPDATE budgets SET updated_at = updated_at
      WHERE version = 0 AND ${tracking};
+  `;
+}
+
+/** v5 — despesas recorrentes do utilizador, na mesma fila das outras entidades. */
+function migrationV5(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const entities = `('accounts', 'categories', 'budgets', 'subscriptions', 'entries')`;
+  const json = (row: 'NEW' | 'OLD', fields: readonly string[]) =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const synced = {
+    accounts: [
+      'name',
+      'type',
+      'currency',
+      'initial_balance',
+      'archived_at',
+      'created_at',
+      'deleted_at',
+    ],
+    categories: ['name', 'type', 'icon', 'color', 'system_key', 'created_at', 'deleted_at'],
+    budgets: [
+      'category_id',
+      'amount',
+      'currency',
+      'period',
+      'starts_on',
+      'created_at',
+      'deleted_at',
+    ],
+    subscriptions: [
+      'name',
+      'amount',
+      'currency',
+      'period',
+      'status',
+      'starts_on',
+      'next_on',
+      'category_id',
+      'created_at',
+      'deleted_at',
+    ],
+    entries: [
+      'type',
+      'amount',
+      'description',
+      'notes',
+      'category_id',
+      'account_id',
+      'destination_account_id',
+      'date',
+      'created_at',
+      'deleted_at',
+    ],
+  } as const;
+  const triggers = Object.entries(synced)
+    .map(([table, fields]) => {
+      const nextBase = `COALESCE(
+        (SELECT base_version + 1 FROM sync_outbox
+          WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+        OLD.version)`;
+      const insertBase = `COALESCE(
+        (SELECT base_version + 1 FROM sync_outbox
+          WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+        NEW.version)`;
+      return `
+        DROP TRIGGER IF EXISTS sync_${table}_insert;
+        DROP TRIGGER IF EXISTS sync_${table}_update;
+        CREATE TRIGGER sync_${table}_insert AFTER INSERT ON ${table}
+        WHEN ${tracking}
+        BEGIN
+          INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+          VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+            ${insertBase}, NULL, ${json('NEW', fields)}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+        END;
+        CREATE TRIGGER sync_${table}_update AFTER UPDATE ON ${table}
+        WHEN ${tracking}
+        BEGIN
+          INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+          VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+            ${nextBase}, ${json('OLD', fields)}, ${json('NEW', fields)},
+            strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+        END;`;
+    })
+    .join('\n');
+
+  return `
+    CREATE TABLE subscriptions (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 60),
+      amount INTEGER NOT NULL CHECK (typeof(amount) = 'integer' AND amount > 0),
+      currency TEXT NOT NULL CHECK (length(currency) = 3 AND currency = upper(currency)),
+      period TEXT NOT NULL CHECK (period IN ('weekly', 'monthly', 'yearly')),
+      status TEXT NOT NULL CHECK (status IN ('active', 'paused', 'cancelled')),
+      starts_on TEXT NOT NULL CHECK (starts_on GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'),
+      next_on TEXT NOT NULL CHECK (next_on GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'),
+      category_id TEXT REFERENCES categories (id) ON DELETE RESTRICT,
+      version INTEGER NOT NULL DEFAULT 0,
+      server_seq INTEGER,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      synced_at TEXT,
+      CHECK (next_on >= starts_on)
+    );
+
+    DROP TRIGGER IF EXISTS sync_accounts_insert;
+    DROP TRIGGER IF EXISTS sync_accounts_update;
+    DROP TRIGGER IF EXISTS sync_categories_insert;
+    DROP TRIGGER IF EXISTS sync_categories_update;
+    DROP TRIGGER IF EXISTS sync_budgets_insert;
+    DROP TRIGGER IF EXISTS sync_budgets_update;
+    DROP TRIGGER IF EXISTS sync_entries_insert;
+    DROP TRIGGER IF EXISTS sync_entries_update;
+
+    CREATE TABLE sync_outbox_v5 (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      op_id TEXT NOT NULL UNIQUE,
+      tx_id TEXT,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      record_id TEXT NOT NULL,
+      base_version INTEGER NOT NULL CHECK (base_version >= 0),
+      base TEXT,
+      data TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      created_at TEXT NOT NULL
+    );
+    INSERT INTO sync_outbox_v5
+      (seq, op_id, tx_id, entity, record_id, base_version, base, data, attempts, last_error, created_at)
+      SELECT seq, op_id, tx_id, entity, record_id, base_version, base, data, attempts, last_error, created_at
+        FROM sync_outbox;
+    DROP TABLE sync_outbox;
+    ALTER TABLE sync_outbox_v5 RENAME TO sync_outbox;
+    CREATE INDEX idx_sync_outbox_record ON sync_outbox (entity, record_id, seq);
+
+    CREATE TABLE sync_inbox_v5 (
+      server_seq INTEGER PRIMARY KEY,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      data TEXT NOT NULL
+    );
+    INSERT INTO sync_inbox_v5 (server_seq, entity, data)
+      SELECT server_seq, entity, data FROM sync_inbox;
+    DROP TABLE sync_inbox;
+    ALTER TABLE sync_inbox_v5 RENAME TO sync_inbox;
+
+    CREATE TABLE sync_conflicts_v5 (
+      id TEXT PRIMARY KEY NOT NULL,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      record_id TEXT NOT NULL,
+      reason TEXT NOT NULL CHECK (reason IN ('version', 'missing', 'rejected')),
+      detail TEXT,
+      base_data TEXT,
+      local_data TEXT,
+      server_data TEXT,
+      created_at TEXT NOT NULL,
+      resolved_at TEXT,
+      resolution TEXT CHECK (resolution IS NULL OR resolution IN ('keepLocal', 'keepServer'))
+    );
+    INSERT INTO sync_conflicts_v5
+      (id, entity, record_id, reason, detail, base_data, local_data, server_data, created_at,
+       resolved_at, resolution)
+      SELECT id, entity, record_id, reason, detail, base_data, local_data, server_data, created_at,
+             resolved_at, resolution
+        FROM sync_conflicts;
+    DROP TABLE sync_conflicts;
+    ALTER TABLE sync_conflicts_v5 RENAME TO sync_conflicts;
+    CREATE INDEX idx_sync_conflicts_open ON sync_conflicts (created_at) WHERE resolved_at IS NULL;
+
+    ${triggers}
   `;
 }
 

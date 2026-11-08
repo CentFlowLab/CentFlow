@@ -50,6 +50,19 @@ const COPY_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'created_at',
     'updated_at',
   ],
+  subscriptions: [
+    'id',
+    'name',
+    'amount',
+    'currency',
+    'period',
+    'status',
+    'starts_on',
+    'next_on',
+    'category_id',
+    'created_at',
+    'updated_at',
+  ],
   entries: [
     'id',
     'type',
@@ -137,6 +150,7 @@ export async function copyRecords(
     accounts: [],
     categories: [],
     budgets: [],
+    subscriptions: [],
     entries: [],
   };
   for (const entity of SYNC_ENTITIES) {

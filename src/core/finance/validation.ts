@@ -4,10 +4,13 @@ import {
   ACCOUNT_TYPES,
   BUDGET_PERIODS,
   CATEGORY_TYPES,
+  SUBSCRIPTION_PERIODS,
+  SUBSCRIPTION_STATUSES,
   ENTRY_TYPES,
   type Account,
   type AccountInput,
   type BudgetInput,
+  type SubscriptionInput,
   type Category,
   type CategoryInput,
   type EntryInput,
@@ -177,5 +180,31 @@ export function validateBudgetInput(input: BudgetInput): ValidationErrors<Budget
   if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
   if (!(BUDGET_PERIODS as readonly string[]).includes(input.period)) errors.period = 'invalid';
   if (!isValidCalendarDate(input.startsOn)) errors.startsOn = 'invalidDate';
+  return errors;
+}
+
+export type SubscriptionField = keyof SubscriptionInput;
+
+export function validateSubscriptionInput(
+  input: SubscriptionInput,
+): ValidationErrors<SubscriptionField> {
+  const errors: ValidationErrors<SubscriptionField> = {};
+  if (input.name.trim() === '') errors.name = 'required';
+  else if (input.name.trim().length > LIMITS.nameMaxLength) errors.name = 'tooLong';
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) {
+    errors.amount = 'amountNotPositive';
+  } else if (input.amount > MAX_AMOUNT_MINOR) {
+    errors.amount = 'amountTooLarge';
+  }
+  if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
+  if (!(SUBSCRIPTION_PERIODS as readonly string[]).includes(input.period))
+    errors.period = 'invalid';
+  if (!(SUBSCRIPTION_STATUSES as readonly string[]).includes(input.status)) {
+    errors.status = 'invalid';
+  }
+  if (!isValidCalendarDate(input.startsOn)) errors.startsOn = 'invalidDate';
+  if (!isValidCalendarDate(input.nextOn) || input.nextOn < input.startsOn) {
+    errors.nextOn = 'invalidDate';
+  }
   return errors;
 }

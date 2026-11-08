@@ -14,6 +14,8 @@ import type {
   EntryInput,
   EntryType,
   Id,
+  Subscription,
+  SubscriptionInput,
 } from '@/core/finance';
 
 /**
@@ -99,6 +101,15 @@ export interface EntryRepository {
   listExpenses(range: { from: CalendarDate; to: CalendarDate }): Promise<BudgetCandidate[]>;
 }
 
+export interface SubscriptionRepository {
+  list(): Promise<Subscription[]>;
+  get(id: Id): Promise<Subscription | null>;
+  /** Não cria movimentos. A categoria, se existir, tem de ser de despesa. */
+  create(input: SubscriptionInput): Promise<Subscription>;
+  update(id: Id, input: SubscriptionInput): Promise<Subscription>;
+  delete(id: Id): Promise<void>;
+}
+
 export interface BudgetRepository {
   list(): Promise<Budget[]>;
   get(id: Id): Promise<Budget | null>;
@@ -108,13 +119,14 @@ export interface BudgetRepository {
   delete(id: Id): Promise<void>;
 }
 
-export type DataEntity = 'accounts' | 'budgets' | 'categories' | 'entries';
+export type DataEntity = 'accounts' | 'budgets' | 'categories' | 'entries' | 'subscriptions';
 
 export interface Repositories {
   accounts: AccountRepository;
   categories: CategoryRepository;
   entries: EntryRepository;
   budgets: BudgetRepository;
+  subscriptions: SubscriptionRepository;
   /** Notifica após cada escrita confirmada. Devolve a função para cancelar. */
   subscribe(listener: (entities: readonly DataEntity[]) => void): () => void;
 }

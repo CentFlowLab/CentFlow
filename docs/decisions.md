@@ -208,6 +208,19 @@ segurança e a ordem das migrations. O trigger `c_close_budgets` foi ensaiado no
 manteve-se, e o segundo utilizador não viu linhas. Os utilizadores de teste e os dados foram
 apagados no fim. A produção não foi alterada.
 
+## ADR-022 — Subscrições são despesas recorrentes do utilizador
+
+**Decisão:** a tabela `subscriptions` guarda despesas que o utilizador repete (nome, valor em
+unidades mínimas, moeda, periodicidade, estado, data de início e próxima data, categoria
+opcional). O estado é `active`, `paused` ou `cancelled`. O custo mensal e anual soma só as
+ativas: o anual é exato (semana × 52, mês × 12 ou o valor anual) e o mensal é a divisão inteira
+desse anual por 12. Guardar uma subscrição não cria movimentos nem altera saldos.
+**Não é a subscrição da CentFlow.** Esta tabela não tem relação com um paywall, um plano pago
+ou a cobrança da própria aplicação.
+**Consequências:** a migration `20261108000600` entra em `sync_push`, `sync_pull_v2`,
+`sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Ainda não foi aplicada
+no staging nem na produção.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                              | Quando            |

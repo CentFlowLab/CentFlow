@@ -35,7 +35,7 @@ function opId(): string {
 type Op = {
   op_id: string;
   tx_id: string | null;
-  entity: 'accounts' | 'categories' | 'budgets' | 'entries';
+  entity: 'accounts' | 'categories' | 'budgets' | 'subscriptions' | 'entries';
   record_id: string;
   base_version: number;
   data: Record<string, unknown>;
@@ -152,12 +152,18 @@ describe('schema', () => {
         where relnamespace = 'public'::regnamespace and relkind = 'r' order by relname`,
     );
     expect(rows).toEqual(
-      ['accounts', 'budgets', 'categories', 'entries', 'profiles', 'sync_metadata'].map(
-        (relname) => ({
-          relname,
-          relrowsecurity: true,
-        }),
-      ),
+      [
+        'accounts',
+        'budgets',
+        'categories',
+        'entries',
+        'profiles',
+        'subscriptions',
+        'sync_metadata',
+      ].map((relname) => ({
+        relname,
+        relrowsecurity: true,
+      })),
     );
   });
 
@@ -175,6 +181,7 @@ describe('schema', () => {
       { table_name: 'accounts', column_name: 'initial_balance', data_type: 'bigint' },
       { table_name: 'budgets', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'entries', column_name: 'amount', data_type: 'bigint' },
+      { table_name: 'subscriptions', column_name: 'amount', data_type: 'bigint' },
     ]);
   });
 
@@ -503,14 +510,14 @@ describe('purge of deleted rows', () => {
     await push(alice, [entryOp(ENTRY, 1, { deleted_at: new Date().toISOString() })]);
 
     expect(await server.pg.query(`select public.purge_deleted()`)).toEqual([
-      { purge_deleted: { entries: 0, budgets: 0, categories: 0, accounts: 0 } },
+      { purge_deleted: { entries: 0, budgets: 0, subscriptions: 0, categories: 0, accounts: 0 } },
     ]);
 
     await server.pg.query(
       `update public.entries set deleted_at = now() - interval '200 days', version = version`,
     );
     expect(await server.pg.query(`select public.purge_deleted()`)).toEqual([
-      { purge_deleted: { entries: 1, budgets: 0, categories: 0, accounts: 0 } },
+      { purge_deleted: { entries: 1, budgets: 0, subscriptions: 0, categories: 0, accounts: 0 } },
     ]);
     await expect(server.pg.query(`select public.purge_deleted(interval '1 day')`)).rejects.toThrow(
       /retention_too_short/,
@@ -731,5 +738,70 @@ describe('budgets', () => {
     expect(
       await alice.query('select count(*)::int as n from public.budgets where id = $1', [BUDGET_2]),
     ).toEqual([{ n: 1 }]);
+  });
+});
+
+describe('subscriptions', () => {
+  const SUB = '60000000-0000-4000-8000-000000000001';
+
+  function subscriptionOp(data: Record<string, unknown> = {}) {
+    return {
+      op_id: opId(),
+      tx_id: null,
+      entity: 'subscriptions' as const,
+      record_id: SUB,
+      base_version: 0,
+      data: {
+        name: 'Telefone',
+        amount: 1500,
+        currency: 'EUR',
+        period: 'monthly',
+        status: 'active',
+        starts_on: '2026-11-01',
+        next_on: '2026-12-01',
+        category_id: null,
+        deleted_at: null,
+        ...data,
+      },
+    };
+  }
+
+  it('syncs a recurring expense without creating an entry and hides it from the other user', async () => {
+    const [created] = await push(alice, [subscriptionOp()]);
+    expect(created).toMatchObject({ status: 'applied' });
+    expect(await alice.query('select count(*)::int as n from public.entries')).toEqual([{ n: 0 }]);
+    expect(await bob.query('select id from public.subscriptions')).toEqual([]);
+
+    const [updated] = await push(alice, [
+      { ...subscriptionOp({ status: 'paused' }), base_version: 1, op_id: opId() },
+    ]);
+    expect(updated).toMatchObject({ status: 'applied' });
+    expect(
+      await alice.query<{ status: string }>('select status from public.subscriptions'),
+    ).toEqual([{ status: 'paused' }]);
+
+    type Pull = { changes: { entity: string }[] };
+    const fresh = await alice.rpc<Pull>('sync_pull_v2', { p_since: 0 });
+    expect(fresh.changes.some((change) => change.entity === 'subscriptions')).toBe(true);
+    const legacy = await alice.rpc<Pull>('sync_pull', { p_since: 0 });
+    expect(legacy.changes.some((change) => change.entity === 'subscriptions')).toBe(false);
+    expect((await bob.rpc<Pull>('sync_pull_v2', { p_since: 0 })).changes).toEqual([]);
+
+    await expect(
+      alice.query(`insert into public.subscriptions (id, name) values ('${SUB}', 'x')`),
+    ).rejects.toThrow();
+  });
+
+  it('rejects an income category and a next date before the start', async () => {
+    await seedBasics(alice);
+    await push(alice, [
+      categoryOp(SALARY, 0, { name: 'Salário', type: 'income', system_key: null }),
+    ]);
+    const [income] = await push(alice, [subscriptionOp({ category_id: SALARY })]);
+    expect(income).toMatchObject({ status: 'rejected', reason: 'category_type_mismatch' });
+    const [dates] = await push(alice, [
+      subscriptionOp({ next_on: '2026-10-01', category_id: null }),
+    ]);
+    expect(dates).toMatchObject({ status: 'rejected', reason: 'invalid' });
   });
 });

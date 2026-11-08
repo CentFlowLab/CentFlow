@@ -20,6 +20,12 @@ export type EntryType = (typeof ENTRY_TYPES)[number];
 export const BUDGET_PERIODS = ['weekly', 'monthly', 'yearly'] as const;
 export type BudgetPeriod = (typeof BUDGET_PERIODS)[number];
 
+/** Despesa recorrente do utilizador. Não é a subscrição paga da CentFlow. */
+export const SUBSCRIPTION_PERIODS = BUDGET_PERIODS;
+export type SubscriptionPeriod = BudgetPeriod;
+export const SUBSCRIPTION_STATUSES = ['active', 'paused', 'cancelled'] as const;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
 type SyncMetadata = {
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -84,4 +90,22 @@ export type EntryInput = Pick<
 export type BudgetInput = Pick<
   Budget,
   'categoryId' | 'amount' | 'currency' | 'period' | 'startsOn'
+>;
+
+export type Subscription = SyncMetadata & {
+  id: Id;
+  name: string;
+  /** Unidades mínimas. Sempre positivo. */
+  amount: number;
+  currency: CurrencyCode;
+  period: SubscriptionPeriod;
+  status: SubscriptionStatus;
+  startsOn: CalendarDate;
+  nextOn: CalendarDate;
+  categoryId: Id | null;
+};
+
+export type SubscriptionInput = Pick<
+  Subscription,
+  'name' | 'amount' | 'currency' | 'period' | 'status' | 'startsOn' | 'nextOn' | 'categoryId'
 >;

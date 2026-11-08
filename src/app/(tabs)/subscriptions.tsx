@@ -1,5 +1,5 @@
-import { ModulePlaceholderScreen } from '@/features/modules/ModulePlaceholderScreen';
+import { SubscriptionsScreen } from '@/features/subscriptions/SubscriptionsScreen';
 
 export default function SubscriptionsRoute() {
-  return <ModulePlaceholderScreen module="subscriptions" />;
+  return <SubscriptionsScreen />;
 }

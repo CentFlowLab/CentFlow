@@ -603,3 +603,35 @@ describe('persistence', () => {
     }
   });
 });
+
+describe('subscriptions', () => {
+  const input = () => ({
+    name: 'Telefone',
+    amount: 1500,
+    currency: 'EUR' as const,
+    period: 'monthly' as const,
+    status: 'active' as const,
+    startsOn: '2026-11-01',
+    nextOn: '2026-12-01',
+    categoryId: food.id,
+  });
+
+  it('creates, pauses and deletes without writing an entry', async () => {
+    const created = await repos.subscriptions.create(input());
+    expect(await repos.subscriptions.list()).toEqual([created]);
+    const paused = await repos.subscriptions.update(created.id, { ...input(), status: 'paused' });
+    expect(paused.status).toBe('paused');
+    expect((await repos.entries.list()).total).toBe(0);
+    await repos.subscriptions.delete(created.id);
+    expect(await repos.subscriptions.get(created.id)).toBeNull();
+  });
+
+  it('rejects an income category and a next date before the start', async () => {
+    await expect(
+      repos.subscriptions.create({ ...input(), categoryId: salary.id }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(
+      repos.subscriptions.create({ ...input(), categoryId: null, nextOn: '2026-10-01' }),
+    ).rejects.toMatchObject({ errors: { nextOn: 'invalidDate' } });
+  });
+});

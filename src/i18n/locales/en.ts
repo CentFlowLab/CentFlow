@@ -85,7 +85,8 @@ const en: Translation = {
       description: 'Weekly, monthly or yearly limits per category, with spending progress.',
     },
     subscriptions: {
-      description: 'Recurring payments, upcoming dates and monthly and yearly cost.',
+      description:
+        'Recurring expenses, with status and a monthly and yearly cost of the active ones.',
     },
     wealth: {
       description: 'Assets, liabilities, investments and how your net worth evolves.',
@@ -357,6 +358,44 @@ const en: Translation = {
       save: 'Save budget',
     },
   },
+  subscriptions: {
+    subtitle: 'Expenses that repeat. They do not change account balances.',
+    add: 'New subscription',
+    emptyTitle: 'No subscriptions yet',
+    emptyDescription:
+      'Add a recurring expense to see the next date and the cost of the active ones.',
+    start: 'Add a subscription',
+    monthly: 'Monthly cost',
+    yearly: 'Yearly cost',
+    activeOnly:
+      'Only active ones count. A paused or cancelled subscription stays out of these totals.',
+    doesNotChangeBalances: 'Saving a subscription does not create transactions or change balances.',
+    nextOn: 'Next date',
+    noneCategory: 'No category',
+    edit: 'Edit subscription',
+    delete: 'Delete subscription',
+    deleteTitle: 'Delete this subscription?',
+    deleteMessage: 'Transactions are left unchanged. This cannot be undone.',
+    notFoundTitle: 'Subscription not found',
+    detailTitle: 'Subscription',
+    status: {
+      active: 'Active',
+      paused: 'Paused',
+      cancelled: 'Cancelled',
+    },
+    form: {
+      createTitle: 'New subscription',
+      editTitle: 'Edit subscription',
+      name: 'Name',
+      amount: 'Amount',
+      period: 'Period',
+      status: 'Status',
+      startsOn: 'Start date',
+      nextOn: 'Next date',
+      category: 'Category',
+      save: 'Save subscription',
+    },
+  },
   validation: {
     required: 'Required field.',
     tooLong: 'Text is too long.',
@@ -545,6 +584,7 @@ const en: Translation = {
       accounts: 'Account',
       categories: 'Category',
       budgets: 'Budget',
+      subscriptions: 'Subscription',
       entries: 'Transaction',
     },
     reasons: {

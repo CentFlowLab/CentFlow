@@ -83,7 +83,8 @@ const ptPT = {
       description: 'Limites por categoria, semanais, mensais ou anuais, com o progresso do gasto.',
     },
     subscriptions: {
-      description: 'Pagamentos recorrentes, próximas datas e custo mensal e anual.',
+      description:
+        'Despesas recorrentes, com estado e custo mensal e anual só das que estão ativas.',
     },
     wealth: {
       description: 'Ativos, passivos, investimentos e evolução do património líquido.',
@@ -354,6 +355,43 @@ const ptPT = {
       save: 'Guardar orçamento',
     },
   },
+  subscriptions: {
+    subtitle: 'Despesas que se repetem. Não alteram o saldo das contas.',
+    add: 'Nova subscrição',
+    emptyTitle: 'Ainda não há subscrições',
+    emptyDescription:
+      'Regista uma despesa recorrente para ver a próxima data e o custo das que estão ativas.',
+    start: 'Registar uma subscrição',
+    monthly: 'Custo mensal',
+    yearly: 'Custo anual',
+    activeOnly: 'Só entram as ativas. Uma em pausa ou cancelada fica de fora destes totais.',
+    doesNotChangeBalances: 'Guardar uma subscrição não cria movimentos nem muda saldos.',
+    nextOn: 'Próxima data',
+    noneCategory: 'Sem categoria',
+    edit: 'Editar subscrição',
+    delete: 'Eliminar subscrição',
+    deleteTitle: 'Eliminar esta subscrição?',
+    deleteMessage: 'Os movimentos não são alterados. Esta ação não pode ser anulada.',
+    notFoundTitle: 'Subscrição não encontrada',
+    detailTitle: 'Subscrição',
+    status: {
+      active: 'Ativa',
+      paused: 'Em pausa',
+      cancelled: 'Cancelada',
+    },
+    form: {
+      createTitle: 'Nova subscrição',
+      editTitle: 'Editar subscrição',
+      name: 'Nome',
+      amount: 'Valor',
+      period: 'Periodicidade',
+      status: 'Estado',
+      startsOn: 'Data de início',
+      nextOn: 'Próxima data',
+      category: 'Categoria',
+      save: 'Guardar subscrição',
+    },
+  },
   validation: {
     required: 'Campo obrigatório.',
     tooLong: 'Texto demasiado longo.',
@@ -545,6 +583,7 @@ const ptPT = {
       accounts: 'Conta',
       categories: 'Categoria',
       budgets: 'Orçamento',
+      subscriptions: 'Subscrição',
       entries: 'Movimento',
     },
     reasons: {

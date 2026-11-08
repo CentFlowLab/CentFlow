@@ -30,7 +30,7 @@ export function EmptyState({ icon, title, description, children }: Props) {
           </Text>
         ) : null}
       </View>
-      {children}
+      {children ? <View style={styles.action}>{children}</View> : null}
     </View>
   );
 }
@@ -41,6 +41,11 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingVertical: spacing['4xl'],
     paddingHorizontal: spacing['2xl'],
+  },
+  action: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   iconWrap: {
     width: 64,

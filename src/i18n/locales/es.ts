@@ -86,7 +86,8 @@ const es: Translation = {
         'Límites semanales, mensuales o anuales por categoría, con el progreso del gasto.',
     },
     subscriptions: {
-      description: 'Pagos recurrentes, próximas fechas y coste mensual y anual.',
+      description:
+        'Gastos recurrentes, con estado y coste mensual y anual solo de los que están activos.',
     },
     wealth: {
       description: 'Activos, pasivos, inversiones y evolución del patrimonio neto.',
@@ -358,6 +359,43 @@ const es: Translation = {
       save: 'Guardar presupuesto',
     },
   },
+  subscriptions: {
+    subtitle: 'Gastos que se repiten. No cambian el saldo de las cuentas.',
+    add: 'Nueva suscripción',
+    emptyTitle: 'Aún no hay suscripciones',
+    emptyDescription:
+      'Registra un gasto recurrente para ver la próxima fecha y el coste de las activas.',
+    start: 'Registrar una suscripción',
+    monthly: 'Coste mensual',
+    yearly: 'Coste anual',
+    activeOnly: 'Solo cuentan las activas. Una en pausa o cancelada queda fuera de estos totales.',
+    doesNotChangeBalances: 'Guardar una suscripción no crea movimientos ni cambia saldos.',
+    nextOn: 'Próxima fecha',
+    noneCategory: 'Sin categoría',
+    edit: 'Editar suscripción',
+    delete: 'Eliminar suscripción',
+    deleteTitle: '¿Eliminar esta suscripción?',
+    deleteMessage: 'Los movimientos no cambian. Esta acción no se puede deshacer.',
+    notFoundTitle: 'Suscripción no encontrada',
+    detailTitle: 'Suscripción',
+    status: {
+      active: 'Activa',
+      paused: 'En pausa',
+      cancelled: 'Cancelada',
+    },
+    form: {
+      createTitle: 'Nueva suscripción',
+      editTitle: 'Editar suscripción',
+      name: 'Nombre',
+      amount: 'Importe',
+      period: 'Periodicidad',
+      status: 'Estado',
+      startsOn: 'Fecha de inicio',
+      nextOn: 'Próxima fecha',
+      category: 'Categoría',
+      save: 'Guardar suscripción',
+    },
+  },
   validation: {
     required: 'Campo obligatorio.',
     tooLong: 'El texto es demasiado largo.',
@@ -550,6 +588,7 @@ const es: Translation = {
       accounts: 'Cuenta',
       categories: 'Categoría',
       budgets: 'Presupuesto',
+      subscriptions: 'Suscripción',
       entries: 'Movimiento',
     },
     reasons: {
