@@ -7,7 +7,7 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#F7F7F9",
+    "backgroundColor": "#F8FAFC",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.centflow.mobile",
@@ -19,7 +19,7 @@
     "android": {
       "package": "app.centflow.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#4B45E6",
+        "backgroundColor": "#101B2D",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -32,8 +32,8 @@
       "name": "CentFlow",
       "shortName": "CentFlow",
       "description": "O teu dinheiro, sob controlo.",
-      "themeColor": "#4B45E6",
-      "backgroundColor": "#F7F7F9"
+      "themeColor": "#101B2D",
+      "backgroundColor": "#F8FAFC"
     },
     "plugins": [
       "expo-router",
@@ -45,10 +45,10 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 96,
           "resizeMode": "contain",
-          "backgroundColor": "#F7F7F9",
+          "backgroundColor": "#F8FAFC",
           "dark": {
             "image": "./assets/splash-icon.png",
-            "backgroundColor": "#0B0B0D"
+            "backgroundColor": "#101B2D"
           }
         }
       ],

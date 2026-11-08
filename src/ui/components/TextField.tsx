@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: layout.minTouchTarget + 4,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md + 2,
     paddingVertical: spacing.sm,
   },

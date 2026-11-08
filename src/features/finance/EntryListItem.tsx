@@ -71,7 +71,7 @@ export function EntryListItem({ entry, lookups, onPress }: Props) {
         variant="bodyStrong"
         tabular
         numberOfLines={1}
-        tone={entry.type === 'income' ? 'positive' : isTransfer ? 'secondary' : 'primary'}>
+        tone={entry.type === 'income' ? 'positive' : isTransfer ? 'secondary' : 'negative'}>
         {amountText}
       </Text>
     </Pressable>

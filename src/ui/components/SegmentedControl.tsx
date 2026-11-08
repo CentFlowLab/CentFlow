@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { radius, spacing, useTheme } from '../theme';
+import { layout, radius, spacing, useTheme } from '../theme';
 import { Text } from './Text';
 
 export type SegmentedOption<T extends string> = { value: T; label: string };
@@ -18,7 +18,7 @@ export function SegmentedControl<T extends string>({
   onChange,
   accessibilityLabel,
 }: Props<T>) {
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <View
@@ -37,11 +37,10 @@ export function SegmentedControl<T extends string>({
             style={[
               styles.segment,
               selected && {
-                backgroundColor: scheme === 'dark' ? colors.borderStrong : colors.surface,
-                boxShadow: scheme === 'light' ? `0 1px 3px ${colors.shadow}` : undefined,
+                backgroundColor: colors.primary,
               },
             ]}>
-            <Text variant="label" tone={selected ? 'primary' : 'secondary'} numberOfLines={1}>
+            <Text variant="label" tone={selected ? 'onPrimary' : 'secondary'} numberOfLines={1}>
               {option.label}
             </Text>
           </Pressable>
@@ -54,14 +53,16 @@ export function SegmentedControl<T extends string>({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    borderRadius: radius.md,
+    flexWrap: 'wrap',
+    borderRadius: radius.xl,
     padding: spacing.xxs + 1,
     gap: spacing.xxs,
   },
   segment: {
-    flex: 1,
-    minHeight: 36,
-    borderRadius: radius.sm,
+    flexGrow: 1,
+    flexShrink: 0,
+    minHeight: layout.minTouchTarget,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.sm,

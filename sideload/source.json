@@ -11,7 +11,7 @@
       "subtitle": "O teu dinheiro, sob controlo.",
       "localizedDescription": "Registo de contas e movimentos neste iPhone. As atualizações mantêm o identificador app.centflow.mobile, por isso a base de dados local continua na instalação existente. O SideStore mostra o botão de atualizar e pede confirmação; não instala uma versão nova sozinho.",
       "iconURL": "https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/assets/icon.png",
-      "tintColor": "#4B45E6",
+      "tintColor": "#10B981",
       "versions": [
         {
           "version": "0.1.0",

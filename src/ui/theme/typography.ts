@@ -33,8 +33,8 @@ export const typography = {
   },
   amountHero: {
     fontFamily: fontFamily.semibold,
-    fontSize: 40,
-    lineHeight: 46,
+    fontSize: 44,
+    lineHeight: 50,
     letterSpacing: -1.2,
   },
   amount: { fontFamily: fontFamily.semibold, fontSize: 17, lineHeight: 22, letterSpacing: -0.3 },

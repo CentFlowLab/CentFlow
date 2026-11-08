@@ -52,7 +52,7 @@ export function MobileTabBar({ activeRoute, onSelect }: Props) {
           paddingBottom: insets.bottom,
           paddingLeft: insets.left,
           paddingRight: insets.right,
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderTopColor: colors.border,
         },
       ]}>
@@ -117,7 +117,7 @@ function TabButton({ label, icon, active, onPress }: TabButtonProps) {
       accessibilityState={{ selected: active }}
       onPress={onPress}
       style={({ pressed }) => [styles.slot, styles.tab, { opacity: pressed ? 0.6 : 1 }]}>
-      <Icon name={icon} size={23} color={active ? 'primaryText' : 'textTertiary'} />
+      <Icon name={icon} size={22} color={active ? 'primaryText' : 'textTertiary'} />
       <Text variant="caption" tone={active ? 'accent' : 'tertiary'} numberOfLines={1}>
         {label}
       </Text>
@@ -141,8 +141,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     width: 48,
-    height: 40,
-    borderRadius: radius.md,
+    height: 48,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

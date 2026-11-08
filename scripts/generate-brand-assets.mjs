@@ -7,9 +7,9 @@ import { deflateSync } from 'node:zlib';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Manter sincronizado com src/ui/theme/palette.ts (brand).
-const GRADIENT_START = [0x6d, 0x6c, 0xff];
-const GRADIENT_END = [0x3b, 0x2f, 0xc9];
+// Manter sincronizado com src/ui/theme/colors.ts (BRAND).
+const GRADIENT_START = [0x10, 0xb9, 0x81];
+const GRADIENT_END = [0x04, 0x78, 0x57];
 const WHITE = [0xff, 0xff, 0xff];
 
 const MARK = {

@@ -34,67 +34,74 @@ export type ThemeColors = {
 
 export type ColorScheme = 'light' | 'dark';
 
+/**
+ * Midnight Emerald.
+ * Os preenchimentos usam o esmeralda pedido (#10B981). O texto verde no modo claro
+ * e o vermelho no modo escuro são tons da mesma família, porque o hexágono literal
+ * não chega ao contraste WCAG AA sobre os cartões.
+ */
 export const BRAND = {
-  gradientStart: '#6D6CFF',
-  gradientEnd: '#3B2FC9',
-  primary: '#4B45E6',
+  navy: '#101B2D',
+  slate: '#1E293B',
+  emerald: '#10B981',
+  ice: '#F8FAFC',
 } as const;
 
 export const lightColors: ThemeColors = {
-  background: '#F7F7F9',
+  background: BRAND.ice,
   surface: '#FFFFFF',
-  surfaceMuted: '#EFEFF3',
-  surfaceHover: '#F2F2F6',
-  border: '#E4E4EA',
-  borderStrong: '#D0D0DA',
+  surfaceMuted: '#EEF2F6',
+  surfaceHover: '#E6EDF4',
+  border: '#E2E8F0',
+  borderStrong: '#CBD5E1',
 
-  text: '#0E0E12',
-  textSecondary: '#5A5C6A',
-  textTertiary: '#6B6D7B',
-  textInverse: '#FFFFFF',
+  text: BRAND.navy,
+  textSecondary: '#475569',
+  textTertiary: '#64748B',
+  textInverse: BRAND.ice,
 
-  primary: BRAND.primary,
-  primaryPressed: '#3D37C9',
-  primaryMuted: '#ECEBFE',
-  primaryText: '#4B45E6',
-  onPrimary: '#FFFFFF',
+  primary: BRAND.emerald,
+  primaryPressed: '#0E9F70',
+  primaryMuted: '#D1FAE5',
+  primaryText: '#047857',
+  onPrimary: BRAND.navy,
 
-  positive: '#0B7F3F',
-  positiveMuted: '#E3F5EA',
-  negative: '#D1293A',
-  negativeMuted: '#FCEBEC',
-  warning: '#9A5800',
-  warningMuted: '#FFF3D6',
+  positive: '#047857',
+  positiveMuted: '#D1FAE5',
+  negative: '#DC2626',
+  negativeMuted: '#FEE2E2',
+  warning: '#B45309',
+  warningMuted: '#FEF3C7',
 
-  overlay: 'rgba(14, 14, 18, 0.4)',
-  shadow: 'rgba(16, 16, 32, 0.06)',
+  overlay: 'rgba(16, 27, 45, 0.4)',
+  shadow: 'rgba(16, 27, 45, 0.06)',
 };
 
 export const darkColors: ThemeColors = {
-  background: '#0B0B0D',
-  surface: '#141417',
-  surfaceMuted: '#1D1D22',
-  surfaceHover: '#1A1A1F',
-  border: '#25252C',
-  borderStrong: '#34343D',
+  background: BRAND.navy,
+  surface: BRAND.slate,
+  surfaceMuted: '#162033',
+  surfaceHover: '#263449',
+  border: '#334155',
+  borderStrong: '#3E4C63',
 
-  text: '#F4F4F6',
-  textSecondary: '#A3A4B0',
-  textTertiary: '#8B8D9A',
-  textInverse: '#0E0E12',
+  text: BRAND.ice,
+  textSecondary: '#94A3B8',
+  textTertiary: '#8B9CB3',
+  textInverse: BRAND.navy,
 
-  primary: '#5E5BF0',
-  primaryPressed: '#4E4BD9',
-  primaryMuted: '#1E1D3D',
-  primaryText: '#A3A1FF',
-  onPrimary: '#FFFFFF',
+  primary: BRAND.emerald,
+  primaryPressed: '#0E9F70',
+  primaryMuted: '#12352C',
+  primaryText: BRAND.emerald,
+  onPrimary: BRAND.navy,
 
-  positive: '#3DD68C',
-  positiveMuted: '#11271C',
-  negative: '#FF6B72',
-  negativeMuted: '#2E1417',
-  warning: '#F5B841',
-  warningMuted: '#2D230F',
+  positive: BRAND.emerald,
+  positiveMuted: '#12352C',
+  negative: '#F87171',
+  negativeMuted: '#3A1D24',
+  warning: '#F59E0B',
+  warningMuted: '#3A2E14',
 
   overlay: 'rgba(0, 0, 0, 0.6)',
   shadow: 'rgba(0, 0, 0, 0.4)',

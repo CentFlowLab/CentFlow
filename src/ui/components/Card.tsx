@@ -20,7 +20,7 @@ export function Card({
   const { colors, scheme } = useTheme();
   const base: StyleProp<ViewStyle> = {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing[padding],

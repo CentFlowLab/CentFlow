@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
   },
   bar: {
     flex: 1,
-    maxWidth: 14,
-    borderTopLeftRadius: radius.xs - 2,
-    borderTopRightRadius: radius.xs - 2,
+    maxWidth: 16,
+    borderTopLeftRadius: radius.sm,
+    borderTopRightRadius: radius.sm,
   },
 });
