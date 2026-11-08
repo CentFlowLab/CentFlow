@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.centflow.mobile",
+      "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -53,7 +54,9 @@
       ],
       "expo-localization",
       "expo-asset",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true

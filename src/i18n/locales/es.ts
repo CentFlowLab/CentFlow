@@ -19,6 +19,7 @@ const es: Translation = {
     today: 'Hoy',
     yesterday: 'Ayer',
     optional: 'Opcional',
+    ok: 'Aceptar',
   },
   nav: {
     mainNavigation: 'Navegación principal',
@@ -334,10 +335,177 @@ const es: Translation = {
       description:
         'Tus datos se guardaron con una versión más reciente de CentFlow. Actualiza la aplicación para continuar.',
     },
+    wrongOwner: {
+      title: 'Estos datos pertenecen a otra cuenta',
+      description:
+        'La copia local encontrada no corresponde a esta sesión y no se ha abierto. No se ha cambiado nada.',
+    },
     unknown: {
       title: 'No se han podido abrir tus datos',
       description:
         'Se ha producido un error al abrir la base de datos local. Tus datos no se han eliminado.',
+    },
+  },
+  auth: {
+    signIn: 'Iniciar sesión',
+    signUp: 'Crear cuenta',
+    signInTitle: 'Iniciar sesión',
+    signInIntro: 'Los datos de tu cuenta se sincronizan entre tus dispositivos.',
+    signUpTitle: 'Crear cuenta',
+    signUpIntro:
+      'Con una cuenta, tus datos se guardan de forma segura y se sincronizan entre dispositivos. La app sigue funcionando sin conexión.',
+    email: 'Correo electrónico',
+    emailPlaceholder: 'nombre@ejemplo.es',
+    password: 'Contraseña',
+    newPassword: 'Nueva contraseña',
+    passwordHelper: 'Al menos {{count}} caracteres.',
+    invalidEmail: 'Introduce un correo válido.',
+    passwordTooShort: 'La contraseña es demasiado corta.',
+    forgotPassword: '¿Has olvidado la contraseña?',
+    noAccount: '¿No tienes cuenta? Crear cuenta',
+    haveAccount: '¿Ya tienes cuenta? Iniciar sesión',
+    signInWithApple: 'Continuar con Apple',
+    confirmEmail: {
+      title: 'Confirma tu correo',
+      message:
+        'Hemos enviado un enlace a {{email}}. Ábrelo en este dispositivo para activar la cuenta y luego inicia sesión.',
+    },
+    forgotTitle: 'Recuperar contraseña',
+    forgotIntro:
+      'Introduce el correo de la cuenta. Recibirás un enlace para definir una nueva contraseña.',
+    sendLink: 'Enviar enlace',
+    linkSent: {
+      title: 'Revisa tu correo',
+      message:
+        'Si existe una cuenta con {{email}}, recibirás un enlace. Ábrelo en este dispositivo.',
+    },
+    resetTitle: 'Nueva contraseña',
+    resetSave: 'Guardar contraseña',
+    passwordUpdated: 'Contraseña actualizada',
+    callbackTitle: 'Confirmación',
+    callbackDone: {
+      title: 'Sesión iniciada',
+      message: 'Los datos de tu cuenta se sincronizarán en este dispositivo.',
+    },
+    callbackFailed: 'No se ha podido confirmar',
+    errors: {
+      invalidCredentials: 'Correo o contraseña incorrectos.',
+      emailNotConfirmed: 'Confirma primero tu correo con el enlace que has recibido.',
+      weakPassword: 'Elige una contraseña más segura.',
+      rateLimited: 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
+      network: 'Sin conexión. Comprueba internet y vuelve a intentarlo.',
+      linkInvalid: 'El enlace ha caducado o ya se ha usado. Solicita uno nuevo.',
+      unknown: 'Se ha producido un error. Vuelve a intentarlo.',
+    },
+  },
+  account: {
+    section: 'Cuenta y sincronización',
+    localOnlyTitle: 'Tus datos solo están en este dispositivo',
+    localOnlyDescription:
+      'Crea una cuenta o inicia sesión para guardar una copia segura y sincronizar entre dispositivos. Es opcional.',
+    sessionExpiredTitle: 'La sesión ha terminado',
+    sessionExpiredMessage:
+      'Los datos de tu cuenta siguen guardados en este dispositivo. Vuelve a iniciar sesión para verlos y sincronizarlos.',
+    signedIn: 'Sesión iniciada',
+    status: {
+      idle: 'Sincronizado',
+      syncing: 'Sincronizando…',
+      offline: 'Sin conexión: cambios guardados en este dispositivo',
+      error: 'No se ha podido sincronizar. Lo volveremos a intentar.',
+      authRequired: 'Sesión caducada. Vuelve a iniciar sesión para sincronizar.',
+    },
+    statusShort: {
+      idle: 'Al día',
+      syncing: 'Enviando',
+      offline: 'Sin conexión',
+      error: 'Error',
+      authRequired: 'Sesión',
+    },
+    lastSynced: 'Última sincronización: {{date}}',
+    neverSynced: 'Aún no sincronizado',
+    pending_one: '{{count}} cambio por enviar',
+    pending_other: '{{count}} cambios por enviar',
+    conflicts_one: '{{count}} conflicto por resolver',
+    conflicts_other: '{{count}} conflictos por resolver',
+    conflictsHint: 'No se ha perdido ningún cambio. Elige la versión que quieres conservar.',
+    syncNow: 'Sincronizar ahora',
+    importData: 'Importar datos de este dispositivo',
+    importDataHint: 'Añade a la cuenta lo que registraste sin cuenta en este dispositivo.',
+    importPending: 'Esperando la confirmación del servidor.',
+    cancelImport: 'Cancelar importación',
+    cancelImportTitle: '¿Cancelar la importación?',
+    cancelImportMessage:
+      'Los datos importados salen de la cuenta. Siguen disponibles en el uso sin cuenta de este dispositivo.',
+    signOut: 'Cerrar sesión',
+    signOutPendingTitle: 'Hay cambios por enviar',
+    signOutPendingMessage_one:
+      'Tienes {{count}} cambio que aún no ha llegado al servidor. Se guarda en este dispositivo y se envía cuando vuelvas a iniciar sesión.',
+    signOutPendingMessage_other:
+      'Tienes {{count}} cambios que aún no han llegado al servidor. Se guardan en este dispositivo y se envían cuando vuelvas a iniciar sesión.',
+    syncAndSignOut: 'Sincronizar y salir',
+    signOutAnyway: 'Salir de todos modos',
+    deleteAccount: 'Eliminar cuenta',
+    deleteTitle: '¿Eliminar la cuenta definitivamente?',
+    deleteMessage:
+      'La cuenta y todos los datos guardados en el servidor se eliminan de inmediato, así como la copia de esta cuenta en este dispositivo. Los datos del uso sin cuenta no se ven afectados. Esta acción no se puede deshacer.',
+    deleteConfirm: 'Eliminar cuenta definitivamente',
+    deleteFailed:
+      'No se ha podido eliminar la cuenta. Comprueba la conexión y vuelve a intentarlo.',
+  },
+  importData: {
+    title: '¿Añadir los datos de este dispositivo a la cuenta?',
+    message:
+      'Tienes datos registrados sin cuenta en este dispositivo. Puedes añadirlos a tu cuenta para sincronizarlos. Solo salen del uso sin cuenta cuando el servidor confirma que se han guardado.',
+    import: 'Importar a la cuenta',
+    keepSeparate: 'Mantener separados',
+    later: 'Decidir más tarde',
+    confirmed: {
+      title: 'Datos importados',
+      message: 'Tus datos se han guardado en la cuenta y el servidor los ha confirmado.',
+    },
+    pending: {
+      title: 'Importación en curso',
+      message:
+        'Los datos ya están en tu cuenta en este dispositivo. La confirmación del servidor termina automáticamente cuando haya conexión. Hasta entonces, no se elimina nada.',
+    },
+    failed: {
+      title: 'Importación interrumpida',
+      message: 'No se ha eliminado nada. Puedes volver a intentarlo en Ajustes.',
+    },
+  },
+  conflicts: {
+    title: 'Conflictos de sincronización',
+    intro:
+      'Estos registros se han modificado en dos sitios a la vez. No se ha perdido ninguna versión: elige la que quieres conservar.',
+    empty: 'No hay conflictos por resolver.',
+    entities: {
+      accounts: 'Cuenta',
+      categories: 'Categoría',
+      entries: 'Movimiento',
+    },
+    reasons: {
+      version: 'Modificado en otro dispositivo',
+      missing: 'Ya no existe en la cuenta',
+      rejected: 'Rechazado por el servidor',
+    },
+    thisDevice: 'En este dispositivo',
+    onAccount: 'En la cuenta',
+    deleted: 'Eliminado',
+    notOnAccount: 'Ya no existe',
+    keepLocal: 'Conservar la de este dispositivo',
+    keepServer: 'Conservar la de la cuenta',
+    discard: 'Descartar este cambio',
+    resolveFailed: 'No se ha podido resolver ahora. Comprueba la conexión y vuelve a intentarlo.',
+    rejectedCodes: {
+      account_unavailable: 'La cuenta usada ya no existe o se eliminó en otro dispositivo.',
+      category_unavailable: 'La categoría usada ya no existe o se eliminó en otro dispositivo.',
+      category_type_mismatch: 'La categoría no corresponde al tipo de movimiento.',
+      currency_mismatch: 'Las cuentas de la transferencia usan monedas diferentes.',
+      currency_locked: 'No se puede cambiar la moneda de una cuenta con movimientos.',
+      account_in_use: 'La cuenta aún tiene movimientos en otro dispositivo.',
+      type_locked: 'No se puede cambiar el tipo de una categoría con movimientos.',
+      category_in_use: 'La categoría aún tiene movimientos en otro dispositivo.',
+      invalid: 'Los datos de este cambio no son válidos.',
     },
   },
   notFound: {

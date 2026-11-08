@@ -177,8 +177,16 @@ export function createSqliteCategoryRepository(
           SEED_KEY,
         ]);
         if (done) return false;
-        for (const { name, type, icon, color } of categories) {
-          await insert(tx, prepare({ name, type, icon, color }));
+        const timestamp = context.now();
+        for (const { id, key, ...raw } of categories) {
+          const { name, type, icon, color } = prepare(raw);
+          // Identificador fixo: a mesma categoria base noutro dispositivo é a mesma linha.
+          await tx.run(
+            `INSERT OR IGNORE INTO categories
+               (id, name, type, icon, color, system_key, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, name, type, icon, color, key, timestamp, timestamp],
+          );
         }
         await tx.run('INSERT INTO meta (key, value) VALUES (?, ?)', [SEED_KEY, context.now()]);
         return true;

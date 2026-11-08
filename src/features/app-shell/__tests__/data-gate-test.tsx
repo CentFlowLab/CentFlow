@@ -1,8 +1,8 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
-import { DatabaseUnavailableError, useDataQuery, type Repositories } from '@/data';
-import { openTestRepositories } from '@/test-utils/node-sqlite-driver';
+import { DatabaseUnavailableError, useDataQuery, type LocalStore, type Repositories } from '@/data';
+import { openTestStore } from '@/test-utils/node-sqlite-driver';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { DataGate } from '../DataGate';
@@ -23,23 +23,23 @@ describe('DataGate', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it('opens the database and seeds translated default categories once', async () => {
-    const { repos } = await openTestRepositories();
-    const open = jest.fn(async () => repos);
+    const store = await openTestStore();
+    const open = jest.fn(async () => store);
     await renderWithProviders(
       <DataGate open={open}>
         <CategoryNames />
       </DataGate>,
     );
     expect(await screen.findByText(/^Casa, Supermercado, Restaurantes/)).toBeOnTheScreen();
-    expect(await repos.categories.seedDefaults([])).toBe(false);
+    expect(await store.repositories.categories.seedDefaults([])).toBe(false);
   });
 
   it('explains when another tab holds the database and retries on demand', async () => {
-    const { repos } = await openTestRepositories();
+    const store = await openTestStore();
     const open = jest
-      .fn<Promise<Repositories>, []>()
+      .fn<Promise<LocalStore>, []>()
       .mockRejectedValueOnce(new DatabaseUnavailableError('otherTab'))
-      .mockResolvedValueOnce(repos);
+      .mockResolvedValueOnce(store);
 
     await renderWithProviders(
       <DataGate open={open}>

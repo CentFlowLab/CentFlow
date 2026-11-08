@@ -81,6 +81,10 @@ describe('database initialization', () => {
       'categories',
       'entries',
       'meta',
+      'sync_conflicts',
+      'sync_inbox',
+      'sync_outbox',
+      'sync_state',
     ]);
     const indexes = await db.all<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_%'",

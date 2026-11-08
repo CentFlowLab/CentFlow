@@ -6,9 +6,8 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 
 ## Estado
 
-Fase 1 (MVP financeiro local) concluída. **Não avançar de fase sem aprovação explícita do
-responsável do produto.** Supabase só na Fase 2.
-Não fazer `git push` sem autorização.
+Fase 2 (autenticação e sincronização) concluída. **Não avançar de fase sem aprovação explícita
+do responsável do produto.** Não fazer `git push` sem autorização.
 
 ## Comandos obrigatórios antes de dar uma tarefa por concluída
 
@@ -26,9 +25,9 @@ src/app        → rotas finas; só importam de features
 src/features   → ecrãs e lógica de cada área; usam ui, core, i18n, lib, data (só o barrel `@/data`)
 src/ui         → design system; usa core e i18n; nunca importa de features
 src/core       → TypeScript puro; NÃO importa React, React Native, Expo, ui ou features
-src/data       → base de dados local: SQL, migrações, repositórios, hooks de dados
+src/data       → SQLite local, repositórios, fila de sincronização, hooks de dados
 src/i18n       → traduções e formatação localizada
-src/lib        → adaptadores de plataforma (preferências em AsyncStorage)
+src/lib        → adaptadores (preferências em AsyncStorage; sessão em SecureStore; cliente Supabase)
 ```
 
 O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `ui` de importar
@@ -39,8 +38,8 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - **SQL só existe em `src/data/sqlite` e `src/data/db`.** Os ecrãs usam as interfaces de
   `src/data/repositories/types.ts` através de `useRepositories()` (escritas) e
   `useDataQuery((repos) => …)` (leituras que se atualizam sozinhas após cada escrita confirmada).
-- As interfaces de repositório não mencionam SQLite: a Fase 2 pode acrescentar uma implementação
-  Supabase ou de sincronização sem tocar nos ecrãs.
+- As interfaces de repositório não mencionam SQLite: a sincronização fala com o Postgres através
+  de RPCs (`sync_push` / `sync_pull`), sem os ecrãs importarem o cliente Supabase.
 - `createSqlDatabase` serializa todas as operações numa fila (o `expo-sqlite` usa uma única
   ligação e `withTransactionAsync` não isola transações concorrentes). Escritas compostas usam
   `db.transaction(async (tx) => …)`; validação e regras são verificadas **dentro** da transação.
@@ -49,7 +48,7 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
   `src/data/__tests__/database-test.ts`. Uma base de dados mais recente do que a app é recusada
   (`SchemaTooNewError`), sem tocar nos dados.
 - Todas as tabelas: `id` UUID gerado no cliente (`expo-crypto`), `created_at`/`updated_at` ISO
-  UTC, `deleted_at` (eliminação lógica) e `synced_at` (reservado para a Fase 2). Consultas
+  UTC, `deleted_at` (eliminação lógica) e `synced_at` (última confirmação no servidor). Consultas
   filtram sempre `deleted_at IS NULL`.
 - Datas de movimentos são datas de calendário locais `YYYY-MM-DD` (`CalendarDate` em
   `src/core/finance/dates.ts`); nunca usar `Date` UTC para decidir o dia ou o mês.
@@ -106,9 +105,9 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - O registo rápido vive em `/new-transaction` (modal) — ponto de entrada único para o botão "+",
   e futuramente atalhos, widgets e deep links.
 - Formulários são modais no `Stack` raiz (`entry/[id]`, `account/new`, `account/[id]`,
-  `category/new`, `category/[id]`) e usam `<FormScreen>`. `unstable_settings.anchor = '(tabs)'`
-  garante que um modal aberto diretamente por URL tem os separadores por baixo. Fechar com
-  `closeModal(fallback)`.
+  `category/new`, `category/[id]`, `auth/*`, `sync/conflicts`) e usam `<FormScreen>`.
+  `unstable_settings.anchor = '(tabs)'` garante que um modal aberto diretamente por URL tem os
+  separadores por baixo. Fechar com `closeModal(fallback)`.
 - Confirmações usam `<Dialog>` (o `Alert` do React Native não funciona na web).
 
 ## Testes
@@ -121,6 +120,8 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - Navegação: `renderRouter('./src/app')` de `expo-router/testing-library`.
 - O locale nos testes é sempre pt-PT (mock em `jest.setup.ts`).
 - Fluxos completos (ecrã → repositório → SQLite) em `src/features/__tests__/finance-flow-test.tsx`.
+- Sincronização e RLS: `src/data/sync/__tests__`, `src/core/sync/__tests__`,
+  `supabase/__tests__/server-test.ts` (PostgreSQL real via PGlite).
 - Formatação pt-PT: valores com espaço não separável antes de `€`; percentagens sem espaço
   (`99,4%`). Usar expressões regulares tolerantes (`\s?`) nas asserções.
 
@@ -135,8 +136,21 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - Nunca registar em logs valores, descrições de movimentos, nomes ou mensagens de erro com dados
   do utilizador. Registar apenas tipos/códigos de erro.
 - `AsyncStorage` (`appStorage`) só para preferências não sensíveis. Dados financeiros vão para a
-  base de dados SQLite (`src/data`); tokens/segredos para armazenamento seguro do sistema.
+  base de dados SQLite (`src/data`); a sessão vai para o armazenamento seguro
+  (`expo-secure-store` no nativo, `localStorage` na web).
 - Logs da camada de dados registam apenas o motivo/código (ex.: `[database] open failed: otherTab`).
-- Fase 2: todas as tabelas com dados pessoais com RLS; `service_role` só em Edge Functions;
-  migrations SQL versionadas em `supabase/migrations`.
+- Todas as tabelas pessoais têm RLS (`auth.uid()`). A chave `service_role` só existe na Edge
+  Function `delete-account`. Migrações em `supabase/migrations`.
+- Cada conta tem a sua base de dados local (`centflow-u-<userId>.db`); o uso sem conta continua
+  em `centflow.db`. Nunca misturar automaticamente.
 - A IA nunca executa operações financeiras sem confirmação explícita do utilizador.
+
+## Sincronização
+
+- Fonte de uso imediato: SQLite local. O Supabase é a cópia central.
+- Fila `sync_outbox` (triggers nas escritas quando `tracking = 1`). Idempotência por `op_id`.
+- O servidor decide versões (`version` + compare-and-swap) e a ordem (`server_seq`). Os relógios
+  dos dispositivos não decidem conflitos.
+- Fusão a três vias em `src/core/sync/merge.ts`: campos diferentes combinam-se; o mesmo campo
+  divergente, ou editar vs eliminar, fica em `sync_conflicts` até o utilizador escolher.
+- Importação do uso sem conta: copiar → enviar → `sync_verify` registo a registo → só então limpar.

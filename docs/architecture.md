@@ -19,7 +19,7 @@ flowchart TD
     FEAT --> I18N["src/i18n"]
   end
   DATA -->|Fase 1| LOCALDB[("SQLite local<br/>expo-sqlite")]
-  DATA -.->|Fase 2| SUPA["Supabase<br/>Auth · Postgres + RLS · Storage"]
+  DATA -->|Fase 2| SUPA["Supabase<br/>Auth · Postgres + RLS · Edge Functions"]
   SUPA --> EDGE["Edge Functions<br/>(IA, OCR, Open Banking)"]
 ```
 
@@ -33,7 +33,7 @@ flowchart TD
 | `src/core`     | Regras de domínio em TypeScript puro (dinheiro, datas, cálculos). | nada (só Intl)                |
 | `src/data`     | SQLite, migrações, repositórios, hooks `useDataQuery`.            | core, expo-sqlite             |
 | `src/i18n`     | Traduções, resolução de idioma e formatação localizada.           | core                          |
-| `src/lib`      | Preferências (AsyncStorage).                                      | bibliotecas externas          |
+| `src/lib`      | Preferências, sessão (SecureStore) e cliente Supabase.            | bibliotecas externas          |
 
 Cada feature organiza-se, à medida que cresce, em:
 
@@ -113,9 +113,34 @@ tipo+data, contas ativas e tipo de categoria.
   (o HTML é servido por um middleware da Expo CLI anterior ao do Metro, por isso
   `enhanceMiddleware` sozinho não chega). Em produção: `public/_headers` (Netlify/Cloudflare) ou
   configuração equivalente do alojamento; `npm run serve:web` para testar localmente.
-- O OPFS com `AccessHandlePoolVFS` é exclusivo por origem. `openAppRepositories` pede um Web Lock
+- O OPFS com `AccessHandlePoolVFS` é exclusivo por origem. `openLocalSpace` pede um Web Lock
   (`navigator.locks`, `ifAvailable`) antes de abrir; um segundo separador recebe o motivo
   `otherTab` em vez de corromper ou bloquear os dados.
+
+## Sincronização (Fase 2)
+
+Cada conta autenticada tem um ficheiro SQLite próprio. O uso sem conta continua em
+`centflow.db`. O servidor (Postgres + RLS) é a cópia central; o cliente usa o SQLite de imediato.
+
+```mermaid
+flowchart LR
+  WRITE["Escrita local"] --> OUTBOX["sync_outbox"]
+  OUTBOX -->|"sync_push (op_id, version)"| SERVER["Postgres + RLS"]
+  SERVER -->|"sync_pull (server_seq)"| INBOX["sync_inbox"]
+  INBOX --> SQLITE["SQLite da conta"]
+  SERVER -->|"conflito de versão"| MERGE["Fusão a 3 vias"]
+  MERGE -->|automático| OUTBOX
+  MERGE -->|ambíguo| USER["O utilizador escolhe"]
+```
+
+- **Push:** operações pela ordem da fila, em grupos atómicos (`tx_id`). Resposta perdida: repetir
+  não duplica (`last_op_id`).
+- **Pull:** alterações com `server_seq` maior que o cursor; se o servidor tiver purgado
+  tombstones antigos, o cliente reconstrói a partir de zero.
+- **Conflitos:** ver ADR-018. Campos de um movimento que definem o tipo (categoria, contas) são
+  tratados como um só, para não criar uma combinação que ninguém escreveu.
+- **Importação:** copiar o espaço sem conta para o da conta, sincronizar, confirmar com
+  `sync_verify`, só então limpar a origem.
 
 ## Fluxo de arranque
 
@@ -125,10 +150,12 @@ tipo+data, contas ativas e tipo de categoria.
    estarem carregadas — evita "flash" de tema ou idioma errado.
 4. `ThemeProvider` resolve o esquema (sistema/claro/escuro), sincroniza o tema da navegação, a
    status bar e a cor de fundo do sistema.
-5. `DataGate` abre a base de dados local, aplica migrações e semeia as categorias base.
-6. O `Stack` raiz contém os separadores `(tabs)`, os modais de formulário (`new-transaction`,
-   `entry/[id]`, `account/new`, `account/[id]`, `category/new`, `category/[id]`) e `+not-found`.
-7. `RootErrorBoundary` apanha erros não tratados sem depender dos providers.
+5. `AuthProvider` restaura a sessão (SecureStore / localStorage). `AccountGate` escolhe o espaço
+   local: conta autenticada ou uso sem conta.
+6. `DataGate` abre a base de dados desse espaço, aplica migrações e semeia as categorias base.
+   `SyncProvider` sincroniza quando há sessão.
+7. O `Stack` raiz contém os separadores `(tabs)`, os modais de formulário e de autenticação.
+8. `RootErrorBoundary` apanha erros não tratados sem depender dos providers.
 
 ## Navegação adaptativa
 
@@ -157,12 +184,10 @@ widgets.
 ## Evolução prevista por fase
 
 - **Fase 1 — dados locais (concluída):** ver "Dados locais" acima.
-- **Fase 2 — Supabase:** implementação de `Repositories` sincronizada ou combinada com a local
-  (as colunas `deleted_at`/`synced_at` e os UUID gerados no cliente já existem); `src/lib/supabase` com cliente usando apenas a chave pública (anon);
-  sessão em armazenamento seguro; `supabase/migrations/*.sql` versionadas; RLS
-  `auth.uid() = user_id` em todas as tabelas pessoais; Storage com políticas por utilizador;
-  sincronização com identificadores gerados no cliente (UUID) e `updated_at` para resolução de
-  conflitos; migração única dos dados locais após o primeiro login; eliminação de conta.
+- **Fase 2 — Supabase (concluída):** SQLite continua a ser a fonte de uso imediato. Cada conta
+  tem o seu ficheiro local. O servidor aplica compare-and-swap por `version` e uma sequência
+  `server_seq`; o cliente envia uma fila idempotente e funde conflitos a três vias. RLS em
+  todas as tabelas; eliminação de conta numa Edge Function. Ver ADR-017 a ADR-020.
 - **Fase 5 — IA e automação:** chamadas a modelos e OCR apenas em Edge Functions (chaves nunca no
   cliente); a IA propõe, o utilizador confirma. Importação de extratos e Open Banking através de
   fornecedores autorizados (PSD2), sempre com consentimento explícito.

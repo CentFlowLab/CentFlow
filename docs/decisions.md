@@ -111,8 +111,9 @@ movimentos como datas de calendário locais `YYYY-MM-DD`.
 **Porquê:** registos criados offline têm identidade estável para sincronizar; eliminações
 precisam de propagar-se a outros dispositivos; um movimento "de dia 31" não pode mudar de mês por
 causa do fuso horário.
-**Consequências:** todas as consultas filtram `deleted_at IS NULL` (índices parciais). Os dados
-eliminados permanecem até existir a sincronização e a eliminação definitiva/RGPD (Fase 2).
+**Consequências:** todas as consultas filtram `deleted_at IS NULL` (índices parciais). Os
+tombstones sincronizam-se para não reaparecerem noutros dispositivos; a limpeza definitiva é
+`purge_deleted` após o período de retenção.
 **Dependência nova:** `expo-crypto` (UUID com gerador criptográfico em todas as plataformas).
 
 ## ADR-015 — Web: isolamento cross-origin e um separador de cada vez
@@ -139,11 +140,52 @@ taxa de câmbio e dois valores).
 
 ---
 
+## ADR-017 — Sincronização própria com compare-and-swap (resolve D-2)
+
+**Decisão:** protocolo próprio (`sync_push` / `sync_pull`) em vez de PowerSync. Cada linha tem
+`version` (só avança no servidor) e `server_seq` (contador por utilizador, atribuído sob bloqueio).
+Uma alteração indica a versão que leu; se não coincidir, o servidor recusa. `op_id` torna o envio
+idempotente.
+**Porquê:** os relógios dos dispositivos não são fonte de verdade. Last-write-wins por
+`updated_at` perderia dados com relógios desfasados. PowerSync acrescenta custo e um modelo
+alheio ao nosso.
+**Consequências:** o cliente guarda uma fila ordenada e não avança a versão local até o servidor
+confirmar. Grupos com o mesmo `tx_id` (ex.: eliminar conta e movimentos) são atómicos.
+
+## ADR-018 — Fusão a três vias; conflitos preservados
+
+**Decisão:** quando o compare-and-swap falha, fundir base / local / servidor
+(`src/core/sync/merge.ts`). Campos alterados só de um lado combinam-se; o mesmo campo divergente,
+ou editar vs eliminar, fica em `sync_conflicts` até o utilizador escolher.
+**Porquê:** a especificação pede para não substituir silenciosamente uma alteração mais recente
+e para preservar a versão em conflito quando não é seguro decidir.
+**Consequências:** a app mostra um ecrã de conflitos. Nada é apagado só porque o outro dispositivo
+ganhou a corrida.
+
+## ADR-019 — Um espaço local por conta, importação explícita
+
+**Decisão:** `centflow.db` é o uso sem conta; `centflow-u-<userId>.db` é cada conta. Entrar muda
+de espaço sem apagar. Importar dados sem conta é uma pergunta explícita; só se apaga a origem
+depois de `sync_verify` confirmar cada registo no servidor.
+**Porquê:** misturar automaticamente dados de duas contas (ou de um dispositivo partilhado)
+corromperia histórico financeiro.
+**Consequências:** sair da conta mostra os dados sem conta deste dispositivo, não os da conta.
+
+## ADR-020 — Sessão no armazenamento seguro; Apple nativo no iOS
+
+**Decisão:** `expo-secure-store` (Keychain/Keystore) no nativo; `localStorage` na web. Sign in
+with Apple via `expo-apple-authentication` + `signInWithIdToken` no iOS; OAuth na web só com
+`EXPO_PUBLIC_AUTH_APPLE_ENABLED`. Eliminação de conta numa Edge Function com
+`auth.admin.deleteUser`.
+**Porquê:** a sessão não cabe no AsyncStorage em segurança; a Apple exige o fluxo nativo no iOS;
+a chave administrativa nunca pode ir para o cliente.
+**Dependências novas:** `@supabase/supabase-js`, `expo-secure-store`, `expo-network`,
+`expo-apple-authentication`; nos testes, `@electric-sql/pglite`.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                              | Quando            |
 | --- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| D-2 | Estratégia de sincronização (Fase 2)           | Sync próprio com UUID + `updated_at` + soft delete, ou PowerSync (serviço externo, custo).                                                                         | Fase 2            |
 | D-3 | Identificadores de app (`app.centflow.mobile`) | Confirmar domínio/organização antes da primeira submissão às lojas — não pode mudar depois.                                                                        | Antes de publicar |
 | D-4 | Licença e entidade legal                       | Proprietária por omissão. Definir titular dos direitos e termos/privacidade (RGPD).                                                                                | Antes de publicar |
 | D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                         | Fase 5            |

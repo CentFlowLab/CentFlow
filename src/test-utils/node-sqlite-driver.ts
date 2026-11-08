@@ -7,6 +7,7 @@ import { initializeDatabase } from '@/data/db/initialize';
 import type { SqlDatabase, SqliteDriver } from '@/data/db/sql-database';
 import type { Repositories } from '@/data/repositories/types';
 import { createSqliteRepositories } from '@/data/sqlite';
+import { createLocalStore, type LocalStore } from '@/data/sync';
 
 /**
  * Driver de testes com SQLite real (módulo `node:sqlite` do Node), com a mesma semântica
@@ -78,6 +79,11 @@ export async function openTestDatabase(path = ':memory:'): Promise<SqlDatabase> 
   return initializeDatabase(createNodeSqliteDriver(path), {
     useWriteAheadLog: path !== ':memory:',
   });
+}
+
+/** Espaço local completo (repositórios + sincronização) numa base de dados de testes. */
+export async function openTestStore(path = ':memory:'): Promise<LocalStore> {
+  return createLocalStore(await openTestDatabase(path), { newId: testId });
 }
 
 export async function openTestRepositories(

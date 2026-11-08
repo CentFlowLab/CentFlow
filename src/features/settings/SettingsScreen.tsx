@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AccountSection } from '@/features/account/AccountSection';
 import {
   usePreferences,
   type LanguagePreference,
@@ -30,6 +31,8 @@ export function SettingsScreen() {
 
   return (
     <Screen title={t('settings.title')}>
+      <AccountSection />
+
       <Section title={t('settings.appearance')}>
         <Card padding="md">
           <SegmentedControl

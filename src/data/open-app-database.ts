@@ -1,13 +1,12 @@
 import { randomUUID } from 'expo-crypto';
-import { openDatabaseAsync } from 'expo-sqlite';
+import { deleteDatabaseAsync, openDatabaseAsync } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
 import { DatabaseUnavailableError, toDatabaseUnavailableError } from './db/errors';
 import { initializeDatabase } from './db/initialize';
-import type { Repositories } from './repositories/types';
-import { createSqliteRepositories } from './sqlite';
-
-export const DATABASE_NAME = 'centflow.db';
+import { attachSpace } from './local-space';
+import { databaseNameFor, type LocalSpace } from './spaces';
+import { createLocalStore, type LocalStore } from './sync';
 
 type LockManagerLike = {
   request(
@@ -52,24 +51,58 @@ async function assertWebEnvironment(): Promise<void> {
   if (!(await acquireTabLock())) throw new DatabaseUnavailableError('otherTab');
 }
 
-let opening: Promise<Repositories> | null = null;
+const open = new Map<string, Promise<LocalStore>>();
 
 /**
- * Abre (uma única vez por processo/separador) a base de dados local e devolve os repositórios.
+ * Abre (uma única vez por processo/separador) a base de dados de um espaço local.
  * Em caso de falha, a próxima chamada volta a tentar.
  */
-export function openAppRepositories(): Promise<Repositories> {
-  opening ??= (async () => {
-    try {
-      const isWeb = Platform.OS === 'web';
-      if (isWeb) await assertWebEnvironment();
-      const driver = await openDatabaseAsync(DATABASE_NAME);
-      const db = await initializeDatabase(driver, { useWriteAheadLog: !isWeb });
-      return createSqliteRepositories(db, { newId: randomUUID });
-    } catch (error) {
-      opening = null;
-      throw toDatabaseUnavailableError(error);
-    }
-  })();
+export function openLocalSpace(space: LocalSpace): Promise<LocalStore> {
+  const name = databaseNameFor(space);
+  let opening = open.get(name);
+  if (!opening) {
+    opening = (async () => {
+      try {
+        const isWeb = Platform.OS === 'web';
+        if (isWeb) await assertWebEnvironment();
+        const driver = await openDatabaseAsync(name);
+        const db = await initializeDatabase(driver, { useWriteAheadLog: !isWeb });
+        const store = createLocalStore(db, { newId: randomUUID });
+        try {
+          await attachSpace(store, space);
+        } catch (error) {
+          await db.close().catch(() => undefined);
+          throw error;
+        }
+        return store;
+      } catch (error) {
+        open.delete(name);
+        throw toDatabaseUnavailableError(error);
+      }
+    })();
+    open.set(name, opening);
+  }
   return opening;
+}
+
+const closing = new Map<string, Promise<void>>();
+
+/** Fecha a ligação (os dados ficam no dispositivo). */
+export function closeLocalSpace(space: LocalSpace): Promise<void> {
+  const name = databaseNameFor(space);
+  const opening = open.get(name);
+  if (!opening) return closing.get(name) ?? Promise.resolve();
+  open.delete(name);
+  const done = (async () => {
+    const store = await opening.catch(() => null);
+    await store?.db.close().catch(() => undefined);
+  })().finally(() => closing.delete(name));
+  closing.set(name, done);
+  return done;
+}
+
+/** Apaga definitivamente a cópia local de um espaço (ex.: depois de eliminar a conta). */
+export async function deleteLocalSpace(space: LocalSpace): Promise<void> {
+  await closeLocalSpace(space);
+  await deleteDatabaseAsync(databaseNameFor(space));
 }

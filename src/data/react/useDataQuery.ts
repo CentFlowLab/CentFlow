@@ -23,6 +23,12 @@ export function useDataQuery<T>(
     data: undefined,
     error: null,
   });
+  const [source, setSource] = useState(repositories);
+  if (source !== repositories) {
+    // Outro espaço local (ex.: terminar sessão): nunca mostrar dados do anterior.
+    setSource(repositories);
+    setState({ status: 'loading', data: undefined, error: null });
+  }
 
   useEffect(() => repositories.subscribe(() => setVersion((value) => value + 1)), [repositories]);
 

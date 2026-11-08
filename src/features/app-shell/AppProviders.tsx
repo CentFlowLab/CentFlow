@@ -2,11 +2,11 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type PropsWithChildren } from 'react';
 
+import { AccountGate } from '@/features/account/AccountGate';
+import { AuthProvider } from '@/features/account/AuthProvider';
 import { PreferencesProvider, usePreferences } from '@/features/preferences';
 import { appFonts } from '@/ui/theme/fonts';
 import { ThemeProvider } from '@/ui/theme';
-
-import { DataGate } from './DataGate';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -27,7 +27,9 @@ function ReadyGate({ children }: PropsWithChildren) {
   if (!ready) return null;
   return (
     <ThemeProvider preference={preferences.theme}>
-      <DataGate>{children}</DataGate>
+      <AuthProvider>
+        <AccountGate>{children}</AccountGate>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

@@ -1,0 +1,6 @@
+# Ligação ao projeto alojado. Não contém credenciais.
+project_id = "slfgslfzolfvqavuccom"
+
+# A função confirma a sessão com `auth.getUser()`; o JWT da plataforma bloqueia o OPTIONS da web.
+[functions.delete-account]
+verify_jwt = false

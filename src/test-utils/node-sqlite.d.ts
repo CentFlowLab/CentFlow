@@ -20,6 +20,23 @@ declare module 'node:sqlite' {
 declare module 'node:fs' {
   export function mkdtempSync(prefix: string): string;
   export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
+  export function readFileSync(path: string): Uint8Array<ArrayBuffer>;
+  export function readFileSync(path: string, encoding: 'utf8'): string;
+  export function readdirSync(path: string): string[];
+}
+
+declare module 'node:process' {
+  export function cwd(): string;
+}
+
+declare module 'node:worker_threads' {
+  export class Worker {
+    constructor(filename: string);
+    postMessage(message: unknown): void;
+    on(event: 'message', listener: (message: never) => void): this;
+    once(event: 'message' | 'error', listener: (value: never) => void): this;
+    terminate(): Promise<number>;
+  }
 }
 
 declare module 'node:os' {
@@ -28,4 +45,8 @@ declare module 'node:os' {
 
 declare module 'node:path' {
   export function join(...paths: string[]): string;
+}
+
+declare module 'node:crypto' {
+  export function randomUUID(): string;
 }

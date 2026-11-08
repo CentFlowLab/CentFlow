@@ -2,7 +2,13 @@ import { useLocales } from 'expo-localization';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { formatDate, formatMonthYear, formatPercent, type DateStyle } from '@/core/format';
+import {
+  formatDate,
+  formatDateTime,
+  formatMonthYear,
+  formatPercent,
+  type DateStyle,
+} from '@/core/format';
 import { formatMoney, type FormatMoneyOptions, type Money } from '@/core/money';
 
 import { DEFAULT_LANGUAGE, isSupportedLanguage, resolveFormatLocale } from './languages';
@@ -21,6 +27,7 @@ export function useLocaleFormat() {
       formatMoney: (value: Money, options?: FormatMoneyOptions) =>
         formatMoney(value, locale, options),
       formatDate: (date: Date, style?: DateStyle) => formatDate(date, locale, style),
+      formatDateTime: (date: Date) => formatDateTime(date, locale),
       formatMonthYear: (date: Date) => formatMonthYear(date, locale),
       formatPercent: (ratio: number, maximumFractionDigits?: number) =>
         formatPercent(ratio, locale, maximumFractionDigits),

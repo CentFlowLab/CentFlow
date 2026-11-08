@@ -6,10 +6,10 @@ CentFlow é uma aplicação de gestão financeira pessoal para iOS, Android e We
 Windows, macOS e Linux). Centraliza rendimentos, despesas, orçamentos, subscrições, património,
 veículos e documentos, com o objetivo de automatizar ao máximo o registo de informação.
 
-> Estado atual: **Fase 1 — MVP financeiro local concluído.** Contas, movimentos (despesas,
-> rendimentos e transferências), categorias e dashboard funcionam com dados guardados no
-> dispositivo (SQLite), sem conta nem servidor. As áreas das fases seguintes aparecem marcadas
-> como "Em breve". Nenhum valor apresentado é fictício.
+> Estado atual: **Fase 2 — autenticação e sincronização.** A app continua a funcionar sem conta
+> (dados só neste dispositivo). Com conta, os mesmos dados sincronizam entre iOS, Android e Web,
+> incluindo offline. As áreas das fases seguintes aparecem marcadas como "Em breve". Nenhum valor
+> apresentado é fictício.
 
 ## Funcionalidades (Fase 1)
 
@@ -26,13 +26,27 @@ veículos e documentos, com o objetivo de automatizar ao máximo o registo de in
   despesas por categoria, evolução dos últimos 6 meses, últimos movimentos e navegação entre
   meses. Atualiza-se automaticamente após cada alteração.
 
+## Conta e sincronização (Fase 2)
+
+- Uso sem conta: os dados ficam só neste dispositivo. Não é obrigatório criar conta para
+  registar o primeiro movimento.
+- Conta (email e palavra-passe; Sign in with Apple no iOS): os dados da conta sincronizam entre
+  dispositivos. Recuperação de palavra-passe por email.
+- Offline: as alterações ficam numa fila local e são enviadas quando a ligação volta, sem
+  duplicar. Se dois dispositivos editarem o mesmo campo, a app pede para escolher a versão;
+  campos diferentes são combinados automaticamente.
+- Dados criados sem conta não são misturados com a conta sem uma decisão explícita. A importação
+  só apaga a cópia local depois de o servidor confirmar cada registo.
+- Eliminar a conta remove os dados no servidor (Edge Function, chave administrativa só no
+  servidor) e a cópia desta conta neste dispositivo.
+
 ## Roadmap
 
 | Fase | Conteúdo                                                                            | Estado       |
 | ---- | ----------------------------------------------------------------------------------- | ------------ |
 | 0    | Projeto, design system, navegação adaptativa, i18n, tema claro/escuro, testes       | ✅ Concluída |
 | 1    | MVP local: contas, movimentos, transferências, categorias, dashboard, resumo mensal | ✅ Concluída |
-| 2    | Supabase: autenticação, base de dados com RLS, sincronização, migração de dados     | —            |
+| 2    | Supabase: autenticação, base de dados com RLS, sincronização, migração de dados     | ✅ Concluída |
 | 3    | Orçamentos, subscrições, objetivos de poupança, relatórios                          | —            |
 | 4    | Património, investimentos, veículos, documentos e garantias                         | —            |
 | 5    | IA, OCR, automação, Open Banking, alertas inteligentes                              | —            |
@@ -65,8 +79,9 @@ com o SDK). No Windows/PowerShell, dependências de desenvolvimento: `npx expo i
 ## Stack
 
 Expo SDK 58 · React Native 0.88 · React 19.3 · TypeScript 6 (strict) · Expo Router (rotas por
-ficheiro) · `expo-sqlite` (dados locais) · i18next · Jest 30 + React Native Testing Library 14.
-Supabase entra na Fase 2.
+ficheiro) · `expo-sqlite` (dados locais) · Supabase (Auth + Postgres com RLS) · i18next · Jest 30
+
+- React Native Testing Library 14.
 
 ## Dados locais e Web
 
@@ -100,6 +115,7 @@ src/
 public/         Ficheiros web estáticos (index.html, manifesto PWA, ícones).
 scripts/        Scripts de manutenção (ícones da marca, servidor web local).
 docs/           Arquitetura e decisões técnicas.
+supabase/       Migrações Postgres, políticas RLS e Edge Function de eliminação de conta.
 ```
 
 Detalhes em [docs/architecture.md](docs/architecture.md) e

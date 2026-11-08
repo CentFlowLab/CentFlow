@@ -55,13 +55,24 @@ function classify(error: unknown): DatabaseError {
   return new DatabaseError(kind, message, { cause: error });
 }
 
+/** SQL executado no início e no fim (antes do commit) de cada transação. */
+export type TransactionHooks = { begin: string; end: string };
+
+export type SqlDatabaseOptions = {
+  /** Lido em cada transação, para poder ser ativado depois das migrações. */
+  transactionHooks?: () => TransactionHooks | null;
+};
+
 /**
  * Envolve um driver numa base de dados com acesso serializado: cada operação
  * (ou transação inteira) corre isoladamente, pela ordem em que foi pedida.
  * Necessário porque o expo-sqlite usa uma única ligação e consultas feitas durante
  * uma transação juntar-se-iam a ela.
  */
-export function createSqlDatabase(driver: SqliteDriver): SqlDatabase {
+export function createSqlDatabase(
+  driver: SqliteDriver,
+  { transactionHooks }: SqlDatabaseOptions = {},
+): SqlDatabase {
   let tail: Promise<unknown> = Promise.resolve();
   let closed = false;
 
@@ -96,8 +107,11 @@ export function createSqlDatabase(driver: SqliteDriver): SqlDatabase {
     transaction: <T>(task: (tx: SqlExecutor) => Promise<T>) =>
       enqueue(async () => {
         let value: T | undefined;
+        const hooks = transactionHooks?.() ?? null;
         await driver.withTransactionAsync(async () => {
+          if (hooks) await raw.exec(hooks.begin);
           value = await task(raw);
+          if (hooks) await raw.exec(hooks.end);
         });
         return value as T;
       }),

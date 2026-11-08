@@ -4,6 +4,7 @@ import { render } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context';
 
+import { AuthProvider } from '@/features/account/AuthProvider';
 import {
   createPreferencesRepository,
   PreferencesProvider,
@@ -30,7 +31,9 @@ export async function renderWithProviders(ui: ReactElement, { preferences }: Opt
   const result = await render(
     <SafeAreaProvider initialMetrics={TEST_METRICS}>
       <PreferencesProvider repository={repository}>
-        <ThemeProvider preference={preferences?.theme ?? 'light'}>{ui}</ThemeProvider>
+        <ThemeProvider preference={preferences?.theme ?? 'light'}>
+          <AuthProvider>{ui}</AuthProvider>
+        </ThemeProvider>
       </PreferencesProvider>
     </SafeAreaProvider>,
   );

@@ -10,6 +10,15 @@ export function formatDate(date: Date, locale: string, style: DateStyle = 'mediu
   return new Intl.DateTimeFormat(locale, DATE_OPTIONS[style]).format(date);
 }
 
+export function formatDateTime(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 export function formatMonthYear(date: Date, locale: string): string {
   return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
 }

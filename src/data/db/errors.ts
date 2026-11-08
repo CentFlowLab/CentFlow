@@ -7,6 +7,8 @@ export type DatabaseUnavailableReason =
   | 'otherTab'
   /** Base de dados criada por uma versão mais recente da app. */
   | 'schemaTooNew'
+  /** O espaço local pertence a outra conta: nunca se misturam dados de contas diferentes. */
+  | 'wrongOwner'
   | 'unknown';
 
 export class DatabaseUnavailableError extends Error {
