@@ -1,0 +1,5 @@
+# Cabeçalhos exigidos pelo expo-sqlite na web (SharedArrayBuffer / OPFS).
+# Formato suportado por Netlify e Cloudflare Pages; noutros alojamentos configurar o equivalente.
+/*
+  Cross-Origin-Embedder-Policy: credentialless
+  Cross-Origin-Opener-Policy: same-origin

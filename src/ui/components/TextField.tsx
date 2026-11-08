@@ -1,5 +1,13 @@
-import { useId, useState } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { useId, useState, type Ref } from 'react';
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextInputInstance,
+  type TextInputProps,
+  type TextStyle,
+} from 'react-native';
 
 import { layout, radius, spacing, typography, useTheme } from '../theme';
 import { Text } from './Text';
@@ -8,9 +16,20 @@ type Props = Omit<TextInputProps, 'style'> & {
   label: string;
   helperText?: string;
   errorText?: string;
+  inputStyle?: StyleProp<TextStyle>;
+  ref?: Ref<TextInputInstance>;
 };
 
-export function TextField({ label, helperText, errorText, onFocus, onBlur, ...rest }: Props) {
+export function TextField({
+  label,
+  helperText,
+  errorText,
+  inputStyle,
+  onFocus,
+  onBlur,
+  ref,
+  ...rest
+}: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const inputId = useId();
@@ -24,6 +43,7 @@ export function TextField({ label, helperText, errorText, onFocus, onBlur, ...re
         {label}
       </Text>
       <TextInput
+        ref={ref}
         accessibilityLabel={label}
         accessibilityLabelledBy={`${inputId}-label`}
         placeholderTextColor={colors.textTertiary}
@@ -45,6 +65,7 @@ export function TextField({ label, helperText, errorText, onFocus, onBlur, ...re
             borderColor,
             borderWidth: focused || hasError ? 1.5 : 1,
           },
+          inputStyle,
         ]}
         {...rest}
       />

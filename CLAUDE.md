@@ -6,7 +6,8 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 
 ## Estado
 
-Fase 0 concluída. **Não avançar de fase sem aprovação explícita do responsável do produto.**
+Fase 1 (MVP financeiro local) concluída. **Não avançar de fase sem aprovação explícita do
+responsável do produto.** Supabase só na Fase 2.
 Não fazer `git push` sem autorização.
 
 ## Comandos obrigatórios antes de dar uma tarefa por concluída
@@ -22,21 +23,55 @@ Para alterações visuais, verificar também na web (`npm run web`) em largura d
 
 ```
 src/app        → rotas finas; só importam de features
-src/features   → ecrãs e lógica de cada área; usam ui, core, i18n, lib
+src/features   → ecrãs e lógica de cada área; usam ui, core, i18n, lib, data (só o barrel `@/data`)
 src/ui         → design system; usa core e i18n; nunca importa de features
 src/core       → TypeScript puro; NÃO importa React, React Native, Expo, ui ou features
+src/data       → base de dados local: SQL, migrações, repositórios, hooks de dados
 src/i18n       → traduções e formatação localizada
-src/lib        → adaptadores de plataforma (storage, futuramente base de dados, Supabase)
+src/lib        → adaptadores de plataforma (preferências em AsyncStorage)
 ```
 
-O ESLint bloqueia imports proibidos em `src/core`.
+O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `ui` de importar
+`expo-sqlite`, `@/data/db/*` ou `@/data/sqlite/*`.
+
+## Camada de dados (`src/data`)
+
+- **SQL só existe em `src/data/sqlite` e `src/data/db`.** Os ecrãs usam as interfaces de
+  `src/data/repositories/types.ts` através de `useRepositories()` (escritas) e
+  `useDataQuery((repos) => …)` (leituras que se atualizam sozinhas após cada escrita confirmada).
+- As interfaces de repositório não mencionam SQLite: a Fase 2 pode acrescentar uma implementação
+  Supabase ou de sincronização sem tocar nos ecrãs.
+- `createSqlDatabase` serializa todas as operações numa fila (o `expo-sqlite` usa uma única
+  ligação e `withTransactionAsync` não isola transações concorrentes). Escritas compostas usam
+  `db.transaction(async (tx) => …)`; validação e regras são verificadas **dentro** da transação.
+- **Migrações:** `src/data/db/migrations.ts`, versionadas com `PRAGMA user_version`. Nunca
+  alterar uma migração publicada — acrescentar uma nova versão e um teste em
+  `src/data/__tests__/database-test.ts`. Uma base de dados mais recente do que a app é recusada
+  (`SchemaTooNewError`), sem tocar nos dados.
+- Todas as tabelas: `id` UUID gerado no cliente (`expo-crypto`), `created_at`/`updated_at` ISO
+  UTC, `deleted_at` (eliminação lógica) e `synced_at` (reservado para a Fase 2). Consultas
+  filtram sempre `deleted_at IS NULL`.
+- Datas de movimentos são datas de calendário locais `YYYY-MM-DD` (`CalendarDate` em
+  `src/core/finance/dates.ts`); nunca usar `Date` UTC para decidir o dia ou o mês.
+- Erros: `ValidationError` (códigos traduzíveis), `NotFoundError`, `AccountInUseError`,
+  `CategoryInUseError`, `DatabaseError` (com `kind`). Nunca mostrar `error.message` ao utilizador.
+- Web: precisa de isolamento cross-origin (COOP/COEP) e de exclusividade entre separadores (Web
+  Locks). Ver `src/data/open-app-database.ts`, `metro.config.js` e `public/_headers`.
+- Testes de dados correm em SQLite real (`node:sqlite` do Node 24, ver
+  `src/test-utils/node-sqlite-driver.ts`). Nos testes de ecrãs, `jest.setup.ts` substitui
+  `@/data/open-app-database` por uma base de dados nova em memória em cada montagem.
 
 ## Regras de domínio
 
 - **Dinheiro é sempre um inteiro em unidades mínimas** (`Money = { amountMinor, currency }`).
   Nunca guardar nem somar valores decimais. Converter com `toMinorUnits` / `toMajorUnits`.
-- Nunca misturar moedas numa operação (`CurrencyMismatchError`).
-- Transferências entre contas não são despesas nem rendimentos (regra para a Fase 1).
+  Entrada do utilizador convertida com `parseAmountInput` (aritmética de strings, sem floats).
+  Nos movimentos, `amount` é sempre positivo; o sinal vem do `type`.
+- Nunca misturar moedas numa operação (`CurrencyMismatchError`). Uma conta tem uma moeda, que
+  fica bloqueada assim que tiver movimentos; transferências só entre contas da mesma moeda.
+- Transferências entre contas não são despesas nem rendimentos: só alteram saldos.
+- Cálculos financeiros (saldos, resumos mensais, taxa de poupança, tendência) vivem em
+  `src/core/finance` e têm testes. Os repositórios agregam em SQL e o `core` interpreta.
 - Formatar valores, datas e percentagens apenas através de `useLocaleFormat()` (respeita idioma e
   região do dispositivo). Nunca concatenar símbolos de moeda à mão.
 
@@ -70,6 +105,11 @@ O ESLint bloqueia imports proibidos em `src/core`.
   Desktop: sidebar completa.
 - O registo rápido vive em `/new-transaction` (modal) — ponto de entrada único para o botão "+",
   e futuramente atalhos, widgets e deep links.
+- Formulários são modais no `Stack` raiz (`entry/[id]`, `account/new`, `account/[id]`,
+  `category/new`, `category/[id]`) e usam `<FormScreen>`. `unstable_settings.anchor = '(tabs)'`
+  garante que um modal aberto diretamente por URL tem os separadores por baixo. Fechar com
+  `closeModal(fallback)`.
+- Confirmações usam `<Dialog>` (o `Alert` do React Native não funciona na web).
 
 ## Testes
 
@@ -80,6 +120,9 @@ O ESLint bloqueia imports proibidos em `src/core`.
 - Componentes: `renderWithProviders` de `@/test-utils/render`.
 - Navegação: `renderRouter('./src/app')` de `expo-router/testing-library`.
 - O locale nos testes é sempre pt-PT (mock em `jest.setup.ts`).
+- Fluxos completos (ecrã → repositório → SQLite) em `src/features/__tests__/finance-flow-test.tsx`.
+- Formatação pt-PT: valores com espaço não separável antes de `€`; percentagens sem espaço
+  (`99,4%`). Usar expressões regulares tolerantes (`\s?`) nas asserções.
 
 ## Dependências
 
@@ -92,7 +135,8 @@ O ESLint bloqueia imports proibidos em `src/core`.
 - Nunca registar em logs valores, descrições de movimentos, nomes ou mensagens de erro com dados
   do utilizador. Registar apenas tipos/códigos de erro.
 - `AsyncStorage` (`appStorage`) só para preferências não sensíveis. Dados financeiros vão para a
-  base de dados local da Fase 1; tokens/segredos para armazenamento seguro do sistema.
+  base de dados SQLite (`src/data`); tokens/segredos para armazenamento seguro do sistema.
+- Logs da camada de dados registam apenas o motivo/código (ex.: `[database] open failed: otherTab`).
 - Fase 2: todas as tabelas com dados pessoais com RLS; `service_role` só em Edge Functions;
   migrations SQL versionadas em `supabase/migrations`.
 - A IA nunca executa operações financeiras sem confirmação explícita do utilizador.

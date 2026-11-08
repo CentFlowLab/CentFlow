@@ -1,0 +1,494 @@
+import {
+  computeBalances,
+  DEFAULT_CATEGORIES,
+  flowsFromEntries,
+  ValidationError,
+  type Account,
+  type Category,
+  type EntryInput,
+} from '@/core/finance';
+import type { SqlDatabase } from '@/data/db/sql-database';
+import { AccountInUseError, CategoryInUseError, NotFoundError } from '@/data/errors';
+import type { DataEntity, Repositories } from '@/data/repositories/types';
+import { createTempDirectory, openTestRepositories } from '@/test-utils/node-sqlite-driver';
+
+let db: SqlDatabase;
+let repos: Repositories;
+let bank: Account;
+let savings: Account;
+let food: Category;
+let salary: Category;
+
+const baseExpense = (): EntryInput => ({
+  type: 'expense',
+  amount: 1250,
+  description: 'Supermercado',
+  categoryId: food.id,
+  accountId: bank.id,
+  destinationAccountId: null,
+  date: '2026-11-08',
+  notes: null,
+});
+
+beforeEach(async () => {
+  ({ db, repos } = await openTestRepositories());
+  bank = await repos.accounts.create({
+    name: 'Banco',
+    type: 'bank',
+    currency: 'EUR',
+    initialBalance: 100000,
+  });
+  savings = await repos.accounts.create({
+    name: 'Poupança',
+    type: 'savings',
+    currency: 'EUR',
+    initialBalance: 0,
+  });
+  food = await repos.categories.create({
+    name: 'Alimentação',
+    type: 'expense',
+    icon: 'cart',
+    color: 'green',
+  });
+  salary = await repos.categories.create({
+    name: 'Salário',
+    type: 'income',
+    icon: 'briefcase',
+    color: 'blue',
+  });
+});
+
+afterEach(() => db.close());
+
+async function balanceOf(id: string) {
+  const accounts = await repos.accounts.listWithBalances({ includeArchived: true });
+  return accounts.find((account) => account.id === id)?.balance;
+}
+
+describe('entries', () => {
+  it('creates an expense and lowers the account balance', async () => {
+    const entry = await repos.entries.create(baseExpense());
+    expect(entry).toMatchObject({ type: 'expense', amount: 1250, accountId: bank.id });
+    expect(await repos.entries.get(entry.id)).toEqual(entry);
+    expect(await balanceOf(bank.id)).toBe(98750);
+  });
+
+  it('creates an income and raises the account balance', async () => {
+    await repos.entries.create({
+      ...baseExpense(),
+      type: 'income',
+      categoryId: salary.id,
+      amount: 250000,
+    });
+    expect(await balanceOf(bank.id)).toBe(350000);
+  });
+
+  it('moves money with a transfer without changing total wealth', async () => {
+    await repos.entries.create({
+      ...baseExpense(),
+      type: 'transfer',
+      categoryId: null,
+      destinationAccountId: savings.id,
+      amount: 30000,
+    });
+    expect(await balanceOf(bank.id)).toBe(70000);
+    expect(await balanceOf(savings.id)).toBe(30000);
+    const total = (await repos.accounts.listWithBalances()).reduce((sum, a) => sum + a.balance, 0);
+    expect(total).toBe(100000);
+  });
+
+  it('rejects invalid entries with field errors and writes nothing', async () => {
+    const attempts: Partial<EntryInput>[] = [
+      { amount: 0 },
+      { accountId: 'ghost' },
+      { categoryId: null },
+      { categoryId: salary.id },
+      { type: 'transfer', categoryId: null, destinationAccountId: bank.id },
+      { date: '2026-02-30' },
+    ];
+    for (const attempt of attempts) {
+      await expect(repos.entries.create({ ...baseExpense(), ...attempt })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    }
+    expect((await repos.entries.list()).total).toBe(0);
+  });
+
+  it('rejects transfers between currencies', async () => {
+    const usd = await repos.accounts.create({
+      name: 'USD',
+      type: 'bank',
+      currency: 'USD',
+      initialBalance: 0,
+    });
+    await expect(
+      repos.entries.create({
+        ...baseExpense(),
+        type: 'transfer',
+        categoryId: null,
+        destinationAccountId: usd.id,
+      }),
+    ).rejects.toMatchObject({ errors: { destinationAccountId: 'currencyMismatch' } });
+  });
+
+  it('edits an entry and recomputes balances', async () => {
+    const entry = await repos.entries.create(baseExpense());
+    const updated = await repos.entries.update(entry.id, {
+      ...baseExpense(),
+      type: 'transfer',
+      categoryId: food.id, // limpo pela normalização
+      destinationAccountId: savings.id,
+      amount: 5000,
+      description: '  Poupança mensal ',
+    });
+    expect(updated).toMatchObject({
+      type: 'transfer',
+      categoryId: null,
+      amount: 5000,
+      description: 'Poupança mensal',
+    });
+    expect(await repos.entries.get(entry.id)).toMatchObject({ type: 'transfer', amount: 5000 });
+    expect(await balanceOf(bank.id)).toBe(95000);
+    expect(await balanceOf(savings.id)).toBe(5000);
+  });
+
+  it('deletes an entry (tombstone) and restores the balance', async () => {
+    const entry = await repos.entries.create(baseExpense());
+    await repos.entries.delete(entry.id);
+    expect(await repos.entries.get(entry.id)).toBeNull();
+    expect(await balanceOf(bank.id)).toBe(100000);
+    await expect(repos.entries.delete(entry.id)).rejects.toBeInstanceOf(NotFoundError);
+    const tombstone = await db.first<{ deleted_at: string | null }>(
+      'SELECT deleted_at FROM entries WHERE id = ?',
+      [entry.id],
+    );
+    expect(tombstone?.deleted_at).toEqual(expect.any(String));
+  });
+
+  it('keeps an archived account on an existing entry when editing', async () => {
+    const entry = await repos.entries.create(baseExpense());
+    await repos.accounts.setArchived(bank.id, true);
+    await expect(
+      repos.entries.update(entry.id, { ...baseExpense(), amount: 999 }),
+    ).resolves.toMatchObject({ amount: 999 });
+    await expect(repos.entries.create(baseExpense())).rejects.toMatchObject({
+      errors: { accountId: 'accountArchived' },
+    });
+  });
+
+  describe('listing', () => {
+    beforeEach(async () => {
+      await repos.entries.create({
+        ...baseExpense(),
+        description: 'Café da manhã',
+        date: '2026-11-01',
+        amount: 150,
+      });
+      await repos.entries.create({
+        ...baseExpense(),
+        description: 'Jantar',
+        date: '2026-11-15',
+        amount: 4000,
+      });
+      await repos.entries.create({
+        ...baseExpense(),
+        type: 'income',
+        categoryId: salary.id,
+        description: 'Salário',
+        date: '2026-10-28',
+        amount: 200000,
+      });
+      await repos.entries.create({
+        ...baseExpense(),
+        type: 'transfer',
+        categoryId: null,
+        destinationAccountId: savings.id,
+        description: '100% poupança_x',
+        date: '2026-11-20',
+        amount: 10000,
+      });
+    });
+
+    const descriptions = (page: { items: { description: string }[] }) =>
+      page.items.map((item) => item.description);
+
+    it('sorts by date, newest first by default', async () => {
+      expect(descriptions(await repos.entries.list())).toEqual([
+        '100% poupança_x',
+        'Jantar',
+        'Café da manhã',
+        'Salário',
+      ]);
+      expect(descriptions(await repos.entries.list({ sort: 'dateAsc' }))).toEqual([
+        'Salário',
+        'Café da manhã',
+        'Jantar',
+        '100% poupança_x',
+      ]);
+    });
+
+    it('searches descriptions ignoring case and accents', async () => {
+      expect(descriptions(await repos.entries.list({ search: 'CAFE' }))).toEqual(['Café da manhã']);
+      expect(descriptions(await repos.entries.list({ search: 'manha' }))).toEqual([
+        'Café da manhã',
+      ]);
+      expect((await repos.entries.list({ search: 'inexistente' })).total).toBe(0);
+    });
+
+    it('treats LIKE wildcards in the search as literal text', async () => {
+      expect(descriptions(await repos.entries.list({ search: '%' }))).toEqual(['100% poupança_x']);
+      expect(descriptions(await repos.entries.list({ search: '_x' }))).toEqual(['100% poupança_x']);
+    });
+
+    it('filters by type, category, account and period', async () => {
+      expect((await repos.entries.list({ type: 'expense' })).total).toBe(2);
+      expect((await repos.entries.list({ categoryId: salary.id })).total).toBe(1);
+      expect(descriptions(await repos.entries.list({ accountId: savings.id }))).toEqual([
+        '100% poupança_x',
+      ]);
+      expect(
+        descriptions(await repos.entries.list({ from: '2026-11-01', to: '2026-11-15' })),
+      ).toEqual(['Jantar', 'Café da manhã']);
+      expect((await repos.entries.list({ type: 'expense', from: '2026-11-10' })).total).toBe(1);
+    });
+
+    it('paginates and reports the total', async () => {
+      const page = await repos.entries.list({ limit: 2, offset: 1 });
+      expect(descriptions(page)).toEqual(['Jantar', 'Café da manhã']);
+      expect(page.total).toBe(4);
+    });
+
+    it('aggregates income and expenses by month and category, excluding transfers', async () => {
+      expect(await repos.entries.aggregate({ from: '2026-10-01', to: '2026-11-30' })).toEqual([
+        {
+          month: '2026-10',
+          currency: 'EUR',
+          type: 'income',
+          categoryId: salary.id,
+          amount: 200000,
+        },
+        { month: '2026-11', currency: 'EUR', type: 'expense', categoryId: food.id, amount: 4150 },
+      ]);
+    });
+  });
+});
+
+describe('accounts', () => {
+  it('computes balances that match the pure domain calculation', async () => {
+    const card = await repos.accounts.create({
+      name: 'Cartão',
+      type: 'card',
+      currency: 'EUR',
+      initialBalance: -20000,
+    });
+    const inputs: EntryInput[] = [
+      { ...baseExpense(), amount: 333 },
+      { ...baseExpense(), accountId: card.id, amount: 4567 },
+      { ...baseExpense(), type: 'income', categoryId: salary.id, amount: 180000 },
+      {
+        ...baseExpense(),
+        type: 'transfer',
+        categoryId: null,
+        destinationAccountId: savings.id,
+        amount: 25000,
+      },
+      {
+        ...baseExpense(),
+        type: 'transfer',
+        categoryId: null,
+        accountId: savings.id,
+        destinationAccountId: card.id,
+        amount: 5000,
+      },
+    ];
+    for (const input of inputs) await repos.entries.create(input);
+    const removed = await repos.entries.create({ ...baseExpense(), amount: 99999 });
+    await repos.entries.delete(removed.id);
+
+    const accounts = await repos.accounts.listWithBalances();
+    const expected = computeBalances(accounts, flowsFromEntries(inputs));
+    expect(
+      accounts.map((a) => ({ accountId: a.id, currency: a.currency, balance: a.balance })),
+    ).toEqual(expected);
+    expect(accounts.find((a) => a.id === bank.id)?.balance).toBe(100000 - 333 + 180000 - 25000);
+    expect(accounts.find((a) => a.id === card.id)?.balance).toBe(-20000 - 4567 + 5000);
+    expect(accounts.find((a) => a.id === savings.id)?.balance).toBe(25000 - 5000);
+    expect(accounts.find((a) => a.id === savings.id)?.entryCount).toBe(2);
+  });
+
+  it('updates fields and locks the currency once entries exist', async () => {
+    await expect(
+      repos.accounts.update(savings.id, {
+        name: 'Reserva',
+        type: 'savings',
+        currency: 'usd',
+        initialBalance: 500,
+      }),
+    ).resolves.toMatchObject({ name: 'Reserva', currency: 'USD' });
+    await repos.entries.create(baseExpense());
+    await expect(
+      repos.accounts.update(bank.id, {
+        name: 'Banco',
+        type: 'bank',
+        currency: 'USD',
+        initialBalance: 0,
+      }),
+    ).rejects.toMatchObject({ errors: { currency: 'currencyLocked' } });
+    await expect(
+      repos.accounts.update(bank.id, {
+        name: 'Banco X',
+        type: 'bank',
+        currency: 'EUR',
+        initialBalance: 0,
+      }),
+    ).resolves.toMatchObject({ name: 'Banco X' });
+  });
+
+  it('archives and restores accounts', async () => {
+    await repos.accounts.setArchived(savings.id, true);
+    expect((await repos.accounts.list()).map((a) => a.id)).toEqual([bank.id]);
+    expect((await repos.accounts.list({ includeArchived: true })).map((a) => a.id)).toEqual([
+      bank.id,
+      savings.id,
+    ]);
+    await repos.accounts.setArchived(savings.id, false);
+    expect((await repos.accounts.list()).map((a) => a.id)).toEqual([bank.id, savings.id]);
+  });
+
+  it('refuses to delete an account with entries and offers safe alternatives', async () => {
+    await repos.entries.create(baseExpense());
+    await repos.entries.create({
+      ...baseExpense(),
+      type: 'transfer',
+      categoryId: null,
+      accountId: savings.id,
+      destinationAccountId: bank.id,
+      amount: 100,
+    });
+    await expect(repos.accounts.delete(bank.id)).rejects.toEqual(new AccountInUseError(2));
+    expect(await repos.accounts.get(bank.id)).not.toBeNull();
+
+    expect(await repos.accounts.deleteWithEntries(bank.id)).toBe(2);
+    expect(await repos.accounts.get(bank.id)).toBeNull();
+    expect((await repos.entries.list()).total).toBe(0);
+    expect(await balanceOf(savings.id)).toBe(0);
+  });
+
+  it('deletes an account without entries', async () => {
+    await repos.accounts.delete(savings.id);
+    expect(await repos.accounts.get(savings.id)).toBeNull();
+    await expect(
+      repos.entries.create({ ...baseExpense(), accountId: savings.id }),
+    ).rejects.toMatchObject({ errors: { accountId: 'accountNotFound' } });
+  });
+
+  it('validates input', async () => {
+    await expect(
+      repos.accounts.create({ name: ' ', type: 'bank', currency: 'EUR', initialBalance: 0 }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(
+      repos.accounts.update('ghost', {
+        name: 'X',
+        type: 'bank',
+        currency: 'EUR',
+        initialBalance: 0,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('categories', () => {
+  it('lists by type with usage counts', async () => {
+    await repos.entries.create(baseExpense());
+    const expenses = await repos.categories.listWithUsage('expense');
+    expect(expenses.map((c) => [c.name, c.entryCount])).toEqual([['Alimentação', 1]]);
+    expect((await repos.categories.list()).map((c) => c.name)).toEqual(['Alimentação', 'Salário']);
+  });
+
+  it('requires a reassignment target to delete a used category', async () => {
+    const dining = await repos.categories.create({
+      name: 'Restaurantes',
+      type: 'expense',
+      icon: 'pizza',
+      color: 'orange',
+    });
+    const entry = await repos.entries.create(baseExpense());
+    await expect(repos.categories.delete(food.id)).rejects.toEqual(new CategoryInUseError(1));
+    await expect(repos.categories.delete(food.id, { reassignTo: salary.id })).rejects.toMatchObject(
+      { errors: { categoryId: 'categoryTypeMismatch' } },
+    );
+    await expect(repos.categories.delete(food.id, { reassignTo: food.id })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+
+    await repos.categories.delete(food.id, { reassignTo: dining.id });
+    expect(await repos.categories.get(food.id)).toBeNull();
+    expect((await repos.entries.get(entry.id))?.categoryId).toBe(dining.id);
+    expect(await balanceOf(bank.id)).toBe(98750);
+  });
+
+  it('locks the type of a used category', async () => {
+    await repos.entries.create(baseExpense());
+    await expect(
+      repos.categories.update(food.id, { name: 'X', type: 'income', icon: 'cart', color: 'green' }),
+    ).rejects.toMatchObject({ errors: { type: 'typeLocked' } });
+  });
+
+  it('seeds default categories exactly once', async () => {
+    const defaults = DEFAULT_CATEGORIES.map((category) => ({ ...category, name: category.key }));
+    expect(await repos.categories.seedDefaults(defaults)).toBe(true);
+    expect(await repos.categories.seedDefaults(defaults)).toBe(false);
+    expect((await repos.categories.list()).length).toBe(2 + DEFAULT_CATEGORIES.length);
+  });
+});
+
+describe('change notifications', () => {
+  it('notifies after committed writes only', async () => {
+    const events: (readonly DataEntity[])[] = [];
+    const unsubscribe = repos.subscribe((entities) => events.push(entities));
+    const entry = await repos.entries.create(baseExpense());
+    await expect(repos.entries.create({ ...baseExpense(), amount: 0 })).rejects.toThrow();
+    await repos.entries.delete(entry.id);
+    unsubscribe();
+    await repos.accounts.setArchived(savings.id, true);
+    expect(events).toEqual([['entries'], ['entries']]);
+  });
+});
+
+describe('persistence', () => {
+  it('keeps all data after closing and reopening the database file', async () => {
+    const dir = createTempDirectory();
+    const file = dir.file('centflow.db');
+    try {
+      const first = await openTestRepositories(file);
+      const account = await first.repos.accounts.create({
+        name: 'Banco',
+        type: 'bank',
+        currency: 'EUR',
+        initialBalance: 1000,
+      });
+      const category = await first.repos.categories.create({
+        name: 'Casa',
+        type: 'expense',
+        icon: 'home',
+        color: 'indigo',
+      });
+      const entry = await first.repos.entries.create({
+        ...baseExpense(),
+        accountId: account.id,
+        categoryId: category.id,
+        amount: 1,
+      });
+      await first.db.close();
+
+      const second = await openTestRepositories(file);
+      expect(await second.repos.entries.get(entry.id)).toEqual(entry);
+      expect(await second.repos.accounts.get(account.id)).toEqual(account);
+      expect(await second.repos.categories.get(category.id)).toEqual(category);
+      expect((await second.repos.accounts.listWithBalances())[0]?.balance).toBe(999);
+      await second.db.close();
+    } finally {
+      dir.remove();
+    }
+  });
+});

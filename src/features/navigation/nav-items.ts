@@ -4,31 +4,50 @@ import type { IconName } from '@/ui/components';
 export type TabRouteName =
   | 'index'
   | 'transactions'
+  | 'accounts'
   | 'budgets'
   | 'subscriptions'
   | 'wealth'
   | 'vehicles'
   | 'documents'
   | 'reports'
+  | 'categories'
   | 'settings'
   | 'more';
 
 export type NavKey =
   | 'dashboard'
   | 'transactions'
+  | 'accounts'
   | 'budgets'
   | 'subscriptions'
   | 'wealth'
   | 'vehicles'
   | 'documents'
   | 'reports'
+  | 'categories'
   | 'settings';
 
-/** Áreas com ecrã próprio ainda por implementar (têm descrição em `modules.*`). */
-export type PlannedModule = Exclude<NavKey, 'dashboard' | 'settings'>;
+/** Áreas com descrição curta em `modules.*` (mostrada no ecrã "Mais"). */
+export type DescribedArea = Exclude<NavKey, 'dashboard' | 'settings'>;
+
+export function hasAreaDescription(key: NavKey): key is DescribedArea {
+  return key !== 'dashboard' && key !== 'settings';
+}
+
+const IMPLEMENTED: readonly NavKey[] = [
+  'dashboard',
+  'transactions',
+  'accounts',
+  'categories',
+  'settings',
+];
+
+/** Áreas com ecrã próprio ainda por implementar. */
+export type PlannedModule = Exclude<DescribedArea, 'transactions' | 'accounts' | 'categories'>;
 
 export function isPlannedModule(key: NavKey): key is PlannedModule {
-  return key !== 'dashboard' && key !== 'settings';
+  return !IMPLEMENTED.includes(key);
 }
 
 export type NavGroup = 'overview' | 'planning' | 'assets' | 'system';
@@ -62,6 +81,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     activeIcon: 'swap-vertical',
     group: 'overview',
     mobilePrimary: true,
+  },
+  {
+    key: 'accounts',
+    route: 'accounts',
+    href: '/accounts',
+    icon: 'wallet-outline',
+    activeIcon: 'wallet',
+    group: 'overview',
+    mobilePrimary: false,
   },
   {
     key: 'budgets',
@@ -115,6 +143,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: 'document-text-outline',
     activeIcon: 'document-text',
     group: 'assets',
+    mobilePrimary: false,
+  },
+  {
+    key: 'categories',
+    route: 'categories',
+    href: '/categories',
+    icon: 'pricetags-outline',
+    activeIcon: 'pricetags',
+    group: 'system',
     mobilePrimary: false,
   },
   {

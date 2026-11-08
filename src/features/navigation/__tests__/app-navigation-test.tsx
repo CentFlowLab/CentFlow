@@ -11,10 +11,11 @@ describe('app routes', () => {
 });
 
 describe('app navigation (phone layout)', () => {
-  it('opens on the dashboard with an honest empty state', async () => {
+  it('opens on the dashboard and asks for a first account (no fake data)', async () => {
     await renderRouter('./src/app');
     expect(screen).toHavePathname('/');
-    expect(await screen.findByText('O teu painel está pronto')).toBeOnTheScreen();
+    expect(await screen.findByText('Começa pela tua primeira conta')).toBeOnTheScreen();
+    expect(screen.queryByText('Saldo total')).toBeNull();
   });
 
   it('reaches secondary areas through "Mais"', async () => {

@@ -1,5 +1,5 @@
-import { NewTransactionScreen } from '@/features/transactions/NewTransactionScreen';
+import { NewEntryScreen } from '@/features/entries/EntryFormScreens';
 
 export default function NewTransactionRoute() {
-  return <NewTransactionScreen />;
+  return <NewEntryScreen />;
 }

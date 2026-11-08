@@ -1,3 +1,4 @@
+export * from './category-palette';
 export * from './colors';
 export * from './tokens';
 export * from './typography';

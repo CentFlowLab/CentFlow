@@ -1,3 +1,4 @@
+import { CATEGORY_COLOR_KEYS, categorySwatch } from '../theme/category-palette';
 import { darkColors, lightColors, type ThemeColors } from '../theme/colors';
 import { resolveColorScheme } from '../theme/ThemeProvider';
 import { getBreakpoint } from '../layout/useBreakpoint';
@@ -41,6 +42,15 @@ describe.each([
   it('primary button label meets WCAG AA', () => {
     expect(contrast(colors.onPrimary, colors.primary)).toBeGreaterThanOrEqual(4.5);
   });
+
+  it.each(CATEGORY_COLOR_KEYS)(
+    'category colour %s meets WCAG non-text contrast (3:1) on its swatch and on surface',
+    (key) => {
+      const swatch = categorySwatch(key, colors === lightColors ? 'light' : 'dark');
+      expect(contrast(swatch.foreground, swatch.background)).toBeGreaterThanOrEqual(3);
+      expect(contrast(swatch.foreground, colors.surface)).toBeGreaterThanOrEqual(3);
+    },
+  );
 });
 
 describe('resolveColorScheme', () => {

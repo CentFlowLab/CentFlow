@@ -1,9 +1,21 @@
-import { isMoreActive, MOBILE_PRIMARY_ITEMS, NAV_ITEMS } from '../nav-items';
+import { isMoreActive, isPlannedModule, MOBILE_PRIMARY_ITEMS, NAV_ITEMS } from '../nav-items';
 
 describe('navigation config', () => {
-  it('covers the nine main areas exactly once', () => {
+  it('covers every area exactly once', () => {
     const keys = NAV_ITEMS.map((item) => item.key);
-    expect(new Set(keys).size).toBe(9);
+    expect(keys).toHaveLength(11);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('marks only unbuilt areas as planned', () => {
+    expect(NAV_ITEMS.filter((item) => isPlannedModule(item.key)).map((item) => item.key)).toEqual([
+      'budgets',
+      'subscriptions',
+      'reports',
+      'wealth',
+      'vehicles',
+      'documents',
+    ]);
   });
 
   it('keeps the bottom bar small enough for phones', () => {

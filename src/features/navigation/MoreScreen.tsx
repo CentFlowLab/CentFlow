@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, Divider, ListItem, Screen } from '@/ui/components';
 import { spacing } from '@/ui/theme';
 
-import { isPlannedModule, MOBILE_SECONDARY_ITEMS } from './nav-items';
+import { hasAreaDescription, MOBILE_SECONDARY_ITEMS } from './nav-items';
 
 const DIVIDER_INSET = spacing.lg + 36 + spacing.md;
 
@@ -21,7 +21,7 @@ export function MoreScreen() {
             <ListItem
               title={t(`nav.${item.key}`)}
               subtitle={
-                isPlannedModule(item.key) ? t(`modules.${item.key}.description`) : undefined
+                hasAreaDescription(item.key) ? t(`modules.${item.key}.description`) : undefined
               }
               icon={item.icon}
               onPress={() => router.navigate(item.href as Href)}

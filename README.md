@@ -6,16 +6,32 @@ CentFlow é uma aplicação de gestão financeira pessoal para iOS, Android e We
 Windows, macOS e Linux). Centraliza rendimentos, despesas, orçamentos, subscrições, património,
 veículos e documentos, com o objetivo de automatizar ao máximo o registo de informação.
 
-> Estado atual: **Fase 0 — Fundação concluída.** Ainda não existem funcionalidades financeiras;
-> as áreas por implementar aparecem na app marcadas como "Em breve". Nenhum valor apresentado é
-> fictício.
+> Estado atual: **Fase 1 — MVP financeiro local concluído.** Contas, movimentos (despesas,
+> rendimentos e transferências), categorias e dashboard funcionam com dados guardados no
+> dispositivo (SQLite), sem conta nem servidor. As áreas das fases seguintes aparecem marcadas
+> como "Em breve". Nenhum valor apresentado é fictício.
+
+## Funcionalidades (Fase 1)
+
+- **Movimentos:** registo rápido (valor, categoria, conta, data com atalhos Hoje/Ontem), edição,
+  eliminação com confirmação, "Guardar e adicionar outro"; lista com pesquisa (ignora acentos e
+  maiúsculas), filtros por tipo, período, conta e categoria, ordenação por data e paginação.
+- **Contas:** criar, editar, arquivar e reativar; saldos calculados a partir do saldo inicial e
+  dos movimentos; transferências movem dinheiro entre contas sem contar como rendimento nem
+  despesa. Eliminar uma conta com movimentos exige escolha explícita (arquivar ou eliminar tudo,
+  com dupla confirmação).
+- **Categorias:** 15 categorias base traduzidas, criação de categorias próprias (nome, ícone,
+  cor); eliminar uma categoria em uso obriga a escolher para onde passam os movimentos.
+- **Dashboard:** saldo total, rendimentos, despesas, poupança líquida e taxa de poupança do mês,
+  despesas por categoria, evolução dos últimos 6 meses, últimos movimentos e navegação entre
+  meses. Atualiza-se automaticamente após cada alteração.
 
 ## Roadmap
 
 | Fase | Conteúdo                                                                            | Estado       |
 | ---- | ----------------------------------------------------------------------------------- | ------------ |
 | 0    | Projeto, design system, navegação adaptativa, i18n, tema claro/escuro, testes       | ✅ Concluída |
-| 1    | MVP local: contas, movimentos, transferências, categorias, dashboard, resumo mensal | Próxima      |
+| 1    | MVP local: contas, movimentos, transferências, categorias, dashboard, resumo mensal | ✅ Concluída |
 | 2    | Supabase: autenticação, base de dados com RLS, sincronização, migração de dados     | —            |
 | 3    | Orçamentos, subscrições, objetivos de poupança, relatórios                          | —            |
 | 4    | Património, investimentos, veículos, documentos e garantias                         | —            |
@@ -34,6 +50,7 @@ npm install          # instalar dependências
 npm start            # servidor de desenvolvimento (QR code para iOS/Android)
 npm run web          # abrir no browser
 npm run build:web    # build de produção web/PWA em dist/
+npm run serve:web    # servir dist/ localmente com os cabeçalhos COOP/COEP (porta 4173)
 
 npm test             # testes (Jest + Testing Library)
 npm run typecheck    # TypeScript
@@ -48,21 +65,40 @@ com o SDK). No Windows/PowerShell, dependências de desenvolvimento: `npx expo i
 ## Stack
 
 Expo SDK 58 · React Native 0.88 · React 19.3 · TypeScript 6 (strict) · Expo Router (rotas por
-ficheiro) · i18next · Jest 30 + React Native Testing Library 14. Supabase entra na Fase 2.
+ficheiro) · `expo-sqlite` (dados locais) · i18next · Jest 30 + React Native Testing Library 14.
+Supabase entra na Fase 2.
+
+## Dados locais e Web
+
+Os dados financeiros ficam numa base de dados SQLite no dispositivo (`centflow.db`). Na web, o
+`expo-sqlite` usa WebAssembly e guarda a base de dados no _Origin Private File System_ do
+browser, o que exige **isolamento cross-origin**. O alojamento tem de enviar em todas as
+respostas:
+
+```
+Cross-Origin-Embedder-Policy: credentialless
+Cross-Origin-Opener-Policy: same-origin
+```
+
+O servidor de desenvolvimento (`metro.config.js`) e o `npm run serve:web` já os enviam;
+`public/_headers` cobre Netlify e Cloudflare Pages. Sem estes cabeçalhos a app mostra um aviso e
+não abre os dados. Na web, só um separador de cada vez pode usar a base de dados (os outros
+mostram um aviso com "Tentar novamente").
 
 ## Estrutura
 
 ```
 src/
   app/          Rotas (Expo Router). Ficheiros finos que delegam nas features.
-  core/         Domínio puro em TypeScript (dinheiro, formatação). Sem React.
+  core/         Domínio puro em TypeScript (dinheiro, datas, cálculos financeiros). Sem React.
+  data/         Base de dados local: migrações, repositórios SQLite, hooks de dados.
   features/     Funcionalidades: ecrãs, componentes e lógica de cada área.
   ui/           Design system: tema, tokens, componentes reutilizáveis, layout.
   i18n/         Idiomas (pt-PT, en, es) e formatação localizada.
   lib/          Adaptadores de plataforma (armazenamento, etc.).
   test-utils/   Utilitários de teste.
 public/         Ficheiros web estáticos (index.html, manifesto PWA, ícones).
-scripts/        Scripts de manutenção (geração de ícones da marca).
+scripts/        Scripts de manutenção (ícones da marca, servidor web local).
 docs/           Arquitetura e decisões técnicas.
 ```
 

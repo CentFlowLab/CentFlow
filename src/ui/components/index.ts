@@ -1,11 +1,18 @@
 export { Amount } from './Amount';
 export { Badge, type BadgeTone } from './Badge';
+export { BarChart, type BarChartGroup } from './BarChart';
 export { BrandMark } from './BrandMark';
 export { Button, type ButtonSize, type ButtonVariant } from './Button';
+export { CalendarPicker } from './CalendarPicker';
 export { Card } from './Card';
+export { CategoryIcon } from './CategoryIcon';
+export { Chip } from './Chip';
+export { ChipGroup } from './ChipGroup';
+export { Dialog, type DialogAction } from './Dialog';
 export { Divider } from './Divider';
 export { EmptyState } from './EmptyState';
 export { FadeIn } from './FadeIn';
+export { FormScreen } from './FormScreen';
 export { Icon, type IconName } from './Icon';
 export { IconButton } from './IconButton';
 export { ListItem } from './ListItem';

@@ -6,6 +6,8 @@ import { PreferencesProvider, usePreferences } from '@/features/preferences';
 import { appFonts } from '@/ui/theme/fonts';
 import { ThemeProvider } from '@/ui/theme';
 
+import { DataGate } from './DataGate';
+
 void SplashScreen.preventAutoHideAsync();
 
 /** Mantém o splash até as fontes e preferências (tema, idioma) estarem prontas, evitando "flashes". */
@@ -23,7 +25,11 @@ function ReadyGate({ children }: PropsWithChildren) {
   }, [ready]);
 
   if (!ready) return null;
-  return <ThemeProvider preference={preferences.theme}>{children}</ThemeProvider>;
+  return (
+    <ThemeProvider preference={preferences.theme}>
+      <DataGate>{children}</DataGate>
+    </ThemeProvider>
+  );
 }
 
 export function AppProviders({ children }: PropsWithChildren) {

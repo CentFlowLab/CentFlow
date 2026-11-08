@@ -38,7 +38,7 @@ dispositivo quando coincidem (ex.: `en-US`).
 **Decisão:** `@react-native-async-storage/async-storage` atrás da interface `KeyValueStore`, só
 para preferências não sensíveis (tema, idioma).
 **Porquê:** funciona em iOS, Android e Web (localStorage) sem configuração.
-**Consequências:** dados financeiros não usam AsyncStorage (ver decisão pendente D-1).
+**Consequências:** dados financeiros não usam AsyncStorage (ver ADR-011).
 
 ## ADR-006 — Web como SPA + manifesto PWA, sem service worker por agora
 
@@ -59,7 +59,8 @@ parte do ecossistema Expo.
 
 **Decisão:** React Context apenas para tema e preferências.
 **Porquê:** ainda não há dados de servidor. A escolha (ex.: TanStack Query para dados remotos)
-fica para quando houver necessidade real (Fase 1/2).
+fica para quando houver necessidade real (Fase 2).
+**Fase 1:** dados locais lidos com `useDataQuery` (ver ADR-013); continua sem biblioteca de estado.
 
 ## ADR-009 — Ícones da marca gerados por script
 
@@ -72,16 +73,79 @@ fica para quando houver necessidade real (Fase 1/2).
 O template do Expo incluía uma licença MIT com copyright da Expo; foi removida.
 `package.json` usa `"license": "UNLICENSED"`.
 
+## ADR-011 — `expo-sqlite` como base de dados local (resolve D-1)
+
+**Decisão:** `expo-sqlite` (58.x) para todos os dados financeiros, em iOS, Android e Web.
+**Alternativas:** WatermelonDB (sync pronto, mas modelo próprio e mais complexo), IndexedDB só na
+web (duas implementações), AsyncStorage (sem transações nem consultas).
+**Porquê:** SQL real com transações, chaves estrangeiras e `CHECK`; o mesmo esquema e as mesmas
+consultas em todas as plataformas; modelo relacional próximo do PostgreSQL da Fase 2.
+**Consequências:** na web exige isolamento cross-origin (ADR-015) e um ficheiro WebAssembly de
+~630 KB. Migrações versionadas com `PRAGMA user_version`; nunca editar uma migração publicada.
+
+## ADR-012 — Camada `src/data` com interfaces e fila serializada
+
+**Decisão:** os ecrãs só conhecem as interfaces `Repositories` (`@/data`). A implementação SQLite
+(`src/data/sqlite`) usa `SqlDatabase`, que serializa todas as operações numa fila.
+**Porquê:** o `expo-sqlite` tem uma única ligação e `withTransactionAsync` não isola operações
+concorrentes (a documentação recomenda `withExclusiveTransactionAsync`, indisponível na web). A
+fila torna cada transação atómica e isolada em todas as plataformas. As interfaces permitem
+acrescentar uma implementação Supabase/sync na Fase 2.
+**Consequências:** escritas são sequenciais (suficiente para uso pessoal). O ESLint impede
+`app`, `features` e `ui` de importar `expo-sqlite` ou os módulos SQL.
+
+## ADR-013 — Atualização automática por notificação dos repositórios
+
+**Decisão:** cada escrita confirmada notifica os subscritores com a entidade alterada;
+`useDataQuery` volta a executar a consulta e mantém os dados anteriores enquanto atualiza.
+**Alternativas:** TanStack Query (dependência extra, pensada para dados remotos), estado global.
+**Porquê:** simples, sem dependências, e o dashboard reflete qualquer alteração de imediato.
+**Consequências:** consultas recalculadas após qualquer escrita; com o volume pessoal esperado o
+custo é desprezável. Rever na Fase 2.
+
+## ADR-014 — Identificadores, eliminação lógica e metadados de sincronização
+
+**Decisão:** `id` UUID v4 gerado no cliente (`expo-crypto`), `created_at`/`updated_at` em ISO
+UTC, `deleted_at` (eliminação lógica) e `synced_at` em todas as tabelas de dados. Datas de
+movimentos como datas de calendário locais `YYYY-MM-DD`.
+**Porquê:** registos criados offline têm identidade estável para sincronizar; eliminações
+precisam de propagar-se a outros dispositivos; um movimento "de dia 31" não pode mudar de mês por
+causa do fuso horário.
+**Consequências:** todas as consultas filtram `deleted_at IS NULL` (índices parciais). Os dados
+eliminados permanecem até existir a sincronização e a eliminação definitiva/RGPD (Fase 2).
+**Dependência nova:** `expo-crypto` (UUID com gerador criptográfico em todas as plataformas).
+
+## ADR-015 — Web: isolamento cross-origin e um separador de cada vez
+
+**Decisão:** servir a web com `Cross-Origin-Embedder-Policy: credentialless` e
+`Cross-Origin-Opener-Policy: same-origin`; obter um Web Lock antes de abrir a base de dados.
+**Porquê:** o worker do `expo-sqlite` precisa de `SharedArrayBuffer`; o VFS OPFS usado é
+exclusivo por origem, e dois separadores em simultâneo falhariam de forma confusa.
+`credentialless` (em vez de `require-corp`) não obriga recursos de terceiros a enviar CORP.
+**Consequências:** o alojamento tem de enviar os cabeçalhos (`public/_headers`, `metro.config.js`,
+`scripts/serve-web.mjs`); sem eles a app explica o problema em vez de abrir. Um segundo separador
+mostra um aviso com "Tentar novamente". Safari não suporta `credentialless` em todas as versões —
+verificar antes de publicar (D-7).
+
+## ADR-016 — Valores sempre positivos com tipo; moedas nunca misturadas
+
+**Decisão:** `amount` é um inteiro > 0 em unidades mínimas; o sinal resulta do tipo
+(`income`, `expense`, `transfer`). A moeda pertence à conta e fica bloqueada quando há movimentos;
+transferências só entre contas da mesma moeda. Entrada do utilizador convertida por aritmética de
+strings (`parseAmountInput`), nunca por `parseFloat`.
+**Porquê:** elimina estados ambíguos (despesa negativa?) e conversões cambiais implícitas.
+**Consequências:** transferências entre moedas diferentes ficam para uma fase futura (exigem
+taxa de câmbio e dois valores).
+
 ---
 
 ## Decisões pendentes
 
-| ID  | Decisão                                        | Opções / recomendação                                                                                                                                                                                                 | Quando            |
-| --- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| D-1 | Base de dados local (Fase 1)                   | **Recomendado: `expo-sqlite`** (SQL real, transações, migrations, alinhado com PostgreSQL). Na web exige headers COOP/COEP no alojamento. Alternativa: WatermelonDB (sync pronto, mais complexo) ou IndexedDB na web. | Fase 1            |
-| D-2 | Estratégia de sincronização (Fase 2)           | Sync próprio com UUID + `updated_at` + soft delete, ou PowerSync (serviço externo, custo).                                                                                                                            | Fase 2            |
-| D-3 | Identificadores de app (`app.centflow.mobile`) | Confirmar domínio/organização antes da primeira submissão às lojas — não pode mudar depois.                                                                                                                           | Antes de publicar |
-| D-4 | Licença e entidade legal                       | Proprietária por omissão. Definir titular dos direitos e termos/privacidade (RGPD).                                                                                                                                   | Antes de publicar |
-| D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                                                                            | Fase 5            |
-| D-6 | Fornecedor de IA/OCR                           | Executar sempre em Edge Functions; escolher pelo custo, privacidade (UE) e qualidade.                                                                                                                                 | Fase 5            |
-| D-7 | Alojamento da PWA                              | Qualquer alojamento estático (Vercel, Netlify, Cloudflare Pages, EAS Hosting); com SQLite na web precisa de COOP/COEP.                                                                                                | Fase 1/2          |
+| ID  | Decisão                                        | Opções / recomendação                                                                                                                                              | Quando            |
+| --- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| D-2 | Estratégia de sincronização (Fase 2)           | Sync próprio com UUID + `updated_at` + soft delete, ou PowerSync (serviço externo, custo).                                                                         | Fase 2            |
+| D-3 | Identificadores de app (`app.centflow.mobile`) | Confirmar domínio/organização antes da primeira submissão às lojas — não pode mudar depois.                                                                        | Antes de publicar |
+| D-4 | Licença e entidade legal                       | Proprietária por omissão. Definir titular dos direitos e termos/privacidade (RGPD).                                                                                | Antes de publicar |
+| D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                         | Fase 5            |
+| D-6 | Fornecedor de IA/OCR                           | Executar sempre em Edge Functions; escolher pelo custo, privacidade (UE) e qualidade.                                                                              | Fase 5            |
+| D-7 | Alojamento da PWA                              | Qualquer alojamento estático que permita cabeçalhos (Vercel, Netlify, Cloudflare Pages, EAS Hosting); tem de enviar COOP/COEP (ADR-015). Confirmar suporte Safari. | Fase 2            |

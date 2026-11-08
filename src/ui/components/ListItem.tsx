@@ -11,6 +11,8 @@ type Props = {
   icon?: IconName;
   iconColor?: keyof ThemeColors;
   iconBackground?: keyof ThemeColors;
+  /** Elemento à esquerda personalizado (substitui `icon`). */
+  leading?: ReactNode;
   /** Conteúdo à direita (valor, badge, interruptor…). */
   trailing?: ReactNode;
   showChevron?: boolean;
@@ -26,6 +28,7 @@ export function ListItem({
   icon,
   iconColor = 'primaryText',
   iconBackground = 'primaryMuted',
+  leading,
   trailing,
   showChevron = true,
   onPress,
@@ -37,11 +40,12 @@ export function ListItem({
 
   const content = (
     <>
-      {icon ? (
-        <View style={[styles.icon, { backgroundColor: colors[iconBackground] }]}>
-          <Icon name={icon} size={18} color={iconColor} />
-        </View>
-      ) : null}
+      {leading ??
+        (icon ? (
+          <View style={[styles.icon, { backgroundColor: colors[iconBackground] }]}>
+            <Icon name={icon} size={18} color={iconColor} />
+          </View>
+        ) : null)}
       <View style={styles.texts}>
         <Text variant="bodyStrong" numberOfLines={1}>
           {title}

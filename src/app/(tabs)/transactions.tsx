@@ -1,5 +1,5 @@
-import { ModulePlaceholderScreen } from '@/features/modules/ModulePlaceholderScreen';
+import { EntriesScreen } from '@/features/entries/EntriesScreen';
 
 export default function TransactionsRoute() {
-  return <ModulePlaceholderScreen module="transactions" />;
+  return <EntriesScreen />;
 }

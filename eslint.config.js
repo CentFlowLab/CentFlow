@@ -17,6 +17,9 @@ module.exports = defineConfig([
   },
   {
     files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { Buffer: 'readonly', process: 'readonly', URL: 'readonly' },
+    },
     rules: { 'no-console': 'off' },
   },
   {
@@ -29,6 +32,23 @@ module.exports = defineConfig([
           patterns: [
             {
               group: ['react', 'react-native', 'react-native/*', 'expo*', '@/ui/*', '@/features/*'],
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Interface e rotas só acedem a dados pelos repositórios exportados por `@/data`.
+    files: ['src/app/**/*.{ts,tsx}', 'src/features/**/*.{ts,tsx}', 'src/ui/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['expo-sqlite', '@/data/db/*', '@/data/sqlite', '@/data/sqlite/*'],
+              message: 'Usar os repositórios de `@/data`; SQL não entra na interface.',
             },
           ],
         },
