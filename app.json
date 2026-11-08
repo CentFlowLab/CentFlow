@@ -60,6 +60,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4014cf35-c2eb-4976-a1ce-5f6bb985652b"
+      }
+    },
+    "owner": "manuc98"
   }
 }

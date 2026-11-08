@@ -1,0 +1,220 @@
+# Compila um IPA iOS na cloud (EAS) e publica-o como artefacto.
+# Não submete à App Store nem ao TestFlight. Não cria nem altera credenciais Apple:
+# --freeze-credentials recusa o build se a assinatura guardada no EAS não existir.
+name: iOS IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: ios-ipa-production
+  cancel-in-progress: false
+
+jobs:
+  ipa:
+    name: Verificar e compilar iOS
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v5
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificações do projeto
+        run: npm run check
+
+      - name: Confirmar a configuração iOS local
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require('node:fs');
+          const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          const eas = JSON.parse(fs.readFileSync('eas.json', 'utf8'));
+          const bundleId = app.expo?.ios?.bundleIdentifier;
+          if (bundleId !== 'app.centflow.mobile') {
+            console.error(
+              'Bundle identifier iOS inesperado. Esperado app.centflow.mobile, encontrado: ' +
+                (bundleId ?? '(em falta)'),
+            );
+            process.exit(1);
+          }
+          const profile = eas.build?.production;
+          if (
+            !profile ||
+            profile.distribution !== 'store' ||
+            profile.environment !== 'production' ||
+            profile.credentialsSource !== 'remote' ||
+            profile.ios?.simulator === true
+          ) {
+            console.error(
+              'O perfil production em eas.json tem de ser distribution=store, environment=production, credentialsSource=remote e sem simulador.',
+            );
+            process.exit(1);
+          }
+          const projectId = app.expo?.extra?.eas?.projectId;
+          if (typeof projectId !== 'string' || projectId.length === 0) {
+            console.error(
+              'Falta expo.extra.eas.projectId em app.json. Na pasta do repositório, com sessão Expo, corre `npx eas-cli@latest init` e faz commit só desse identificador. Não coloques certificados nem chaves no repositório.',
+            );
+            process.exit(1);
+          }
+          console.log('Configuração local aceite: ' + bundleId + ', perfil production.');
+          EOF
+
+      - name: Confirmar EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "O secret EXPO_TOKEN não está configurado neste repositório."
+            echo "Cria um token em https://expo.dev/accounts/[conta]/settings/access-tokens e guarda-o em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "EXPO_TOKEN está presente."
+
+      - name: Configurar o EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Confirmar variáveis de produção no EAS
+        shell: bash
+        run: |
+          eas env:list production --format short > eas-env-names.txt
+          node <<'EOF'
+          const fs = require('node:fs');
+          const text = fs.readFileSync('eas-env-names.txt', 'utf8').replace(/\u001b\[[0-9;]*m/g, '');
+          fs.unlinkSync('eas-env-names.txt');
+          const names = text
+            .split('\n')
+            .map((line) => line.split('=')[0]?.trim())
+            .filter((name) => name && !name.includes(' '));
+          const required = ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY'];
+          const missing = required.filter((name) => !names.includes(name));
+          if (missing.length > 0) {
+            console.error(
+              'Faltam variáveis no ambiente production do EAS: ' +
+                missing.join(', ') +
+                '. Define-as com visibilidade sensitive (não secret) para entrarem na aplicação. Não uses .env.local neste workflow.',
+            );
+            process.exit(1);
+          }
+          const forbidden = names.filter((name) => /service_role/i.test(name));
+          if (forbidden.length > 0) {
+            console.error(
+              'O ambiente production tem uma variável service_role. Remove-a do EAS: essa chave não pode ser incluída na aplicação.',
+            );
+            process.exit(1);
+          }
+          console.log('Variáveis de produção presentes: ' + required.join(', '));
+          EOF
+
+      - name: Compilar o IPA no EAS
+        shell: bash
+        run: |
+          eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --wait \
+            --freeze-credentials \
+            --json \
+            --message "GitHub Actions ${GITHUB_SHA}" \
+            > eas-build.json
+
+      - name: Descarregar o IPA
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require('node:fs');
+
+          async function main() {
+            let parsed;
+            try {
+              parsed = JSON.parse(fs.readFileSync('eas-build.json', 'utf8'));
+            } catch {
+              console.error(
+                'A saída JSON do EAS não foi reconhecida. O build não produziu um resultado utilizável.',
+              );
+              process.exit(1);
+            }
+            const build = Array.isArray(parsed)
+              ? (parsed.find((item) => item.platform === 'IOS') ?? parsed[0])
+              : parsed;
+            if (!build || build.status !== 'FINISHED') {
+              console.error(
+                'O build EAS não terminou com sucesso. Estado: ' + (build?.status ?? 'desconhecido'),
+              );
+              process.exit(1);
+            }
+            const ipaUrl = build.artifacts?.applicationArchiveUrl;
+            if (typeof ipaUrl !== 'string' || !ipaUrl.startsWith('https://')) {
+              console.error(
+                'O build terminou sem um URL HTTPS do IPA. Confirma a assinatura de distribuição no EAS.',
+              );
+              process.exit(1);
+            }
+            const owner = build.app?.ownerAccount?.name;
+            const slug = build.app?.slug;
+            if (!owner || !slug || !build.id) {
+              console.error('O resultado do EAS não inclui o endereço do build.');
+              process.exit(1);
+            }
+            const page = `https://expo.dev/accounts/${owner}/projects/${slug}/builds/${build.id}`;
+            let response;
+            try {
+              response = await fetch(ipaUrl);
+            } catch {
+              console.error('Não foi possível descarregar o IPA a partir do EAS.');
+              process.exit(1);
+            }
+            if (!response.ok) {
+              console.error('O EAS recusou o descarregamento do IPA (HTTP ' + response.status + ').');
+              process.exit(1);
+            }
+            const bytes = Buffer.from(await response.arrayBuffer());
+            if (bytes.length < 1024 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
+              console.error('O ficheiro descarregado não é um IPA.');
+              process.exit(1);
+            }
+            fs.writeFileSync('centflow.ipa', bytes);
+            fs.writeFileSync('eas-build-page-url.txt', page);
+            fs.unlinkSync('eas-build.json');
+            console.log('Build EAS: ' + page);
+            console.log('IPA descarregado (' + bytes.length + ' bytes).');
+          }
+
+          main().catch(() => {
+            console.error('Não foi possível descarregar o IPA a partir do EAS.');
+            process.exit(1);
+          });
+          EOF
+          {
+            echo "### IPA iOS"
+            echo
+            echo "Build EAS: $(cat eas-build-page-url.txt)"
+            echo
+            echo "O ficheiro está no artefacto \`centflow-ios-ipa\` desta execução."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar o IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: centflow-ios-ipa
+          path: centflow.ipa
+          if-no-files-found: error
+          retention-days: 14
