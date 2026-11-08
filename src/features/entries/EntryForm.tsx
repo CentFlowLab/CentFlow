@@ -439,8 +439,13 @@ export function EntryForm({ lookups, today, entry }: Props) {
 
 const styles = StyleSheet.create({
   amountInput: {
-    fontSize: 28,
+    fontSize: 40,
+    lineHeight: 48,
     fontWeight: '600',
+    textAlign: 'center',
+    minHeight: 80,
+    letterSpacing: -1,
+    fontVariant: ['tabular-nums'],
   },
   footerRow: {
     flexDirection: 'row',

@@ -17,8 +17,10 @@ export function EmptyState({ icon, title, description, children }: Props) {
   const { colors } = useTheme();
   return (
     <View style={styles.container} accessibilityRole="summary">
-      <View style={[styles.iconWrap, { backgroundColor: colors.primaryMuted }]}>
-        <Icon name={icon} size={28} color="primaryText" />
+      <View style={[styles.iconRing, { backgroundColor: colors.surfaceMuted }]}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.primaryMuted }]}>
+          <Icon name={icon} size={30} color="primaryText" />
+        </View>
       </View>
       <View style={styles.texts}>
         <Text variant="title3" align="center">
@@ -47,10 +49,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
+  iconRing: {
+    width: 104,
+    height: 104,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.xl,
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

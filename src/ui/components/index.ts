@@ -5,6 +5,7 @@ export { BrandMark } from './BrandMark';
 export { Button, type ButtonSize, type ButtonVariant } from './Button';
 export { CalendarPicker } from './CalendarPicker';
 export { Card } from './Card';
+export { HeroCard } from './HeroCard';
 export { CategoryIcon } from './CategoryIcon';
 export { Chip } from './Chip';
 export { ChipGroup } from './ChipGroup';

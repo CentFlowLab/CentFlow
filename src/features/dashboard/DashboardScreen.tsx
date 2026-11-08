@@ -24,6 +24,7 @@ import {
   CategoryIcon,
   Divider,
   EmptyState,
+  HeroCard,
   Icon,
   IconButton,
   Screen,
@@ -94,20 +95,49 @@ export function DashboardScreen() {
   const lookupData = lookups.data;
 
   if (accounts.length === 0) {
+    const welcomeSteps = t('dashboard.welcomeSteps', {
+      returnObjects: true,
+    }) as unknown as string[];
     return (
       <Screen {...header}>
-        <Card padding="none">
-          <EmptyState
-            icon="wallet-outline"
-            title={t('dashboard.onboardingTitle')}
-            description={t('dashboard.onboardingDescription')}>
-            <Button
-              label={t('dashboard.createAccount')}
-              icon="add"
-              onPress={() => router.push('/account/new')}
-            />
-          </EmptyState>
-        </Card>
+        <HeroCard style={styles.welcome}>
+          <View style={[styles.welcomeIcon, { backgroundColor: colors.heroSurface }]}>
+            <Icon name="wallet-outline" size={28} color="heroText" />
+          </View>
+          <Text variant="title2" tone="hero">
+            {t('dashboard.onboardingTitle')}
+          </Text>
+          <Text variant="callout" tone="heroMuted">
+            {t('dashboard.onboardingDescription')}
+          </Text>
+          <View style={styles.steps}>
+            {welcomeSteps.map((step, index) => (
+              <View key={step} style={styles.step}>
+                <View style={[styles.stepNumber, { backgroundColor: colors.heroSurface }]}>
+                  <Text variant="caption" tone="hero">
+                    {index + 1}
+                  </Text>
+                </View>
+                <Text variant="callout" tone="hero" style={styles.flex}>
+                  {step}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('dashboard.createAccount')}
+            onPress={() => router.push('/account/new')}
+            style={({ pressed }) => [
+              styles.welcomeButton,
+              { backgroundColor: colors.heroText, opacity: pressed ? 0.85 : 1 },
+            ]}>
+            <Icon name="add" size={20} color="heroStart" />
+            <Text variant="bodyStrong" style={{ color: colors.heroStart }}>
+              {t('dashboard.createAccount')}
+            </Text>
+          </Pressable>
+        </HeroCard>
       </Screen>
     );
   }
@@ -135,12 +165,16 @@ export function DashboardScreen() {
       label: t('dashboard.monthIncome'),
       value: money(summary.income),
       tone: 'positive' as const,
+      icon: 'arrow-down' as IconName,
+      background: colors.positiveMuted,
     },
     {
       key: 'expense',
       label: t('dashboard.monthExpenses'),
       value: money(summary.expense),
       tone: 'negative' as const,
+      icon: 'arrow-up' as IconName,
+      background: colors.negativeMuted,
     },
   ];
   const quickActions: readonly {
@@ -262,10 +296,10 @@ export function DashboardScreen() {
 
   return (
     <Screen {...header}>
-      <View style={styles.monthBar}>
+      <View
+        style={[styles.monthBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <IconButton
           icon="chevron-back"
-          variant="filled"
           accessibilityLabel={t('dashboard.previousMonth')}
           onPress={() => setMonth((value) => addMonths(value, -1))}
         />
@@ -274,7 +308,6 @@ export function DashboardScreen() {
         </Text>
         <IconButton
           icon="chevron-forward"
-          variant="filled"
           accessibilityLabel={t('dashboard.nextMonth')}
           onPress={() => setMonth((value) => addMonths(value, 1))}
         />
@@ -291,42 +324,68 @@ export function DashboardScreen() {
         </View>
       ) : null}
 
-      <Card style={styles.hero}>
-        <Text variant="footnote" tone="secondary">
+      <HeroCard style={styles.hero}>
+        <Text variant="overline" tone="heroMuted">
           {t('dashboard.totalBalance')}
         </Text>
-        <Text variant="amountHero" tabular numberOfLines={1} adjustsFontSizeToFit>
+        <Text variant="amountHero" tone="hero" tabular numberOfLines={1} adjustsFontSizeToFit>
           {money(totals.get(currency) ?? 0)}
         </Text>
-        <Text variant="footnote" tone={summary.net < 0 ? 'negative' : 'positive'} tabular>
-          {formatMoney({ amountMinor: summary.net, currency }, { signDisplay: 'exceptZero' })}
-        </Text>
-        {summary.savingsRate === null ? (
-          <Text variant="caption" tone="tertiary">
-            {t('dashboard.savingsRateUndefined')}
-          </Text>
-        ) : (
-          <View style={styles.rate}>
+        <View style={styles.heroRow}>
+          <View style={[styles.netChip, { backgroundColor: colors.heroSurface }]}>
+            <Icon
+              name={summary.net < 0 ? 'trending-down' : 'trending-up'}
+              size={16}
+              color={summary.net < 0 ? 'heroNegative' : 'heroPositive'}
+            />
             <Text
               variant="footnote"
-              tone={summary.savingsRate < 0 ? 'negative' : 'positive'}
+              tone={summary.net < 0 ? 'heroNegative' : 'heroPositive'}
               tabular>
-              {formatPercent(summary.savingsRate, 1)}
-            </Text>
-            <Text variant="caption" tone="secondary">
-              {t('dashboard.savingsRate')}
+              {formatMoney({ amountMinor: summary.net, currency }, { signDisplay: 'exceptZero' })}
             </Text>
           </View>
-        )}
-        <Text variant="caption" tone="tertiary">
+          {summary.savingsRate === null ? (
+            <Text variant="caption" tone="heroMuted" style={styles.flex}>
+              {t('dashboard.savingsRateUndefined')}
+            </Text>
+          ) : (
+            <View style={styles.rate}>
+              <Text
+                variant="footnote"
+                tone={summary.savingsRate < 0 ? 'heroNegative' : 'heroPositive'}
+                tabular>
+                {formatPercent(summary.savingsRate, 1)}
+              </Text>
+              <Text variant="caption" tone="heroMuted">
+                {t('dashboard.savingsRate')}
+              </Text>
+            </View>
+          )}
+        </View>
+        {summary.savingsRate !== null ? (
+          <View style={[styles.rateTrack, { backgroundColor: colors.heroTrack }]}>
+            <View
+              style={[
+                styles.rateFill,
+                {
+                  width: `${Math.min(Math.max(summary.savingsRate, 0), 1) * 100}%`,
+                  backgroundColor:
+                    summary.savingsRate < 0 ? colors.heroNegative : colors.heroPositive,
+                },
+              ]}
+            />
+          </View>
+        ) : null}
+        <Text variant="caption" tone="heroMuted">
           {t('dashboard.totalBalanceHint', { currency })}
         </Text>
         {otherCurrencies.length > 0 ? (
-          <Text variant="caption" tone="tertiary">
+          <Text variant="caption" tone="heroMuted">
             {t('dashboard.otherCurrencies', { list: otherCurrencies.join(' · ') })}
           </Text>
         ) : null}
-      </Card>
+      </HeroCard>
 
       <View style={styles.actions}>
         {quickActions.map((action) => (
@@ -335,12 +394,14 @@ export function DashboardScreen() {
             accessibilityRole="button"
             accessibilityLabel={action.label}
             onPress={() => router.push(action.href)}
-            style={({ pressed }) => [styles.action, { opacity: pressed ? 0.7 : 1 }]}>
-            <View
-              style={[
-                styles.actionIcon,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}>
+            style={({ pressed }) => [
+              styles.action,
+              {
+                backgroundColor: pressed ? colors.surfaceHover : colors.surface,
+                borderColor: colors.border,
+              },
+            ]}>
+            <View style={[styles.actionIcon, { backgroundColor: colors.primaryMuted }]}>
               <Icon name={action.icon} size={22} color="primaryText" />
             </View>
             <Text variant="caption" tone="secondary" align="center" numberOfLines={2}>
@@ -353,6 +414,9 @@ export function DashboardScreen() {
       <View style={styles.kpis}>
         {summaryCards.map((kpi) => (
           <Card key={kpi.key} style={[styles.kpi, { flexBasis: isWide ? 240 : 140 }]}>
+            <View style={[styles.kpiIcon, { backgroundColor: kpi.background }]}>
+              <Icon name={kpi.icon} size={18} color={kpi.tone} />
+            </View>
             <Text variant="footnote" tone="secondary" numberOfLines={1}>
               {kpi.label}
             </Text>
@@ -430,16 +494,76 @@ const styles = StyleSheet.create({
   monthBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.xs,
   },
   hero: {
     gap: spacing.sm,
+  },
+  heroRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  netChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
   },
   rate: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  rateTrack: {
+    height: 6,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+    marginTop: spacing.xs,
+  },
+  rateFill: {
+    height: '100%',
+    borderRadius: radius.full,
+  },
+  welcome: {
+    gap: spacing.lg,
+    padding: spacing['3xl'],
+  },
+  welcomeIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  steps: {
+    gap: spacing.md,
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 52,
+    borderRadius: radius.full,
+    marginTop: spacing.sm,
   },
   actions: {
     flexDirection: 'row',
@@ -447,15 +571,19 @@ const styles = StyleSheet.create({
   },
   action: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 96,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1,
+    borderRadius: radius.xl,
   },
   actionIcon: {
-    width: 52,
-    height: 52,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -467,6 +595,14 @@ const styles = StyleSheet.create({
   kpi: {
     flexGrow: 1,
     gap: spacing.xs,
+  },
+  kpiIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
   },
   columns: {
     flexDirection: 'row',

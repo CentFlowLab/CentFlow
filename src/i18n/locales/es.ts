@@ -51,6 +51,11 @@ const es: Translation = {
     onboardingTitle: 'Empieza por tu primera cuenta',
     onboardingDescription:
       'Añade una cuenta (banco, efectivo, tarjeta…) con su saldo actual. A partir de ahí, cada movimiento actualiza el saldo, los ingresos, los gastos y el ahorro.',
+    welcomeSteps: [
+      'Crea una cuenta con tu saldo actual',
+      'Registra gastos e ingresos en segundos',
+      'Mira a dónde va tu dinero',
+    ],
     createAccount: 'Crear cuenta',
     previousMonth: 'Mes anterior',
     nextMonth: 'Mes siguiente',

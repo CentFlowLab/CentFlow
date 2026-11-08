@@ -39,6 +39,14 @@ describe.each([
     expect(contrast(colors[token], colors.surface)).toBeGreaterThanOrEqual(4.5);
   });
 
+  it.each(['heroText', 'heroTextMuted', 'heroPositive', 'heroNegative'] as const)(
+    '%s meets WCAG AA (4.5:1) on both ends of the hero gradient',
+    (token) => {
+      expect(contrast(colors[token], colors.heroStart)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(colors[token], colors.heroEnd)).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
   it('primary button label meets WCAG AA', () => {
     expect(contrast(colors.onPrimary, colors.primary)).toBeGreaterThanOrEqual(4.5);
   });

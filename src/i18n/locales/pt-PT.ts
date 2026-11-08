@@ -49,6 +49,11 @@ const ptPT = {
     onboardingTitle: 'Começa pela tua primeira conta',
     onboardingDescription:
       'Adiciona uma conta (banco, dinheiro, cartão…) com o saldo atual. A partir daí, cada movimento atualiza o saldo, os rendimentos, as despesas e a poupança.',
+    welcomeSteps: [
+      'Cria uma conta com o saldo atual',
+      'Regista despesas e rendimentos em segundos',
+      'Vê para onde vai o teu dinheiro',
+    ],
     createAccount: 'Criar conta',
     previousMonth: 'Mês anterior',
     nextMonth: 'Mês seguinte',

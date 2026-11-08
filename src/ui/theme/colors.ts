@@ -30,6 +30,17 @@ export type ThemeColors = {
 
   overlay: string;
   shadow: string;
+
+  /** Cartão de saldo: gradiente escuro de marca, igual nos dois temas. */
+  heroStart: string;
+  heroEnd: string;
+  heroText: string;
+  heroTextMuted: string;
+  heroPositive: string;
+  heroNegative: string;
+  /** Superfícies translúcidas sobre o gradiente (chips, trilhos). */
+  heroSurface: string;
+  heroTrack: string;
 };
 
 export type ColorScheme = 'light' | 'dark';
@@ -75,6 +86,15 @@ export const lightColors: ThemeColors = {
 
   overlay: 'rgba(16, 27, 45, 0.4)',
   shadow: 'rgba(16, 27, 45, 0.06)',
+
+  heroStart: '#0F2A3D',
+  heroEnd: '#0A5C47',
+  heroText: '#F8FAFC',
+  heroTextMuted: '#D5E2EE',
+  heroPositive: '#6EE7B7',
+  heroNegative: '#FECACA',
+  heroSurface: 'rgba(255, 255, 255, 0.14)',
+  heroTrack: 'rgba(255, 255, 255, 0.18)',
 };
 
 export const darkColors: ThemeColors = {
@@ -105,6 +125,15 @@ export const darkColors: ThemeColors = {
 
   overlay: 'rgba(0, 0, 0, 0.6)',
   shadow: 'rgba(0, 0, 0, 0.4)',
+
+  heroStart: '#15304A',
+  heroEnd: '#0A5C47',
+  heroText: '#F8FAFC',
+  heroTextMuted: '#D5E2EE',
+  heroPositive: '#6EE7B7',
+  heroNegative: '#FECACA',
+  heroSurface: 'rgba(255, 255, 255, 0.14)',
+  heroTrack: 'rgba(255, 255, 255, 0.18)',
 };
 
 export const colorsByScheme: Record<ColorScheme, ThemeColors> = {

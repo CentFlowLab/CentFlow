@@ -51,6 +51,11 @@ const en: Translation = {
     onboardingTitle: 'Start with your first account',
     onboardingDescription:
       'Add an account (bank, cash, card…) with its current balance. From then on, every transaction updates your balance, income, expenses and savings.',
+    welcomeSteps: [
+      'Create an account with your current balance',
+      'Log expenses and income in seconds',
+      'See where your money goes',
+    ],
     createAccount: 'Create account',
     previousMonth: 'Previous month',
     nextMonth: 'Next month',

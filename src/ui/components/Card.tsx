@@ -24,7 +24,8 @@ export function Card({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing[padding],
-    boxShadow: scheme === 'light' ? `0 1px 2px ${colors.shadow}` : undefined,
+    boxShadow:
+      scheme === 'light' ? `0 1px 2px ${colors.shadow}, 0 8px 24px ${colors.shadow}` : undefined,
   };
 
   if (onPress) {

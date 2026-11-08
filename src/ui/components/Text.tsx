@@ -11,7 +11,11 @@ export type TextTone =
   | 'negative'
   | 'warning'
   | 'inverse'
-  | 'onPrimary';
+  | 'onPrimary'
+  | 'hero'
+  | 'heroMuted'
+  | 'heroPositive'
+  | 'heroNegative';
 
 const toneToColor: Record<TextTone, keyof ThemeColors> = {
   primary: 'text',
@@ -23,6 +27,10 @@ const toneToColor: Record<TextTone, keyof ThemeColors> = {
   warning: 'warning',
   inverse: 'textInverse',
   onPrimary: 'onPrimary',
+  hero: 'heroText',
+  heroMuted: 'heroTextMuted',
+  heroPositive: 'heroPositive',
+  heroNegative: 'heroNegative',
 };
 
 const HEADING_VARIANTS: readonly TypographyVariant[] = ['display', 'title1', 'title2', 'title3'];
