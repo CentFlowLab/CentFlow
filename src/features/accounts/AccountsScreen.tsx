@@ -13,6 +13,7 @@ import {
   CategoryIcon,
   Divider,
   EmptyState,
+  HeroCard,
   IconButton,
   ListItem,
   Screen,
@@ -118,14 +119,19 @@ export function AccountsScreen() {
           {totals.length > 0 ? (
             <View style={styles.totals}>
               {totals.map(([currency, total]) => (
-                <Card key={currency} style={styles.totalCard}>
-                  <Text variant="footnote" tone="secondary">
+                <HeroCard key={currency} style={styles.totalCard}>
+                  <Text variant="overline" tone="heroMuted">
                     {t('accounts.totalLabel', { currency })}
                   </Text>
-                  <Text variant="amountHero" tabular numberOfLines={1} adjustsFontSizeToFit>
+                  <Text
+                    variant="amountHero"
+                    tone="hero"
+                    tabular
+                    numberOfLines={1}
+                    adjustsFontSizeToFit>
                     {formatMoney({ amountMinor: total, currency })}
                   </Text>
-                </Card>
+                </HeroCard>
               ))}
             </View>
           ) : null}
