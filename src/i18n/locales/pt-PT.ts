@@ -589,6 +589,13 @@ const ptPT = {
     errors: {
       invalidCredentials: 'Email ou palavra-passe incorretos.',
       emailNotConfirmed: 'Confirma primeiro o teu email através do link que recebeste.',
+      emailInvalid:
+        'Este email não é aceite. Domínios de exemplo ou de teste não servem; usa um endereço real.',
+      emailSendFailed:
+        'Não foi possível enviar o email de confirmação. Tenta novamente mais tarde.',
+      redirectRejected:
+        'O endereço de retorno deste dispositivo não está autorizado, por isso o email não foi enviado.',
+      emailExists: 'Já existe uma conta com este email. Entra ou pede uma nova palavra-passe.',
       weakPassword: 'Escolhe uma palavra-passe mais forte.',
       rateLimited: 'Demasiadas tentativas. Aguarda alguns minutos e tenta novamente.',
       network: 'Sem ligação. Verifica a internet e tenta novamente.',

@@ -30,6 +30,10 @@ export type AuthState =
 export type AuthErrorCode =
   | 'invalidCredentials'
   | 'emailNotConfirmed'
+  | 'emailInvalid'
+  | 'emailSendFailed'
+  | 'redirectRejected'
+  | 'emailExists'
   | 'weakPassword'
   | 'rateLimited'
   | 'network'
@@ -38,16 +42,42 @@ export type AuthErrorCode =
 
 export type AuthResult<T = void> = { ok: true; value: T } | { ok: false; error: AuthErrorCode };
 
-/** Traduz o erro do Supabase num código. A mensagem nunca é mostrada nem registada. */
+/** A mensagem do servidor pode citar o email. Só serve para distinguir o código genérico. */
+function serverMessage(error: AuthError): string {
+  return typeof error.message === 'string' ? error.message.toLowerCase() : '';
+}
+
+/**
+ * Traduz o erro do Supabase num código. A mensagem do servidor não é mostrada.
+ * O registo fica em `fail` e contém só o código.
+ */
 export function toAuthErrorCode(error: AuthError | Error | null | undefined): AuthErrorCode {
   if (!error) return 'unknown';
-  const { code, status, name } = error as AuthError;
+  const authError = error as AuthError;
+  const { code, status, name } = authError;
   if (name === 'AuthRetryableFetchError' || status === 0) return 'network';
+  const message = serverMessage(authError);
   switch (code) {
     case 'invalid_credentials':
       return 'invalidCredentials';
     case 'email_not_confirmed':
       return 'emailNotConfirmed';
+    case 'email_address_invalid':
+      return 'emailInvalid';
+    case 'email_address_not_authorized':
+      return 'emailSendFailed';
+    case 'unexpected_failure':
+      return message.includes('sending confirmation email') ||
+        message.includes('sending recovery email') ||
+        message.includes('sending magic link') ||
+        message.includes('sending invite email')
+        ? 'emailSendFailed'
+        : 'unknown';
+    case 'validation_failed':
+      return message.includes('redirect') ? 'redirectRejected' : 'unknown';
+    case 'email_exists':
+    case 'user_already_exists':
+      return 'emailExists';
     case 'weak_password':
       return 'weakPassword';
     case 'over_request_rate_limit':
@@ -63,11 +93,18 @@ export function toAuthErrorCode(error: AuthError | Error | null | undefined): Au
   }
 }
 
+/** Código seguro para o log. Nunca a mensagem: ela pode incluir o email. */
+export function authLogCode(error: AuthError | Error | null | undefined): string {
+  const code = (error as AuthError | null | undefined)?.code;
+  if (typeof code === 'string' && code.length > 0) return code;
+  return toAuthErrorCode(error);
+}
+
 const ok = <T,>(value: T): AuthResult<T> => ({ ok: true, value });
-const fail = (error: AuthError | Error | null | undefined): AuthResult<never> => ({
-  ok: false,
-  error: toAuthErrorCode(error),
-});
+const fail = (error: AuthError | Error | null | undefined): AuthResult<never> => {
+  console.error(`[auth] ${authLogCode(error)}`);
+  return { ok: false, error: toAuthErrorCode(error) };
+};
 
 export { isAppleSignInAvailable } from './apple-sign-in';
 

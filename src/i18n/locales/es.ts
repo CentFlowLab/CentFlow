@@ -595,6 +595,12 @@ const es: Translation = {
     errors: {
       invalidCredentials: 'Correo o contraseña incorrectos.',
       emailNotConfirmed: 'Confirma primero tu correo con el enlace que has recibido.',
+      emailInvalid:
+        'Este correo no se acepta. Los dominios de ejemplo o de prueba no sirven; usa una dirección real.',
+      emailSendFailed: 'No se ha podido enviar el correo de confirmación. Inténtalo más tarde.',
+      redirectRejected:
+        'La dirección de retorno de este dispositivo no está autorizada, así que el correo no se ha enviado.',
+      emailExists: 'Ya existe una cuenta con este correo. Entra o pide una contraseña nueva.',
       weakPassword: 'Elige una contraseña más segura.',
       rateLimited: 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
       network: 'Sin conexión. Comprueba internet y vuelve a intentarlo.',

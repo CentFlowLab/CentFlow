@@ -5,7 +5,7 @@ import { Text } from 'react-native';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { authRedirectUrl } from '../auth-redirect';
-import { AuthProvider, toAuthErrorCode, useAuth } from '../AuthProvider';
+import { AuthProvider, authLogCode, toAuthErrorCode, useAuth } from '../AuthProvider';
 import { SignInScreen, SignUpScreen } from '../AuthScreens';
 
 jest.mock('@/features/finance/navigation', () => ({
@@ -27,6 +27,24 @@ describe('toAuthErrorCode', () => {
   it('maps known Supabase errors without exposing messages', () => {
     expect(toAuthErrorCode(authError('invalid_credentials'))).toBe('invalidCredentials');
     expect(toAuthErrorCode(authError('email_not_confirmed'))).toBe('emailNotConfirmed');
+    expect(toAuthErrorCode(authError('email_address_invalid'))).toBe('emailInvalid');
+    expect(toAuthErrorCode(authError('email_address_not_authorized'))).toBe('emailSendFailed');
+    expect(
+      toAuthErrorCode({
+        ...authError('unexpected_failure', 500),
+        message: 'Error sending confirmation email',
+      }),
+    ).toBe('emailSendFailed');
+    expect(toAuthErrorCode(authError('unexpected_failure', 500))).toBe('unknown');
+    expect(
+      toAuthErrorCode({
+        ...authError('validation_failed'),
+        message: 'redirect url is not allowed',
+      }),
+    ).toBe('redirectRejected');
+    expect(toAuthErrorCode(authError('validation_failed'))).toBe('unknown');
+    expect(toAuthErrorCode(authError('email_exists'))).toBe('emailExists');
+    expect(toAuthErrorCode(authError('user_already_exists'))).toBe('emailExists');
     expect(toAuthErrorCode(authError('weak_password'))).toBe('weakPassword');
     expect(toAuthErrorCode(authError('over_request_rate_limit'))).toBe('rateLimited');
     expect(toAuthErrorCode(authError('otp_expired'))).toBe('linkInvalid');
@@ -34,6 +52,18 @@ describe('toAuthErrorCode', () => {
       'network',
     );
     expect(toAuthErrorCode(authError('something_else'))).toBe('unknown');
+  });
+
+  it('logs only the error code', () => {
+    const error = {
+      ...authError('email_address_invalid'),
+      message: 'rejected pessoa@exemplo.test',
+    };
+    expect(authLogCode(error)).toBe('email_address_invalid');
+    expect(authLogCode(error)).not.toContain('pessoa@exemplo.test');
+    expect(authLogCode({ name: 'AuthRetryableFetchError', status: 0 } as AuthError)).toBe(
+      'network',
+    );
   });
 });
 
@@ -180,5 +210,37 @@ describe('auth screens', () => {
       }),
     );
     expect(await screen.findByText('Confirma o teu email')).toBeOnTheScreen();
+  });
+
+  it('explains a rejected sign-up and logs only the error code', async () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { client } = fakeClient({
+      signUp: jest.fn(async () => ({
+        data: { session: null, user: null },
+        error: {
+          name: 'AuthApiError',
+          status: 400,
+          code: 'email_address_invalid',
+          message: 'rejected nova@b.pt',
+        },
+      })),
+    });
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignUpScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(await screen.findByLabelText('Email'), 'nova@b.pt');
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(
+      await screen.findByText(
+        'Este email não é aceite. Domínios de exemplo ou de teste não servem; usa um endereço real.',
+      ),
+    ).toBeOnTheScreen();
+    const logged = spy.mock.calls.flat().join(' ');
+    expect(logged).toContain('[auth] email_address_invalid');
+    expect(logged).not.toContain('nova@b.pt');
+    spy.mockRestore();
   });
 });
