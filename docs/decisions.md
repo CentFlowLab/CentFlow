@@ -235,6 +235,19 @@ elimina logicamente as contribuições ainda ativas. Está aplicada no staging d
 e foi ensaiada (contribuições, bloqueio da moeda, fecho ao eliminar o objetivo e isolamento).
 Não está na produção.
 
+## ADR-024 — Relatórios calculam, não guardam
+
+**Decisão:** o ecrã de relatórios não cria tabela nem migration. O período é o mês, o trimestre,
+o ano ou um intervalo personalizado, sempre comparado com o período anterior da mesma natureza.
+Os totais, a taxa de poupança, as categorias e a evolução vivem em `src/core/finance/reports.ts`.
+O SQLite só agrega por dia, moeda, tipo e categoria, e soma as contribuições dos objetivos. Moedas
+diferentes nunca se somam: o ecrã mostra uma moeda de cada vez. O custo das subscrições é o das
+ativas neste momento e não cria movimentos. O progresso de um objetivo continua a ser a soma das
+contribuições. Exportação, partilha e IA ficam para fases seguintes.
+**Consequências:** não há escrita remota neste passo. Um intervalo com a data de fim antes da de
+início não mostra números. Sem contas, movimentos, orçamentos, subscrições ou objetivos, o ecrã
+diz que não há dados.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                              | Quando            |

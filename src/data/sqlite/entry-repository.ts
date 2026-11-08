@@ -261,6 +261,33 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
       }));
     },
 
+    async aggregateByDate({ from, to }) {
+      const rows = await db.all<{
+        date: string;
+        currency: string;
+        type: 'income' | 'expense';
+        category_id: string | null;
+        amount: number;
+      }>(
+        `SELECT e.date AS date, a.currency AS currency, e.type AS type,
+           e.category_id AS category_id, SUM(e.amount) AS amount
+         FROM entries e
+         JOIN accounts a ON a.id = e.account_id
+         WHERE e.deleted_at IS NULL AND e.type IN ('income', 'expense')
+           AND e.date >= ? AND e.date <= ?
+         GROUP BY e.date, a.currency, e.type, e.category_id
+         ORDER BY e.date`,
+        [from, to],
+      );
+      return rows.map((row) => ({
+        date: row.date,
+        currency: row.currency,
+        type: row.type,
+        categoryId: row.category_id,
+        amount: Number(row.amount),
+      }));
+    },
+
     async listExpenses({ from, to }) {
       const rows = await db.all<{
         category_id: string;

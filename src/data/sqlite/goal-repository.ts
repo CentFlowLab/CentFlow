@@ -96,6 +96,39 @@ export function createSqliteSavingsGoalRepository(
       return rows.map(toGoal);
     },
 
+    async progress({ from, to }) {
+      const rows = await db.all<{
+        id: string;
+        name: string;
+        currency: string;
+        target_amount: number;
+        target_on: string | null;
+        saved_amount: number | null;
+        period_amount: number | null;
+      }>(
+        `SELECT g.id AS id, g.name AS name, g.currency AS currency,
+           g.target_amount AS target_amount, g.target_on AS target_on,
+           SUM(c.amount) AS saved_amount,
+           SUM(CASE WHEN c.date >= ? AND c.date <= ? THEN c.amount ELSE 0 END) AS period_amount
+         FROM goals g
+         LEFT JOIN goal_contributions c
+           ON c.goal_id = g.id AND c.deleted_at IS NULL
+         WHERE g.deleted_at IS NULL
+         GROUP BY g.id
+         ORDER BY g.name, g.rowid`,
+        [from, to],
+      );
+      return rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        currency: row.currency,
+        targetAmount: row.target_amount,
+        targetOn: row.target_on,
+        savedAmount: Number(row.saved_amount ?? 0),
+        contributedInPeriod: Number(row.period_amount ?? 0),
+      }));
+    },
+
     async get(id) {
       const row = await db.first<GoalRow>(
         `SELECT ${GOAL_COLUMNS} FROM goals WHERE id = ? AND deleted_at IS NULL`,

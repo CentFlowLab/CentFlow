@@ -191,7 +191,8 @@ widgets.
 - **Fase 3 — orçamentos e planeamento (em curso):** os orçamentos (ADR-021), as subscrições
   (ADR-022) e os objetivos de poupança (ADR-023) estão no cliente e no staging, com histórico
   `20261108000100` a `20261108000700`, ensaiados em 2026-11-08. A produção continua só com
-  `20261108000100` e `20261108000200`. Relatórios ainda não. As Fases 4 e 5 não avançam sem
+  `20261108000100` e `20261108000200`. Os relatórios (ADR-024) estão no cliente e não
+  acrescentam tabela nem migration. As Fases 4 e 5 não avançam sem
   aprovação explícita.
 - **Fase 5 — IA e automação:** chamadas a modelos e OCR apenas em Edge Functions (chaves nunca no
   cliente); a IA propõe, o utilizador confirma. Importação de extratos e Open Banking através de

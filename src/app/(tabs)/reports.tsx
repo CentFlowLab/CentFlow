@@ -1,5 +1,5 @@
-import { ModulePlaceholderScreen } from '@/features/modules/ModulePlaceholderScreen';
+import { ReportsScreen } from '@/features/reports/ReportsScreen';
 
 export default function ReportsRoute() {
-  return <ModulePlaceholderScreen module="reports" />;
+  return <ReportsScreen />;
 }

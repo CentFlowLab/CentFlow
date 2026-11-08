@@ -9,7 +9,8 @@ veículos e documentos, com o objetivo de automatizar ao máximo o registo de in
 > Estado atual: **Fase 3 — orçamentos, subscrições, objetivos e relatórios, em curso.** Os
 > orçamentos, as subscrições e os objetivos de poupança funcionam no dispositivo e estão
 > aplicados no staging, com histórico `20261108000100` a `20261108000700`, já ensaiados. A
-> produção continua só com `20261108000100` e `20261108000200`. Relatórios continuam «Em breve».
+> produção continua só com `20261108000100` e `20261108000200`. Os relatórios estão no
+> cliente e não acrescentam tabela nem migration.
 > A app continua a funcionar sem conta (dados só
 > neste dispositivo). Com conta, os mesmos dados sincronizam entre iOS, Android e Web, incluindo
 > offline. Nenhum valor apresentado é fictício.

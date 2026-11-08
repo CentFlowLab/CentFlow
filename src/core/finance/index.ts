@@ -5,6 +5,7 @@ export * from './goals';
 export * from './default-categories';
 export * from './overview';
 export * from './periods';
+export * from './reports';
 export * from './subscriptions';
 export * from './summary';
 export * from './types';

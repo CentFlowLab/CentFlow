@@ -9,7 +9,8 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 Fases 0, 1 e 2 concluídas. Fase 3 (orçamentos, subscrições, objetivos de poupança, relatórios)
 em curso, com aprovação do responsável: orçamentos, subscrições e objetivos de poupança estão
 no cliente e no staging (histórico `20261108000100` a `20261108000700`, ensaiados em
-2026-11-08). Relatórios ainda não. A produção continua só com `20261108000100` e
+2026-11-08). Os relatórios estão no cliente (ADR-024): calculam sobre os dados já
+existentes e não acrescentam migration. A produção continua só com `20261108000100` e
 `20261108000200`. **Não avançar para as Fases 4 e 5 sem aprovação explícita.**
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:

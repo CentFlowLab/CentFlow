@@ -91,6 +91,15 @@ export type EntryAggregate = {
   amount: number;
 };
 
+/** Os mesmos totais, por dia, para um relatório que não cabe num mês fechado. */
+export type DailyAggregate = {
+  date: CalendarDate;
+  currency: string;
+  type: 'income' | 'expense';
+  categoryId: Id | null;
+  amount: number;
+};
+
 export interface EntryRepository {
   list(filter?: EntryFilter): Promise<EntryPage>;
   get(id: Id): Promise<Entry | null>;
@@ -98,6 +107,8 @@ export interface EntryRepository {
   update(id: Id, input: EntryInput): Promise<Entry>;
   delete(id: Id): Promise<void>;
   aggregate(range: { from: CalendarDate; to: CalendarDate }): Promise<EntryAggregate[]>;
+  /** Igual a `aggregate`, agrupado pelo dia em vez do mês. */
+  aggregateByDate(range: { from: CalendarDate; to: CalendarDate }): Promise<DailyAggregate[]>;
   /**
    * Despesas reais no intervalo, com a moeda da conta.
    * Não altera saldos: rendimentos e transferências ficam de fora.
@@ -114,8 +125,22 @@ export interface SubscriptionRepository {
   delete(id: Id): Promise<void>;
 }
 
+export type GoalProgress = {
+  id: Id;
+  name: string;
+  currency: string;
+  targetAmount: number;
+  targetOn: CalendarDate | null;
+  /** Soma de todas as contribuições ativas. Não é uma coluna do objetivo. */
+  savedAmount: number;
+  /** Soma das contribuições ativas cuja data cai no período. */
+  contributedInPeriod: number;
+};
+
 export interface SavingsGoalRepository {
   list(): Promise<SavingsGoal[]>;
+  /** Progresso calculado na consulta. O objetivo continua sem total guardado. */
+  progress(range: { from: CalendarDate; to: CalendarDate }): Promise<GoalProgress[]>;
   get(id: Id): Promise<SavingsGoal | null>;
   create(input: SavingsGoalInput): Promise<SavingsGoal>;
   update(id: Id, input: SavingsGoalInput): Promise<SavingsGoal>;

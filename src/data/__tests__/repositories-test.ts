@@ -272,6 +272,34 @@ describe('entries', () => {
         { month: '2026-11', currency: 'EUR', type: 'expense', categoryId: food.id, amount: 4150 },
       ]);
     });
+
+    it('aggregates the same movements by day and still excludes transfers', async () => {
+      expect(await repos.entries.aggregateByDate({ from: '2026-10-01', to: '2026-11-30' })).toEqual(
+        [
+          {
+            date: '2026-10-28',
+            currency: 'EUR',
+            type: 'income',
+            categoryId: salary.id,
+            amount: 200000,
+          },
+          {
+            date: '2026-11-01',
+            currency: 'EUR',
+            type: 'expense',
+            categoryId: food.id,
+            amount: 150,
+          },
+          {
+            date: '2026-11-15',
+            currency: 'EUR',
+            type: 'expense',
+            categoryId: food.id,
+            amount: 4000,
+          },
+        ],
+      );
+    });
   });
 });
 
@@ -668,6 +696,25 @@ describe('savings goals', () => {
     await repos.goals.delete(goal.id);
     expect(await repos.goals.get(goal.id)).toBeNull();
     expect(await repos.goals.listContributions(goal.id)).toEqual([]);
+  });
+
+  it('sums progress in SQL without storing it on the goal', async () => {
+    const goal = await repos.goals.create({
+      name: 'Férias',
+      targetAmount: 10000,
+      currency: 'EUR',
+      targetOn: null,
+    });
+    await repos.goals.addContribution({ goalId: goal.id, amount: 2500, date: '2026-10-01' });
+    await repos.goals.addContribution({ goalId: goal.id, amount: 2500, date: '2026-11-08' });
+    const [progress] = await repos.goals.progress({ from: '2026-11-01', to: '2026-11-30' });
+    expect(progress).toMatchObject({
+      id: goal.id,
+      savedAmount: 5000,
+      contributedInPeriod: 2500,
+    });
+    const columns = await db.all<{ name: string }>('PRAGMA table_info(goals)');
+    expect(columns.map((column) => column.name)).not.toContain('saved_amount');
   });
 
   it('rejects a contribution for a missing goal and a non-positive amount', async () => {
