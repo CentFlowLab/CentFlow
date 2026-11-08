@@ -221,6 +221,18 @@ ou a cobrança da própria aplicação.
 `sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Ainda não foi aplicada
 no staging nem na produção.
 
+## ADR-023 — Objetivos de poupança somam contribuições
+
+**Decisão:** `goals` guarda o alvo (nome, valor em unidades mínimas, moeda e data opcional).
+`goal_contributions` guarda cada contribuição numa linha sincronizada (valor positivo, data,
+objetivo e eliminação lógica). O progresso é a soma das contribuições ainda ativas; o objetivo
+não tem coluna de total. Corrigir um engano é apagar a contribuição. A moeda do objetivo fica
+bloqueada quando já há contribuições. Uma contribuição não cria movimentos nem altera saldos.
+**Consequências:** a migration `20261108000700` entra em `sync_push`, `sync_pull_v2`,
+`sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Apagar o objetivo
+elimina logicamente as contribuições ainda ativas. Ainda não foi aplicada no staging nem na
+produção.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                              | Quando            |

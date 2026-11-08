@@ -10,7 +10,14 @@
  *   em silêncio, nem uma eliminação desfeita em silêncio.
  */
 
-export type SyncEntity = 'accounts' | 'categories' | 'budgets' | 'subscriptions' | 'entries';
+export type SyncEntity =
+  | 'accounts'
+  | 'categories'
+  | 'budgets'
+  | 'subscriptions'
+  | 'goals'
+  | 'goal_contributions'
+  | 'entries';
 
 export type SyncValue = string | number | null;
 export type SyncRecord = Readonly<Record<string, SyncValue>>;
@@ -31,6 +38,8 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'category_id',
     'deleted_at',
   ],
+  goals: ['name', 'target_amount', 'currency', 'target_on', 'deleted_at'],
+  goal_contributions: ['goal_id', 'amount', 'date', 'deleted_at'],
   entries: [
     'type',
     'amount',
@@ -49,6 +58,8 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   categories: [],
   budgets: [],
   subscriptions: [],
+  goals: [],
+  goal_contributions: [],
   entries: [['type', 'category_id', 'account_id', 'destination_account_id']],
 };
 

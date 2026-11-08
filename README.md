@@ -8,8 +8,9 @@ veículos e documentos, com o objetivo de automatizar ao máximo o registo de in
 
 > Estado atual: **Fase 3 — orçamentos, subscrições, objetivos e relatórios, em curso.** Os
 > orçamentos já funcionam no dispositivo e entram na sincronização. As subscrições também já
-> funcionam no dispositivo; a migration ainda não foi aplicada na cloud. Objetivos de poupança
-> e relatórios continuam «Em breve». A app continua a funcionar sem conta (dados só
+> funcionam no dispositivo; a migration ainda não foi aplicada na cloud. Os objetivos de
+> poupança também já funcionam no dispositivo; a migration `20261108000700` ainda não foi
+> aplicada na cloud. Relatórios continuam «Em breve». A app continua a funcionar sem conta (dados só
 > neste dispositivo). Com conta, os mesmos dados sincronizam entre iOS, Android e Web, incluindo
 > offline. Nenhum valor apresentado é fictício.
 

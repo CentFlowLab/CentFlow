@@ -58,6 +58,7 @@ export const REJECTION_CODES = [
   'type_locked',
   'category_in_use',
   'duplicate_budget',
+  'goal_unavailable',
 ] as const;
 export type RejectionCode = (typeof REJECTION_CODES)[number] | 'invalid';
 
@@ -176,13 +177,24 @@ export function createSyncEngine({
   }
 
   /**
-   * Uma ronda de envio, por ordem da fila. Devolve `true` se alguma operação ficou resolvida.
-   *
-   * Cada registo envia no máximo uma alteração por ronda: a seguinte só parte depois de a
-   * anterior estar confirmada, para que um conflito nunca seja contornado por uma alteração
-   * posterior cuja versão base coincida por acaso com a do servidor. Grupos que tocam registos
-   * bloqueados (rejeitados ou abortados) são saltados para não travarem o resto da fila.
+   * O objetivo só parte depois de o apagamento das contribuições estar confirmado,
+   * quando não viajam no mesmo grupo. No mesmo grupo a ordem da fila chega.
    */
+  function goalDeleteWaits(
+    group: readonly OutboxOperation[],
+    contributionDeletes: readonly { seq: number; txId: string | null; goalId: string }[],
+  ): boolean {
+    return group.some((op) => {
+      if (op.entity !== 'goals' || op.data.deleted_at == null) return false;
+      return contributionDeletes.some(
+        (contribution) =>
+          contribution.goalId === op.recordId &&
+          contribution.seq < op.seq &&
+          contribution.txId !== op.txId,
+      );
+    });
+  }
+
   /**
    * A categoria só parte depois de o apagamento do orçamento estar confirmado.
    * No mesmo grupo atómico a ordem da fila chega: o orçamento é aplicado primeiro.
@@ -200,10 +212,19 @@ export function createSyncEngine({
     });
   }
 
+  /**
+   * Uma ronda de envio, por ordem da fila. Devolve `true` se alguma operação ficou resolvida.
+   *
+   * Cada registo envia no máximo uma alteração por ronda: a seguinte só parte depois de a
+   * anterior estar confirmada, para que um conflito nunca seja contornado por uma alteração
+   * posterior cuja versão base coincida por acaso com a do servidor. Grupos que tocam registos
+   * bloqueados (rejeitados ou abortados) são saltados para não travarem o resto da fila.
+   */
   async function pushRound(): Promise<boolean> {
     const seen = new Set<string>();
     const stuck = new Set<string>();
     const budgetDeletes = await store.pendingBudgetDeletes();
+    const contributionDeletes = await store.pendingContributionDeletes();
     let after = 0;
     let progressed = false;
     for (;;) {
@@ -219,7 +240,10 @@ export function createSyncEngine({
           examined = group.at(-1)!.seq;
           continue;
         }
-        if (categoryDeleteWaits(group, budgetDeletes)) {
+        if (
+          categoryDeleteWaits(group, budgetDeletes) ||
+          goalDeleteWaits(group, contributionDeletes)
+        ) {
           examined = group.at(-1)!.seq;
           continue;
         }
@@ -311,7 +335,17 @@ export function createSyncEngine({
       store.state(),
     ]);
     if (server.last_seq !== state.pullCursor) return true;
-    return (['accounts', 'categories', 'budgets', 'subscriptions', 'entries'] as const).every(
+    return (
+      [
+        'accounts',
+        'categories',
+        'budgets',
+        'subscriptions',
+        'goals',
+        'goal_contributions',
+        'entries',
+      ] as const
+    ).every(
       (entity) =>
         server[entity].live === local[entity].live &&
         server[entity].deleted === local[entity].deleted,

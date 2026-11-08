@@ -109,3 +109,27 @@ export type SubscriptionInput = Pick<
   Subscription,
   'name' | 'amount' | 'currency' | 'period' | 'status' | 'startsOn' | 'nextOn' | 'categoryId'
 >;
+
+/** Objetivo de poupança. O progresso não é guardado: é a soma das contribuições ativas. */
+export type SavingsGoal = SyncMetadata & {
+  id: Id;
+  name: string;
+  /** Alvo em unidades mínimas. Sempre positivo. */
+  targetAmount: number;
+  currency: CurrencyCode;
+  /** Data opcional para atingir o alvo. */
+  targetOn: CalendarDate | null;
+};
+
+export type SavingsGoalInput = Pick<SavingsGoal, 'name' | 'targetAmount' | 'currency' | 'targetOn'>;
+
+/** Linha própria. Corrigir um engano é apagá-la, não editar o valor. */
+export type GoalContribution = SyncMetadata & {
+  id: Id;
+  goalId: Id;
+  /** Unidades mínimas. Sempre positivo. A moeda é a do objetivo. */
+  amount: number;
+  date: CalendarDate;
+};
+
+export type GoalContributionInput = Pick<GoalContribution, 'goalId' | 'amount' | 'date'>;

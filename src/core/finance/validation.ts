@@ -10,6 +10,8 @@ import {
   type Account,
   type AccountInput,
   type BudgetInput,
+  type GoalContributionInput,
+  type SavingsGoalInput,
   type SubscriptionInput,
   type Category,
   type CategoryInput,
@@ -206,5 +208,41 @@ export function validateSubscriptionInput(
   if (!isValidCalendarDate(input.nextOn) || input.nextOn < input.startsOn) {
     errors.nextOn = 'invalidDate';
   }
+  return errors;
+}
+
+export type SavingsGoalField = keyof SavingsGoalInput;
+
+export function validateSavingsGoalInput(
+  input: SavingsGoalInput,
+): ValidationErrors<SavingsGoalField> {
+  const errors: ValidationErrors<SavingsGoalField> = {};
+  const name = validateName(input.name);
+  if (name) errors.name = name;
+  if (!Number.isSafeInteger(input.targetAmount) || input.targetAmount <= 0) {
+    errors.targetAmount = 'amountNotPositive';
+  } else if (input.targetAmount > MAX_AMOUNT_MINOR) {
+    errors.targetAmount = 'amountTooLarge';
+  }
+  if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
+  if (input.targetOn !== null && !isValidCalendarDate(input.targetOn)) {
+    errors.targetOn = 'invalidDate';
+  }
+  return errors;
+}
+
+export type GoalContributionField = keyof GoalContributionInput;
+
+export function validateGoalContributionInput(
+  input: GoalContributionInput,
+): ValidationErrors<GoalContributionField> {
+  const errors: ValidationErrors<GoalContributionField> = {};
+  if (input.goalId.trim() === '') errors.goalId = 'required';
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) {
+    errors.amount = 'amountNotPositive';
+  } else if (input.amount > MAX_AMOUNT_MINOR) {
+    errors.amount = 'amountTooLarge';
+  }
+  if (!isValidCalendarDate(input.date)) errors.date = 'invalidDate';
   return errors;
 }

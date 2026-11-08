@@ -190,7 +190,8 @@ widgets.
   todas as tabelas; eliminação de conta numa Edge Function. Ver ADR-017 a ADR-020.
 - **Fase 3 — orçamentos e planeamento (em curso):** os orçamentos usam o mesmo protocolo
   (ADR-021) e já estão no cliente e no staging. As subscrições (ADR-022) estão no cliente; a
-  migration ainda não foi aplicada na cloud. Objetivos de poupança e relatórios ainda não.
+  migration ainda não foi aplicada na cloud. Os objetivos de poupança (ADR-023) estão no
+  cliente; a migration `20261108000700` ainda não foi aplicada na cloud. Relatórios ainda não.
   As Fases 4 e 5 não avançam sem aprovação explícita.
 - **Fase 5 — IA e automação:** chamadas a modelos e OCR apenas em Edge Functions (chaves nunca no
   cliente); a IA propõe, o utilizador confirma. Importação de extratos e Open Banking através de

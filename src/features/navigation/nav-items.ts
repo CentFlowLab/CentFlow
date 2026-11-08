@@ -7,6 +7,7 @@ export type TabRouteName =
   | 'accounts'
   | 'budgets'
   | 'subscriptions'
+  | 'goals'
   | 'wealth'
   | 'vehicles'
   | 'documents'
@@ -21,6 +22,7 @@ export type NavKey =
   | 'accounts'
   | 'budgets'
   | 'subscriptions'
+  | 'goals'
   | 'wealth'
   | 'vehicles'
   | 'documents'
@@ -41,6 +43,7 @@ const IMPLEMENTED: readonly NavKey[] = [
   'accounts',
   'budgets',
   'subscriptions',
+  'goals',
   'categories',
   'settings',
 ];
@@ -48,7 +51,7 @@ const IMPLEMENTED: readonly NavKey[] = [
 /** Áreas com ecrã próprio ainda por implementar. */
 export type PlannedModule = Exclude<
   DescribedArea,
-  'transactions' | 'accounts' | 'categories' | 'budgets' | 'subscriptions'
+  'transactions' | 'accounts' | 'categories' | 'budgets' | 'subscriptions' | 'goals'
 >;
 
 export function isPlannedModule(key: NavKey): key is PlannedModule {
@@ -111,6 +114,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/subscriptions',
     icon: 'repeat-outline',
     activeIcon: 'repeat',
+    group: 'planning',
+    mobilePrimary: false,
+  },
+  {
+    key: 'goals',
+    route: 'goals',
+    href: '/goals',
+    icon: 'flag-outline',
+    activeIcon: 'flag',
     group: 'planning',
     mobilePrimary: false,
   },

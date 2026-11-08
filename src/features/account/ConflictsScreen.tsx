@@ -35,6 +35,22 @@ function useDescribe() {
     if (conflict.entity === 'accounts' || conflict.entity === 'categories') {
       return { title: String(version.name ?? '') };
     }
+    if (conflict.entity === 'goals') {
+      const amount =
+        typeof version.target_amount === 'number' && typeof version.currency === 'string'
+          ? formatMoney({ amountMinor: version.target_amount, currency: version.currency })
+          : null;
+      return {
+        title: String(version.name || t('conflicts.entities.goals')),
+        detail: amount ?? undefined,
+      };
+    }
+    if (conflict.entity === 'goal_contributions') {
+      return {
+        title: t('conflicts.entities.goal_contributions'),
+        detail: typeof version.date === 'string' ? version.date : undefined,
+      };
+    }
     if (conflict.entity === 'subscriptions') {
       const amount =
         typeof version.amount === 'number' && typeof version.currency === 'string'

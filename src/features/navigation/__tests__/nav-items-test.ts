@@ -3,7 +3,7 @@ import { isMoreActive, isPlannedModule, MOBILE_PRIMARY_ITEMS, NAV_ITEMS } from '
 describe('navigation config', () => {
   it('covers every area exactly once', () => {
     const keys = NAV_ITEMS.map((item) => item.key);
-    expect(keys).toHaveLength(11);
+    expect(keys).toHaveLength(12);
     expect(new Set(keys).size).toBe(keys.length);
   });
 

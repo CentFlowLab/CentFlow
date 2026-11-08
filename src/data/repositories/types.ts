@@ -14,6 +14,10 @@ import type {
   EntryInput,
   EntryType,
   Id,
+  GoalContribution,
+  GoalContributionInput,
+  SavingsGoal,
+  SavingsGoalInput,
   Subscription,
   SubscriptionInput,
 } from '@/core/finance';
@@ -110,6 +114,20 @@ export interface SubscriptionRepository {
   delete(id: Id): Promise<void>;
 }
 
+export interface SavingsGoalRepository {
+  list(): Promise<SavingsGoal[]>;
+  get(id: Id): Promise<SavingsGoal | null>;
+  create(input: SavingsGoalInput): Promise<SavingsGoal>;
+  update(id: Id, input: SavingsGoalInput): Promise<SavingsGoal>;
+  /** Apaga também as contribuições ativas. Não cria movimentos. */
+  delete(id: Id): Promise<void>;
+  listContributions(goalId: Id): Promise<GoalContribution[]>;
+  /** Não cria movimentos. A moeda é a do objetivo. */
+  addContribution(input: GoalContributionInput): Promise<GoalContribution>;
+  /** Corrigir um engano é apagar a linha, não alterar o valor. */
+  deleteContribution(id: Id): Promise<void>;
+}
+
 export interface BudgetRepository {
   list(): Promise<Budget[]>;
   get(id: Id): Promise<Budget | null>;
@@ -119,7 +137,14 @@ export interface BudgetRepository {
   delete(id: Id): Promise<void>;
 }
 
-export type DataEntity = 'accounts' | 'budgets' | 'categories' | 'entries' | 'subscriptions';
+export type DataEntity =
+  | 'accounts'
+  | 'budgets'
+  | 'categories'
+  | 'entries'
+  | 'goal_contributions'
+  | 'goals'
+  | 'subscriptions';
 
 export interface Repositories {
   accounts: AccountRepository;
@@ -127,6 +152,7 @@ export interface Repositories {
   entries: EntryRepository;
   budgets: BudgetRepository;
   subscriptions: SubscriptionRepository;
+  goals: SavingsGoalRepository;
   /** Notifica após cada escrita confirmada. Devolve a função para cancelar. */
   subscribe(listener: (entities: readonly DataEntity[]) => void): () => void;
 }

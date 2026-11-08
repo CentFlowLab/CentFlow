@@ -2,6 +2,7 @@ import {
   computeBalances,
   DEFAULT_CATEGORIES,
   flowsFromEntries,
+  savedAmountMinor,
   spentAmount,
   ValidationError,
   type Account,
@@ -633,5 +634,58 @@ describe('subscriptions', () => {
     await expect(
       repos.subscriptions.create({ ...input(), categoryId: null, nextOn: '2026-10-01' }),
     ).rejects.toMatchObject({ errors: { nextOn: 'invalidDate' } });
+  });
+});
+
+describe('savings goals', () => {
+  it('sums active contributions and does not write an entry or a stored total', async () => {
+    const goal = await repos.goals.create({
+      name: 'Férias',
+      targetAmount: 10000,
+      currency: 'EUR',
+      targetOn: '2026-12-01',
+    });
+    const first = await repos.goals.addContribution({
+      goalId: goal.id,
+      amount: 2500,
+      date: '2026-11-01',
+    });
+    await repos.goals.addContribution({ goalId: goal.id, amount: 2500, date: '2026-11-08' });
+    const contributions = await repos.goals.listContributions(goal.id);
+    expect(savedAmountMinor(contributions.map((item) => item.amount))).toBe(5000);
+    expect((await repos.entries.list()).total).toBe(0);
+    const columns = await db.all<{ name: string }>(`PRAGMA table_info(goals)`);
+    expect(columns.map((column) => column.name)).not.toContain('saved_amount');
+
+    await repos.goals.deleteContribution(first.id);
+    expect(
+      savedAmountMinor((await repos.goals.listContributions(goal.id)).map((item) => item.amount)),
+    ).toBe(2500);
+    await expect(
+      repos.goals.update(goal.id, { ...goal, currency: 'USD', targetOn: goal.targetOn }),
+    ).rejects.toMatchObject({ errors: { currency: 'currencyLocked' } });
+
+    await repos.goals.delete(goal.id);
+    expect(await repos.goals.get(goal.id)).toBeNull();
+    expect(await repos.goals.listContributions(goal.id)).toEqual([]);
+  });
+
+  it('rejects a contribution for a missing goal and a non-positive amount', async () => {
+    await expect(
+      repos.goals.addContribution({
+        goalId: '00000000-0000-4000-8000-000000000000',
+        amount: 100,
+        date: '2026-11-08',
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    const goal = await repos.goals.create({
+      name: 'Reserva',
+      targetAmount: 100,
+      currency: 'EUR',
+      targetOn: null,
+    });
+    await expect(
+      repos.goals.addContribution({ goalId: goal.id, amount: 0, date: '2026-11-08' }),
+    ).rejects.toBeInstanceOf(ValidationError);
   });
 });

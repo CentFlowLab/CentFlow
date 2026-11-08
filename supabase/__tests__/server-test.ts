@@ -35,7 +35,14 @@ function opId(): string {
 type Op = {
   op_id: string;
   tx_id: string | null;
-  entity: 'accounts' | 'categories' | 'budgets' | 'subscriptions' | 'entries';
+  entity:
+    | 'accounts'
+    | 'categories'
+    | 'budgets'
+    | 'subscriptions'
+    | 'goals'
+    | 'goal_contributions'
+    | 'entries';
   record_id: string;
   base_version: number;
   data: Record<string, unknown>;
@@ -157,6 +164,8 @@ describe('schema', () => {
         'budgets',
         'categories',
         'entries',
+        'goal_contributions',
+        'goals',
         'profiles',
         'subscriptions',
         'sync_metadata',
@@ -174,13 +183,16 @@ describe('schema', () => {
       data_type: string;
     }>(
       `select table_name, column_name, data_type from information_schema.columns
-        where table_schema = 'public' and column_name in ('amount', 'initial_balance')
+        where table_schema = 'public'
+          and column_name in ('amount', 'initial_balance', 'target_amount')
         order by table_name`,
     );
     expect(rows).toEqual([
       { table_name: 'accounts', column_name: 'initial_balance', data_type: 'bigint' },
       { table_name: 'budgets', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'entries', column_name: 'amount', data_type: 'bigint' },
+      { table_name: 'goal_contributions', column_name: 'amount', data_type: 'bigint' },
+      { table_name: 'goals', column_name: 'target_amount', data_type: 'bigint' },
       { table_name: 'subscriptions', column_name: 'amount', data_type: 'bigint' },
     ]);
   });
@@ -510,14 +522,34 @@ describe('purge of deleted rows', () => {
     await push(alice, [entryOp(ENTRY, 1, { deleted_at: new Date().toISOString() })]);
 
     expect(await server.pg.query(`select public.purge_deleted()`)).toEqual([
-      { purge_deleted: { entries: 0, budgets: 0, subscriptions: 0, categories: 0, accounts: 0 } },
+      {
+        purge_deleted: {
+          entries: 0,
+          budgets: 0,
+          subscriptions: 0,
+          goal_contributions: 0,
+          goals: 0,
+          categories: 0,
+          accounts: 0,
+        },
+      },
     ]);
 
     await server.pg.query(
       `update public.entries set deleted_at = now() - interval '200 days', version = version`,
     );
     expect(await server.pg.query(`select public.purge_deleted()`)).toEqual([
-      { purge_deleted: { entries: 1, budgets: 0, subscriptions: 0, categories: 0, accounts: 0 } },
+      {
+        purge_deleted: {
+          entries: 1,
+          budgets: 0,
+          subscriptions: 0,
+          goal_contributions: 0,
+          goals: 0,
+          categories: 0,
+          accounts: 0,
+        },
+      },
     ]);
     await expect(server.pg.query(`select public.purge_deleted(interval '1 day')`)).rejects.toThrow(
       /retention_too_short/,
@@ -803,5 +835,93 @@ describe('subscriptions', () => {
       subscriptionOp({ next_on: '2026-10-01', category_id: null }),
     ]);
     expect(dates).toMatchObject({ status: 'rejected', reason: 'invalid' });
+  });
+});
+
+describe('savings goals', () => {
+  const GOAL = '70000000-0000-4000-8000-000000000001';
+  const CONTRIBUTION = '70000000-0000-4000-8000-000000000002';
+
+  function goalOp(base: number, data: Record<string, unknown> = {}) {
+    return {
+      op_id: opId(),
+      tx_id: null,
+      entity: 'goals' as const,
+      record_id: GOAL,
+      base_version: base,
+      data: {
+        name: 'Férias',
+        target_amount: 10000,
+        currency: 'EUR',
+        target_on: '2026-12-01',
+        deleted_at: null,
+        ...data,
+      },
+    };
+  }
+
+  function contributionOp(base: number, data: Record<string, unknown> = {}) {
+    return {
+      op_id: opId(),
+      tx_id: null,
+      entity: 'goal_contributions' as const,
+      record_id: CONTRIBUTION,
+      base_version: base,
+      data: {
+        goal_id: GOAL,
+        amount: 2500,
+        date: '2026-11-08',
+        deleted_at: null,
+        ...data,
+      },
+    };
+  }
+
+  it('keeps each contribution as its own row and does not create an entry', async () => {
+    const [goal] = await push(alice, [goalOp(0)]);
+    expect(goal).toMatchObject({ status: 'applied' });
+    const [contribution] = await push(alice, [contributionOp(0)]);
+    expect(contribution).toMatchObject({ status: 'applied' });
+    expect(await alice.query('select count(*)::int as n from public.entries')).toEqual([{ n: 0 }]);
+    expect(
+      await alice.query<{ saved: string | null }>(
+        `select column_name as saved from information_schema.columns
+          where table_schema = 'public' and table_name = 'goals'
+            and column_name in ('saved_amount', 'progress', 'total')`,
+      ),
+    ).toEqual([]);
+    expect(await bob.query('select id from public.goals')).toEqual([]);
+    expect(await bob.query('select id from public.goal_contributions')).toEqual([]);
+
+    type Pull = { changes: { entity: string }[] };
+    const fresh = await alice.rpc<Pull>('sync_pull_v2', { p_since: 0 });
+    expect(fresh.changes.some((change) => change.entity === 'goals')).toBe(true);
+    expect(fresh.changes.some((change) => change.entity === 'goal_contributions')).toBe(true);
+    const legacy = await alice.rpc<Pull>('sync_pull', { p_since: 0 });
+    expect(legacy.changes.some((change) => change.entity === 'goals')).toBe(false);
+    expect(legacy.changes.some((change) => change.entity === 'goal_contributions')).toBe(false);
+
+    await expect(
+      alice.query(`insert into public.goals (id, name) values ('${GOAL}', 'x')`),
+    ).rejects.toThrow();
+  });
+
+  it('closes contributions when the goal is deleted and locks the currency', async () => {
+    await push(alice, [goalOp(0), contributionOp(0)]);
+    const [currency] = await push(alice, [goalOp(1, { currency: 'USD' })]);
+    expect(currency).toMatchObject({ status: 'rejected', reason: 'currency_locked' });
+
+    const [removed] = await push(alice, [goalOp(1, { deleted_at: new Date().toISOString() })]);
+    expect(removed).toMatchObject({ status: 'applied' });
+    expect(
+      await alice.query<{ gone: boolean }>(
+        `select deleted_at is not null as gone from public.goal_contributions where id = $1`,
+        [CONTRIBUTION],
+      ),
+    ).toEqual([{ gone: true }]);
+    expect(await alice.query('select count(*)::int as n from public.entries')).toEqual([{ n: 0 }]);
+
+    const [missing] = await push(bob, [contributionOp(0)]);
+    expect(missing).toMatchObject({ status: 'rejected', reason: 'goal_unavailable' });
   });
 });

@@ -1,6 +1,7 @@
 export class NotFoundError extends Error {
   constructor(
-    readonly entity: 'account' | 'budget' | 'category' | 'entry' | 'subscription',
+    readonly entity:
+      'account' | 'budget' | 'category' | 'entry' | 'goal' | 'contribution' | 'subscription',
     readonly id: string,
   ) {
     super(`${entity} ${id} not found`);

@@ -12,6 +12,8 @@ export const SYNC_ENTITIES: readonly SyncEntity[] = [
   'categories',
   'budgets',
   'subscriptions',
+  'goals',
+  'goal_contributions',
   'entries',
 ];
 
@@ -103,6 +105,17 @@ const COLUMNS: Record<SyncEntity, readonly string[]> = {
     'updated_at',
     'deleted_at',
   ],
+  goals: [
+    'id',
+    'name',
+    'target_amount',
+    'currency',
+    'target_on',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  ],
+  goal_contributions: ['id', 'goal_id', 'amount', 'date', 'created_at', 'updated_at', 'deleted_at'],
   entries: [
     'id',
     'type',
@@ -338,6 +351,22 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
         .map((row) => ({ seq: row.seq, txId: row.tx_id, categoryId: row.category_id }));
     },
 
+    /** Apagamentos de contribuição ainda por confirmar, para não ultrapassar o do objetivo. */
+    async pendingContributionDeletes(): Promise<
+      { seq: number; txId: string | null; goalId: string }[]
+    > {
+      const rows = await db.all<{ seq: number; tx_id: string | null; goal_id: string }>(
+        `SELECT seq, tx_id, json_extract(data, '$.goal_id') AS goal_id
+           FROM sync_outbox
+          WHERE entity = 'goal_contributions'
+            AND json_type(data, '$.deleted_at') = 'text'
+          ORDER BY seq`,
+      );
+      return rows
+        .filter((row) => row.goal_id != null)
+        .map((row) => ({ seq: row.seq, txId: row.tx_id, goalId: row.goal_id }));
+    },
+
     async openConflictCount(): Promise<number> {
       const row = await db.first<{ n: number }>(
         'SELECT COUNT(*) AS n FROM sync_conflicts WHERE resolved_at IS NULL',
@@ -527,7 +556,10 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
                   : entity === 'categories'
                     ? `AND NOT EXISTS (SELECT 1 FROM entries e WHERE e.category_id = categories.id)
                        AND NOT EXISTS (SELECT 1 FROM budgets b WHERE b.category_id = categories.id)`
-                    : '';
+                    : entity === 'goals'
+                      ? `AND NOT EXISTS (SELECT 1 FROM goal_contributions c
+                          WHERE c.goal_id = goals.id)`
+                      : '';
               // Já confirmadas e purgadas no servidor: a eliminação foi definitiva.
               const purged = await tx.run(
                 `DELETE FROM ${entity} WHERE version > 0 AND ${unseen} ${referenced}`,

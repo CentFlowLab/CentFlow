@@ -23,6 +23,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="accounts" options={{ title: t('nav.accounts') }} />
       <Tabs.Screen name="budgets" options={{ title: t('nav.budgets') }} />
       <Tabs.Screen name="subscriptions" options={{ title: t('nav.subscriptions') }} />
+      <Tabs.Screen name="goals" options={{ title: t('nav.goals') }} />
       <Tabs.Screen name="reports" options={{ title: t('nav.reports') }} />
       <Tabs.Screen name="wealth" options={{ title: t('nav.wealth') }} />
       <Tabs.Screen name="vehicles" options={{ title: t('nav.vehicles') }} />
