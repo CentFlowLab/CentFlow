@@ -3,8 +3,17 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { PERIOD_PRESETS, presetRange, type EntryType, type PeriodPreset } from '@/core/finance';
+import {
+  PERIOD_PRESETS,
+  addDays,
+  calendarDateToLocalDate,
+  presetRange,
+  type CalendarDate,
+  type EntryType,
+  type PeriodPreset,
+} from '@/core/finance';
 import { useDataQuery, type EntryFilter, type EntrySort, type Repositories } from '@/data';
+import { useLocaleFormat } from '@/i18n';
 import {
   Button,
   Card,
@@ -26,6 +35,17 @@ import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
 
+function dateHeading(
+  date: CalendarDate,
+  today: CalendarDate,
+  formatDate: (value: Date, style: 'medium') => string,
+  t: (key: 'common.today' | 'common.yesterday') => string,
+): string {
+  if (date === today) return t('common.today');
+  if (date === addDays(today, -1)) return t('common.yesterday');
+  return formatDate(calendarDateToLocalDate(date), 'medium');
+}
+
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 250;
 const DIVIDER_INSET = spacing.lg + 36 + spacing.md;
@@ -45,6 +65,7 @@ export function EntriesScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const breakpoint = useBreakpoint();
+  const { formatDate } = useLocaleFormat();
   const today = useToday();
   const lookups = useFinanceLookups();
 
@@ -282,16 +303,28 @@ export function EntriesScreen() {
             {t('entries.resultCount', { count: total })}
           </Text>
           <Card padding="xs">
-            {items.map((entry, index) => (
-              <Fragment key={entry.id}>
-                {index > 0 ? <Divider inset={DIVIDER_INSET} /> : null}
-                <EntryListItem
-                  entry={entry}
-                  lookups={lookups.data!}
-                  onPress={() => router.push({ pathname: '/entry/[id]', params: { id: entry.id } })}
-                />
-              </Fragment>
-            ))}
+            {items.map((entry, index) => {
+              const previous = items[index - 1];
+              const showDate = !previous || previous.date !== entry.date;
+              return (
+                <Fragment key={entry.id}>
+                  {showDate ? (
+                    <Text variant="footnote" tone="secondary" style={styles.day}>
+                      {dateHeading(entry.date, today, formatDate, t)}
+                    </Text>
+                  ) : (
+                    <Divider inset={DIVIDER_INSET} />
+                  )}
+                  <EntryListItem
+                    entry={entry}
+                    lookups={lookups.data!}
+                    onPress={() =>
+                      router.push({ pathname: '/entry/[id]', params: { id: entry.id } })
+                    }
+                  />
+                </Fragment>
+              );
+            })}
           </Card>
           {items.length < total ? (
             <Button
@@ -320,6 +353,11 @@ const styles = StyleSheet.create({
   },
   results: {
     gap: spacing.sm,
+  },
+  day: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
   },
   loading: {
     paddingVertical: spacing['4xl'],
