@@ -142,6 +142,9 @@ let server: TestServer;
 let alice: ServerSession;
 let bob: ServerSession;
 
+// No CI do macOS, arrancar o PGlite pode passar dos 5 s por omissão.
+jest.setTimeout(30_000);
+
 beforeEach(async () => {
   server = await createTestServer();
   alice = await server.createUser(A);
@@ -149,7 +152,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await server.close();
+  await server?.close();
 });
 
 describe('schema', () => {

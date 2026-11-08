@@ -2,7 +2,7 @@
 // consegue localizar os seus ficheiros WASM. Os pedidos são processados um de cada vez para que
 // a identidade (role + utilizador) de um pedido nunca se misture com a de outro.
 // O Node 24 aborta ao libertar um wrapper WASM (nodejs/node#66366). O `npm test` arranca o Jest
-// com --no-wasm-code-gc e um orçamento de tier-up enorme; este worker herda essas flags.
+// com --no-wasm-code-gc; este worker herda a flag.
 import { PGlite } from '@electric-sql/pglite';
 import { parentPort } from 'node:worker_threads';
 
