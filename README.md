@@ -2,45 +2,53 @@
 
 **O teu dinheiro, sob controlo.**
 
-Miven é uma aplicação de gestão financeira pessoal para iOS, Android e Web (PWA instalável em
-Windows, macOS e Linux). Centraliza rendimentos, despesas, orçamentos, subscrições, património,
-veículos e documentos, com o objetivo de automatizar ao máximo o registo de informação.
+Miven é uma aplicação de gestão financeira pessoal para iOS, Android e Web. Centraliza contas,
+movimentos, orçamentos, subscrições, objetivos, património, veículos e documentos, com o
+objetivo de automatizar ao máximo o registo de informação.
 
-> Estado atual: **Fase 3 — orçamentos, subscrições, objetivos e relatórios, em curso.** Os
-> orçamentos, as subscrições e os objetivos de poupança funcionam no dispositivo e estão
-> aplicados no staging, com histórico `20261108000100` a `20261108000700`, já ensaiados. A
-> produção continua só com `20261108000100` e `20261108000200`. Os relatórios estão no
-> cliente e não acrescentam tabela nem migration.
-> A app continua a funcionar sem conta (dados só
-> neste dispositivo). Com conta, os mesmos dados sincronizam entre iOS, Android e Web, incluindo
-> offline. Nenhum valor apresentado é fictício.
+> **Estado (2026-11-09):** Fases 0 a 4 concluídas e Fase 5 em curso, em fase de testes.
+> Produção e staging do Supabase têm o mesmo histórico de migrations (`20261108000100` a
+> `20261108000900`). O Miven só se usa com conta. Plataformas:
+>
+> - **Web:** <https://miven.pt/app/> (site de apresentação em <https://miven.pt>).
+> - **iPhone:** fonte SideStore
+>   `https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json`.
+> - **Android:** APK assinado (workflow "Android APK"), publicado em
+>   `releases/download/android-latest/miven.apk` depois da primeira compilação.
+>
+> Nenhum valor apresentado na app é fictício. O estado detalhado está em
+> [CLAUDE.md](CLAUDE.md) e as decisões em [docs/decisions.md](docs/decisions.md).
 
-## Funcionalidades (Fase 1)
+## Funcionalidades
 
 - **Movimentos:** registo rápido (valor, categoria, conta, data com atalhos Hoje/Ontem), edição,
-  eliminação com confirmação, "Guardar e adicionar outro"; lista com pesquisa (ignora acentos e
-  maiúsculas), filtros por tipo, período, conta e categoria, ordenação por data e paginação.
-- **Contas:** criar, editar, arquivar e reativar; saldos calculados a partir do saldo inicial e
-  dos movimentos; transferências movem dinheiro entre contas sem contar como rendimento nem
-  despesa. Eliminar uma conta com movimentos exige escolha explícita (arquivar ou eliminar tudo,
-  com dupla confirmação).
-- **Categorias:** 15 categorias base traduzidas, criação de categorias próprias (nome, ícone,
-  cor); eliminar uma categoria em uso obriga a escolher para onde passam os movimentos.
-- **Dashboard:** saldo total, rendimentos, despesas, poupança líquida e taxa de poupança do mês,
-  despesas por categoria, evolução dos últimos 6 meses, últimos movimentos e navegação entre
-  meses. Atualiza-se automaticamente após cada alteração.
+  eliminação com confirmação, "Guardar e adicionar outro"; lista agrupada por dia, com pesquisa
+  (ignora acentos e maiúsculas) e filtros de tipo, período, conta e categoria num painel.
+- **Importação de extratos CSV:** escolhe o ficheiro ou cola o texto, revê a lista, os possíveis
+  duplicados ficam de fora por omissão e nada é gravado antes de confirmares.
+- **Registo por texto com IA:** "ontem Pingo Doce 23,50" preenche o formulário; nunca grava
+  sozinho (precisa do segredo `ANTHROPIC_API_KEY` no servidor).
+- **Contas e categorias:** saldos calculados a partir do saldo inicial e dos movimentos;
+  transferências não contam como rendimento nem despesa; 15 categorias base traduzidas.
+- **Planeamento:** orçamentos por categoria, subscrições (custo mensal e anual das ativas),
+  objetivos de poupança com contribuições, relatórios por período com comparação.
+- **Património, veículos e documentos:** bens e dívidas com património líquido, prazos de
+  inspeção, seguro e validade.
+- **Painel:** saldo total, rendimentos, despesas, taxa de poupança, orçamentos, despesas por
+  categoria, evolução de 6 meses e últimos movimentos.
 
-## Conta e sincronização (Fase 2)
+## Conta e sincronização
 
-- Uso sem conta: os dados ficam só neste dispositivo. Não é obrigatório criar conta para
-  registar o primeiro movimento.
-- Conta (email e palavra-passe; Sign in with Apple no iOS): os dados da conta sincronizam entre
-  dispositivos. Recuperação de palavra-passe por email.
+- Conta obrigatória (email e palavra-passe; Sign in with Apple no iOS). Sem sessão só há as
+  boas-vindas e a autenticação, e não se abre nenhuma base de dados.
+- Os emails de confirmação e recuperação têm a marca Miven, saem de `noreply@miven.pt` (Resend)
+  e seguem a língua da app. Os links abrem `https://miven.pt/auth/...`, que reencaminha para a
+  app.
 - Offline: as alterações ficam numa fila local e são enviadas quando a ligação volta, sem
   duplicar. Se dois dispositivos editarem o mesmo campo, a app pede para escolher a versão;
   campos diferentes são combinados automaticamente.
-- Dados criados sem conta não são misturados com a conta sem uma decisão explícita. A importação
-  só apaga a cópia local depois de o servidor confirmar cada registo.
+- Dados que tenham ficado sem conta num dispositivo antigo são importados ou apagados no
+  primeiro login, sempre com decisão explícita.
 - Eliminar a conta remove os dados no servidor (Edge Function, chave administrativa só no
   servidor) e a cópia desta conta neste dispositivo.
 
@@ -51,9 +59,9 @@ veículos e documentos, com o objetivo de automatizar ao máximo o registo de in
 | 0    | Projeto, design system, navegação adaptativa, i18n, tema claro/escuro, testes       | ✅ Concluída |
 | 1    | MVP local: contas, movimentos, transferências, categorias, dashboard, resumo mensal | ✅ Concluída |
 | 2    | Supabase: autenticação, base de dados com RLS, sincronização, migração de dados     | ✅ Concluída |
-| 3    | Orçamentos, subscrições, objetivos de poupança, relatórios                          | Em curso     |
-| 4    | Património, investimentos, veículos, documentos e garantias                         | —            |
-| 5    | IA, OCR, automação, Open Banking, alertas inteligentes                              | —            |
+| 3    | Orçamentos, subscrições, objetivos de poupança, relatórios                          | ✅ Concluída |
+| 4    | Património, veículos e documentos                                                   | ✅ Concluída |
+| 5    | IA (registo por texto), extratos CSV; falta OCR, Open Banking e alertas             | Em curso     |
 
 ## Requisitos
 

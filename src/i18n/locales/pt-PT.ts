@@ -21,7 +21,7 @@ const ptPT = {
   },
   nav: {
     mainNavigation: 'Navegação principal',
-    dashboard: 'Dashboard',
+    dashboard: 'Início',
     transactions: 'Movimentos',
     accounts: 'Contas',
     budgets: 'Orçamentos',

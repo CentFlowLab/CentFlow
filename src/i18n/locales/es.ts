@@ -23,7 +23,7 @@ const es: Translation = {
   },
   nav: {
     mainNavigation: 'Navegación principal',
-    dashboard: 'Panel',
+    dashboard: 'Inicio',
     transactions: 'Movimientos',
     accounts: 'Cuentas',
     budgets: 'Presupuestos',

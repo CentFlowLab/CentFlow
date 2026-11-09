@@ -119,8 +119,9 @@ tipo+data, contas ativas e tipo de categoria.
 
 ## Sincronização (Fase 2)
 
-Cada conta autenticada tem um ficheiro SQLite próprio. O uso sem conta continua em
-`centflow.db`. O servidor (Postgres + RLS) é a cópia central; o cliente usa o SQLite de imediato.
+Cada conta autenticada tem um ficheiro SQLite próprio (`centflow-u-<userId>.db`). Não há uso
+sem conta (ADR-034): `centflow.db` só existe em dispositivos com versões antigas. O servidor
+(Postgres + RLS) é a cópia central; o cliente usa o SQLite de imediato.
 
 ```mermaid
 flowchart LR
@@ -139,8 +140,8 @@ flowchart LR
   tombstones antigos, o cliente reconstrói a partir de zero.
 - **Conflitos:** ver ADR-018. Campos de um movimento que definem o tipo (categoria, contas) são
   tratados como um só, para não criar uma combinação que ninguém escreveu.
-- **Importação:** copiar o espaço sem conta para o da conta, sincronizar, confirmar com
-  `sync_verify`, só então limpar a origem.
+- **Importação (dispositivos antigos):** copiar o espaço sem conta para o da conta, sincronizar,
+  confirmar com `sync_verify`, só então limpar a origem; ou apagá-lo com segunda confirmação.
 
 ## Fluxo de arranque
 
@@ -150,11 +151,12 @@ flowchart LR
    estarem carregadas — evita "flash" de tema ou idioma errado.
 4. `ThemeProvider` resolve o esquema (sistema/claro/escuro), sincroniza o tema da navegação, a
    status bar e a cor de fundo do sistema.
-5. `AuthProvider` restaura a sessão (SecureStore / localStorage). `AccountGate` escolhe o espaço
-   local: conta autenticada ou uso sem conta.
+5. `AuthProvider` restaura a sessão (SecureStore / localStorage). `AccountGate` decide o acesso
+   (`app-access.ts`): sem sessão não abre dados; com sessão escolhe o espaço da conta.
 6. `DataGate` abre a base de dados desse espaço, aplica migrações e semeia as categorias base.
-   `SyncProvider` sincroniza quando há sessão.
-7. O `Stack` raiz contém os separadores `(tabs)`, os modais de formulário e de autenticação.
+   `SyncProvider` sincroniza e mantém a língua dos emails na conta.
+7. O `Stack` raiz usa `Stack.Protected`: separadores e formulários só com sessão; boas-vindas e
+   autenticação só sem sessão; os retornos dos links de email sempre.
 8. `RootErrorBoundary` apanha erros não tratados sem depender dos providers.
 
 ## Navegação adaptativa
@@ -173,10 +175,24 @@ widgets.
 
 ## Plataformas e desktop
 
-- **iOS/Android:** builds via EAS. Funcionalidades nativas (câmara, notificações, widgets) entram
-  por módulos Expo e config plugins.
-- **Web/PWA:** `web.output = "single"` (SPA, adequada a uma app autenticada sem necessidade de SEO).
-  `public/index.html` e `public/manifest.json` tornam a app instalável em Windows, macOS e Linux.
+```mermaid
+flowchart LR
+  REPO["master"] -->|"iOS IPA (manual)"| IPA["IPA sem assinatura<br/>Release + fonte SideStore"]
+  REPO -->|"Android APK (manual)"| APK["APK assinado<br/>android-latest"]
+  REPO -->|"Site miven.pt (cada push)"| PAGES["GitHub Pages<br/>miven.pt + /app"]
+  IPA & APK & PAGES --> SUPA["Supabase produção"]
+```
+
+- **iOS:** workflow "iOS IPA" (macOS, Xcode, sem assinatura), Release `sideload-build-N` e
+  `sideload/source.json` para o SideStore. Funcionalidades nativas entram por módulos Expo e
+  config plugins.
+- **Android:** workflow "Android APK" (prebuild + Gradle, assinatura PKCS#12 dos segredos
+  `ANDROID_*`), Releases `android-build-N` e `android-latest` (ADR-037).
+- **Web/PWA:** `web.output = "single"`, exportada com `baseUrl = /app` e publicada em
+  `https://miven.pt/app/` com o `coi-serviceworker` para COOP/COEP. `public/index.html` e
+  `public/manifest.json` tornam a app instalável em Windows, macOS e Linux.
+- **Site:** `site/` (apresentação, `auth/callback`, `auth/reset-password`, 404 para links
+  profundos da app). DNS de `miven.pt` no dominios.pt.
 - **Desktop nativo (futuro):** o build web pode ser empacotado com Tauri ou Electron sem
   reescrever lógica. Se for preciso partilhar `core` com outros clientes, extrair para um
   workspace (`packages/core`) — a regra de lint já garante que `core` não depende de React Native.
@@ -188,15 +204,11 @@ widgets.
   tem o seu ficheiro local. O servidor aplica compare-and-swap por `version` e uma sequência
   `server_seq`; o cliente envia uma fila idempotente e funde conflitos a três vias. RLS em
   todas as tabelas; eliminação de conta numa Edge Function. Ver ADR-017 a ADR-020.
-- **Fase 3 — orçamentos e planeamento (em curso):** os orçamentos (ADR-021), as subscrições
-  (ADR-022) e os objetivos de poupança (ADR-023) estão no cliente e no staging, com histórico
-  `20261108000100` a `20261108000700`, ensaiados em 2026-11-08. A produção continua só com
-  `20261108000100` e `20261108000200`. Os relatórios (ADR-024) estão no cliente e não
-  acrescentam tabela nem migration. As Fases 4 e 5 não avançam sem
-  aprovação explícita.
-- **Fase 4 — património, veículos e documentos (no cliente e no staging):** Património
-  (ADR-027), Veículos e Documentos (ADR-028). As migrations `20261108000800` e
-  `20261108000900` estão no staging desde 2026-11-09 (ADR-031); a produção ainda não as tem.
+- **Fase 3 — orçamentos e planeamento (concluída):** orçamentos (ADR-021), subscrições
+  (ADR-022), objetivos de poupança (ADR-023) e relatórios (ADR-024, sem tabela).
+- **Fase 4 — património, veículos e documentos (concluída):** Património (ADR-027), Veículos e
+  Documentos (ADR-028). Migrations `00800` e `00900` no staging e na produção desde 2026-11-09
+  (ADR-031, ADR-032).
 - **Fase 5 — IA e automação (em curso):** registo por texto (ADR-029, Edge Function
   `suggest-entry`) e importação de extratos CSV no dispositivo (ADR-030: `src/core/import`
   interpreta, o utilizador revê e confirma, `entries.createMany` grava numa transação). Chamadas a
