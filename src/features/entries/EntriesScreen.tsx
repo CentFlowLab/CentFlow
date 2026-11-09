@@ -46,6 +46,19 @@ function dateHeading(
   return formatDate(calendarDateToLocalDate(date), 'medium');
 }
 
+/** Agrupa movimentos consecutivos do mesmo dia (a lista já vem ordenada por data). */
+function groupByDay<T extends { id: string; date: CalendarDate }>(
+  items: readonly T[],
+): { date: CalendarDate; entries: T[] }[] {
+  const groups: { date: CalendarDate; entries: T[] }[] = [];
+  for (const item of items) {
+    const last = groups[groups.length - 1];
+    if (last && last.date === item.date) last.entries.push(item);
+    else groups.push({ date: item.date, entries: [item] });
+  }
+  return groups;
+}
+
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 250;
 const DIVIDER_INSET = spacing.lg + 36 + spacing.md;
@@ -97,9 +110,13 @@ export function EntriesScreen() {
   );
 
   const resetPaging = () => setLimit(PAGE_SIZE);
-  const advancedCount = (accountId ? 1 : 0) + (categoryId ? 1 : 0) + (sort !== 'dateDesc' ? 1 : 0);
-  const hasFilters =
-    Boolean(debouncedSearch) || type !== 'all' || period !== 'all' || advancedCount > 0;
+  const activeFilterCount =
+    (type !== 'all' ? 1 : 0) +
+    (period !== 'all' ? 1 : 0) +
+    (accountId ? 1 : 0) +
+    (categoryId ? 1 : 0) +
+    (sort !== 'dateDesc' ? 1 : 0);
+  const hasFilters = Boolean(debouncedSearch) || activeFilterCount > 0;
 
   const clearFilters = () => {
     setSearch('');
@@ -150,50 +167,14 @@ export function EntriesScreen() {
           autoCorrect={false}
           clearButtonMode="while-editing"
         />
-        <SegmentedControl
-          accessibilityLabel={t('entries.filterType')}
-          value={type}
-          onChange={(value) => {
-            setType(value);
-            if (
-              categoryId &&
-              value !== 'all' &&
-              lookups.data?.categories.get(categoryId)?.type !== value
-            ) {
-              setCategoryId(null);
-            }
-            resetPaging();
-          }}
-          options={[
-            { value: 'all', label: t('common.all') },
-            { value: 'expense', label: t('entryTypes.expense') },
-            { value: 'income', label: t('entryTypes.income') },
-            { value: 'transfer', label: t('entryTypes.transfer') },
-          ]}
-        />
-        <ChipGroup label={t('entries.filterPeriod')} hideLabel>
-          {PERIOD_PRESETS.map((preset) => (
-            <Chip
-              key={preset}
-              label={t(`entries.periods.${preset}`)}
-              selected={period === preset}
-              onPress={() => {
-                setPeriod(preset);
-                resetPaging();
-              }}
-            />
-          ))}
-        </ChipGroup>
-
         <View style={styles.filterBar}>
           <Button
             label={
-              advancedCount > 0
-                ? `${t('entries.filters')} (${advancedCount})`
+              activeFilterCount > 0
+                ? `${t('entries.filters')} (${activeFilterCount})`
                 : t('entries.filters')
             }
             variant="secondary"
-            size="sm"
             icon={showFilters ? 'chevron-up' : 'options-outline'}
             onPress={() => setShowFilters((value) => !value)}
             accessibilityState={{ expanded: showFilters }}
@@ -210,6 +191,40 @@ export function EntriesScreen() {
 
         {showFilters ? (
           <Card style={styles.advanced}>
+            <SegmentedControl
+              accessibilityLabel={t('entries.filterType')}
+              value={type}
+              onChange={(value) => {
+                setType(value);
+                if (
+                  categoryId &&
+                  value !== 'all' &&
+                  lookups.data?.categories.get(categoryId)?.type !== value
+                ) {
+                  setCategoryId(null);
+                }
+                resetPaging();
+              }}
+              options={[
+                { value: 'all', label: t('common.all') },
+                { value: 'expense', label: t('entryTypes.expense') },
+                { value: 'income', label: t('entryTypes.income') },
+                { value: 'transfer', label: t('entryTypes.transfer') },
+              ]}
+            />
+            <ChipGroup label={t('entries.filterPeriod')} hideLabel>
+              {PERIOD_PRESETS.map((preset) => (
+                <Chip
+                  key={preset}
+                  label={t(`entries.periods.${preset}`)}
+                  selected={period === preset}
+                  onPress={() => {
+                    setPeriod(preset);
+                    resetPaging();
+                  }}
+                />
+              ))}
+            </ChipGroup>
             <ChipGroup label={t('entries.filterAccount')}>
               <Chip
                 label={t('entries.allAccounts')}
@@ -302,30 +317,31 @@ export function EntriesScreen() {
           <Text variant="footnote" tone="secondary" accessibilityLiveRegion="polite">
             {t('entries.resultCount', { count: total })}
           </Text>
-          <Card padding="xs">
-            {items.map((entry, index) => {
-              const previous = items[index - 1];
-              const showDate = !previous || previous.date !== entry.date;
-              return (
-                <Fragment key={entry.id}>
-                  {showDate ? (
-                    <Text variant="footnote" tone="secondary" style={styles.day}>
-                      {dateHeading(entry.date, today, formatDate, t)}
-                    </Text>
-                  ) : (
-                    <Divider inset={DIVIDER_INSET} />
-                  )}
-                  <EntryListItem
-                    entry={entry}
-                    lookups={lookups.data!}
-                    onPress={() =>
-                      router.push({ pathname: '/entry/[id]', params: { id: entry.id } })
-                    }
-                  />
-                </Fragment>
-              );
-            })}
-          </Card>
+          {groupByDay(items).map((group) => (
+            <View key={group.date} style={styles.dayGroup}>
+              <Text
+                variant="overline"
+                tone="secondary"
+                accessibilityRole="header"
+                style={styles.day}>
+                {dateHeading(group.date, today, formatDate, t)}
+              </Text>
+              <Card padding="xs">
+                {group.entries.map((entry, index) => (
+                  <Fragment key={entry.id}>
+                    {index > 0 ? <Divider inset={DIVIDER_INSET} /> : null}
+                    <EntryListItem
+                      entry={entry}
+                      lookups={lookups.data!}
+                      onPress={() =>
+                        router.push({ pathname: '/entry/[id]', params: { id: entry.id } })
+                      }
+                    />
+                  </Fragment>
+                ))}
+              </Card>
+            </View>
+          ))}
           {items.length < total ? (
             <Button
               label={t('entries.loadMore')}
@@ -352,12 +368,13 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   results: {
+    gap: spacing.lg,
+  },
+  dayGroup: {
     gap: spacing.sm,
   },
   day: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   loading: {
     paddingVertical: spacing['4xl'],
