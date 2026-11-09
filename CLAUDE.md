@@ -11,8 +11,12 @@ têm o mesmo histórico, `20261108000100` a `20261108000900`.** As migrations `0
 foram aplicadas na produção a 2026-11-09, com autorização explícita, depois de uma cópia de
 segurança (ver [docs/release-producao.md](docs/release-producao.md), "Execução"). As funções
 `delete-account` e `suggest-entry` estão publicadas nos dois ambientes. Ainda falta, nos dois,
-o segredo `ANTHROPIC_API_KEY`. Na produção falta também a auth do painel (URL do site,
-redirects, confirmação e SMTP); a do staging vive em `[remotes.staging]`.
+o segredo `ANTHROPIC_API_KEY`. A auth do painel da produção (URL do site, redirects,
+confirmação, palavra-passe mínima 8) foi feita a 2026-11-09; falta só o SMTP. A do staging vive
+em `[remotes.staging]`. A cópia de segurança fica fora do git e fora de pastas sincronizadas
+(OneDrive, iCloud): contém o esquema `auth` (emails e hashes de palavras-passe).
+Antes de abrir a app ao público faltam a política de privacidade e os termos (D-4), que têm de
+mencionar o fornecedor de IA e o PostHog.
 Fase 5: registo por texto com IA (ADR-029) e importação de extratos CSV no dispositivo
 (ADR-030). Open Banking (D-5) e OCR de recibos (D-6) esperam pela escolha do fornecedor.
 A app do SideStore compila com o ambiente EAS `production` e fala com a produção.
