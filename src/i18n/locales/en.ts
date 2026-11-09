@@ -386,6 +386,8 @@ const en: Translation = {
   },
   subscriptions: {
     subtitle: 'Expenses that repeat. They do not change account balances.',
+    activeCount_one: '{{count}} active',
+    activeCount_other: '{{count}} active',
     add: 'New subscription',
     emptyTitle: 'No subscriptions yet',
     emptyDescription:
@@ -424,6 +426,9 @@ const en: Translation = {
   },
   goals: {
     subtitle: 'Each contribution is recorded on its own. It does not change account balances.',
+    totalSaved: 'Saved towards goals',
+    ofTarget: 'of {{amount}}',
+    reachedCount: '{{reached}} of {{total}} reached',
     add: 'New goal',
     emptyTitle: 'No goals yet',
     emptyDescription:

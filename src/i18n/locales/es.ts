@@ -386,6 +386,8 @@ const es: Translation = {
   },
   subscriptions: {
     subtitle: 'Gastos que se repiten. No cambian el saldo de las cuentas.',
+    activeCount_one: '{{count}} activa',
+    activeCount_other: '{{count}} activas',
     add: 'Nueva suscripción',
     emptyTitle: 'Aún no hay suscripciones',
     emptyDescription:
@@ -423,6 +425,9 @@ const es: Translation = {
   },
   goals: {
     subtitle: 'Cada aportación queda registrada aparte. No cambia el saldo de las cuentas.',
+    totalSaved: 'Ahorrado en objetivos',
+    ofTarget: 'de {{amount}}',
+    reachedCount: '{{reached}} de {{total}} alcanzados',
     add: 'Nuevo objetivo',
     emptyTitle: 'Aún no hay objetivos',
     emptyDescription:

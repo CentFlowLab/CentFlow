@@ -382,6 +382,8 @@ const ptPT = {
   },
   subscriptions: {
     subtitle: 'Despesas que se repetem. Não alteram o saldo das contas.',
+    activeCount_one: '{{count}} ativa',
+    activeCount_other: '{{count}} ativas',
     add: 'Nova subscrição',
     emptyTitle: 'Ainda não há subscrições',
     emptyDescription:
@@ -419,6 +421,9 @@ const ptPT = {
   },
   goals: {
     subtitle: 'Cada contribuição fica registada à parte. Não altera o saldo das contas.',
+    totalSaved: 'Junto nos objetivos',
+    ofTarget: 'de {{amount}}',
+    reachedCount: '{{reached}} de {{total}} atingidos',
     add: 'Novo objetivo',
     emptyTitle: 'Ainda não há objetivos',
     emptyDescription:
