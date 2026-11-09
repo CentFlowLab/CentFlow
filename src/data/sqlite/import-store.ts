@@ -127,7 +127,6 @@ export async function writeImportState(db: SqlDatabase, state: ImportState): Pro
   ]);
 }
 
-/** Há dados criados pelo utilizador no espaço sem conta (as categorias base não contam). */
 /** Entidades sem regras de duplicação: qualquer linha ativa ainda conta como dados por importar. */
 const PLAIN_ENTITIES_SQL = [
   'subscriptions',
@@ -140,6 +139,7 @@ const PLAIN_ENTITIES_SQL = [
   .map((table) => `(SELECT COUNT(*) FROM ${table} WHERE deleted_at IS NULL)`)
   .join('\n          + ');
 
+/** Há dados criados pelo utilizador no espaço sem conta (as categorias base não contam). */
 export async function hasUserData(db: SqlDatabase): Promise<boolean> {
   const row = await db.first<{ n: number }>(
     `SELECT (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL)
