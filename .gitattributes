@@ -1,0 +1,5 @@
+# Fins de linha LF no repositório e na cópia de trabalho (o Prettier e o CI esperam LF).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ipa binary
