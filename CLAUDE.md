@@ -22,7 +22,7 @@ Fase 5: registo por texto com IA (ADR-029) e importação de extratos CSV no dis
 A app do SideStore compila com o ambiente EAS `production` e fala com a produção.
 Integrações (ADR-033): Sentry com DSN no EAS desde 2026-11-09; PostHog só com chave e
 consentimento nas Definições; Superwall preparado atrás de `EXPO_PUBLIC_PAYWALL_ENABLED`, sem
-paywall. O SMTP do Resend espera pela verificação do domínio `miven.pt`.
+paywall. O SMTP do Resend espera pela verificação do domínio `miven.pt` (CNAME `send` e `rsend` corrigidos a 2026-11-09).
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.

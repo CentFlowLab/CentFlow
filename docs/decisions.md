@@ -395,10 +395,13 @@ Connect. Não tem relação com as "Subscrições" do utilizador (ADR-022).
 **Sentry:** o EAS `production` não tinha `EXPO_PUBLIC_SENTRY_DSN`, por isso os IPAs saíam com o
 Sentry desligado. A DSN pública foi acrescentada a 2026-11-09; entra a partir da compilação
 seguinte à 0.1.4. O token de source maps continua fora do CI (ADR-025).
-**Resend / miven.pt:** o DNS está em `host-redirect.com` (dominios.pt). Existem o DKIM
-(`resend._domainkey`) e o DMARC (`p=none`). Em 2026-11-09 o `send.miven.pt` tinha o TXT
-`send.forge.rmta.net` em vez do SPF do Resend e não tinha MX, por isso o domínio não fica
-verificado. O domínio raiz não tem registo A (alojamento por escolher, D-7).
+**Resend / miven.pt:** o DNS está em `host-redirect.com` (dominios.pt), região Resend
+`eu-west-1`. O Resend (Forge) pede o DKIM em TXT (`resend._domainkey`) e o SPF em dois **CNAME**:
+`send` → `send.forge.rmta.net` e `rsend` → `rsend-euw1.forge.rmta.net`. Não pede MX. Em
+2026-11-09 os dois CNAME estavam criados como TXT (com o valor certo entre aspas) e o domínio
+ficava "Pending"; foram corrigidos para CNAME no painel do dominios.pt nesse dia. O DMARC
+(`p=none`) mantém-se. O SMTP do Supabase só deve ser ligado depois de o Resend mostrar
+"Verified". O domínio raiz não tem registo A (alojamento por escolher, D-7).
 **Zernio:** plataforma de marketing (redes sociais, anúncios, mensagens) com servidor MCP. Não
 entra no código da app.
 **Dependências novas:** `posthog-react-native` e `expo-superwall` (módulo nativo, só ativo com a
