@@ -142,6 +142,60 @@ describe('import of data created without an account', () => {
     expect(await shouldOfferImport(anonymous, account)).toBe(false);
   });
 
+  it('offers and imports data that only exists in the newer areas', async () => {
+    const user = await server.createUser(randomUUID());
+    const db = await openTestDatabase();
+    const anonymous = createLocalStore(db, { newId: testId });
+    cleanup.push(() => db.close());
+    await attachSpace(anonymous, ANONYMOUS_SPACE);
+    await anonymous.repositories.categories.seedDefaults(defaults);
+    await anonymous.repositories.wealth.create({
+      name: 'Casa',
+      type: 'property',
+      amount: 25_000_000,
+      currency: 'EUR',
+      valuedOn: '2026-11-01',
+    });
+    await anonymous.repositories.vehicles.create({
+      name: 'Carro',
+      kind: 'car',
+      plate: null,
+      odometerKm: null,
+      inspectionDue: '2027-03-01',
+      insuranceDue: null,
+    });
+    await anonymous.repositories.documents.create({
+      title: 'Passaporte',
+      category: 'identity',
+      expiresOn: '2030-01-01',
+      notes: '',
+    });
+    const account = await accountDevice(user);
+
+    expect(await shouldOfferImport(anonymous, account)).toBe(true);
+    const result = await runImport({
+      anonymous,
+      account,
+      engine: account.engine,
+      transport: account.transport,
+    });
+    expect(result).toEqual({ status: 'confirmed', imported: 3 });
+    expect(await serverLive(user, 'wealth_items')).toBe(1);
+    expect(await serverLive(user, 'vehicles')).toBe(1);
+    expect(await serverLive(user, 'documents')).toBe(1);
+    expect(await anonymous.repositories.wealth.list()).toHaveLength(0);
+    expect(await shouldOfferImport(anonymous, account)).toBe(false);
+
+    // Depois de confirmada, um registo novo no uso sem conta volta a ser proposto.
+    await anonymous.repositories.documents.create({
+      title: 'Carta de condução',
+      category: 'identity',
+      expiresOn: null,
+      notes: '',
+    });
+    expect(await shouldOfferImport(anonymous, account)).toBe(true);
+  });
+
   it('keeps everything local while offline and resumes without duplicates', async () => {
     const user = await server.createUser(randomUUID());
     const anonymous = await anonymousSpace();

@@ -128,12 +128,25 @@ export async function writeImportState(db: SqlDatabase, state: ImportState): Pro
 }
 
 /** Há dados criados pelo utilizador no espaço sem conta (as categorias base não contam). */
+/** Entidades sem regras de duplicação: qualquer linha ativa ainda conta como dados por importar. */
+const PLAIN_ENTITIES_SQL = [
+  'subscriptions',
+  'goals',
+  'goal_contributions',
+  'wealth_items',
+  'vehicles',
+  'documents',
+]
+  .map((table) => `(SELECT COUNT(*) FROM ${table} WHERE deleted_at IS NULL)`)
+  .join('\n          + ');
+
 export async function hasUserData(db: SqlDatabase): Promise<boolean> {
   const row = await db.first<{ n: number }>(
     `SELECT (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL)
           + (SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL)
           + (SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL AND system_key IS NULL)
-          + (SELECT COUNT(*) FROM budgets WHERE deleted_at IS NULL) AS n`,
+          + (SELECT COUNT(*) FROM budgets WHERE deleted_at IS NULL)
+          + ${PLAIN_ENTITIES_SQL} AS n`,
   );
   return (row?.n ?? 0) > 0;
 }
@@ -146,7 +159,8 @@ export async function hasFreshUserData(source: SqlDatabase, target: SqlDatabase)
   const structural = await source.first<{ n: number }>(
     `SELECT (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL)
           + (SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL)
-          + (SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL AND system_key IS NULL) AS n`,
+          + (SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL AND system_key IS NULL)
+          + ${PLAIN_ENTITIES_SQL} AS n`,
   );
   if ((structural?.n ?? 0) > 0) return true;
   const sourceBudgets = await source.all<{ id: string; category_id: string }>(
