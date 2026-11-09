@@ -20,7 +20,7 @@ enable_signup = true
 minimum_password_length = 8
 
 [auth.email]
-enable_signup = true
+enabled = true
 enable_confirmations = true
 # O correio integrado do Supabase limita o ritmo; com SMTP próprio pode ser mais curto.
 max_frequency = "1m"
@@ -41,3 +41,25 @@ verify_jwt = false
 
 [functions.suggest-entry]
 verify_jwt = false
+
+# Staging. Aplicado com `npx supabase config push --remote=qlimqcgrgaqzwjmafora` (só staging).
+# A web de desenvolvimento corre em localhost:8081; a app nativa usa o esquema miven://.
+# O SMTP fica desligado até a chave do Resend existir no ambiente: ligá-lo sem ela quebra o envio.
+[remotes.staging]
+project_id = "qlimqcgrgaqzwjmafora"
+
+[remotes.staging.auth]
+site_url = "http://localhost:8081"
+additional_redirect_urls = [
+  "miven://auth/callback",
+  "miven://auth/reset-password",
+  "http://localhost:8081/auth/callback",
+  "http://localhost:8081/auth/reset-password",
+  "https://miven.pt/auth/callback",
+  "https://miven.pt/auth/reset-password",
+  "https://www.miven.pt/auth/callback",
+  "https://www.miven.pt/auth/reset-password",
+]
+
+[remotes.staging.auth.email.smtp]
+enabled = false
