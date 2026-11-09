@@ -1,0 +1,136 @@
+body.home {
+  display: block;
+  padding: 0;
+}
+
+.top,
+.bottom {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.top .brand {
+  margin: 0;
+  min-height: 44px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.wide {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+.hero {
+  text-align: center;
+  padding: 48px 0 32px;
+}
+
+.hero-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 28px;
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-size: clamp(28px, 6vw, 44px);
+  line-height: 1.15;
+  margin: 0 0 12px;
+}
+
+.lead {
+  font-size: 18px;
+  max-width: 620px;
+  margin: 0 auto 24px;
+}
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cta .button,
+.top .button {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.button.small {
+  min-height: 44px;
+  padding: 8px 18px;
+  font-size: 15px;
+}
+
+.button.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.note {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 24px 0 40px;
+}
+
+.features article,
+.install {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.features h2,
+.install h2 {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+
+.features p {
+  margin: 0;
+}
+
+.install ol {
+  color: var(--muted);
+  padding-left: 20px;
+  margin: 12px 0;
+}
+
+.source {
+  display: block;
+  overflow-wrap: anywhere;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.bottom {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.bottom a {
+  color: var(--muted);
+}

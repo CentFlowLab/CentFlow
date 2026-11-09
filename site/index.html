@@ -4,21 +4,85 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Miven — O teu dinheiro, sob controlo.</title>
+    <meta
+      name="description"
+      content="Contas, movimentos, orçamentos, subscrições e objetivos, sincronizados entre os teus dispositivos." />
+    <meta name="theme-color" content="#010206" />
     <link rel="icon" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/assets/logo.png" />
     <link rel="stylesheet" href="/assets/site.css" />
+    <link rel="stylesheet" href="/assets/home.css" />
   </head>
-  <body>
-    <main>
-      <div class="brand"><img src="/assets/logo.png" alt="" />Miven</div>
-      <section class="card">
+  <body class="home">
+    <header class="top">
+      <a class="brand" href="/"><img src="/assets/logo.png" alt="" />Miven</a>
+      <a class="button small" href="/app/">Abrir a app</a>
+    </header>
+
+    <main class="wide">
+      <section class="hero">
+        <img class="hero-logo" src="/assets/logo.png" alt="" width="120" height="120" />
         <h1>O teu dinheiro, sob controlo.</h1>
-        <p>
-          Contas, movimentos, orçamentos, subscrições e objetivos, sincronizados entre os teus
-          dispositivos.
+        <p class="lead">
+          Contas, movimentos, orçamentos, subscrições e objetivos num só sítio, sincronizados entre
+          o telemóvel e o computador.
         </p>
-        <p class="hint">A app está em fase de testes.</p>
+        <div class="cta">
+          <a class="button" href="/app/">Usar no browser</a>
+          <a class="button ghost" href="#instalar">Instalar no iPhone</a>
+        </div>
+        <p class="note">O Miven está em fase de testes.</p>
       </section>
-      <footer>miven.pt</footer>
+
+      <section class="features" aria-label="Funcionalidades">
+        <article>
+          <h2>Contas e movimentos</h2>
+          <p>Saldos por conta, despesas, rendimentos e transferências, agrupados por dia.</p>
+        </article>
+        <article>
+          <h2>Orçamentos e subscrições</h2>
+          <p>Limites por categoria e o custo real das despesas que se repetem.</p>
+        </article>
+        <article>
+          <h2>Objetivos e património</h2>
+          <p>Poupança por objetivo, bens e dívidas, e o teu património líquido.</p>
+        </article>
+        <article>
+          <h2>Extratos do banco</h2>
+          <p>Importa um CSV, revê os movimentos e os possíveis duplicados antes de guardar.</p>
+        </article>
+        <article>
+          <h2>Relatórios</h2>
+          <p>Evolução, categorias e comparação com o período anterior.</p>
+        </article>
+        <article>
+          <h2>Sincronização segura</h2>
+          <p>
+            Os dados ficam na tua conta e funcionam sem ligação; sincronizam quando voltas a ter
+            rede.
+          </p>
+        </article>
+      </section>
+
+      <section id="instalar" class="install">
+        <h2>Instalar no iPhone (SideStore)</h2>
+        <ol>
+          <li>Instala o SideStore no iPhone, se ainda não o tiveres.</li>
+          <li>No SideStore, abre <strong>Sources</strong> e acrescenta esta fonte:</li>
+        </ol>
+        <code class="source"
+          >https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json</code
+        >
+        <ol start="3">
+          <li>Instala o <strong>Miven</strong> a partir da fonte e abre a app.</li>
+          <li>Cria a tua conta e confirma o email.</li>
+        </ol>
+      </section>
     </main>
+
+    <footer class="bottom">
+      <span>© Miven</span>
+      <a href="/app/">App web</a>
+    </footer>
   </body>
 </html>
