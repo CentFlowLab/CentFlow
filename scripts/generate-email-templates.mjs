@@ -177,7 +177,7 @@ function html(type) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;padding:24px 12px">
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#FFFFFF;border-radius:20px;overflow:hidden;border:1px solid #E2E8F0">
-<tr><td style="background:#101B2D;padding:24px 32px"><a href="${SITE}" style="text-decoration:none"><img src="${LOGO}" width="132" height="40" alt="Miven" style="display:block;border:0;height:40px;width:auto"></a></td></tr>
+<tr><td style="background:#101B2D;padding:20px 32px"><a href="${SITE}" style="text-decoration:none;color:#FFFFFF"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="vertical-align:middle"><img src="${LOGO}" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;border-radius:10px"></td><td style="vertical-align:middle;padding-left:12px;font-size:22px;font-weight:700;letter-spacing:-0.3px;color:#FFFFFF">Miven</td></tr></table></a></td></tr>
 <tr><td style="height:16px"></td></tr>
 ${body}
 </table>
