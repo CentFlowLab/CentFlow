@@ -1,0 +1,133 @@
+:root {
+  --navy: #101b2d;
+  --emerald: #10b981;
+  --mint: #6ee7b7;
+  --ice: #f8fafc;
+  --text: #101b2d;
+  --muted: #475569;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f8fafc;
+    --muted: #b6c2d3;
+    --card: #1e293b;
+    --border: #334155;
+    --bg: #101b2d;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    16px/1.6 -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Inter,
+    Roboto,
+    sans-serif;
+}
+
+main {
+  width: 100%;
+  max-width: 440px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.3px;
+}
+
+.brand img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.icon.error {
+  background: rgba(200, 30, 30, 0.12);
+  color: #c81e1e;
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 8px;
+}
+
+p {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.button {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--emerald);
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: none;
+  margin-top: 8px;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 2px;
+}
+
+.hint {
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
