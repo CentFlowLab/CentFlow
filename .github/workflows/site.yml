@@ -1,13 +1,10 @@
-# Site estático de miven.pt (ADR-034): página inicial e páginas de retorno dos emails.
-# Publica só a pasta site/ no GitHub Pages; não compila a app nem lê segredos.
+# Site de miven.pt no GitHub Pages (ADR-034, ADR-037): página de apresentação, páginas de retorno
+# dos emails e a app web em /app. Lê só as variáveis públicas de produção do EAS.
 name: Site miven.pt
 
 on:
   push:
     branches: [master]
-    paths:
-      - 'site/**'
-      - '.github/workflows/site.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,7 +18,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Publicar site/
+    name: Compilar a app web e publicar site/
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -29,6 +26,46 @@ jobs:
     steps:
       - name: Obter o código
         uses: actions/checkout@v5
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Configurar o EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Obter as variáveis públicas de produção
+        shell: bash
+        run: |
+          eas env:pull production --non-interactive --path .env.local > /tmp/eas-env-pull.txt
+          if grep -qiE '^[A-Z_]*(SERVICE_ROLE|SECRET)[A-Z_]*=' .env.local; then
+            echo "As variáveis de produção incluem uma chave secreta."
+            exit 1
+          fi
+          grep -q '^EXPO_PUBLIC_SUPABASE_URL=' .env.local
+
+      - name: Exportar a app web para /app
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require('node:fs');
+          const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          app.expo.experiments = { ...(app.expo.experiments ?? {}), baseUrl: '/app' };
+          fs.writeFileSync('app.json', JSON.stringify(app, null, 2) + '\n');
+          EOF
+          npx expo export --platform web --output-dir dist
+          rm -f .env.local
+          node scripts/prepare-web-app.mjs dist /app
+          rm -rf site/app
+          cp -r dist site/app
 
       - name: Configurar o Pages
         uses: actions/configure-pages@v5

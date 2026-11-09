@@ -7,6 +7,21 @@
     <title>Miven</title>
     <link rel="icon" href="/favicon.png" />
     <link rel="stylesheet" href="/assets/site.css" />
+    <script>
+      // A app web (SPA) vive em /app: um link profundo chega aqui; guarda o caminho e abre a app.
+      (function () {
+        var path = window.location.pathname;
+        if (path.indexOf('/app/') === 0 && path !== '/app/') {
+          try {
+            sessionStorage.setItem(
+              'miven:spa-path',
+              path + window.location.search + window.location.hash,
+            );
+          } catch (e) {}
+          window.location.replace('/app/');
+        }
+      })();
+    </script>
   </head>
   <body>
     <main>

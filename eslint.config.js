@@ -7,7 +7,14 @@ module.exports = defineConfig([
   expoConfig,
   prettierConfig,
   {
-    ignores: ['dist/*', 'coverage/*', '.expo/*', 'supabase/.temp/*', 'supabase/functions/**'],
+    ignores: [
+      'dist/*',
+      'coverage/*',
+      '.expo/*',
+      'supabase/.temp/*',
+      'supabase/functions/**',
+      'public/coi-serviceworker.min.js',
+    ],
   },
   {
     rules: {

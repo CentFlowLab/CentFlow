@@ -5,3 +5,4 @@ coverage
 package-lock.json
 public/index.html
 supabase/templates
+public/coi-serviceworker.min.js
