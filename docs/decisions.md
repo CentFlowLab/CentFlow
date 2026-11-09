@@ -445,12 +445,16 @@ estragaria as marcas `{{ }}`.
 **Verificação:** registos e recuperação de teste com `delivered@resend.dev` (com e sem `locale`)
 enviaram sem erro de modelo; os utilizadores de teste foram apagados.
 
-## ADR-036 — Logótipo B: moeda com "m" e seta
+## ADR-036 — Logótipo oficial do Miven
 
-**Decisão:** das três propostas (tendência, moeda, barras), ficou a moeda verde com um "m" em
-negativo e uma seta para cima, sobre azul-noite. `scripts/generate-brand-assets.mjs` desenha-a
-por geometria (SDF), sem dependências, e escreve os ícones da app, do Android adaptativo, da PWA,
-do site e dos emails. Entra no iPhone a partir da 0.1.5.
+**Decisão:** o logótipo é a imagem enviada pelo responsável a 2026-11-09 (um "M" que se torna
+uma seta a subir, com barras, num mosaico escuro com brilho verde), guardada em
+`assets/brand/miven-logo.webp`. Substitui as três propostas desenhadas no mesmo dia (a "B",
+moeda, chegou a entrar na 0.1.5). `scripts/build-brand-assets.py` recorta o mosaico e gera os
+ícones: iOS a toda a largura, versão de cantos transparentes (arranque, PWA, site, emails),
+Android adaptativo com o mosaico completo sobre o preto da imagem (`#010206`) e versão
+monocromática. O script usa Pillow e numpy só no ambiente de quem mexe na marca: não são
+dependências da app. O gerador por geometria (`generate-brand-assets.mjs`) foi retirado.
 
 ## Decisões pendentes
 

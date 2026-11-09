@@ -128,9 +128,10 @@ agentes de IA) em [CLAUDE.md](CLAUDE.md).
 
 ## Identidade visual
 
-O logótipo e todos os ícones (iOS, Android adaptativo, splash, favicon, PWA) são gerados a partir
-de geometria por `node scripts/generate-brand-assets.mjs`. Para mudar cores ou forma, edita o
-script e volta a gerar.
+O logótipo oficial está em `assets/brand/miven-logo.webp`. Todos os ícones (iOS, Android
+adaptativo, splash, favicon, PWA, site e emails) são gerados a partir dele por
+`scripts/build-brand-assets.py` (precisa de Pillow e numpy num ambiente virtual; ver o
+cabeçalho do script).
 
 ## Segurança
 

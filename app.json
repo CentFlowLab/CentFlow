@@ -19,7 +19,7 @@
     "android": {
       "package": "app.centflow.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#101B2D",
+        "backgroundColor": "#010206",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
