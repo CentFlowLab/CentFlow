@@ -1,6 +1,9 @@
 import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
+// Fluxos completos com SQLite real: no runner macOS do CI o primeiro passa os 5 s por omissão.
+jest.setTimeout(30_000);
+
 // Valores formatados em pt-PT usam espaço não separável antes do "€".
 const eur = (text: string) => new RegExp(`^[+−-]?${text.replace('.', '\\.')}\\s€$`);
 
