@@ -1,15 +1,20 @@
-import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 
-/** Esquema em `app.json`. Usado se o manifesto Expo não estiver disponível (ex.: testes). */
-const APP_SCHEME = 'miven';
+/**
+ * Origem pública das páginas de autenticação (site estático em miven.pt, ADR-034).
+ * No nativo, os links dos emails abrem uma página web que funciona em qualquer dispositivo e
+ * reencaminha para `miven://auth/...` com o mesmo código. Não usar `Linking.createURL`: nas
+ * compilações nativas devolve `miven:///auth/callback` (três barras), que não coincide com a
+ * lista de redirects do Supabase e fazia o servidor cair no site por omissão.
+ */
+export const PUBLIC_AUTH_ORIGIN = 'https://miven.pt';
 
-/** Endereço de retorno dos emails e OAuth. Tem de estar autorizado no Supabase. */
-export function authRedirectUrl(path: '/auth/callback' | '/auth/reset-password'): string {
-  try {
-    const url = Linking.createURL(path, { scheme: APP_SCHEME });
-    if (url) return url;
-  } catch {
-    // Sem Constants.expoConfig (Jest) ou sem esquema resolvido: o valor coincide com `app.json`.
+type AuthPath = '/auth/callback' | '/auth/reset-password';
+
+/** Endereço de retorno dos emails e do OAuth. Tem de estar autorizado no Supabase. */
+export function authRedirectUrl(path: AuthPath): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}${path}`;
   }
-  return `${APP_SCHEME}://${path.replace(/^\//, '')}`;
+  return `${PUBLIC_AUTH_ORIGIN}${path}`;
 }

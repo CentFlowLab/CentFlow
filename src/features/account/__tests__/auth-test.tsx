@@ -17,9 +17,10 @@ function authError(code: string, status = 400): AuthError {
 }
 
 describe('authRedirectUrl', () => {
-  it('builds a deep link that the dashboard can whitelist', () => {
-    expect(authRedirectUrl('/auth/callback')).toContain('auth/callback');
-    expect(authRedirectUrl('/auth/reset-password')).toContain('auth/reset-password');
+  it('uses the exact public pages whitelisted in Supabase, never miven:/// with three slashes', () => {
+    // Os testes correm como nativo (jest-expo, iOS).
+    expect(authRedirectUrl('/auth/callback')).toBe('https://miven.pt/auth/callback');
+    expect(authRedirectUrl('/auth/reset-password')).toBe('https://miven.pt/auth/reset-password');
   });
 });
 
