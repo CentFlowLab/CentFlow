@@ -38,6 +38,8 @@ const en: Translation = {
     more: 'More',
     newTransaction: 'New transaction',
     groups: {
+      overview: 'Money',
+      system: 'Setup',
       planning: 'Planning',
       assets: 'Assets and records',
     },

@@ -36,6 +36,8 @@ const ptPT = {
     more: 'Mais',
     newTransaction: 'Novo movimento',
     groups: {
+      overview: 'Dinheiro',
+      system: 'Configuração',
       planning: 'Planeamento',
       assets: 'Património e arquivo',
     },

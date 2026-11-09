@@ -38,6 +38,8 @@ const es: Translation = {
     more: 'Más',
     newTransaction: 'Nuevo movimiento',
     groups: {
+      overview: 'Dinero',
+      system: 'Configuración',
       planning: 'Planificación',
       assets: 'Patrimonio y archivo',
     },
