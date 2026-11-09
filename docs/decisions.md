@@ -379,6 +379,31 @@ contas, categorias e movimentos. Ficam por fazer o segredo da IA e a auth do pai
 O repositório `CentFlowLab/Miven` é público: a fonte SideStore e o IPA abrem sem sessão. O
 endereço antigo `CentFlowLab/CentFlow` redireciona.
 
+## ADR-033 — Estatísticas com consentimento, Superwall preparado e Sentry nos IPAs
+
+**PostHog:** `posthog-react-native`, região UE (`EXPO_PUBLIC_POSTHOG_HOST`, por omissão
+`https://eu.i.posthog.com`). Só arranca com `EXPO_PUBLIC_POSTHOG_KEY` e com a preferência
+`analytics` ligada pelo utilizador nas Definições (desligada por omissão; sem chave a secção nem
+aparece). Envia só o nome do ecrã, sem identificadores (`/entry/[id]`), sem perfis de pessoa,
+sem eventos de ciclo de vida, sem valores, descrições, contas nem email. Desligar faz `optOut`
+e `reset`. A política de privacidade (D-4) tem de o mencionar antes de abrir ao público.
+**Superwall:** `expo-superwall` está instalado e `PaywallProvider` só monta o SDK com
+`EXPO_PUBLIC_PAYWALL_ENABLED=true` e a chave pública da plataforma
+(`EXPO_PUBLIC_SUPERWALL_IOS_KEY` / `_ANDROID_KEY`), nunca na web. Não há produtos, preços,
+colocações nem paywall visível: isso exige decidir o que é pago e criar os produtos na App Store
+Connect. Não tem relação com as "Subscrições" do utilizador (ADR-022).
+**Sentry:** o EAS `production` não tinha `EXPO_PUBLIC_SENTRY_DSN`, por isso os IPAs saíam com o
+Sentry desligado. A DSN pública foi acrescentada a 2026-11-09; entra a partir da compilação
+seguinte à 0.1.4. O token de source maps continua fora do CI (ADR-025).
+**Resend / miven.pt:** o DNS está em `host-redirect.com` (dominios.pt). Existem o DKIM
+(`resend._domainkey`) e o DMARC (`p=none`). Em 2026-11-09 o `send.miven.pt` tinha o TXT
+`send.forge.rmta.net` em vez do SPF do Resend e não tinha MX, por isso o domínio não fica
+verificado. O domínio raiz não tem registo A (alojamento por escolher, D-7).
+**Zernio:** plataforma de marketing (redes sociais, anúncios, mensagens) com servidor MCP. Não
+entra no código da app.
+**Dependências novas:** `posthog-react-native` e `expo-superwall` (módulo nativo, só ativo com a
+flag). O IPA 0.1.4 ainda não as tem.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

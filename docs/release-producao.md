@@ -156,5 +156,8 @@ separado, também com autorização. Até lá, a app nova fica no repositório.
 - Edge Functions publicadas. O segredo `ANTHROPIC_API_KEY` ainda não está definido.
 - Ensaio real com utilizador temporário (`live-sync-test.ts`, `MIVEN_LIVE_CONFIRM`): passou e
   apagou o utilizador.
-- Por fazer: a auth do painel (URL do site, redirects, confirmação, palavra-passe mínima 8,
-  SMTP do Resend).
+- Auth do painel feita à mão: URL do site `https://miven.pt`, os seis redirects (`miven://`,
+  `miven.pt` e `www.miven.pt`; os dois `centflow://` antigos ficaram), confirmação por email
+  ligada e palavra-passe mínima 8. Confirmado com `config diff` (só leitura).
+- Por fazer: SMTP do Resend (o domínio `miven.pt` ainda não verifica, ADR-033) e o segredo da IA.
+- Build 0.1.4 (compilação 8) publicado na fonte SideStore; o IPA descarrega.

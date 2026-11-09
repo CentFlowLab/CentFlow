@@ -16,6 +16,9 @@ redirects, confirmação e SMTP); a do staging vive em `[remotes.staging]`.
 Fase 5: registo por texto com IA (ADR-029) e importação de extratos CSV no dispositivo
 (ADR-030). Open Banking (D-5) e OCR de recibos (D-6) esperam pela escolha do fornecedor.
 A app do SideStore compila com o ambiente EAS `production` e fala com a produção.
+Integrações (ADR-033): Sentry com DSN no EAS desde 2026-11-09; PostHog só com chave e
+consentimento nas Definições; Superwall preparado atrás de `EXPO_PUBLIC_PAYWALL_ENABLED`, sem
+paywall. O SMTP do Resend espera pela verificação do domínio `miven.pt`.
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.
