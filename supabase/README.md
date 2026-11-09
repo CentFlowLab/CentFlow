@@ -29,7 +29,7 @@ npm run staging:guard -- qlimqcgrgaqzwjmafora
 
 No staging estão aplicadas `20261108000100` a `20261108000900` (`00800` e `00900` a
 2026-11-09), e publicadas as funções `delete-account` e `suggest-entry` (esta sem o segredo
-`ANTHROPIC_API_KEY`). Na produção só `20261108000100` e `20261108000200`.
+`ANTHROPIC_API_KEY`). A produção tem o mesmo histórico desde 2026-11-09 (ADR-032).
 O destino é sempre explícito (`--remote=qlimqcgrgaqzwjmafora`) e o guard tem de aceitar esse
 mesmo valor. Não usar `supabase link` para trocar o projeto ligado: `--remote` chega.
 
@@ -68,10 +68,7 @@ As migrações em `migrations/` criam `profiles`, `sync_metadata`, `accounts`, `
 quando a categoria é eliminada. Os testes em `__tests__/server-test.ts` correm as mesmas
 migrações contra PostgreSQL real (PGlite).
 
-`20261108000300` a `20261108000900` estão no staging e não estão na produção. Não as publicar
-na produção sem autorização, cópia de segurança e a ordem das migrations.
-No dashboard, Database › Settings › Exposed schemas tem de continuar só com `public`. O esquema
-`private` não pode ser exposto: é aí que corre a escrita interna.
+`20261108000300` a `20261108000900` estão no staging e na produção desde 2026-11-09 (ADR-032).
 
 ## Configuração no dashboard
 

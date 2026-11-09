@@ -220,7 +220,7 @@ ou a cobrança da própria aplicação.
 **Consequências:** a migration `20261108000600` entra em `sync_push`, `sync_pull_v2`,
 `sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Está aplicada no
 staging desde 2026-11-08 e foi ensaiada (criar, editar, pausar, conflito de versão, eliminar
-e isolamento). Não está na produção.
+e isolamento). Na produção desde 2026-11-09 (ADR-032).
 
 ## ADR-023 — Objetivos de poupança somam contribuições
 
@@ -233,7 +233,7 @@ bloqueada quando já há contribuições. Uma contribuição não cria movimento
 `sync_counts`, `sync_verify` e `purge_deleted`, com RLS por `auth.uid()`. Apagar o objetivo
 elimina logicamente as contribuições ainda ativas. Está aplicada no staging desde 2026-11-08
 e foi ensaiada (contribuições, bloqueio da moeda, fecho ao eliminar o objetivo e isolamento).
-Não está na produção.
+Na produção desde 2026-11-09 (ADR-032).
 
 ## ADR-024 — Relatórios calculam, não guardam
 
@@ -282,7 +282,7 @@ entidades e não criam movimentos nem mudam saldos de contas.
 **Consequências:** não há histórico de valorizações: editar o valor substitui o anterior, por
 isso ainda não há gráfico de evolução. Se for preciso, acrescenta-se uma tabela de valorizações
 numa migration nova. A migration `20261108000800` foi aplicada no staging a 2026-11-09 e
-ensaiada com duas sessões reais (criar, editar, eliminar). Não está na produção; a app sincroniza
+ensaiada com duas sessões reais (criar, editar, eliminar). Na produção desde 2026-11-09 (ADR-032); a app sincroniza
 `wealth_items` só depois de ela existir no servidor.
 
 ## ADR-028 — Veículos e Documentos são registos com prazos, sem ficheiros
@@ -295,8 +295,8 @@ Ambos entram na fila de sincronização como as restantes entidades.
 **Consequências:** os documentos não guardam o ficheiro: isso exigiria Supabase Storage,
 regras de acesso e um fluxo de eliminação (RGPD), por isso fica para uma decisão própria. Ainda
 não há notificações de prazos nem custos por veículo. A migration `20261108000900` depende da
-`20261108000800`. Foi aplicada no staging a 2026-11-09 e ensaiada com duas sessões reais. Não
-está na produção.
+`20261108000800`. Foi aplicada no staging a 2026-11-09 e ensaiada com duas sessões reais. Na
+produção desde 2026-11-09 (ADR-032).
 
 ## ADR-029 — Registo por linguagem natural com IA (Fase 5, primeiro passo)
 
@@ -313,7 +313,7 @@ diz que a IA ainda não está ativa. Não há limite diário por utilizador (a d
 público: custo e abuso). A função está publicada no staging desde 2026-11-09 e responde 401 sem
 sessão e 503 sem o segredo; o segredo `ANTHROPIC_API_KEY` ainda não foi definido. O Haiku 5.5
 recusa `temperature` e raciocina por omissão, por isso o pedido usa `thinking: disabled` e
-`max_tokens` 1024; uma recusa ou corte dá `not_understood`. Não está na produção. O texto sai do dispositivo para o
+`max_tokens` 1024; uma recusa ou corte dá `not_understood`. Publicada na produção a 2026-11-09, também sem o segredo. O texto sai do dispositivo para o
 fornecedor de IA, o que tem de constar da política de privacidade (D-4). Resolve D-6 para este
 caso; OCR de recibos, importação de extratos e Open Banking (D-5) continuam por fazer.
 
@@ -343,7 +343,7 @@ linhas por ficheiro.
 
 **Decisão:** o staging recebeu `00800` e `00900` com `db push --remote=qlimqcgrgaqzwjmafora`
 (sem trocar o projeto ligado, que continua a ser a produção). A sincronização foi ensaiada com
-dois dispositivos da mesma conta contra o staging real (`staging-live-test.ts`). A configuração
+dois dispositivos da mesma conta contra o staging real (`live-sync-test.ts`). A configuração
 de auth do staging vive em `[remotes.staging]` no `supabase/config.toml` (site
 `http://localhost:8081`, redirects `miven://`, `localhost:8081` e `miven.pt`, palavra-passe mínima 8) e foi aplicada com `config push --remote=qlimqcgrgaqzwjmafora`; o SMTP fica desligado no
 staging até a chave do Resend existir. A secção base continua a ser a proposta da produção e
@@ -352,6 +352,32 @@ Windows fazia falhar o `prettier --check`.
 **Consequências:** o registo por email no staging só funciona para membros da organização até
 haver SMTP; `example.com` é recusado pelo Supabase. O token de sessão de teste vem de um
 utilizador criado e apagado pela API de administração do staging.
+
+## ADR-032 — Produção alinhada com o staging (2026-11-09)
+
+**Contexto:** a app 0.1.3 do SideStore falhava sempre a sincronizar. O workflow "iOS IPA" usa
+`eas env:pull production`, e o `EXPO_PUBLIC_SUPABASE_URL` desse ambiente é a produção
+(`slfgslfzolfvqavuccom`), que só tinha `00100` e `00200`. A app chama `sync_pull_v2` e as
+tabelas novas, que não existiam.
+**Decisão:** com autorização explícita (`CONFIRMO-PRODUCAO`), aplicaram-se `00300` a `00900`
+pela ordem do plano. O dry-run listou exatamente essas sete. Antes houve uma cópia de segurança.
+O painel não tinha cópias (sem PITR) e o `db dump` precisa de Docker, que não existe nesta
+máquina. Por isso usou-se o script do `db dump --dry-run` com o `pg_dump` 17 local
+(`--quote-all-identifiers` por extenso: o `pg_dump` do Windows não aceita a abreviatura). Ficou
+em `C:\Users\Emanuel\Documents\Miven-backups\` (esquema, dados e dump `-Fc` de `public` e
+`auth`), fora do git. Publicaram-se `delete-account` e `suggest-entry`.
+**Verificação:** histórico local e remoto iguais de `00100` a `00900`. As 12 tabelas públicas
+têm RLS. `anon` não lê. `authenticated` só lê, sem `INSERT`/`UPDATE` diretos e sem políticas de
+`DELETE`. As funções de sync e `private.sync_apply_op` têm `search_path` vazio. O esquema
+`private` não está exposto (406). Um `POST` anónimo a `/rest/v1/goals` dá 401. O ensaio
+`live-sync-test.ts` correu na produção com um utilizador temporário (conta, movimento,
+Património, Veículo e Documento; criar, editar e eliminar em duas sessões) e apagou-o.
+`delete-account` respondeu 401 sem confirmação e apagou o utilizador de teste com ela.
+`suggest-entry` respondeu 401 sem sessão e 503 sem o segredo.
+**Consequências:** o código da app 0.1.0–0.1.2 que ainda use `sync_pull` continua a receber
+contas, categorias e movimentos. Ficam por fazer o segredo da IA e a auth do painel da produção.
+O repositório `CentFlowLab/Miven` é público: a fonte SideStore e o IPA abrem sem sessão. O
+endereço antigo `CentFlowLab/CentFlow` redireciona.
 
 ## Decisões pendentes
 

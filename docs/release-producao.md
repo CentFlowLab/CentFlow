@@ -3,6 +3,8 @@
 Plano. Não executar nenhum passo sem uma autorização nova, nessa altura, com a frase
 `CONFIRMO-PRODUCAO` no comando. Este documento não autoriza o lançamento.
 
+**Executado a 2026-11-09** com autorização explícita do responsável. Ver "Execução" no fim.
+
 Produção: `slfgslfzolfvqavuccom`. Staging: `qlimqcgrgaqzwjmafora`. Não escrever no staging neste
 lançamento. Não usar `supabase link` para trocar o projeto ligado.
 
@@ -136,3 +138,23 @@ utilizador (ADR-029).
 Só quando o histórico mostra `00100` a `00900`, as verificações passam e o SMTP e os
 redirects da produção estão feitos. A publicação (EAS ou o alojamento da PWA) é um passo
 separado, também com autorização. Até lá, a app nova fica no repositório.
+
+## Execução (2026-11-09)
+
+- O EAS `production` aponta `EXPO_PUBLIC_SUPABASE_URL` para `slfgslfzolfvqavuccom`.
+- Cópia de segurança às 16:57–16:58 (hora local). O painel não tinha cópias. O `db dump` precisa
+  de Docker, por isso correu-se o script do `db dump --dry-run` com o `pg_dump` 17 local,
+  trocando `--quote-all-identifier` por `--quote-all-identifiers`. Cada `--dry-run` cria uma
+  palavra-passe temporária nova, por isso cada script tem de correr logo a seguir ao seu. Ficheiros
+  em `C:\Users\Emanuel\Documents\Miven-backups\miven-prod-20261109-165722-*` (esquema, dados,
+  `-Fc` de `public` e `auth`). Dados nesse momento: 1 perfil, 3 contas, 15 categorias,
+  0 movimentos.
+- Dry-run: as sete migrations, `00300` a `00900`, por ordem. Aplicação sem erros. Histórico
+  local e remoto iguais de `00100` a `00900`.
+- Verificações desta lista: todas passaram (ADR-032). O `POST` anónimo dá 401 (não 403): `anon`
+  não tem permissão na tabela.
+- Edge Functions publicadas. O segredo `ANTHROPIC_API_KEY` ainda não está definido.
+- Ensaio real com utilizador temporário (`live-sync-test.ts`, `MIVEN_LIVE_CONFIRM`): passou e
+  apagou o utilizador.
+- Por fazer: a auth do painel (URL do site, redirects, confirmação, palavra-passe mínima 8,
+  SMTP do Resend).

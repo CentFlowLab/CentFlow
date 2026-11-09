@@ -6,16 +6,16 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 
 ## Estado
 
-Fases 0, 1 e 2 concluídas. Fase 3 (orçamentos, subscrições, objetivos, relatórios) e Fase 4
-(Património, ADR-027; Veículos e Documentos, ADR-028) estão no cliente. O **staging** tem o
-histórico `20261108000100` a `20261108000900` (`00800` e `00900` aplicadas e ensaiadas a
-2026-11-09, com sincronização real entre duas sessões), a configuração de auth de
-`[remotes.staging]` e as funções `delete-account` e `suggest-entry` publicadas. A **produção**
-continua só com `20261108000100` e `20261108000200`; o plano está em
-[docs/release-producao.md](docs/release-producao.md) e não foi executado.
-Fase 5: registo por texto com IA (ADR-029; a função está no staging mas falta o segredo
-`ANTHROPIC_API_KEY`) e importação de extratos CSV no dispositivo (ADR-030). Open Banking (D-5)
-e OCR de recibos (D-6) esperam pela escolha do fornecedor.
+Fases 0 a 4 e a parte da Fase 5 sem fornecedor externo estão no cliente. **Produção e staging
+têm o mesmo histórico, `20261108000100` a `20261108000900`.** As migrations `00300` a `00900`
+foram aplicadas na produção a 2026-11-09, com autorização explícita, depois de uma cópia de
+segurança (ver [docs/release-producao.md](docs/release-producao.md), "Execução"). As funções
+`delete-account` e `suggest-entry` estão publicadas nos dois ambientes. Ainda falta, nos dois,
+o segredo `ANTHROPIC_API_KEY`. Na produção falta também a auth do painel (URL do site,
+redirects, confirmação e SMTP); a do staging vive em `[remotes.staging]`.
+Fase 5: registo por texto com IA (ADR-029) e importação de extratos CSV no dispositivo
+(ADR-030). Open Banking (D-5) e OCR de recibos (D-6) esperam pela escolha do fornecedor.
+A app do SideStore compila com o ambiente EAS `production` e fala com a produção.
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.
