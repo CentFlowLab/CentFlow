@@ -24,15 +24,19 @@ import {
   BarChart,
   CalendarPicker,
   Card,
+  CategoryIcon,
   Chip,
   ChipGroup,
   EmptyState,
+  HeroCard,
+  Icon,
   ProgressBar,
   Screen,
   Section,
   Text,
+  type IconName,
 } from '@/ui/components';
-import { spacing, useTheme } from '@/ui/theme';
+import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { useToday } from '../finance/useToday';
 import { loadReport } from './load';
@@ -186,6 +190,7 @@ export function ReportsScreen() {
   const selected = currency && currencies.includes(currency) ? currency : currencies[0]!;
   const report = buildCurrencyReport(data.rows, selected, ranges.current, ranges.previous);
   const names = new Map(data.categories.map((category) => [category.id, category.name]));
+  const categoryById = new Map(data.categories.map((category) => [category.id, category]));
   const money = (amountMinor: number) => formatMoney({ amountMinor, currency: selected });
   const budgetRows = budgetsForPeriod(data.budgets, data.expenses, ranges.current).filter(
     (row) => row.currency === selected,
@@ -217,32 +222,54 @@ export function ReportsScreen() {
         </Text>
       )}
 
-      <Card>
-        <Text variant="caption" tone="secondary">
+      <HeroCard style={styles.hero}>
+        <Text variant="overline" tone="heroMuted">
           {rangeLabel(ranges.current, formatDate)}
         </Text>
-        <View style={styles.metrics}>
-          <Metric
-            label={t('reports.income')}
-            value={money(report.summary.income)}
-            tone="positive"
-          />
-          <Metric
-            label={t('reports.expense')}
-            value={money(report.summary.expense)}
-            tone="negative"
-          />
-          <Metric label={t('reports.net')} value={money(report.summary.net)} />
-          <Metric
-            label={t('reports.savingsRate')}
-            value={
-              report.summary.savingsRate === null
-                ? t('reports.savingsRateUndefined')
-                : formatPercent(report.summary.savingsRate, 1)
+        <Text variant="caption" tone="heroMuted">
+          {t('reports.net')}
+        </Text>
+        <Text variant="amountHero" tone="hero" tabular numberOfLines={1} adjustsFontSizeToFit>
+          {formatMoney(
+            { amountMinor: report.summary.net, currency: selected },
+            { signDisplay: 'exceptZero' },
+          )}
+        </Text>
+        <View style={[styles.heroChip, { backgroundColor: colors.heroSurface }]}>
+          <Text variant="caption" tone="heroMuted">
+            {t('reports.savingsRate')}
+          </Text>
+          <Text
+            variant="footnote"
+            tone={
+              report.summary.savingsRate !== null && report.summary.savingsRate < 0
+                ? 'heroNegative'
+                : 'hero'
             }
-          />
+            tabular>
+            {report.summary.savingsRate === null
+              ? t('reports.savingsRateUndefined')
+              : formatPercent(report.summary.savingsRate, 1)}
+          </Text>
         </View>
-      </Card>
+      </HeroCard>
+
+      <View style={styles.metrics}>
+        <Kpi
+          label={t('reports.income')}
+          value={money(report.summary.income)}
+          tone="positive"
+          icon="arrow-down"
+          background={colors.positiveMuted}
+        />
+        <Kpi
+          label={t('reports.expense')}
+          value={money(report.summary.expense)}
+          tone="negative"
+          icon="arrow-up"
+          background={colors.negativeMuted}
+        />
+      </View>
 
       <Section
         title={t('reports.comparedWith', { period: rangeLabel(ranges.previous, formatDate) })}>
@@ -337,30 +364,40 @@ export function ReportsScreen() {
               return (
                 <View
                   key={item.categoryId ?? 'none'}
+                  style={styles.categoryRow}
                   accessible
                   accessibilityLabel={`${name}: ${money(item.amount)}, ${percent}`}>
-                  <View style={styles.row}>
-                    <Text variant="label" style={styles.flex} numberOfLines={1}>
-                      {name}
-                    </Text>
-                    <Amount
-                      value={{ amountMinor: item.amount, currency: selected }}
-                      variant="label"
-                    />
-                    <Text variant="caption" tone="tertiary" tabular>
-                      {percent}
-                    </Text>
-                  </View>
-                  <View style={[styles.track, { backgroundColor: colors.surfaceMuted }]}>
-                    <View
-                      style={[
-                        styles.fill,
-                        {
-                          width: `${Math.max(item.share * 100, item.amount > 0 ? 2 : 0)}%`,
-                          backgroundColor: colors.negative,
-                        },
-                      ]}
-                    />
+                  <CategoryIcon
+                    icon={
+                      (item.categoryId && categoryById.get(item.categoryId)?.icon) || 'help-outline'
+                    }
+                    color={(item.categoryId && categoryById.get(item.categoryId)?.color) || 'slate'}
+                    size={32}
+                  />
+                  <View style={styles.categoryBody}>
+                    <View style={styles.row}>
+                      <Text variant="label" style={styles.flex} numberOfLines={1}>
+                        {name}
+                      </Text>
+                      <Amount
+                        value={{ amountMinor: item.amount, currency: selected }}
+                        variant="label"
+                      />
+                      <Text variant="caption" tone="tertiary" tabular>
+                        {percent}
+                      </Text>
+                    </View>
+                    <View style={[styles.track, { backgroundColor: colors.surfaceMuted }]}>
+                      <View
+                        style={[
+                          styles.fill,
+                          {
+                            width: `${Math.max(item.share * 100, item.amount > 0 ? 2 : 0)}%`,
+                            backgroundColor: colors.negative,
+                          },
+                        ]}
+                      />
+                    </View>
                   </View>
                 </View>
               );
@@ -493,6 +530,34 @@ function Metric({
   );
 }
 
+function Kpi({
+  label,
+  value,
+  tone,
+  icon,
+  background,
+}: {
+  label: string;
+  value: string;
+  tone: 'positive' | 'negative';
+  icon: IconName;
+  background: string;
+}) {
+  return (
+    <Card style={styles.kpi} accessible accessibilityLabel={`${label}: ${value}`}>
+      <View style={[styles.kpiIcon, { backgroundColor: background }]}>
+        <Icon name={icon} size={18} color={tone} />
+      </View>
+      <Text variant="footnote" tone="secondary" numberOfLines={1}>
+        {label}
+      </Text>
+      <Text variant="title2" tone={tone} tabular numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+    </Card>
+  );
+}
+
 function Comparison({
   label,
   current,
@@ -539,10 +604,32 @@ const styles = StyleSheet.create({
   metric: { width: '46%', flexGrow: 1, gap: spacing.xxs },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1 },
-  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  fill: { height: '100%' },
+  track: { height: 6, borderRadius: radius.full, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: radius.full },
+  hero: { gap: spacing.xs },
+  heroChip: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginTop: spacing.xs,
+  },
+  kpi: { flexGrow: 1, flexBasis: 140, gap: spacing.xs },
+  kpiIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  categoryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  categoryBody: { flex: 1, gap: spacing.xs + 2 },
   chartScroll: { flexGrow: 1 },
   legend: { flexDirection: 'row', gap: spacing.md },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  swatch: { width: 12, height: 12, borderRadius: 2 },
+  swatch: { width: 10, height: 10, borderRadius: radius.full },
 });
