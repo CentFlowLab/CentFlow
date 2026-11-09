@@ -19,7 +19,9 @@ Antes de abrir a app ao público faltam a política de privacidade e os termos (
 mencionar o fornecedor de IA e o PostHog.
 Integrações (ADR-033): Sentry com DSN no EAS; PostHog só com chave e consentimento; Superwall
 preparado atrás de `EXPO_PUBLIC_PAYWALL_ENABLED`, sem paywall.
-A app do SideStore compila com o ambiente EAS `production` e fala com a produção.
+Plataformas (ADR-037): iOS pela fonte SideStore (workflow "iOS IPA"), Android por APK assinado
+(workflow "Android APK", release fixa `android-latest`) e web em `https://miven.pt/app/`
+(workflow "Site miven.pt", em cada push). Todas usam o ambiente EAS `production`.
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.

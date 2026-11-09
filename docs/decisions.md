@@ -456,6 +456,28 @@ Android adaptativo com o mosaico completo sobre o preto da imagem (`#010206`) e 
 monocromática. O script usa Pillow e numpy só no ambiente de quem mexe na marca: não são
 dependências da app. O gerador por geometria (`generate-brand-assets.mjs`) foi retirado.
 
+## ADR-037 — Três plataformas: web em miven.pt/app, APK Android e iOS por SideStore
+
+**Web:** o workflow "Site miven.pt" compila a app web em cada push para o master
+(`expo export` com `experiments.baseUrl = "/app"` só no runner) e publica-a em
+`https://miven.pt/app/` junto do site. O GitHub Pages não envia COOP/COEP, que o expo-sqlite
+precisa: `public/coi-serviceworker.min.js` (coi-serviceworker 0.1.7, MIT, sha256
+`03d2f35b…f2d05d`, guardado no repositório e fora do lint/Prettier) acrescenta-os por service
+worker. `scripts/prepare-web-app.mjs` liga-o, aponta manifesto e ícones para `/app` e restaura os
+links profundos que o `404.html` do site guarda. Na web, os retornos de autenticação incluem
+`/app` e estão na lista do Supabase. `app.miven.pt` exigiria um segundo repositório e um token
+entre repositórios; fica para depois, como redirecionamento.
+**Android:** workflow "Android APK" (manual): verificações, variáveis públicas do EAS, `expo
+prebuild`, Gradle `assembleRelease` assinado com a chave dos segredos `ANDROID_*` (PKCS#12, criada
+uma vez pelo responsável com `scripts/create-android-signing-key.sh`; cópia de segurança fora do
+git), verificação com `apksigner`, Release `android-build-N` e a release fixa `android-latest`
+(`/releases/download/android-latest/miven.apk`) para o site. `versionCode` = número de builds
+Android publicados + 1. Sem Play Store por agora.
+**iOS:** continua o IPA sem assinatura pela fonte SideStore.
+**Consequências:** sem a chave Android não há atualizações do APK (o Android recusa outra
+assinatura). Se o service worker não puder registar-se (browser sem suporte), a app web mostra
+o erro de isolamento e não abre dados.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
