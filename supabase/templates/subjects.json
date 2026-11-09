@@ -1,0 +1,8 @@
+{
+  "confirmation": "{{ $l := or .Data.locale \"pt\" }}{{ if eq $l \"en\" }}Confirm your email for Miven{{ else if eq $l \"es\" }}Confirma tu email en Miven{{ else }}Confirma o teu email no Miven{{ end }}",
+  "recovery": "{{ $l := or .Data.locale \"pt\" }}{{ if eq $l \"en\" }}Reset your Miven password{{ else if eq $l \"es\" }}Restablece tu contraseña de Miven{{ else }}Repor a palavra-passe do Miven{{ end }}",
+  "magic_link": "{{ $l := or .Data.locale \"pt\" }}{{ if eq $l \"en\" }}Your Miven sign-in link{{ else if eq $l \"es\" }}Tu enlace para entrar en Miven{{ else }}O teu link para entrar no Miven{{ end }}",
+  "email_change": "{{ $l := or .Data.locale \"pt\" }}{{ if eq $l \"en\" }}Confirm your new Miven email{{ else if eq $l \"es\" }}Confirma tu nuevo email de Miven{{ else }}Confirma o novo email do Miven{{ end }}",
+  "invite": "{{ $l := or .Data.locale \"pt\" }}{{ if eq $l \"en\" }}You've been invited to Miven{{ else if eq $l \"es\" }}Te han invitado a Miven{{ else }}Foste convidado para o Miven{{ end }}",
+  "reauthentication": "{{ $l := or .Data.locale \"pt\" }}{{ if eq $l \"en\" }}Your Miven code{{ else if eq $l \"es\" }}Tu código de Miven{{ else }}O teu código do Miven{{ end }}"
+}

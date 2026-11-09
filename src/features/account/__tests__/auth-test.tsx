@@ -207,7 +207,10 @@ describe('auth screens', () => {
       expect(auth.signUp).toHaveBeenCalledWith({
         email: 'nova@b.pt',
         password: 'secret-password',
-        options: { emailRedirectTo: expect.stringContaining('auth/callback') },
+        options: {
+          emailRedirectTo: 'https://miven.pt/auth/callback',
+          data: { locale: 'pt' },
+        },
       }),
     );
     expect(await screen.findByText('Confirma o teu email')).toBeOnTheScreen();

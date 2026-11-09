@@ -4,10 +4,11 @@ import { openLocalSpace } from '@/data/open-app-database';
 import { getSupabase } from '@/lib/supabase';
 
 import { appAccessFor } from '../app-access';
+import { emailLocaleFor } from '../AuthProvider';
 
 describe('appAccessFor', () => {
   it('only grants access with a session', () => {
-    const user = { id: '00000000-0000-4000-8000-000000000001', email: null };
+    const user = { id: '00000000-0000-4000-8000-000000000001', email: null, locale: null };
     expect(appAccessFor({ status: 'signedIn', user }, false)).toBe('granted');
     expect(appAccessFor({ status: 'signedOut', expired: false }, true)).toBe('signedOut');
     expect(appAccessFor({ status: 'loading' }, false)).toBe('loading');
@@ -52,5 +53,14 @@ describe('without a session', () => {
     expect(await screen.findByText('Bem-vindo ao Miven')).toBeOnTheScreen();
     expect(screen.queryByLabelText('Pesquisar')).toBeNull();
     expect(openLocalSpace).not.toHaveBeenCalled();
+  });
+});
+
+describe('emailLocaleFor', () => {
+  it('maps the app language to the three email templates', () => {
+    expect(emailLocaleFor('pt-PT')).toBe('pt');
+    expect(emailLocaleFor('en')).toBe('en');
+    expect(emailLocaleFor('es')).toBe('es');
+    expect(emailLocaleFor('fr')).toBe('pt');
   });
 });

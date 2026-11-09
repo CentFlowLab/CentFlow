@@ -4,12 +4,13 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { ANONYMOUS_SPACE, deleteLocalSpace, type LocalSpace } from '@/data';
 import { appStorage } from '@/lib/storage/key-value-store';
+import { usePreferences } from '@/features/preferences';
 import { EmptyState } from '@/ui/components';
 import { useTheme } from '@/ui/theme';
 
 import { DataGate } from '../app-shell/DataGate';
 import { appAccessFor, type AppAccess } from './app-access';
-import { useAuth } from './AuthProvider';
+import { emailLocaleFor, useAuth } from './AuthProvider';
 import { resumePendingAccountDeletion } from './pending-account-deletion';
 import { SyncProvider } from './SyncProvider';
 
@@ -31,6 +32,15 @@ export function AccountGate({ children }: PropsWithChildren) {
   const access = useAppAccess();
   const [resumeSettled, setResumeSettled] = useState(false);
   const userId = state.status === 'signedIn' ? state.user.id : null;
+  const { activeLanguage } = usePreferences();
+  const savedLocale = state.status === 'signedIn' ? state.user.locale : null;
+
+  // Os emails de autenticação usam a língua guardada na conta: acompanha a da app.
+  useEffect(() => {
+    if (!userId) return;
+    const wanted = emailLocaleFor(activeLanguage);
+    if (savedLocale !== wanted) void actions.updateEmailLocale(wanted);
+  }, [actions, activeLanguage, savedLocale, userId]);
 
   useEffect(() => {
     if (state.status === 'loading') return;

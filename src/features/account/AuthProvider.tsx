@@ -10,6 +10,7 @@ import {
   type PropsWithChildren,
 } from 'react';
 
+import { i18n } from '@/i18n';
 import { getSupabase } from '@/lib/supabase';
 
 import { AppleSignInCancelledError, performAppleSignIn } from './apple-sign-in';
@@ -17,7 +18,26 @@ import { authRedirectUrl } from './auth-redirect';
 
 export { authRedirectUrl } from './auth-redirect';
 
-export type AuthUser = { id: string; email: string | null };
+export type AuthUser = {
+  id: string;
+  email: string | null;
+  /** Língua dos emails de autenticação, guardada nos metadados da conta (ADR-035). */
+  locale: EmailLocale | null;
+};
+
+/** Os modelos de email só distinguem português, inglês e espanhol. */
+export type EmailLocale = 'pt' | 'en' | 'es';
+
+export function emailLocaleFor(language: string): EmailLocale {
+  if (language.startsWith('en')) return 'en';
+  if (language.startsWith('es')) return 'es';
+  return 'pt';
+}
+
+function readLocale(metadata: unknown): EmailLocale | null {
+  const value = (metadata as { locale?: unknown } | null | undefined)?.locale;
+  return value === 'pt' || value === 'en' || value === 'es' ? value : null;
+}
 
 export type AuthState =
   /** Projeto Supabase não configurado nesta build: só uso sem conta. */
@@ -125,6 +145,8 @@ export type AuthActions = {
   reauthenticateWithApple(): Promise<AuthResult | { ok: false; error: 'cancelled' }>;
   /** Token de acesso atual, para chamadas a funções do servidor. */
   accessToken(): Promise<string | null>;
+  /** Guarda a língua dos emails nos metadados da conta. */
+  updateEmailLocale(locale: EmailLocale): Promise<AuthResult>;
 };
 
 type AuthContextValue = { state: AuthState; client: SupabaseClient | null; actions: AuthActions };
@@ -143,6 +165,7 @@ function createActions(client: SupabaseClient | null): AuthActions {
       updatePassword: unavailable,
       signInWithApple: unavailable,
       reauthenticateWithApple: unavailable,
+      updateEmailLocale: unavailable,
       accessToken: async () => null,
     };
   }
@@ -165,7 +188,11 @@ function createActions(client: SupabaseClient | null): AuthActions {
         const { data, error } = await auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: authRedirectUrl('/auth/callback') },
+          options: {
+            emailRedirectTo: authRedirectUrl('/auth/callback'),
+            // Os emails seguem a língua da app (modelos em supabase/templates).
+            data: { locale: emailLocaleFor(i18n.language) },
+          },
         });
         if (error) return fail(error);
         return ok(data.session ? 'signedIn' : 'confirmEmail');
@@ -203,6 +230,11 @@ function createActions(client: SupabaseClient | null): AuthActions {
         }
       }),
     accessToken: async () => (await auth.getSession()).data.session?.access_token ?? null,
+    updateEmailLocale: (locale) =>
+      guard(async () => {
+        const { error } = await auth.updateUser({ data: { locale } });
+        return error ? fail(error) : ok(undefined);
+      }),
     reauthenticateWithApple: async () => {
       try {
         await performAppleSignIn(client);
@@ -228,14 +260,18 @@ export function AuthProvider({
     if (!client) return;
     let cancelled = false;
     const applySession = (
-      session: { user: { id: string; email?: string | null } } | null,
+      session: { user: { id: string; email?: string | null; user_metadata?: unknown } } | null,
       expired: boolean,
     ) => {
       if (cancelled) return;
       if (session?.user) {
         setState({
           status: 'signedIn',
-          user: { id: session.user.id, email: session.user.email ?? null },
+          user: {
+            id: session.user.id,
+            email: session.user.email ?? null,
+            locale: readLocale(session.user.user_metadata),
+          },
         });
         return;
       }

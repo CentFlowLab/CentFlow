@@ -4,3 +4,4 @@ coverage
 .expo
 package-lock.json
 public/index.html
+supabase/templates
