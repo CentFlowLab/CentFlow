@@ -5,6 +5,7 @@ import { useEffect, type PropsWithChildren } from 'react';
 import { AccountGate } from '@/features/account/AccountGate';
 import { AuthProvider } from '@/features/account/AuthProvider';
 import { PreferencesProvider, usePreferences } from '@/features/preferences';
+import { PaywallProvider } from '@/lib/paywall';
 import { appFonts } from '@/ui/theme/fonts';
 import { ThemeProvider } from '@/ui/theme';
 
@@ -37,7 +38,9 @@ function ReadyGate({ children }: PropsWithChildren) {
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <PreferencesProvider>
-      <ReadyGate>{children}</ReadyGate>
+      <PaywallProvider>
+        <ReadyGate>{children}</ReadyGate>
+      </PaywallProvider>
     </PreferencesProvider>
   );
 }
