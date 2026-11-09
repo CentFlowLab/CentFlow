@@ -7,22 +7,19 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 ## Estado
 
 Fases 0 a 4 e a parte da Fase 5 sem fornecedor externo estão no cliente. **Produção e staging
-têm o mesmo histórico, `20261108000100` a `20261108000900`.** As migrations `00300` a `00900`
-foram aplicadas na produção a 2026-11-09, com autorização explícita, depois de uma cópia de
-segurança (ver [docs/release-producao.md](docs/release-producao.md), "Execução"). As funções
-`delete-account` e `suggest-entry` estão publicadas nos dois ambientes. Ainda falta, nos dois,
-o segredo `ANTHROPIC_API_KEY`. A auth do painel da produção (URL do site, redirects,
-confirmação, palavra-passe mínima 8) e o SMTP do Resend (`noreply@miven.pt`, `smtp.resend.com:465`) foram feitos a 2026-11-09; o envio foi testado. A do staging vive
-em `[remotes.staging]`. A cópia de segurança fica fora do git e fora de pastas sincronizadas
-(OneDrive, iCloud): contém o esquema `auth` (emails e hashes de palavras-passe).
+têm o mesmo histórico, `20261108000100` a `20261108000900`** (produção desde 2026-11-09, ver
+[docs/release-producao.md](docs/release-producao.md)). Funções `delete-account` e
+`suggest-entry` nos dois ambientes; falta o segredo `ANTHROPIC_API_KEY`.
+**O Miven só se usa com conta (ADR-034):** sem sessão só há boas-vindas e autenticação, e não se
+abre base de dados. Os links dos emails vão para `https://miven.pt/auth/...` (site estático em
+`site/`, GitHub Pages), que reencaminha para `miven://`. Emails da autenticação com a marca e na
+língua da app (ADR-035), enviados pelo Resend (`noreply@miven.pt`). Logótipo B (ADR-036).
+A cópia de segurança fica fora do git e de pastas sincronizadas: contém o esquema `auth`.
 Antes de abrir a app ao público faltam a política de privacidade e os termos (D-4), que têm de
 mencionar o fornecedor de IA e o PostHog.
-Fase 5: registo por texto com IA (ADR-029) e importação de extratos CSV no dispositivo
-(ADR-030). Open Banking (D-5) e OCR de recibos (D-6) esperam pela escolha do fornecedor.
+Integrações (ADR-033): Sentry com DSN no EAS; PostHog só com chave e consentimento; Superwall
+preparado atrás de `EXPO_PUBLIC_PAYWALL_ENABLED`, sem paywall.
 A app do SideStore compila com o ambiente EAS `production` e fala com a produção.
-Integrações (ADR-033): Sentry com DSN no EAS desde 2026-11-09; PostHog só com chave e
-consentimento nas Definições; Superwall preparado atrás de `EXPO_PUBLIC_PAYWALL_ENABLED`, sem
-paywall. O domínio `miven.pt` está verificado no Resend e o SMTP da produção usa-o.
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.
@@ -124,7 +121,8 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
   e futuramente atalhos, widgets e deep links.
 - Formulários são modais no `Stack` raiz (`entry/[id]`, `account/new`, `account/[id]`,
   `category/new`, `category/[id]`, `import-statement`, `auth/*`, `sync/conflicts`) e usam
-  `<FormScreen>`.
+  `<FormScreen>`. As rotas de dados ficam dentro de `Stack.Protected guard={granted}`; uma rota
+  nova de dados tem de entrar nesse grupo (ADR-034).
   `unstable_settings.anchor = '(tabs)'` garante que um modal aberto diretamente por URL tem os
   separadores por baixo. Fechar com `closeModal(fallback)`.
 - Confirmações usam `<Dialog>` (o `Alert` do React Native não funciona na web).
@@ -164,8 +162,9 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - Logs da camada de dados registam apenas o motivo/código (ex.: `[database] open failed: otherTab`).
 - Todas as tabelas pessoais têm RLS (`auth.uid()`). A chave `service_role` só existe na Edge
   Function `delete-account`. Migrações em `supabase/migrations`.
-- Cada conta tem a sua base de dados local (`centflow-u-<userId>.db`); o uso sem conta continua
-  em `centflow.db`. Nunca misturar automaticamente.
+- Cada conta tem a sua base de dados local (`centflow-u-<userId>.db`). Não há uso sem conta
+  (ADR-034): `centflow.db` só existe em dispositivos antigos e é importado ou apagado no primeiro
+  login, sempre com decisão explícita.
 - A IA nunca executa operações financeiras sem confirmação explícita do utilizador.
 
 ## Sincronização
@@ -176,4 +175,5 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
   dos dispositivos não decidem conflitos.
 - Fusão a três vias em `src/core/sync/merge.ts`: campos diferentes combinam-se; o mesmo campo
   divergente, ou editar vs eliminar, fica em `sync_conflicts` até o utilizador escolher.
-- Importação do uso sem conta: copiar → enviar → `sync_verify` registo a registo → só então limpar.
+- Importação do uso sem conta (dispositivos antigos): copiar → enviar → `sync_verify` registo a
+  registo → só então limpar.

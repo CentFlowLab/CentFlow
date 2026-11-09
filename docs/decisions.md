@@ -412,6 +412,46 @@ entra no código da app.
 **Dependências novas:** `posthog-react-native` e `expo-superwall` (módulo nativo, só ativo com a
 flag). O IPA 0.1.4 ainda não as tem.
 
+## ADR-034 — Conta obrigatória e páginas de retorno em miven.pt
+
+**Decisão:** o Miven só se usa com conta. O layout raiz usa `Stack.Protected`: separadores,
+formulários e conflitos só com sessão; boas-vindas, entrar, criar conta e recuperar só sem
+sessão; `auth/callback` e `auth/reset-password` ficam sempre acessíveis. Sem sessão não se abre
+nenhuma base de dados local. Sem Supabase configurado (`unavailable`), a app só funciona em
+desenvolvimento e nos testes; numa compilação de produção mostra um erro de configuração. Os
+dados que já existam sem conta num dispositivo são propostos no primeiro login: importar para a
+conta ou apagar do dispositivo (com segunda confirmação). Substitui a parte "uso sem conta" do
+ADR-019; o espaço `centflow.db` fica só para esta migração.
+**Links dos emails:** os retornos passam a `https://miven.pt/auth/callback` e
+`https://miven.pt/auth/reset-password`. Nas compilações nativas, `Linking.createURL` devolvia
+`miven:///auth/callback` (três barras), que não estava na lista de redirects; o Supabase caía no
+site por omissão (miven.pt, sem alojamento) e o link de confirmação dava "Não é possível aceder a
+este site". O site estático (`site/`, GitHub Pages, workflow "Site miven.pt", domínio
+`miven.pt`) mostra o resultado na língua do browser e reencaminha o mesmo código para
+`miven://auth/...`; no telemóvel tenta abrir a app. Com PKCE, o código só cria sessão no
+dispositivo que fez o pedido; noutro dispositivo o email fica confirmado e basta entrar.
+**Consequências:** quando a PWA for alojada em miven.pt (D-7), as rotas `/auth/*` passam a ser
+as da app. A política de privacidade e os termos (D-4) ainda não estão no site.
+
+## ADR-035 — Emails da autenticação com a marca, na língua da app
+
+**Decisão:** seis modelos (confirmação, recuperação, link mágico, mudança de email, convite e
+código de reautenticação) gerados por `scripts/generate-email-templates.mjs` em
+`supabase/templates/` e colados no painel da produção a 2026-11-09. Cada modelo escolhe o texto
+por `user_metadata.locale` (`pt`, `en`, `es`; sem valor, português), também no assunto. A app
+envia `locale` no registo e atualiza-o quando a língua muda com sessão iniciada. O cabeçalho usa
+`https://miven.pt/assets/email-logo.png` e o nome em texto. A pasta fica fora do Prettier, que
+estragaria as marcas `{{ }}`.
+**Verificação:** registos e recuperação de teste com `delivered@resend.dev` (com e sem `locale`)
+enviaram sem erro de modelo; os utilizadores de teste foram apagados.
+
+## ADR-036 — Logótipo B: moeda com "m" e seta
+
+**Decisão:** das três propostas (tendência, moeda, barras), ficou a moeda verde com um "m" em
+negativo e uma seta para cima, sobre azul-noite. `scripts/generate-brand-assets.mjs` desenha-a
+por geometria (SDF), sem dependências, e escreve os ícones da app, do Android adaptativo, da PWA,
+do site e dos emails. Entra no iPhone a partir da 0.1.5.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
