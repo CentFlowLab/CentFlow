@@ -12,7 +12,7 @@ foram aplicadas na produção a 2026-11-09, com autorização explícita, depois
 segurança (ver [docs/release-producao.md](docs/release-producao.md), "Execução"). As funções
 `delete-account` e `suggest-entry` estão publicadas nos dois ambientes. Ainda falta, nos dois,
 o segredo `ANTHROPIC_API_KEY`. A auth do painel da produção (URL do site, redirects,
-confirmação, palavra-passe mínima 8) foi feita a 2026-11-09; falta só o SMTP. A do staging vive
+confirmação, palavra-passe mínima 8) e o SMTP do Resend (`noreply@miven.pt`, `smtp.resend.com:465`) foram feitos a 2026-11-09; o envio foi testado. A do staging vive
 em `[remotes.staging]`. A cópia de segurança fica fora do git e fora de pastas sincronizadas
 (OneDrive, iCloud): contém o esquema `auth` (emails e hashes de palavras-passe).
 Antes de abrir a app ao público faltam a política de privacidade e os termos (D-4), que têm de
@@ -22,7 +22,7 @@ Fase 5: registo por texto com IA (ADR-029) e importação de extratos CSV no dis
 A app do SideStore compila com o ambiente EAS `production` e fala com a produção.
 Integrações (ADR-033): Sentry com DSN no EAS desde 2026-11-09; PostHog só com chave e
 consentimento nas Definições; Superwall preparado atrás de `EXPO_PUBLIC_PAYWALL_ENABLED`, sem
-paywall. O SMTP do Resend espera pela verificação do domínio `miven.pt` (CNAME `send` e `rsend` corrigidos a 2026-11-09).
+paywall. O domínio `miven.pt` está verificado no Resend e o SMTP da produção usa-o.
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.

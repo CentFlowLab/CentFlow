@@ -159,5 +159,7 @@ separado, também com autorização. Até lá, a app nova fica no repositório.
 - Auth do painel feita à mão: URL do site `https://miven.pt`, os seis redirects (`miven://`,
   `miven.pt` e `www.miven.pt`; os dois `centflow://` antigos ficaram), confirmação por email
   ligada e palavra-passe mínima 8. Confirmado com `config diff` (só leitura).
-- Por fazer: SMTP do Resend (o domínio `miven.pt` ainda não verifica, ADR-033) e o segredo da IA.
+- SMTP do Resend ligado (domínio `miven.pt` verificado). Registo de teste com
+  `delivered@resend.dev`: email de confirmação enviado; utilizador apagado.
+- Por fazer: o segredo da IA.
 - Build 0.1.4 (compilação 8) publicado na fonte SideStore; o IPA descarrega.

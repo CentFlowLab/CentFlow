@@ -400,8 +400,13 @@ seguinte à 0.1.4. O token de source maps continua fora do CI (ADR-025).
 `send` → `send.forge.rmta.net` e `rsend` → `rsend-euw1.forge.rmta.net`. Não pede MX. Em
 2026-11-09 os dois CNAME estavam criados como TXT (com o valor certo entre aspas) e o domínio
 ficava "Pending"; foram corrigidos para CNAME no painel do dominios.pt nesse dia. O DMARC
-(`p=none`) mantém-se. O SMTP do Supabase só deve ser ligado depois de o Resend mostrar
-"Verified". O domínio raiz não tem registo A (alojamento por escolher, D-7).
+(`p=none`) mantém-se. O domínio ficou "Verified" no Resend a 2026-11-09 e o SMTP da produção foi ligado no painel
+(`smtp.resend.com`, porta 465, utilizador `resend`, remetente `Miven <noreply@miven.pt>`; a
+palavra-passe é uma chave de API do Resend com permissão de envio, colada pelo responsável).
+Um registo de teste com `delivered@resend.dev` enviou o email de confirmação (o utilizador foi
+apagado). O primeiro envio falhou com `535 Authentication credentials invalid` porque o painel
+não tinha gravado a chave; o painel mostra sempre "Stored password is hidden", por isso o
+teste de envio é a única confirmação. O domínio raiz não tem registo A (alojamento por escolher, D-7).
 **Zernio:** plataforma de marketing (redes sociais, anúncios, mensagens) com servidor MCP. Não
 entra no código da app.
 **Dependências novas:** `posthog-react-native` e `expo-superwall` (módulo nativo, só ativo com a
