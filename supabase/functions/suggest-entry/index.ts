@@ -88,15 +88,23 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 300,
-        temperature: 0,
+        // Os modelos atuais recusam `temperature` (400). Extração curta: sem raciocínio, para
+        // os tokens de saída irem para a resposta. `disabled` é aceite com o esforço por omissão.
+        max_tokens: 1024,
+        thinking: { type: 'disabled' },
         system: prompt.system,
         messages: [{ role: 'user', content: prompt.user }],
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!response.ok) return json({ error: 'upstream_failed' }, 502);
-    const data = (await response.json()) as { content?: { type: string; text?: string }[] };
+    const data = (await response.json()) as {
+      stop_reason?: string;
+      content?: { type: string; text?: string }[];
+    };
+    if (data.stop_reason === 'refusal' || data.stop_reason === 'max_tokens') {
+      return json({ error: 'not_understood' }, 422);
+    }
     reply = data.content?.find((block) => block.type === 'text')?.text ?? '';
   } catch {
     return json({ error: 'upstream_failed' }, 502);
