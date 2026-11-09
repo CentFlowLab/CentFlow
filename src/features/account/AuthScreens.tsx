@@ -9,6 +9,9 @@ import { spacing, useTheme } from '@/ui/theme';
 import { closeModal } from '../finance/navigation';
 import { isAppleSignInAvailable, useAuth, type AuthErrorCode } from './AuthProvider';
 
+/** Ecrã inicial sem sessão (fora das rotas tipadas até o Expo as regenerar). */
+const WELCOME = '/welcome' as Href;
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const MIN_PASSWORD_LENGTH = 8;
 
@@ -52,7 +55,7 @@ function AuthLayout({
     <FormScreen
       title={title}
       closeLabel={t('common.close')}
-      onClose={() => closeModal('/settings')}
+      onClose={() => closeModal(WELCOME)}
       footer={footer}>
       {intro ? (
         <Text variant="callout" tone="secondary">
@@ -114,8 +117,8 @@ export function SignInScreen() {
     setError(null);
     const result = await actions.signIn(email, password);
     setBusy(false);
-    if (result.ok) closeModal('/settings');
-    else setError(result.error);
+    // Com sessão, as páginas de quem não tem conta deixam de existir e o router abre a app.
+    if (!result.ok) setError(result.error);
   };
 
   return (
@@ -193,8 +196,8 @@ export function SignUpScreen() {
     const result = await actions.signUp(email, password);
     setBusy(false);
     if (!result.ok) setError(result.error);
-    else if (result.value === 'signedIn') closeModal('/settings');
-    else setAwaitingConfirmation(true);
+    // Sessão imediata: o router abre a app sozinho.
+    else if (result.value !== 'signedIn') setAwaitingConfirmation(true);
   };
 
   if (awaitingConfirmation) {
@@ -203,7 +206,7 @@ export function SignUpScreen() {
         <Notice
           title={t('auth.confirmEmail.title')}
           message={t('auth.confirmEmail.message', { email: email.trim() })}
-          action={<Button label={t('common.ok')} onPress={() => closeModal('/settings')} />}
+          action={<Button label={t('common.ok')} onPress={() => closeModal(WELCOME)} />}
         />
       </AuthLayout>
     );
@@ -275,7 +278,7 @@ export function ForgotPasswordScreen() {
         <Notice
           title={t('auth.linkSent.title')}
           message={t('auth.linkSent.message', { email: email.trim() })}
-          action={<Button label={t('common.ok')} onPress={() => closeModal('/settings')} />}
+          action={<Button label={t('common.ok')} onPress={() => closeModal(WELCOME)} />}
         />
       </AuthLayout>
     );
@@ -335,7 +338,7 @@ export function AuthCallbackScreen() {
         <Notice
           title={t('auth.callbackDone.title')}
           message={t('auth.callbackDone.message')}
-          action={<Button label={t('common.ok')} onPress={() => router.replace('/settings')} />}
+          action={<Button label={t('common.ok')} onPress={() => router.replace('/')} />}
         />
       ) : (
         <EmptyState
@@ -401,7 +404,7 @@ export function ResetPasswordScreen() {
         <Notice
           title={t('auth.passwordUpdated')}
           message={t('auth.callbackDone.message')}
-          action={<Button label={t('common.ok')} onPress={() => router.replace('/settings')} />}
+          action={<Button label={t('common.ok')} onPress={() => router.replace('/')} />}
         />
       </AuthLayout>
     );

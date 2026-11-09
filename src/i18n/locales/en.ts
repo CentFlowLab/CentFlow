@@ -114,6 +114,29 @@ const en: Translation = {
       description: 'Period totals, categories and trends, always by currency.',
     },
   },
+  welcome: {
+    title: 'Welcome to Miven',
+    tagline: 'Your money, under control.',
+    points: {
+      sync: {
+        title: 'On all your devices',
+        description: 'Your data lives in your account and syncs on its own.',
+      },
+      private: {
+        title: 'Private by design',
+        description: 'Only you see your data. Nothing is shared unless you ask.',
+      },
+      plan: {
+        title: 'Plan with ease',
+        description: 'Budgets, subscriptions, goals and reports in one place.',
+      },
+    },
+    createAccount: 'Create account',
+    signIn: 'I already have an account',
+    accountRequired: 'Miven needs an account to keep your data safe.',
+    misconfiguredTitle: "Miven isn't configured",
+    misconfiguredDescription: "This version can't reach the server. Install the latest version.",
+  },
   more: {
     title: 'More',
     subtitle: 'Every area of Miven',
@@ -845,9 +868,13 @@ const en: Translation = {
   importData: {
     title: "Add this device's data to your account?",
     message:
-      'You have data recorded without an account on this device. You can add it to your account to sync it. It is only removed from use without an account after the server confirms it was saved.',
+      'This device has data recorded without an account. Miven only keeps data in an account: import it into your account or delete it from this device. It only leaves this device after the server confirms it was saved.',
     import: 'Import to account',
-    keepSeparate: 'Keep separate',
+    delete: 'Delete from device',
+    deleteTitle: 'Delete the data without an account?',
+    deleteMessage:
+      "The data recorded without an account on this device will be deleted. Your account doesn't change. This can't be undone.",
+    deleteConfirm: 'Delete',
     later: 'Decide later',
     confirmed: {
       title: 'Data imported',

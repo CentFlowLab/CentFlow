@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { declineImport, type ImportProgress, type LocalStore } from '@/data';
+import {
+  ANONYMOUS_SPACE,
+  declineImport,
+  deleteLocalSpace,
+  type ImportProgress,
+  type LocalStore,
+} from '@/data';
 import { Dialog } from '@/ui/components';
 
-type Step = 'ask' | 'importing' | 'confirmed' | 'pending' | 'failed';
+type Step = 'ask' | 'importing' | 'confirmDelete' | 'deleting' | 'confirmed' | 'pending' | 'failed';
 
 type Props = {
   visible: boolean;
@@ -14,8 +20,9 @@ type Props = {
 };
 
 /**
- * Pergunta explícita depois de entrar: juntar à conta os dados criados sem conta neste
- * dispositivo. Nada é importado sem esta decisão e nada é apagado antes da confirmação.
+ * Pergunta explícita depois de entrar: o Miven só guarda dados com conta (ADR-034), por isso os
+ * dados que ficaram sem conta neste dispositivo ou entram na conta ou são apagados. Nada é
+ * importado nem apagado sem esta decisão; apagar pede uma segunda confirmação.
  */
 export function ImportDialog({ visible, account, onStart, onClose }: Props) {
   const { t } = useTranslation();
@@ -35,6 +42,42 @@ export function ImportDialog({ visible, account, onStart, onClose }: Props) {
       setStep('failed');
     }
   };
+
+  const removeAnonymousData = async () => {
+    setStep('deleting');
+    try {
+      await declineImport(account);
+      await deleteLocalSpace(ANONYMOUS_SPACE);
+      close();
+    } catch {
+      setStep('failed');
+    }
+  };
+
+  if (step === 'confirmDelete' || step === 'deleting') {
+    return (
+      <Dialog
+        visible={visible}
+        title={t('importData.deleteTitle')}
+        message={t('importData.deleteMessage')}
+        onDismiss={step === 'deleting' ? () => undefined : () => setStep('ask')}
+        actions={[
+          {
+            label: t('importData.deleteConfirm'),
+            variant: 'destructive',
+            loading: step === 'deleting',
+            onPress: () => void removeAnonymousData(),
+          },
+          {
+            label: t('common.back'),
+            variant: 'secondary',
+            disabled: step === 'deleting',
+            onPress: () => setStep('ask'),
+          },
+        ]}
+      />
+    );
+  }
 
   if (step === 'confirmed' || step === 'pending' || step === 'failed') {
     return (
@@ -57,12 +100,10 @@ export function ImportDialog({ visible, account, onStart, onClose }: Props) {
       actions={[
         { label: t('importData.import'), onPress: start, loading: step === 'importing' },
         {
-          label: t('importData.keepSeparate'),
+          label: t('importData.delete'),
           variant: 'secondary',
           disabled: step === 'importing',
-          onPress: () => {
-            void declineImport(account).finally(close);
-          },
+          onPress: () => setStep('confirmDelete'),
         },
         {
           label: t('importData.later'),

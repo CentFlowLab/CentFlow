@@ -111,6 +111,30 @@ const ptPT = {
       description: 'Totais, categorias e evolução do período, sempre por moeda.',
     },
   },
+  welcome: {
+    title: 'Bem-vindo ao Miven',
+    tagline: 'O teu dinheiro, sob controlo.',
+    points: {
+      sync: {
+        title: 'Em todos os teus dispositivos',
+        description: 'Os dados ficam na tua conta e sincronizam sozinhos.',
+      },
+      private: {
+        title: 'Privado por desenho',
+        description: 'Só tu vês os teus dados. Nada é partilhado sem pedires.',
+      },
+      plan: {
+        title: 'Planeia com calma',
+        description: 'Orçamentos, subscrições, objetivos e relatórios num só sítio.',
+      },
+    },
+    createAccount: 'Criar conta',
+    signIn: 'Já tenho conta',
+    accountRequired: 'O Miven precisa de uma conta para guardar os teus dados em segurança.',
+    misconfiguredTitle: 'O Miven não está configurado',
+    misconfiguredDescription:
+      'Esta versão não tem a ligação ao servidor. Instala a versão mais recente.',
+  },
   more: {
     title: 'Mais',
     subtitle: 'Todas as áreas do Miven',
@@ -845,9 +869,13 @@ const ptPT = {
   importData: {
     title: 'Juntar os dados deste dispositivo à conta?',
     message:
-      'Tens dados registados sem conta neste dispositivo. Podes juntá-los à tua conta para os sincronizar. Só deixam o uso sem conta depois de o servidor confirmar que foram guardados.',
+      'Este dispositivo tem dados que foram registados sem conta. O Miven só guarda dados numa conta: importa-os para a tua conta ou apaga-os deste dispositivo. Só deixam este dispositivo depois de o servidor confirmar que foram guardados.',
     import: 'Importar para a conta',
-    keepSeparate: 'Manter separados',
+    delete: 'Apagar do dispositivo',
+    deleteTitle: 'Apagar os dados sem conta?',
+    deleteMessage:
+      'Os dados registados sem conta neste dispositivo são apagados. A tua conta não muda. Esta ação não pode ser anulada.',
+    deleteConfirm: 'Apagar',
     later: 'Decidir mais tarde',
     confirmed: {
       title: 'Dados importados',

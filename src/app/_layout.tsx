@@ -4,6 +4,7 @@ import '@/i18n';
 import * as Sentry from '@sentry/react-native';
 import { Stack } from 'expo-router';
 
+import { useAppAccess } from '@/features/account/AccountGate';
 import { AnalyticsTracker } from '@/features/app-shell/AnalyticsTracker';
 import { AppProviders } from '@/features/app-shell/AppProviders';
 import { RootErrorBoundary } from '@/features/app-shell/RootErrorBoundary';
@@ -15,11 +16,12 @@ export const unstable_settings = { anchor: '(tabs)' };
 
 const MODAL = { presentation: 'modal' } as const;
 
-function RootLayout() {
+/** Rotas de dados só com conta; sem sessão, só boas-vindas e autenticação (ADR-034). */
+function RootStack() {
+  const granted = useAppAccess() === 'granted';
   return (
-    <AppProviders>
-      <AnalyticsTracker />
-      <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={granted}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="new-transaction" options={MODAL} />
         <Stack.Screen name="import-statement" options={MODAL} />
@@ -40,14 +42,26 @@ function RootLayout() {
         <Stack.Screen name="vehicles/[id]" options={MODAL} />
         <Stack.Screen name="documents/new" options={MODAL} />
         <Stack.Screen name="documents/[id]" options={MODAL} />
+        <Stack.Screen name="sync/conflicts" options={MODAL} />
+      </Stack.Protected>
+      <Stack.Protected guard={!granted}>
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="auth/sign-in" options={MODAL} />
         <Stack.Screen name="auth/sign-up" options={MODAL} />
         <Stack.Screen name="auth/forgot-password" options={MODAL} />
-        <Stack.Screen name="auth/reset-password" options={MODAL} />
-        <Stack.Screen name="auth/callback" options={MODAL} />
-        <Stack.Screen name="sync/conflicts" options={MODAL} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      </Stack.Protected>
+      <Stack.Screen name="auth/reset-password" options={MODAL} />
+      <Stack.Screen name="auth/callback" options={MODAL} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
+
+function RootLayout() {
+  return (
+    <AppProviders>
+      <AnalyticsTracker />
+      <RootStack />
     </AppProviders>
   );
 }

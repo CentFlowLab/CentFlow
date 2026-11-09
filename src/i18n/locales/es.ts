@@ -114,6 +114,30 @@ const es: Translation = {
       description: 'Totales, categorías y evolución del periodo, siempre por moneda.',
     },
   },
+  welcome: {
+    title: 'Bienvenido a Miven',
+    tagline: 'Tu dinero, bajo control.',
+    points: {
+      sync: {
+        title: 'En todos tus dispositivos',
+        description: 'Tus datos están en tu cuenta y se sincronizan solos.',
+      },
+      private: {
+        title: 'Privado por diseño',
+        description: 'Solo tú ves tus datos. Nada se comparte sin que lo pidas.',
+      },
+      plan: {
+        title: 'Planifica con calma',
+        description: 'Presupuestos, suscripciones, objetivos e informes en un solo lugar.',
+      },
+    },
+    createAccount: 'Crear cuenta',
+    signIn: 'Ya tengo cuenta',
+    accountRequired: 'Miven necesita una cuenta para guardar tus datos de forma segura.',
+    misconfiguredTitle: 'Miven no está configurado',
+    misconfiguredDescription:
+      'Esta versión no puede conectar con el servidor. Instala la versión más reciente.',
+  },
   more: {
     title: 'Más',
     subtitle: 'Todas las áreas de Miven',
@@ -853,9 +877,13 @@ const es: Translation = {
   importData: {
     title: '¿Añadir los datos de este dispositivo a la cuenta?',
     message:
-      'Tienes datos registrados sin cuenta en este dispositivo. Puedes añadirlos a tu cuenta para sincronizarlos. Solo salen del uso sin cuenta cuando el servidor confirma que se han guardado.',
+      'Este dispositivo tiene datos registrados sin cuenta. Miven solo guarda datos en una cuenta: impórtalos a tu cuenta o bórralos de este dispositivo. Solo salen de este dispositivo cuando el servidor confirma que se guardaron.',
     import: 'Importar a la cuenta',
-    keepSeparate: 'Mantener separados',
+    delete: 'Borrar del dispositivo',
+    deleteTitle: '¿Borrar los datos sin cuenta?',
+    deleteMessage:
+      'Los datos registrados sin cuenta en este dispositivo se borrarán. Tu cuenta no cambia. Esta acción no se puede deshacer.',
+    deleteConfirm: 'Borrar',
     later: 'Decidir más tarde',
     confirmed: {
       title: 'Datos importados',

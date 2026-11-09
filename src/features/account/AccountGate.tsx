@@ -4,21 +4,31 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { ANONYMOUS_SPACE, deleteLocalSpace, type LocalSpace } from '@/data';
 import { appStorage } from '@/lib/storage/key-value-store';
+import { EmptyState } from '@/ui/components';
 import { useTheme } from '@/ui/theme';
 
 import { DataGate } from '../app-shell/DataGate';
+import { appAccessFor, type AppAccess } from './app-access';
 import { useAuth } from './AuthProvider';
 import { resumePendingAccountDeletion } from './pending-account-deletion';
 import { SyncProvider } from './SyncProvider';
 
+/** Acesso à app a partir do estado da sessão (ver `app-access.ts`). */
+export function useAppAccess(): AppAccess {
+  const { state } = useAuth();
+  return appAccessFor(state, __DEV__);
+}
+
 /**
- * Escolhe o espaço local: com sessão, a base de dados dessa conta; sem sessão, a do uso sem
- * conta. Sair da conta muda de espaço sem apagar nada.
+ * Só abre dados com conta. Com sessão, a base de dados dessa conta; sem sessão, nenhuma: as rotas
+ * de dados ficam protegidas (`Stack.Protected` no layout raiz) e só se vê as boas-vindas e a
+ * autenticação. Sair da conta não apaga a base de dados da conta.
  */
 export function AccountGate({ children }: PropsWithChildren) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { state, actions } = useAuth();
+  const access = useAppAccess();
   const [resumeSettled, setResumeSettled] = useState(false);
   const userId = state.status === 'signedIn' ? state.user.id : null;
 
@@ -42,7 +52,7 @@ export function AccountGate({ children }: PropsWithChildren) {
     };
   }, [actions, state.status, userId]);
 
-  if (state.status === 'loading' || !resumeSettled) {
+  if (access === 'loading' || !resumeSettled) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} accessibilityLabel={t('database.opening')} />
@@ -50,6 +60,21 @@ export function AccountGate({ children }: PropsWithChildren) {
     );
   }
 
+  if (access === 'misconfigured') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon="cloud-offline-outline"
+          title={t('welcome.misconfiguredTitle')}
+          description={t('welcome.misconfiguredDescription')}
+        />
+      </View>
+    );
+  }
+
+  if (access === 'signedOut') return children;
+
+  // `unavailable` só chega aqui em desenvolvimento e nos testes (sem Supabase configurado).
   const space: LocalSpace =
     state.status === 'signedIn' ? { kind: 'user', userId: state.user.id } : ANONYMOUS_SPACE;
 
