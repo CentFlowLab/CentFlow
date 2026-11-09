@@ -1,0 +1,184 @@
+# APK Android assinado, publicado nas Releases e com um endereço fixo para o site (ADR-037).
+# A chave vem dos segredos ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD e ANDROID_KEY_ALIAS
+# (criados por scripts/create-android-signing-key.sh). Não envia para a Play Store.
+name: Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    name: Verificar e compilar APK assinado
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v5
+
+      - name: Confirmar a chave de assinatura
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        shell: bash
+        run: |
+          if [ -z "$KEYSTORE" ] || [ -z "$PASSWORD" ] || [ -z "$ALIAS" ]; then
+            echo "Faltam os segredos ANDROID_*. Corre scripts/create-android-signing-key.sh uma vez."
+            exit 1
+          fi
+          echo "Chave de assinatura presente."
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificações do projeto
+        run: npm run check
+
+      - name: Reservar a compilação seguinte
+        shell: bash
+        run: |
+          count="$(gh release list --limit 500 --json tagName --jq '[.[].tagName | select(startswith("android-build-"))] | length')"
+          code=$((count + 1))
+          version="$(node -p "require('./app.json').expo.version")"
+          printf 'VERSION_CODE=%s\nVERSION_NAME=%s\n' "$code" "$version" >> "$GITHUB_ENV"
+          VERSION_CODE="$code" node <<'EOF'
+          const fs = require('node:fs');
+          const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          app.expo.android = app.expo.android ?? {};
+          if (app.expo.android.package !== 'app.centflow.mobile') {
+            console.error('Package Android inesperado: ' + app.expo.android.package);
+            process.exit(1);
+          }
+          app.expo.android.versionCode = Number(process.env.VERSION_CODE);
+          fs.writeFileSync('app.json', JSON.stringify(app, null, 2) + '\n');
+          EOF
+          echo "Compilação ${code} da versão ${version}. O app.json só muda neste runner."
+
+      - name: Configurar o EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Obter as variáveis públicas de produção
+        shell: bash
+        run: |
+          eas env:pull production --non-interactive --path .env.local > /tmp/eas-env-pull.txt
+          node <<'EOF'
+          const fs = require('node:fs');
+          const names = fs
+            .readFileSync('.env.local', 'utf8')
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line && !line.startsWith('#'))
+            .map((line) => line.split('=')[0]);
+          const required = ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY'];
+          const missing = required.filter((name) => !names.includes(name));
+          if (missing.length > 0) {
+            console.error('Faltam variáveis de produção: ' + missing.join(', '));
+            process.exit(1);
+          }
+          if (names.some((name) => /service_role|secret/i.test(name))) {
+            console.error('As variáveis de produção incluem uma chave secreta.');
+            process.exit(1);
+          }
+          console.log('Variáveis públicas de produção presentes.');
+          EOF
+
+      - name: Configurar o Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Gerar o projeto Android
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Configurar a assinatura
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          printf '%s' "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/miven-release.p12"
+          echo "MIVEN_KEYSTORE_PATH=$RUNNER_TEMP/miven-release.p12" >> "$GITHUB_ENV"
+          gradle_file=android/app/build.gradle
+          if [ ! -f "$gradle_file" ]; then
+            echo "O prebuild não gerou android/app/build.gradle (Groovy). Rever a assinatura."
+            exit 1
+          fi
+          cat >> "$gradle_file" <<'GRADLE'
+
+          // Acrescentado pelo workflow "Android APK": assinatura de lançamento a partir de variáveis.
+          android {
+              signingConfigs {
+                  mivenRelease {
+                      storeFile file(System.getenv("MIVEN_KEYSTORE_PATH"))
+                      storeType "pkcs12"
+                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                      keyPassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.mivenRelease
+                  }
+              }
+          }
+          GRADLE
+
+      - name: Compilar o APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Confirmar a assinatura e empacotar
+        shell: bash
+        run: |
+          apk="android/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$apk" ]; then
+            echo "O Gradle não produziu o APK de lançamento."
+            exit 1
+          fi
+          signer="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$signer" verify --print-certs "$apk" | grep -E 'Signer #1 certificate (DN|SHA-256)'
+          if "$signer" verify --print-certs "$apk" | grep -q 'CN=Android Debug'; then
+            echo "O APK ficou assinado com a chave de depuração."
+            exit 1
+          fi
+          rm -f .env.local
+          cp "$apk" "$RUNNER_TEMP/miven-${VERSION_NAME}-${VERSION_CODE}.apk"
+          cp "$apk" "$RUNNER_TEMP/miven.apk"
+
+      - name: Publicar
+        shell: bash
+        run: |
+          tag="android-build-${VERSION_CODE}"
+          gh release create "$tag" "$RUNNER_TEMP/miven-${VERSION_NAME}-${VERSION_CODE}.apk" \
+            --title "Android ${VERSION_NAME} (${VERSION_CODE})" \
+            --notes "APK assinado da versão ${VERSION_NAME}, compilação ${VERSION_CODE}." \
+            --target "$GITHUB_SHA"
+          if ! gh release view android-latest >/dev/null 2>&1; then
+            gh release create android-latest --title "Android: versão mais recente" \
+              --notes "Endereço fixo do APK mais recente para o site miven.pt." --latest=false
+          fi
+          gh release upload android-latest "$RUNNER_TEMP/miven.apk" --clobber
+          gh release edit android-latest --notes "Versão ${VERSION_NAME}, compilação ${VERSION_CODE}." --latest=false
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/miven.apk"
