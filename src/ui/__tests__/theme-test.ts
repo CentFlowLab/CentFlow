@@ -39,6 +39,12 @@ describe.each([
     expect(contrast(colors[token], colors.surface)).toBeGreaterThanOrEqual(4.5);
   });
 
+  // Linhas e cartões tocados ou com o rato por cima mudam o fundo: o texto tem de continuar legível.
+  it.each(TEXT_TOKENS)('%s meets WCAG AA on surfaceHover and surfaceMuted', (token) => {
+    expect(contrast(colors[token], colors.surfaceHover)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(colors[token], colors.surfaceMuted)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it.each(['heroText', 'heroTextMuted', 'heroPositive', 'heroNegative'] as const)(
     '%s meets WCAG AA (4.5:1) on both ends of the hero gradient',
     (token) => {

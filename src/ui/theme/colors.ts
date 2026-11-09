@@ -62,13 +62,13 @@ export const lightColors: ThemeColors = {
   background: BRAND.ice,
   surface: '#FFFFFF',
   surfaceMuted: '#EEF2F6',
-  surfaceHover: '#E6EDF4',
+  surfaceHover: '#EEF2F6',
   border: '#E2E8F0',
   borderStrong: '#CBD5E1',
 
   text: BRAND.navy,
   textSecondary: '#475569',
-  textTertiary: '#64748B',
+  textTertiary: '#5E6E84',
   textInverse: BRAND.ice,
 
   primary: BRAND.emerald,
@@ -79,9 +79,9 @@ export const lightColors: ThemeColors = {
 
   positive: '#047857',
   positiveMuted: '#D1FAE5',
-  negative: '#DC2626',
+  negative: '#C81E1E',
   negativeMuted: '#FEE2E2',
-  warning: '#B45309',
+  warning: '#A84E08',
   warningMuted: '#FEF3C7',
 
   overlay: 'rgba(16, 27, 45, 0.4)',
@@ -101,7 +101,7 @@ export const darkColors: ThemeColors = {
   background: BRAND.navy,
   surface: BRAND.slate,
   surfaceMuted: '#162033',
-  surfaceHover: '#263449',
+  surfaceHover: '#22304A',
   border: '#334155',
   borderStrong: '#3E4C63',
 
