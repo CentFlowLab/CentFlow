@@ -179,6 +179,12 @@ export function EntriesScreen() {
             onPress={() => setShowFilters((value) => !value)}
             accessibilityState={{ expanded: showFilters }}
           />
+          <Button
+            label={t('entries.import')}
+            variant="ghost"
+            icon="document-text-outline"
+            onPress={() => router.push('/import-statement')}
+          />
           {hasFilters ? (
             <Button
               label={t('entries.clearFilters')}
@@ -362,6 +368,7 @@ const styles = StyleSheet.create({
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   advanced: {

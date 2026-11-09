@@ -68,6 +68,22 @@ async function balanceOf(id: string) {
 }
 
 describe('entries', () => {
+  it('creates many entries in one transaction, or none when one is invalid', async () => {
+    const income = { ...baseExpense(), type: 'income' as const, categoryId: salary.id };
+    const created = await repos.entries.createMany([baseExpense(), { ...income, amount: 5000 }]);
+    expect(created).toHaveLength(2);
+    expect(await balanceOf(bank.id)).toBe(100000 - 1250 + 5000);
+
+    // A segunda linha tem uma categoria de rendimento numa despesa: nada é gravado.
+    const failure = repos.entries.createMany([
+      baseExpense(),
+      { ...baseExpense(), categoryId: salary.id },
+    ]);
+    await expect(failure).rejects.toMatchObject({ name: 'ValidationError', index: 1 });
+    expect((await repos.entries.list()).total).toBe(2);
+    expect(await balanceOf(bank.id)).toBe(100000 - 1250 + 5000);
+  });
+
   it('creates an expense and lowers the account balance', async () => {
     const entry = await repos.entries.create(baseExpense());
     expect(entry).toMatchObject({ type: 'expense', amount: 1250, accountId: bank.id });

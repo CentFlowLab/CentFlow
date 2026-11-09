@@ -139,6 +139,7 @@ const en: Translation = {
   entries: {
     title: 'Transactions',
     add: 'New transaction',
+    import: 'Import statement',
     searchLabel: 'Search',
     searchPlaceholder: 'Search by description',
     filters: 'Filters',
@@ -167,6 +168,39 @@ const en: Translation = {
     noResultsDescription: 'Try another search or remove some filters.',
     loadMore: 'Load more',
     transferBetween: '{{from}} → {{to}}',
+  },
+  statementImport: {
+    title: 'Import statement',
+    intro:
+      'Choose a CSV file exported from your bank or paste its contents. Nothing is saved until you confirm.',
+    account: 'Statement account',
+    pickFile: 'Choose CSV file',
+    pasteLabel: 'Or paste the CSV contents here',
+    pastePlaceholder: 'Date,Description,Amount',
+    preview: 'Preview',
+    readFailed: 'The file could not be read.',
+    errors: {
+      empty: 'The file is empty.',
+      noHeader:
+        'Could not find date, description and amount (or debit and credit) columns. Check that this is the bank CSV.',
+      tooManyRows: 'The statement has more than 2000 lines. Split it by period.',
+      noRows: 'There are no movements that can be imported in this file.',
+      saveFailed: 'Could not save. Nothing was imported.',
+    },
+    found_one: '{{count}} movement read',
+    found_other: '{{count}} movements read',
+    duplicates_one: '{{count}} seems to be recorded already and is left out. Tap to include it.',
+    duplicates_other:
+      '{{count}} seem to be recorded already and are left out. Tap to include them.',
+    skipped: 'Lines ignored (no valid date or amount): {{lines}}',
+    expenseCategory: 'Category for expenses',
+    incomeCategory: 'Category for income',
+    duplicate: 'Possible duplicate',
+    noDescription: 'No description',
+    confirm_one: 'Import {{count}} movement',
+    confirm_other: 'Import {{count}} movements',
+    back: 'Choose another file',
+    noAccounts: 'Create an account first to receive the movements.',
   },
   entryForm: {
     ai: {

@@ -125,6 +125,43 @@ describe('local finance flow (real SQLite)', () => {
     expect(await screen.findByText('Nada encontrado')).toBeOnTheScreen();
   });
 
+  it('imports a CSV statement after a preview that leaves likely duplicates out', async () => {
+    const now = new Date();
+    const today = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    await renderRouter('./src/app', { initialUrl: '/account/new' });
+    await createAccount('Banco', '100');
+    await addEntry({ amount: '3', category: 'Restaurantes', description: 'Café' });
+
+    await act(() => router.navigate('/transactions'));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Importar extrato' }));
+    expect(screen).toHavePathname('/import-statement');
+    await fireEvent.changeText(
+      await screen.findByLabelText('Ou cola aqui o conteúdo do CSV'),
+      [
+        'Data;Descrição;Montante',
+        `${today};CAFE CENTRAL;-3,00`,
+        `${today};PINGO DOCE;-23,50`,
+        `${today};REEMBOLSO;5,00`,
+        'linha estragada;x;y',
+      ].join('\n'),
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Pré-visualizar' }));
+
+    expect(await screen.findByText('3 movimentos lidos')).toBeOnTheScreen();
+    expect(screen.getByText(/1 parece já estar registado/)).toBeOnTheScreen();
+    expect(screen.getByText(/Linhas ignoradas.*5/)).toBeOnTheScreen();
+    expect(screen.getByRole('checkbox', { name: /CAFE CENTRAL/ })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /PINGO DOCE/ })).toBeChecked();
+    // Nada foi gravado ainda.
+    await fireEvent.press(screen.getByRole('button', { name: 'Importar 2 movimentos' }));
+
+    await waitFor(() => expect(screen).toHavePathname('/transactions'));
+    expect(await screen.findByText('3 movimentos')).toBeOnTheScreen();
+    expect(screen.getByText('PINGO DOCE')).toBeOnTheScreen();
+    expect(screen.getByText('REEMBOLSO')).toBeOnTheScreen();
+    expect(screen.queryByText('CAFE CENTRAL')).toBeNull();
+  });
+
   it('keeps type and period inside Filtros and counts the active ones', async () => {
     await renderRouter('./src/app', { initialUrl: '/account/new' });
     await createAccount('Banco', '0');

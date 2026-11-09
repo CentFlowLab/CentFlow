@@ -20,6 +20,7 @@ function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="new-transaction" options={MODAL} />
+        <Stack.Screen name="import-statement" options={MODAL} />
         <Stack.Screen name="entry/[id]" options={MODAL} />
         <Stack.Screen name="account/new" options={MODAL} />
         <Stack.Screen name="account/[id]" options={MODAL} />

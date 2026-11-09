@@ -139,6 +139,7 @@ const es: Translation = {
   entries: {
     title: 'Movimientos',
     add: 'Nuevo movimiento',
+    import: 'Importar extracto',
     searchLabel: 'Buscar',
     searchPlaceholder: 'Buscar por descripción',
     filters: 'Filtros',
@@ -167,6 +168,39 @@ const es: Translation = {
     noResultsDescription: 'Prueba otra búsqueda o quita algunos filtros.',
     loadMore: 'Cargar más',
     transferBetween: '{{from}} → {{to}}',
+  },
+  statementImport: {
+    title: 'Importar extracto',
+    intro:
+      'Elige un archivo CSV exportado del banco o pega su contenido. No se guarda nada hasta que confirmes.',
+    account: 'Cuenta del extracto',
+    pickFile: 'Elegir archivo CSV',
+    pasteLabel: 'O pega aquí el contenido del CSV',
+    pastePlaceholder: 'Fecha;Concepto;Importe',
+    preview: 'Vista previa',
+    readFailed: 'No se pudo leer el archivo.',
+    errors: {
+      empty: 'El archivo está vacío.',
+      noHeader:
+        'No encontré las columnas de fecha, concepto e importe (o débito y crédito). Comprueba que es el CSV del banco.',
+      tooManyRows: 'El extracto tiene más de 2000 líneas. Divídelo por periodos.',
+      noRows: 'No hay movimientos que se puedan importar en este archivo.',
+      saveFailed: 'No se pudo guardar. No se importó nada.',
+    },
+    found_one: '{{count}} movimiento leído',
+    found_other: '{{count}} movimientos leídos',
+    duplicates_one: '{{count}} parece estar ya registrado y queda fuera. Toca para incluirlo.',
+    duplicates_other:
+      '{{count}} parecen estar ya registrados y quedan fuera. Toca para incluirlos.',
+    skipped: 'Líneas ignoradas (sin fecha o importe válido): {{lines}}',
+    expenseCategory: 'Categoría de los gastos',
+    incomeCategory: 'Categoría de los ingresos',
+    duplicate: 'Posible duplicado',
+    noDescription: 'Sin descripción',
+    confirm_one: 'Importar {{count}} movimiento',
+    confirm_other: 'Importar {{count}} movimientos',
+    back: 'Elegir otro archivo',
+    noAccounts: 'Crea primero una cuenta para recibir los movimientos.',
   },
   entryForm: {
     ai: {

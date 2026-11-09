@@ -110,6 +110,11 @@ export interface EntryRepository {
   list(filter?: EntryFilter): Promise<EntryPage>;
   get(id: Id): Promise<Entry | null>;
   create(input: EntryInput): Promise<Entry>;
+  /**
+   * Cria vários movimentos numa só transação (ex.: extrato importado). Se um falhar a validação,
+   * nenhum é gravado e o erro indica a posição (`index`).
+   */
+  createMany(inputs: readonly EntryInput[]): Promise<Entry[]>;
   update(id: Id, input: EntryInput): Promise<Entry>;
   delete(id: Id): Promise<void>;
   aggregate(range: { from: CalendarDate; to: CalendarDate }): Promise<EntryAggregate[]>;

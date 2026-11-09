@@ -129,6 +129,36 @@ async function prepare(
 export function createSqliteEntryRepository(context: SqliteRepositoryContext): EntryRepository {
   const { db } = context;
 
+  async function insertEntry(tx: SqlExecutor, input: EntryInput): Promise<Entry> {
+    const timestamp = context.now();
+    const entry: Entry = {
+      ...input,
+      id: context.newId(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    await tx.run(
+      `INSERT INTO entries (id, type, amount, description, search_text, category_id, account_id,
+         destination_account_id, date, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        entry.id,
+        entry.type,
+        entry.amount,
+        entry.description,
+        normalizeSearchText(entry.description),
+        entry.categoryId,
+        entry.accountId,
+        entry.destinationAccountId,
+        entry.date,
+        entry.notes,
+        timestamp,
+        timestamp,
+      ],
+    );
+    return entry;
+  }
+
   return {
     list(filter = {}) {
       const { sql, params } = buildWhere(filter);
@@ -157,35 +187,25 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
 
     create(raw) {
       return write(context, ['entries'], () =>
+        db.transaction(async (tx) => insertEntry(tx, await prepare(tx, raw))),
+      );
+    },
+
+    createMany(raws) {
+      return write(context, ['entries'], () =>
         db.transaction(async (tx) => {
-          const input = await prepare(tx, raw);
-          const timestamp = context.now();
-          const entry: Entry = {
-            ...input,
-            id: context.newId(),
-            createdAt: timestamp,
-            updatedAt: timestamp,
-          };
-          await tx.run(
-            `INSERT INTO entries (id, type, amount, description, search_text, category_id, account_id,
-               destination_account_id, date, notes, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              entry.id,
-              entry.type,
-              entry.amount,
-              entry.description,
-              normalizeSearchText(entry.description),
-              entry.categoryId,
-              entry.accountId,
-              entry.destinationAccountId,
-              entry.date,
-              entry.notes,
-              timestamp,
-              timestamp,
-            ],
-          );
-          return entry;
+          const created: Entry[] = [];
+          for (const [index, raw] of raws.entries()) {
+            let input: EntryInput;
+            try {
+              input = await prepare(tx, raw);
+            } catch (error) {
+              if (error instanceof ValidationError) throw new ValidationError(error.errors, index);
+              throw error;
+            }
+            created.push(await insertEntry(tx, input));
+          }
+          return created;
         }),
       );
     },

@@ -52,7 +52,11 @@ export type ValidationCode =
 export type ValidationErrors<Field extends string> = Partial<Record<Field, ValidationCode>>;
 
 export class ValidationError<Field extends string = string> extends Error {
-  constructor(readonly errors: ValidationErrors<Field>) {
+  constructor(
+    readonly errors: ValidationErrors<Field>,
+    /** Posição do registo com erro, quando se gravam vários de uma vez. */
+    readonly index?: number,
+  ) {
     super(`Validation failed: ${Object.keys(errors).join(', ')}`);
     this.name = 'ValidationError';
   }

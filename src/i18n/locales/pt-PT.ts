@@ -136,6 +136,7 @@ const ptPT = {
   entries: {
     title: 'Movimentos',
     add: 'Novo movimento',
+    import: 'Importar extrato',
     searchLabel: 'Pesquisar',
     searchPlaceholder: 'Pesquisar por descrição',
     filters: 'Filtros',
@@ -164,6 +165,38 @@ const ptPT = {
     noResultsDescription: 'Experimenta outra pesquisa ou remove alguns filtros.',
     loadMore: 'Carregar mais',
     transferBetween: '{{from}} → {{to}}',
+  },
+  statementImport: {
+    title: 'Importar extrato',
+    intro:
+      'Escolhe um ficheiro CSV exportado do banco ou cola o conteúdo. Nada é gravado antes de confirmares.',
+    account: 'Conta do extrato',
+    pickFile: 'Escolher ficheiro CSV',
+    pasteLabel: 'Ou cola aqui o conteúdo do CSV',
+    pastePlaceholder: 'Data;Descrição;Montante',
+    preview: 'Pré-visualizar',
+    readFailed: 'Não foi possível ler o ficheiro.',
+    errors: {
+      empty: 'O ficheiro está vazio.',
+      noHeader:
+        'Não encontrei as colunas de data, descrição e valor (ou débito e crédito). Confirma que é o CSV do banco.',
+      tooManyRows: 'O extrato tem mais de 2000 linhas. Divide-o por períodos.',
+      noRows: 'Não há movimentos que se possam importar neste ficheiro.',
+      saveFailed: 'Não foi possível guardar. Nada foi importado.',
+    },
+    found_one: '{{count}} movimento lido',
+    found_other: '{{count}} movimentos lidos',
+    duplicates_one: '{{count}} parece já estar registado e fica de fora. Toca para incluir.',
+    duplicates_other: '{{count}} parecem já estar registados e ficam de fora. Toca para incluir.',
+    skipped: 'Linhas ignoradas (sem data ou valor válido): {{lines}}',
+    expenseCategory: 'Categoria das despesas',
+    incomeCategory: 'Categoria dos rendimentos',
+    duplicate: 'Possível duplicado',
+    noDescription: 'Sem descrição',
+    confirm_one: 'Importar {{count}} movimento',
+    confirm_other: 'Importar {{count}} movimentos',
+    back: 'Escolher outro ficheiro',
+    noAccounts: 'Cria primeiro uma conta para receber os movimentos.',
   },
   entryForm: {
     ai: {
