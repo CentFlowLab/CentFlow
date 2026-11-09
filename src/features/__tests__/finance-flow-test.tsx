@@ -125,6 +125,25 @@ describe('local finance flow (real SQLite)', () => {
     expect(await screen.findByText('Nada encontrado')).toBeOnTheScreen();
   });
 
+  it('keeps type and period inside Filtros and counts the active ones', async () => {
+    await renderRouter('./src/app', { initialUrl: '/account/new' });
+    await createAccount('Banco', '0');
+    await addEntry({ amount: '3', category: 'Restaurantes', description: 'Café' });
+
+    await act(() => router.navigate('/transactions'));
+    expect(await screen.findByText('1 movimento')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Hoje' })).toBeOnTheScreen();
+    expect(screen.queryByRole('radio', { name: 'Rendimento' })).toBeNull();
+    expect(screen.queryByText('Este mês')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Filtros' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Rendimento' }));
+    expect(await screen.findByText('Nada encontrado')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Filtros (1)' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Limpar filtros' }));
+    expect(await screen.findByText('1 movimento')).toBeOnTheScreen();
+  });
+
   it('records wealth items and shows the net worth without changing account totals', async () => {
     await renderRouter('./src/app', { initialUrl: '/wealth' });
     expect(await screen.findByText('Ainda não há património')).toBeOnTheScreen();
