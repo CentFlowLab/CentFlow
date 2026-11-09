@@ -133,8 +133,8 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - O locale nos testes é sempre pt-PT (mock em `jest.setup.ts`).
 - Fluxos completos (ecrã → repositório → SQLite) em `src/features/__tests__/finance-flow-test.tsx`.
 - Ensaio real contra o staging (opcional, fora do `check`):
-  `src/data/sync/__tests__/staging-live-test.ts`, só com `MIVEN_STAGING_URL`,
-  `MIVEN_STAGING_PUBLISHABLE_KEY` e `MIVEN_STAGING_SECRET_KEY` definidas na shell (nunca em
+  `src/data/sync/__tests__/live-sync-test.ts`, só com `MIVEN_LIVE_URL`,
+  `MIVEN_LIVE_PUBLISHABLE_KEY` e `MIVEN_LIVE_SECRET_KEY` definidas na shell (nunca em
   ficheiros). Cria e apaga um utilizador de teste.
 - Sincronização e RLS: `src/data/sync/__tests__`, `src/core/sync/__tests__`,
   `supabase/__tests__/server-test.ts` (PostgreSQL real via PGlite).
