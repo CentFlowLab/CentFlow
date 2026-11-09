@@ -196,6 +196,6 @@ widgets.
   aprovação explícita.
 - **Fase 4 — património, veículos e documentos (no cliente):** Património (ADR-027), Veículos e
   Documentos (ADR-028), com as migrations `20261108000800` e `20261108000900` por aplicar.
-- **Fase 5 — IA e automação:** chamadas a modelos e OCR apenas em Edge Functions (chaves nunca no
+- **Fase 5 — IA e automação (começou: registo por texto, ADR-029):** chamadas a modelos e OCR apenas em Edge Functions (chaves nunca no
   cliente); a IA propõe, o utilizador confirma. Importação de extratos e Open Banking através de
   fornecedores autorizados (PSD2), sempre com consentimento explícito.

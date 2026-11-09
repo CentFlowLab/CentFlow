@@ -167,6 +167,19 @@ const es: Translation = {
     transferBetween: '{{from}} → {{to}}',
   },
   entryForm: {
+    ai: {
+      label: 'Describe el movimiento (opcional)',
+      placeholder: 'Ej.: ayer Mercadona 23,50',
+      action: 'Sugerir con IA',
+      status: {
+        idle: 'El texto se envía a Miven y a un proveedor de IA para proponer los campos. Tú confirmas antes de guardar.',
+        loading: 'Leyendo…',
+        applied: 'Campos rellenados. Revisa y guarda.',
+        notConfigured: 'La IA aún no está activa en este servidor.',
+        notUnderstood: 'No pude entender el movimiento. Prueba con importe y descripción.',
+        failed: 'No se pudo sugerir ahora. Rellénalo a mano.',
+      },
+    },
     newTitle: 'Nuevo movimiento',
     editTitle: 'Editar movimiento',
     type: 'Tipo de movimiento',

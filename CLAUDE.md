@@ -13,8 +13,9 @@ no cliente e no staging (histórico `20261108000100` a `20261108000700`, ensaiad
 existentes e não acrescentam migration. A produção continua só com `20261108000100` e
 `20261108000200`. A Fase 4 foi aprovada pelo responsável a 2026-11-09 e está no cliente: Património (ADR-027),
 Veículos e Documentos (ADR-028). As migrations `20261108000800` e `20261108000900` estão no
-repositório e **não foram aplicadas** no staging nem na produção. **A Fase 5 não avança sem decisões do
-responsável sobre fornecedores (D-5, D-6).**
+repositório e **não foram aplicadas** no staging nem na produção. A Fase 5 começou com o registo por linguagem natural
+(ADR-029, Edge Function `suggest-entry`, por implementar na cloud e sem chave). Open Banking (D-5),
+OCR e importação de extratos continuam por fazer.
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.

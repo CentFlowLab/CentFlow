@@ -38,3 +38,6 @@ sender_name = "Miven"
 # O CORS permitido está no código (origins locais + ALLOWED_WEB_ORIGINS). Não voltar a usar `*`.
 [functions.delete-account]
 verify_jwt = false
+
+[functions.suggest-entry]
+verify_jwt = false

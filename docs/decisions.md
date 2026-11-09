@@ -297,6 +297,23 @@ regras de acesso e um fluxo de eliminação (RGPD), por isso fica para uma decis
 não há notificações de prazos nem custos por veículo. A migration `20261108000900` depende da
 `20261108000800`, está no repositório e **não foi aplicada** na cloud.
 
+## ADR-029 — Registo por linguagem natural com IA (Fase 5, primeiro passo)
+
+**Decisão:** a Edge Function `suggest-entry` recebe uma frase curta (até 300 caracteres) e as
+categorias do utilizador, chama a API de mensagens da Anthropic (modelo por omissão
+`claude-haiku-5-5`, configurável em `SUGGEST_ENTRY_MODEL`) e devolve **uma proposta**. A chave é o
+segredo `ANTHROPIC_API_KEY` e existe só no servidor. A função verifica o JWT do utilizador, trata o
+texto como dados (vai só na mensagem de utilizador), valida a resposta em `src/core/ai` (valor
+decimal positivo, data real a menos de um ano, categoria só se existir e for do tipo certo) e não
+grava nada nem regista o texto. O formulário só pré-preenche; o utilizador confirma com "Guardar".
+A IA nunca executa operações financeiras.
+**Consequências:** só aparece com sessão iniciada. Sem o segredo, a função responde 503 e a app
+diz que a IA ainda não está ativa. Não há limite diário por utilizador (a decidir antes de abrir ao
+público: custo e abuso). A função não está implementada na cloud: `supabase secrets set
+ANTHROPIC_API_KEY=…` e `supabase functions deploy suggest-entry`. O texto sai do dispositivo para o
+fornecedor de IA, o que tem de constar da política de privacidade (D-4). Resolve D-6 para este
+caso; OCR de recibos, importação de extratos e Open Banking (D-5) continuam por fazer.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
@@ -304,5 +321,5 @@ não há notificações de prazos nem custos por veículo. A migration `20261108
 | D-3 | Identificadores de app (`app.centflow.mobile`) | Mantidos: já há compilações SideStore. O nome público e o domínio ficaram decididos no ADR-026. Não mudar o identificador depois da primeira submissão às lojas. | Antes de publicar |
 | D-4 | Licença e entidade legal                       | Proprietária por omissão. Definir titular dos direitos e termos/privacidade (RGPD).                                                                              | Antes de publicar |
 | D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                       | Fase 5            |
-| D-6 | Fornecedor de IA/OCR                           | Executar sempre em Edge Functions; escolher pelo custo, privacidade (UE) e qualidade.                                                                            | Fase 5            |
+| D-6 | Fornecedor de IA/OCR                           | Registo por texto resolvido no ADR-029 (Anthropic, em Edge Function). OCR de recibos continua por decidir: exige imagem e um seletor de ficheiros nativo.        | Fase 5            |
 | D-7 | Alojamento da PWA                              | O domínio é miven.pt. Falta escolher o alojamento estático com COOP/COEP (ADR-015): Vercel, Netlify, Cloudflare Pages ou EAS Hosting. Confirmar suporte Safari.  | Fase 2            |

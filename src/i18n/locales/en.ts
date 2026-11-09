@@ -167,6 +167,19 @@ const en: Translation = {
     transferBetween: '{{from}} → {{to}}',
   },
   entryForm: {
+    ai: {
+      label: 'Describe the entry (optional)',
+      placeholder: 'E.g. yesterday Tesco 23.50',
+      action: 'Suggest with AI',
+      status: {
+        idle: 'The text is sent to Miven and to an AI provider to propose the fields. You confirm before saving.',
+        loading: 'Reading…',
+        applied: 'Fields filled in. Review and save.',
+        notConfigured: 'AI is not enabled on this server yet.',
+        notUnderstood: 'I could not understand the entry. Try an amount and a description.',
+        failed: 'Could not suggest right now. Fill it in by hand.',
+      },
+    },
     newTitle: 'New transaction',
     editTitle: 'Edit transaction',
     type: 'Transaction type',

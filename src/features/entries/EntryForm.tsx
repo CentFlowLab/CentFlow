@@ -34,6 +34,7 @@ import {
 } from '@/ui/components';
 import { categorySwatch, spacing, useTheme } from '@/ui/theme';
 
+import { AiSuggestion } from './AiSuggestion';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import type { FinanceLookups } from '../finance/useFinanceLookups';
@@ -256,6 +257,35 @@ export function EntryForm({ lookups, today, entry }: Props) {
           </View>
         </>
       }>
+      {isEditing ? null : (
+        <AiSuggestion
+          today={today}
+          categories={lookups.categoryList}
+          onApply={(suggestion) => {
+            changeType(suggestion.type);
+            setDate(suggestion.date);
+            if (suggestion.description) {
+              setDescription(suggestion.description);
+              setShowDetails(true);
+            }
+            const category = lookups.categoryList.find(
+              (item) => item.name === suggestion.categoryName && item.type === suggestion.type,
+            );
+            if (category) setCategoryId(category.id);
+            if (suggestion.amount) {
+              const parsed = parseAmountInput(
+                suggestion.amount.replace('.', decimalSeparatorFor(locale)),
+                currency,
+              );
+              if (parsed.ok) {
+                setAmountText(
+                  amountToInputString(parsed.amountMinor, currency, decimalSeparatorFor(locale)),
+                );
+              }
+            }
+          }}
+        />
+      )}
       <SegmentedControl
         accessibilityLabel={t('entryForm.type')}
         value={type}

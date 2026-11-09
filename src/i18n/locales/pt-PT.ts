@@ -164,6 +164,19 @@ const ptPT = {
     transferBetween: '{{from}} → {{to}}',
   },
   entryForm: {
+    ai: {
+      label: 'Descreve o movimento (opcional)',
+      placeholder: 'Ex.: ontem Pingo Doce 23,50',
+      action: 'Sugerir com IA',
+      status: {
+        idle: 'O texto é enviado ao Miven e a um fornecedor de IA para propor os campos. Tu confirmas antes de guardar.',
+        loading: 'A ler…',
+        applied: 'Campos preenchidos. Revê e guarda.',
+        notConfigured: 'A IA ainda não está ativa neste servidor.',
+        notUnderstood: 'Não consegui perceber o movimento. Tenta com valor e descrição.',
+        failed: 'Não foi possível sugerir agora. Preenche à mão.',
+      },
+    },
     newTitle: 'Novo movimento',
     editTitle: 'Editar movimento',
     type: 'Tipo de movimento',
