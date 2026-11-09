@@ -302,6 +302,8 @@ jobs:
           git -c user.name='github-actions[bot]' \
             -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
             commit -m "ci: publish sideload ${MARKETING_VERSION} (${BUILD_NUMBER})"
+          # O master pode ter avançado durante a compilação (cerca de 18 min): junta antes de enviar.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
           url='https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json'
           link="sidestore://source?url=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$url")"
