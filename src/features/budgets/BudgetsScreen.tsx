@@ -1,7 +1,7 @@
 import { router, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import {
   addMonths,
@@ -23,11 +23,13 @@ import {
   Card,
   CategoryIcon,
   EmptyState,
+  HeroCard,
   IconButton,
   Screen,
   Text,
 } from '@/ui/components';
-import { spacing, useTheme } from '@/ui/theme';
+import { useBreakpoint } from '@/ui/layout/useBreakpoint';
+import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { useSync } from '../account/SyncProvider';
 import { useToday } from '../finance/useToday';
@@ -51,6 +53,7 @@ export function BudgetsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { snapshot } = useSync();
+  const breakpoint = useBreakpoint();
   const { formatDate, formatMoney, formatMonthYear, formatPercent } = useLocaleFormat();
   const today = useToday();
   const currentMonth = monthOf(today);
@@ -66,14 +69,22 @@ export function BudgetsScreen() {
   const header = {
     title: t('nav.budgets'),
     subtitle: t('budgets.subtitle'),
-    headerRight: (
-      <IconButton
-        icon="add"
-        variant="filled"
-        accessibilityLabel={t('budgets.add')}
-        onPress={() => router.push('/budget/new' as Href)}
-      />
-    ),
+    headerRight:
+      breakpoint === 'compact' ? (
+        <IconButton
+          icon="add"
+          variant="filled"
+          color="primaryText"
+          accessibilityLabel={t('budgets.add')}
+          onPress={() => router.push('/budget/new' as Href)}
+        />
+      ) : (
+        <Button
+          label={t('budgets.add')}
+          icon="add"
+          onPress={() => router.push('/budget/new' as Href)}
+        />
+      ),
   };
 
   if (!query.data) {
@@ -94,10 +105,10 @@ export function BudgetsScreen() {
 
   return (
     <Screen {...header}>
-      <View style={styles.monthBar}>
+      <View
+        style={[styles.monthBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <IconButton
           icon="chevron-back"
-          variant="filled"
           accessibilityLabel={t('dashboard.previousMonth')}
           onPress={() => setMonth((value) => addMonths(value, -1))}
         />
@@ -106,7 +117,6 @@ export function BudgetsScreen() {
         </Text>
         <IconButton
           icon="chevron-forward"
-          variant="filled"
           accessibilityLabel={t('dashboard.nextMonth')}
           onPress={() => setMonth((value) => addMonths(value, 1))}
         />
@@ -200,6 +210,9 @@ function CurrencySection({
   primary: string;
 }) {
   const { t } = useTranslation();
+  const {
+    colors: { heroTrack, heroNegative, heroPositive },
+  } = useTheme();
   const items = data.presented.filter((item) => item.budget.currency === currency);
   const active = items.filter((item) => item.window);
   const waiting = items.filter((item) => !item.window);
@@ -220,43 +233,60 @@ function CurrencySection({
   return (
     <View style={styles.stack}>
       {totals ? (
-        <Card style={styles.hero}>
-          <Text variant="footnote" tone="secondary">
+        <HeroCard style={styles.hero}>
+          <Text variant="overline" tone="heroMuted">
             {t('budgets.totalLimit')}
           </Text>
-          <Text variant="amountHero" tabular numberOfLines={1} adjustsFontSizeToFit>
+          <Text variant="amountHero" tone="hero" tabular numberOfLines={1} adjustsFontSizeToFit>
             {money(totals.limit, currency)}
           </Text>
           <View style={styles.kpis}>
             <View style={styles.kpi}>
-              <Text variant="caption" tone="secondary">
+              <Text variant="caption" tone="heroMuted">
                 {t('budgets.spent')}
               </Text>
-              <Text variant="title3" tone="negative" tabular>
+              <Text variant="title3" tone="hero" tabular>
                 {money(totals.spent, currency)}
               </Text>
             </View>
             <View style={styles.kpi}>
-              <Text variant="caption" tone="secondary">
+              <Text variant="caption" tone="heroMuted">
                 {totals.available < 0 ? t('budgets.over') : t('budgets.available')}
               </Text>
-              <Text variant="title3" tone={totals.available < 0 ? 'negative' : 'positive'} tabular>
+              <Text
+                variant="title3"
+                tone={totals.available < 0 ? 'heroNegative' : 'heroPositive'}
+                tabular>
                 {money(Math.abs(totals.available), currency)}
               </Text>
             </View>
             <View style={styles.kpi}>
-              <Text variant="caption" tone="secondary">
+              <Text variant="caption" tone="heroMuted">
                 {t('budgets.used')}
               </Text>
-              <Text variant="title3" tone={budgetTone(totals.level)} tabular>
+              <Text
+                variant="title3"
+                tone={totals.level === 'over' ? 'heroNegative' : 'hero'}
+                tabular>
                 {formatPercent(totals.ratio, 0)}
               </Text>
             </View>
           </View>
-          <Text variant="caption" tone="tertiary">
+          <View style={[styles.heroTrack, { backgroundColor: heroTrack }]}>
+            <View
+              style={[
+                styles.heroFill,
+                {
+                  width: `${Math.min(Math.max(totals.ratio, 0), 1) * 100}%`,
+                  backgroundColor: totals.level === 'over' ? heroNegative : heroPositive,
+                },
+              ]}
+            />
+          </View>
+          <Text variant="caption" tone="heroMuted">
             {t('budgets.categoryCount', { count: active.length })}
           </Text>
-        </Card>
+        </HeroCard>
       ) : null}
 
       {totals && hasSpend ? (
@@ -322,61 +352,58 @@ function BudgetCard({
   const currency = item.budget.currency;
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t('budgets.progressLabel', { name, percent })}
+    <Card
+      style={styles.cardGap}
       onPress={onPress}
-      style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1 }]}>
-      <Card style={styles.cardGap}>
-        <View style={styles.row}>
-          <CategoryIcon
-            icon={item.category?.icon ?? 'help-outline'}
-            color={item.category?.color ?? 'slate'}
-            size={36}
+      accessibilityLabel={t('budgets.progressLabel', { name, percent })}>
+      <View style={styles.row}>
+        <CategoryIcon
+          icon={item.category?.icon ?? 'help-outline'}
+          color={item.category?.color ?? 'slate'}
+          size={36}
+        />
+        <View style={styles.flex}>
+          <Text variant="label" numberOfLines={1}>
+            {name}
+          </Text>
+          <Text variant="caption" tone="tertiary">
+            {t(`budgets.period.${item.budget.period}`)}
+          </Text>
+        </View>
+        {item.figures.level !== 'ok' && item.window ? (
+          <Badge
+            label={t(`budgets.level.${item.figures.level}`)}
+            tone={budgetTone(item.figures.level)}
           />
-          <View style={styles.flex}>
-            <Text variant="label" numberOfLines={1}>
-              {name}
+        ) : null}
+      </View>
+      {item.window ? (
+        <>
+          <BudgetMeter
+            level={item.figures.level}
+            ratio={item.figures.ratio}
+            accessibilityLabel={t('budgets.progressLabel', { name, percent })}
+          />
+          <View style={[styles.row, styles.between]}>
+            <Text variant="footnote" tabular>
+              {money(item.figures.spent, currency)}
             </Text>
-            <Text variant="caption" tone="tertiary">
-              {t(`budgets.period.${item.budget.period}`)}
+            <Text variant="footnote" tone="secondary" tabular>
+              {money(item.budget.amount, currency)}
             </Text>
           </View>
-          {item.figures.level !== 'ok' && item.window ? (
-            <Badge
-              label={t(`budgets.level.${item.figures.level}`)}
-              tone={budgetTone(item.figures.level)}
-            />
-          ) : null}
-        </View>
-        {item.window ? (
-          <>
-            <BudgetMeter
-              level={item.figures.level}
-              ratio={item.figures.ratio}
-              accessibilityLabel={t('budgets.progressLabel', { name, percent })}
-            />
-            <View style={styles.row}>
-              <Text variant="footnote" tabular>
-                {money(item.figures.spent, currency)}
-              </Text>
-              <Text variant="footnote" tone="secondary" tabular>
-                {money(item.budget.amount, currency)}
-              </Text>
-            </View>
-            <Text variant="caption" tone={item.figures.available < 0 ? 'negative' : 'secondary'}>
-              {item.figures.available < 0
-                ? t('budgets.overBy', { amount: money(-item.figures.available, currency) })
-                : t('budgets.remaining', { amount: money(item.figures.available, currency) })}
-            </Text>
-          </>
-        ) : (
-          <Text variant="footnote" tone="secondary">
-            {t('budgets.notStarted')}
+          <Text variant="caption" tone={item.figures.available < 0 ? 'negative' : 'secondary'}>
+            {item.figures.available < 0
+              ? t('budgets.overBy', { amount: money(-item.figures.available, currency) })
+              : t('budgets.remaining', { amount: money(item.figures.available, currency) })}
           </Text>
-        )}
-      </Card>
-    </Pressable>
+        </>
+      ) : (
+        <Text variant="footnote" tone="secondary">
+          {t('budgets.notStarted')}
+        </Text>
+      )}
+    </Card>
   );
 }
 
@@ -393,14 +420,28 @@ const styles = StyleSheet.create({
   monthBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.xs,
+  },
+  heroTrack: {
+    height: 6,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+    alignSelf: 'stretch',
+  },
+  heroFill: {
+    height: '100%',
+    borderRadius: radius.full,
+  },
+  between: {
+    justifyContent: 'space-between',
   },
   stack: {
     gap: spacing.lg,
   },
   hero: {
     gap: spacing.sm,
-    alignItems: 'center',
   },
   kpis: {
     flexDirection: 'row',
@@ -410,7 +451,6 @@ const styles = StyleSheet.create({
   kpi: {
     flex: 1,
     gap: spacing.xs,
-    alignItems: 'center',
   },
   cardGap: {
     gap: spacing.md,
