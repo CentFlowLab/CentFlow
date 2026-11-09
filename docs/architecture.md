@@ -25,15 +25,15 @@ flowchart TD
 
 ## Camadas
 
-| Camada         | Responsabilidade                                                  | Pode depender de              |
-| -------------- | ----------------------------------------------------------------- | ----------------------------- |
-| `src/app`      | Mapa de rotas. Cada ficheiro só renderiza um ecrã de `features`.  | features                      |
-| `src/features` | Ecrãs, componentes específicos, hooks e casos de uso por área.    | ui, core, i18n, lib, `@/data` |
-| `src/ui`       | Tema, tokens, componentes genéricos e layout responsivo.          | core, i18n                    |
-| `src/core`     | Regras de domínio em TypeScript puro (dinheiro, datas, cálculos). | nada (só Intl)                |
-| `src/data`     | SQLite, migrações, repositórios, hooks `useDataQuery`.            | core, expo-sqlite             |
-| `src/i18n`     | Traduções, resolução de idioma e formatação localizada.           | core                          |
-| `src/lib`      | Preferências, sessão (SecureStore) e cliente Supabase.            | bibliotecas externas          |
+| Camada         | Responsabilidade                                                                       | Pode depender de              |
+| -------------- | -------------------------------------------------------------------------------------- | ----------------------------- |
+| `src/app`      | Mapa de rotas. Cada ficheiro só renderiza um ecrã de `features`.                       | features                      |
+| `src/features` | Ecrãs, componentes específicos, hooks e casos de uso por área.                         | ui, core, i18n, lib, `@/data` |
+| `src/ui`       | Tema, tokens, componentes genéricos e layout responsivo.                               | core, i18n                    |
+| `src/core`     | Regras de domínio em TypeScript puro (dinheiro, datas, cálculos, leitura de extratos). | nada (só Intl)                |
+| `src/data`     | SQLite, migrações, repositórios, hooks `useDataQuery`.                                 | core, expo-sqlite             |
+| `src/i18n`     | Traduções, resolução de idioma e formatação localizada.                                | core                          |
+| `src/lib`      | Preferências, sessão (SecureStore) e cliente Supabase.                                 | bibliotecas externas          |
 
 Cada feature organiza-se, à medida que cresce, em:
 
@@ -194,8 +194,12 @@ widgets.
   `20261108000100` e `20261108000200`. Os relatórios (ADR-024) estão no cliente e não
   acrescentam tabela nem migration. As Fases 4 e 5 não avançam sem
   aprovação explícita.
-- **Fase 4 — património, veículos e documentos (no cliente):** Património (ADR-027), Veículos e
-  Documentos (ADR-028), com as migrations `20261108000800` e `20261108000900` por aplicar.
-- **Fase 5 — IA e automação (começou: registo por texto, ADR-029):** chamadas a modelos e OCR apenas em Edge Functions (chaves nunca no
-  cliente); a IA propõe, o utilizador confirma. Importação de extratos e Open Banking através de
-  fornecedores autorizados (PSD2), sempre com consentimento explícito.
+- **Fase 4 — património, veículos e documentos (no cliente e no staging):** Património
+  (ADR-027), Veículos e Documentos (ADR-028). As migrations `20261108000800` e
+  `20261108000900` estão no staging desde 2026-11-09 (ADR-031); a produção ainda não as tem.
+- **Fase 5 — IA e automação (em curso):** registo por texto (ADR-029, Edge Function
+  `suggest-entry`) e importação de extratos CSV no dispositivo (ADR-030: `src/core/import`
+  interpreta, o utilizador revê e confirma, `entries.createMany` grava numa transação). Chamadas a
+  modelos e OCR apenas em Edge Functions (chaves nunca no cliente); a IA propõe, o utilizador
+  confirma. Open Banking através de fornecedores autorizados (PSD2), sempre com consentimento
+  explícito.

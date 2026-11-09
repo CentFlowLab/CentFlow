@@ -281,9 +281,9 @@ cartão, outra). O património líquido é bens menos dívidas por moeda, calcul
 entidades e não criam movimentos nem mudam saldos de contas.
 **Consequências:** não há histórico de valorizações: editar o valor substitui o anterior, por
 isso ainda não há gráfico de evolução. Se for preciso, acrescenta-se uma tabela de valorizações
-numa migration nova. A migration `20261108000800` está no repositório e **não foi aplicada** no
-staging nem na produção; a app nova sincroniza `wealth_items` só depois de ela existir no
-servidor.
+numa migration nova. A migration `20261108000800` foi aplicada no staging a 2026-11-09 e
+ensaiada com duas sessões reais (criar, editar, eliminar). Não está na produção; a app sincroniza
+`wealth_items` só depois de ela existir no servidor.
 
 ## ADR-028 — Veículos e Documentos são registos com prazos, sem ficheiros
 
@@ -295,7 +295,8 @@ Ambos entram na fila de sincronização como as restantes entidades.
 **Consequências:** os documentos não guardam o ficheiro: isso exigiria Supabase Storage,
 regras de acesso e um fluxo de eliminação (RGPD), por isso fica para uma decisão própria. Ainda
 não há notificações de prazos nem custos por veículo. A migration `20261108000900` depende da
-`20261108000800`, está no repositório e **não foi aplicada** na cloud.
+`20261108000800`. Foi aplicada no staging a 2026-11-09 e ensaiada com duas sessões reais. Não
+está na produção.
 
 ## ADR-029 — Registo por linguagem natural com IA (Fase 5, primeiro passo)
 
@@ -309,10 +310,48 @@ grava nada nem regista o texto. O formulário só pré-preenche; o utilizador co
 A IA nunca executa operações financeiras.
 **Consequências:** só aparece com sessão iniciada. Sem o segredo, a função responde 503 e a app
 diz que a IA ainda não está ativa. Não há limite diário por utilizador (a decidir antes de abrir ao
-público: custo e abuso). A função não está implementada na cloud: `supabase secrets set
-ANTHROPIC_API_KEY=…` e `supabase functions deploy suggest-entry`. O texto sai do dispositivo para o
+público: custo e abuso). A função está publicada no staging desde 2026-11-09 e responde 401 sem
+sessão e 503 sem o segredo; o segredo `ANTHROPIC_API_KEY` ainda não foi definido. O Haiku 5.5
+recusa `temperature` e raciocina por omissão, por isso o pedido usa `thinking: disabled` e
+`max_tokens` 1024; uma recusa ou corte dá `not_understood`. Não está na produção. O texto sai do dispositivo para o
 fornecedor de IA, o que tem de constar da política de privacidade (D-4). Resolve D-6 para este
 caso; OCR de recibos, importação de extratos e Open Banking (D-5) continuam por fazer.
+
+## ADR-030 — Importação de extratos CSV no dispositivo
+
+**Decisão:** o extrato é lido e interpretado no dispositivo, sem servidor nem fornecedor. O
+utilizador escolhe um ficheiro (`expo-document-picker`; leitura com `expo-file-system` no
+nativo e `File` na web) ou cola o texto. `src/core/import` deteta o separador (`;`, `,` ou
+tabulação), o cabeçalho (até à 10.ª linha), as colunas de data, descrição e montante com sinal
+ou débito/crédito, as datas `DD/MM/AAAA` e `AAAA-MM-DD`, e lê os valores com
+`parseAmountInput` (sem floats). Bytes que não são UTF-8 válido são lidos como Windows-1252.
+Linhas sem data ou valor válidos são listadas, nunca adivinhadas. Um possível duplicado é uma
+linha com a mesma data, tipo e valor de um movimento da conta (transferências contam pelo lado
+da conta), contado como multiconjunto; fica desmarcado por omissão. O utilizador escolhe a conta
+e uma categoria para despesas e outra para rendimentos, revê a lista e confirma.
+`entries.createMany` grava tudo numa transação ou nada.
+**Porquê:** é útil já, não precisa de contrato nem de enviar dados financeiros para fora, e o
+Open Banking (D-5) continua a ser a via automática.
+**Dependências novas:** `expo-document-picker` (seletor de ficheiros nativo e web) e
+`expo-file-system` (ler o ficheiro escolhido no nativo). São módulos Expo; o IPA 0.1.3 não os
+tem, por isso o seletor só funciona a partir da próxima compilação. Colar o texto funciona já.
+**Consequências:** o formato é heurístico; extratos em Excel (`.xlsx`) ou PDF não são lidos.
+Não há regras de categorização automática nem memória de mapeamentos por banco. Máximo de 2000
+linhas por ficheiro.
+
+## ADR-031 — Ensaio do staging de 2026-11-09 e configuração por ambiente
+
+**Decisão:** o staging recebeu `00800` e `00900` com `db push --remote=qlimqcgrgaqzwjmafora`
+(sem trocar o projeto ligado, que continua a ser a produção). A sincronização foi ensaiada com
+dois dispositivos da mesma conta contra o staging real (`staging-live-test.ts`). A configuração
+de auth do staging vive em `[remotes.staging]` no `supabase/config.toml` (site
+`http://localhost:8081`, redirects `miven://`, `localhost:8081` e `miven.pt`, palavra-passe mínima 8) e foi aplicada com `config push --remote=qlimqcgrgaqzwjmafora`; o SMTP fica desligado no
+staging até a chave do Resend existir. A secção base continua a ser a proposta da produção e
+não foi aplicada. `.gitattributes` fixa LF, porque com `core.autocrlf=true` o checkout no
+Windows fazia falhar o `prettier --check`.
+**Consequências:** o registo por email no staging só funciona para membros da organização até
+haver SMTP; `example.com` é recusado pelo Supabase. O token de sessão de teste vem de um
+utilizador criado e apagado pela API de administração do staging.
 
 ## Decisões pendentes
 
@@ -321,5 +360,5 @@ caso; OCR de recibos, importação de extratos e Open Banking (D-5) continuam po
 | D-3 | Identificadores de app (`app.centflow.mobile`) | Mantidos: já há compilações SideStore. O nome público e o domínio ficaram decididos no ADR-026. Não mudar o identificador depois da primeira submissão às lojas. | Antes de publicar |
 | D-4 | Licença e entidade legal                       | Proprietária por omissão. Definir titular dos direitos e termos/privacidade (RGPD).                                                                              | Antes de publicar |
 | D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                       | Fase 5            |
-| D-6 | Fornecedor de IA/OCR                           | Registo por texto resolvido no ADR-029 (Anthropic, em Edge Function). OCR de recibos continua por decidir: exige imagem e um seletor de ficheiros nativo.        | Fase 5            |
+| D-6 | Fornecedor de IA/OCR                           | Registo por texto resolvido no ADR-029 (Anthropic, em Edge Function). OCR de recibos continua por decidir: exige imagem e um fornecedor.                         | Fase 5            |
 | D-7 | Alojamento da PWA                              | O domínio é miven.pt. Falta escolher o alojamento estático com COOP/COEP (ADR-015): Vercel, Netlify, Cloudflare Pages ou EAS Hosting. Confirmar suporte Safari.  | Fase 2            |

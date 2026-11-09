@@ -6,16 +6,16 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 
 ## Estado
 
-Fases 0, 1 e 2 concluídas. Fase 3 (orçamentos, subscrições, objetivos de poupança, relatórios)
-em curso, com aprovação do responsável: orçamentos, subscrições e objetivos de poupança estão
-no cliente e no staging (histórico `20261108000100` a `20261108000700`, ensaiados em
-2026-11-08). Os relatórios estão no cliente (ADR-024): calculam sobre os dados já
-existentes e não acrescentam migration. A produção continua só com `20261108000100` e
-`20261108000200`. A Fase 4 foi aprovada pelo responsável a 2026-11-09 e está no cliente: Património (ADR-027),
-Veículos e Documentos (ADR-028). As migrations `20261108000800` e `20261108000900` estão no
-repositório e **não foram aplicadas** no staging nem na produção. A Fase 5 começou com o registo por linguagem natural
-(ADR-029, Edge Function `suggest-entry`, por implementar na cloud e sem chave). Open Banking (D-5),
-OCR e importação de extratos continuam por fazer.
+Fases 0, 1 e 2 concluídas. Fase 3 (orçamentos, subscrições, objetivos, relatórios) e Fase 4
+(Património, ADR-027; Veículos e Documentos, ADR-028) estão no cliente. O **staging** tem o
+histórico `20261108000100` a `20261108000900` (`00800` e `00900` aplicadas e ensaiadas a
+2026-11-09, com sincronização real entre duas sessões), a configuração de auth de
+`[remotes.staging]` e as funções `delete-account` e `suggest-entry` publicadas. A **produção**
+continua só com `20261108000100` e `20261108000200`; o plano está em
+[docs/release-producao.md](docs/release-producao.md) e não foi executado.
+Fase 5: registo por texto com IA (ADR-029; a função está no staging mas falta o segredo
+`ANTHROPIC_API_KEY`) e importação de extratos CSV no dispositivo (ADR-030). Open Banking (D-5)
+e OCR de recibos (D-6) esperam pela escolha do fornecedor.
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:
 `qlimqcgrgaqzwjmafora`.
@@ -116,7 +116,8 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - O registo rápido vive em `/new-transaction` (modal) — ponto de entrada único para o botão "+",
   e futuramente atalhos, widgets e deep links.
 - Formulários são modais no `Stack` raiz (`entry/[id]`, `account/new`, `account/[id]`,
-  `category/new`, `category/[id]`, `auth/*`, `sync/conflicts`) e usam `<FormScreen>`.
+  `category/new`, `category/[id]`, `import-statement`, `auth/*`, `sync/conflicts`) e usam
+  `<FormScreen>`.
   `unstable_settings.anchor = '(tabs)'` garante que um modal aberto diretamente por URL tem os
   separadores por baixo. Fechar com `closeModal(fallback)`.
 - Confirmações usam `<Dialog>` (o `Alert` do React Native não funciona na web).
@@ -131,6 +132,10 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
 - Navegação: `renderRouter('./src/app')` de `expo-router/testing-library`.
 - O locale nos testes é sempre pt-PT (mock em `jest.setup.ts`).
 - Fluxos completos (ecrã → repositório → SQLite) em `src/features/__tests__/finance-flow-test.tsx`.
+- Ensaio real contra o staging (opcional, fora do `check`):
+  `src/data/sync/__tests__/staging-live-test.ts`, só com `MIVEN_STAGING_URL`,
+  `MIVEN_STAGING_PUBLISHABLE_KEY` e `MIVEN_STAGING_SECRET_KEY` definidas na shell (nunca em
+  ficheiros). Cria e apaga um utilizador de teste.
 - Sincronização e RLS: `src/data/sync/__tests__`, `src/core/sync/__tests__`,
   `supabase/__tests__/server-test.ts` (PostgreSQL real via PGlite).
 - Formatação pt-PT: valores com espaço não separável antes de `€`; percentagens sem espaço

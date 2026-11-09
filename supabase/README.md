@@ -8,7 +8,7 @@ Migrações, políticas RLS e a função de eliminação de conta. **Nunca** col
 O projeto ligado é a produção do Miven, referência `slfgslfzolfvqavuccom`. Não o usar para ensaios.
 Qualquer comando destinado à produção tem de passar primeiro pelo guard. Ele só aceita essa
 referência quando o comando inclui a confirmação `CONFIRMO-PRODUCAO` e recusa staging, outro
-projeto ou um alvo vazio. O plano está em [docs/release-fase3.md](../docs/release-fase3.md).
+projeto ou um alvo vazio. O plano está em [docs/release-producao.md](../docs/release-producao.md).
 
 ```bash
 npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
@@ -27,12 +27,22 @@ referência de produção, um URL de produção e um alvo vazio:
 npm run staging:guard -- qlimqcgrgaqzwjmafora
 ```
 
-No staging estão aplicadas `20261108000100` a `20261108000700`, ensaiadas em 2026-11-08.
-Na produção só `20261108000100` e `20261108000200`. Não correr `db push` sem autorização
-para esse passo.
-Quando for autorizado, o destino tem de ser explícito (`--remote=qlimqcgrgaqzwjmafora` no
-staging) e o guard tem de aceitar esse mesmo valor. Não usar `supabase link` para trocar o
-projeto ligado.
+No staging estão aplicadas `20261108000100` a `20261108000900` (`00800` e `00900` a
+2026-11-09), e publicadas as funções `delete-account` e `suggest-entry` (esta sem o segredo
+`ANTHROPIC_API_KEY`). Na produção só `20261108000100` e `20261108000200`.
+O destino é sempre explícito (`--remote=qlimqcgrgaqzwjmafora`) e o guard tem de aceitar esse
+mesmo valor. Não usar `supabase link` para trocar o projeto ligado: `--remote` chega.
+
+```bash
+npm run staging:guard -- qlimqcgrgaqzwjmafora
+npx supabase db push --remote=qlimqcgrgaqzwjmafora --skip-vault --dry-run
+npx supabase config diff --remote=qlimqcgrgaqzwjmafora
+```
+
+A configuração de auth do staging está em `[remotes.staging]` no `config.toml` e foi aplicada
+com `config push --remote=qlimqcgrgaqzwjmafora`. O SMTP do staging fica desligado até existir a
+chave do Resend; para o ligar, mudar `enabled` nessa secção e correr o push com
+`RESEND_API_KEY` e `RESEND_FROM_EMAIL` exportadas na shell (nunca num ficheiro do repositório).
 
 ## Aplicar as migrações ao projeto alojado
 
@@ -58,7 +68,7 @@ As migrações em `migrations/` criam `profiles`, `sync_metadata`, `accounts`, `
 quando a categoria é eliminada. Os testes em `__tests__/server-test.ts` correm as mesmas
 migrações contra PostgreSQL real (PGlite).
 
-`20261108000300` a `20261108000700` estão no staging e não estão na produção. Não as publicar
+`20261108000300` a `20261108000900` estão no staging e não estão na produção. Não as publicar
 na produção sem autorização, cópia de segurança e a ordem das migrations.
 No dashboard, Database › Settings › Exposed schemas tem de continuar só com `public`. O esquema
 `private` não pode ser exposto: é aí que corre a escrita interna.
@@ -98,4 +108,4 @@ Corre no servidor com a chave administrativa injetada pelo Supabase. Confirma o 
 `auth.getUser()` (o `user_id` do corpo é ignorado), exige `confirm: "DELETE"` e uma sessão
 iniciada nos últimos 10 minutos, e chama `auth.admin.deleteUser`. As tabelas públicas têm
 `ON DELETE CASCADE` a partir de `auth.users`. A versão com esta verificação ainda não está
-publicada.
+publicada na produção (no staging, sim, desde 2026-11-09).

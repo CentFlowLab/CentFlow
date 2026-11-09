@@ -1,4 +1,4 @@
-# Lançamento da Fase 3 em produção
+# Lançamento das Fases 3 a 5 em produção
 
 Plano. Não executar nenhum passo sem uma autorização nova, nessa altura, com a frase
 `CONFIRMO-PRODUCAO` no comando. Este documento não autoriza o lançamento.
@@ -6,14 +6,17 @@ Plano. Não executar nenhum passo sem uma autorização nova, nessa altura, com 
 Produção: `slfgslfzolfvqavuccom`. Staging: `qlimqcgrgaqzwjmafora`. Não escrever no staging neste
 lançamento. Não usar `supabase link` para trocar o projeto ligado.
 
-Estado de partida, ensaiado no staging em 2026-11-08: a produção tem só
-`20261108000100` e `20261108000200`. Faltam, por esta ordem:
+Estado de partida: a produção tem só `20261108000100` e `20261108000200`. O staging tem
+`00100` a `00900`: `00300` a `00700` ensaiadas a 2026-11-08, `00800` e `00900` a 2026-11-09 com
+sincronização real entre duas sessões (ADR-031). Faltam na produção, por esta ordem:
 
 1. `20261108000300_sync_write_guard.sql`
 2. `20261108000400_budgets.sql`
 3. `20261108000500_category_budget_delete.sql`
 4. `20261108000600_subscriptions.sql`
 5. `20261108000700_savings_goals.sql`
+6. `20261108000800_wealth_items.sql`
+7. `20261108000900_vehicles_documents.sql`
 
 A app que já está publicada fala com `sync_pull` e não recebe estas entidades. A app nova lê
 `sync_pull_v2`. Por isso as migrations vão primeiro e a publicação da app só depois.
@@ -63,7 +66,7 @@ npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
 npx supabase db push --dry-run --skip-vault --remote=slfgslfzolfvqavuccom --yes
 ```
 
-O dry-run tem de listar só as cinco migrations, de `00300` a `00700`, por esta ordem, e não
+O dry-run tem de listar só as sete migrations, de `00300` a `00900`, por esta ordem, e não
 dizer que as aplicou. Se aparecer outra migration, a produção, o staging, ou um aviso de
 reparação, parar.
 
@@ -74,7 +77,7 @@ npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
 npx supabase db push --skip-vault --remote=slfgslfzolfvqavuccom --yes
 ```
 
-Confirmar o histórico. Local e remoto têm de coincidir de `00100` a `00700`:
+Confirmar o histórico. Local e remoto têm de coincidir de `00100` a `00900`:
 
 ```bash
 npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
@@ -85,7 +88,8 @@ npx supabase migration list --remote=slfgslfzolfvqavuccom
 
 Só leitura (`db query --read-only` ou o painel). Não criar utilizadores.
 
-- `budgets`, `subscriptions`, `goals` e `goal_contributions` têm RLS ligado.
+- `budgets`, `subscriptions`, `goals`, `goal_contributions`, `wealth_items`, `vehicles` e
+  `documents` têm RLS ligado.
 - `anon` não tem `SELECT`, `INSERT`, `UPDATE` nem `DELETE`.
 - `authenticated` tem `SELECT` e não tem escrita direta. A escrita continua a ser pelas
   funções `sync_push` / `sync_verify`.
@@ -110,8 +114,25 @@ um `UPDATE` na produção.
 - Se a app que já está publicada deixar de sincronizar, não publicar a app nova por cima
   para "tapar" o erro. Restaurar a cópia e só depois decidir.
 
+## Edge Functions
+
+Depois das migrations, com a mesma regra de autorização. As funções foram publicadas e testadas
+no staging a 2026-11-09 (`delete-account`: 401 sem confirmação, apaga só o dono do token;
+`suggest-entry`: 401 sem sessão, 503 sem o segredo).
+
+```bash
+npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
+npx supabase functions deploy delete-account --remote=slfgslfzolfvqavuccom --use-api --yes
+npx supabase functions deploy suggest-entry --remote=slfgslfzolfvqavuccom --use-api --yes
+```
+
+O segredo da IA é definido pelo responsável, no terminal dele, nunca num ficheiro nem na
+conversa: `npx supabase secrets set ANTHROPIC_API_KEY=… --remote=slfgslfzolfvqavuccom`. Sem
+ele, a app diz que a IA não está ativa. Antes de abrir ao público, decidir o limite diário por
+utilizador (ADR-029).
+
 ## Publicar a app
 
-Só quando o histórico mostra `00100` a `00700`, as verificações passam e o SMTP e os
+Só quando o histórico mostra `00100` a `00900`, as verificações passam e o SMTP e os
 redirects da produção estão feitos. A publicação (EAS ou o alojamento da PWA) é um passo
 separado, também com autorização. Até lá, a app nova fica no repositório.
