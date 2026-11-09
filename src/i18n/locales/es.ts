@@ -780,7 +780,7 @@ const es: Translation = {
     confirmEmail: {
       title: 'Confirma tu correo',
       message:
-        'Hemos enviado un enlace a {{email}}. Ábrelo en este dispositivo para activar la cuenta y luego inicia sesión.',
+        'Enviamos un enlace a {{email}}. Ábrelo en el móvil o en el ordenador para activar la cuenta y luego entra en la app.',
     },
     forgotTitle: 'Recuperar contraseña',
     forgotIntro:
@@ -818,9 +818,9 @@ const es: Translation = {
   },
   account: {
     section: 'Cuenta y sincronización',
-    localOnlyTitle: 'Tus datos solo están en este dispositivo',
+    localOnlyTitle: 'Entra en tu cuenta',
     localOnlyDescription:
-      'Crea una cuenta o inicia sesión para guardar una copia segura y sincronizar entre dispositivos. Es opcional.',
+      'Miven guarda tus datos en tu cuenta y los sincroniza entre dispositivos.',
     sessionExpiredTitle: 'La sesión ha terminado',
     sessionExpiredMessage:
       'Los datos de tu cuenta siguen guardados en este dispositivo. Vuelve a iniciar sesión para verlos y sincronizarlos.',
@@ -848,12 +848,13 @@ const es: Translation = {
     conflictsHint: 'No se ha perdido ningún cambio. Elige la versión que quieres conservar.',
     syncNow: 'Sincronizar ahora',
     importData: 'Importar datos de este dispositivo',
-    importDataHint: 'Añade a la cuenta lo que registraste sin cuenta en este dispositivo.',
+    importDataHint:
+      'Añade a tu cuenta los datos de una versión antigua de Miven que quedaron en este dispositivo.',
     importPending: 'Esperando la confirmación del servidor.',
     cancelImport: 'Cancelar importación',
     cancelImportTitle: '¿Cancelar la importación?',
     cancelImportMessage:
-      'Los datos importados salen de la cuenta. Siguen disponibles en el uso sin cuenta de este dispositivo.',
+      'Los datos importados salen de la cuenta y vuelven a quedar solo en este dispositivo, sin importar.',
     signOut: 'Cerrar sesión',
     signOutPendingTitle: 'Hay cambios por enviar',
     signOutPendingMessage_one:
@@ -865,7 +866,7 @@ const es: Translation = {
     deleteAccount: 'Eliminar cuenta',
     deleteTitle: '¿Eliminar la cuenta definitivamente?',
     deleteMessage:
-      'La cuenta y todos los datos guardados en el servidor se eliminan de inmediato, así como la copia de esta cuenta en este dispositivo. Los datos del uso sin cuenta no se ven afectados. Esta acción no se puede deshacer.',
+      'La cuenta y todos los datos guardados en el servidor se eliminan de inmediato, junto con la copia de esta cuenta en este dispositivo. Esta acción no se puede deshacer.',
     deleteConfirm: 'Eliminar cuenta definitivamente',
     deletePassword: 'Contraseña',
     deletePasswordHint: 'Escribe la contraseña para confirmar que eres tú.',

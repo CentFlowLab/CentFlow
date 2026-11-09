@@ -772,7 +772,7 @@ const ptPT = {
     confirmEmail: {
       title: 'Confirma o teu email',
       message:
-        'Enviámos um link para {{email}}. Abre-o neste dispositivo para ativar a conta e depois entra.',
+        'Enviámos um link para {{email}}. Abre-o no telemóvel ou no computador para ativar a conta e depois entra na app.',
     },
     forgotTitle: 'Recuperar palavra-passe',
     forgotIntro:
@@ -811,9 +811,9 @@ const ptPT = {
   },
   account: {
     section: 'Conta e sincronização',
-    localOnlyTitle: 'Os teus dados estão só neste dispositivo',
+    localOnlyTitle: 'Entra na tua conta',
     localOnlyDescription:
-      'Cria uma conta ou entra para guardar uma cópia segura e sincronizar entre dispositivos. É opcional.',
+      'O Miven guarda os teus dados na tua conta e sincroniza-os entre dispositivos.',
     sessionExpiredTitle: 'A sessão terminou',
     sessionExpiredMessage:
       'Os dados da tua conta continuam guardados neste dispositivo. Entra novamente para os ver e sincronizar.',
@@ -841,12 +841,13 @@ const ptPT = {
     conflictsHint: 'Nenhuma alteração foi perdida. Escolhe a versão a manter.',
     syncNow: 'Sincronizar agora',
     importData: 'Importar dados deste dispositivo',
-    importDataHint: 'Junta à conta o que registaste sem conta neste dispositivo.',
+    importDataHint:
+      'Junta à conta os dados de uma versão antiga do Miven que ficaram neste dispositivo.',
     importPending: 'A aguardar confirmação do servidor.',
     cancelImport: 'Cancelar importação',
     cancelImportTitle: 'Cancelar a importação?',
     cancelImportMessage:
-      'Os dados importados saem da conta. Continuam disponíveis no uso sem conta deste dispositivo.',
+      'Os dados importados saem da conta e voltam a ficar só neste dispositivo, por importar.',
     signOut: 'Terminar sessão',
     signOutPendingTitle: 'Há alterações por enviar',
     signOutPendingMessage_one:
@@ -858,7 +859,7 @@ const ptPT = {
     deleteAccount: 'Eliminar conta',
     deleteTitle: 'Eliminar a conta definitivamente?',
     deleteMessage:
-      'A conta e todos os dados guardados no servidor são eliminados de imediato, bem como a cópia desta conta neste dispositivo. Os dados do uso sem conta não são afetados. Esta ação não pode ser anulada.',
+      'A conta e todos os dados guardados no servidor são eliminados de imediato, bem como a cópia desta conta neste dispositivo. Esta ação não pode ser anulada.',
     deleteConfirm: 'Eliminar conta definitivamente',
     deletePassword: 'Palavra-passe',
     deletePasswordHint: 'Escreve a palavra-passe para confirmar que és tu.',

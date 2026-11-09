@@ -774,7 +774,7 @@ const en: Translation = {
     confirmEmail: {
       title: 'Confirm your email',
       message:
-        'We sent a link to {{email}}. Open it on this device to activate your account, then sign in.',
+        'We sent a link to {{email}}. Open it on your phone or computer to activate the account, then sign in to the app.',
     },
     forgotTitle: 'Reset password',
     forgotIntro: "Enter your account's email. You'll get a link to set a new password.",
@@ -810,9 +810,8 @@ const en: Translation = {
   },
   account: {
     section: 'Account and sync',
-    localOnlyTitle: 'Your data is only on this device',
-    localOnlyDescription:
-      'Create an account or sign in to keep a secure copy and sync across devices. It is optional.',
+    localOnlyTitle: 'Sign in to your account',
+    localOnlyDescription: 'Miven keeps your data in your account and syncs it across devices.',
     sessionExpiredTitle: 'Your session ended',
     sessionExpiredMessage:
       'Your account data is still stored on this device. Sign in again to see and sync it.',
@@ -840,12 +839,13 @@ const en: Translation = {
     conflictsHint: 'No change was lost. Choose which version to keep.',
     syncNow: 'Sync now',
     importData: 'Import data from this device',
-    importDataHint: 'Add what you recorded without an account on this device.',
+    importDataHint:
+      'Adds to your account the data from an older Miven version left on this device.',
     importPending: 'Waiting for server confirmation.',
     cancelImport: 'Cancel import',
     cancelImportTitle: 'Cancel the import?',
     cancelImportMessage:
-      'The imported data leaves your account. It stays available when using this device without an account.',
+      'The imported data leaves your account and stays only on this device, not imported.',
     signOut: 'Sign out',
     signOutPendingTitle: 'There are changes to send',
     signOutPendingMessage_one:
@@ -857,7 +857,7 @@ const en: Translation = {
     deleteAccount: 'Delete account',
     deleteTitle: 'Permanently delete your account?',
     deleteMessage:
-      "Your account and all data stored on the server are deleted immediately, along with this account's copy on this device. Data used without an account is not affected. This cannot be undone.",
+      'Your account and all data stored on the server are deleted immediately, along with this account’s copy on this device. This can’t be undone.',
     deleteConfirm: 'Permanently delete account',
     deletePassword: 'Password',
     deletePasswordHint: 'Enter your password to confirm it is you.',
