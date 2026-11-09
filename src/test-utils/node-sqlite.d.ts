@@ -50,3 +50,26 @@ declare module 'node:path' {
 declare module 'node:crypto' {
   export function randomUUID(): string;
 }
+
+declare module 'node:https' {
+  type IncomingMessage = {
+    statusCode?: number;
+    statusMessage?: string;
+    headers: Record<string, string | string[] | undefined>;
+    on(event: 'data', listener: (chunk: Uint8Array) => void): void;
+    on(event: 'end', listener: () => void): void;
+  };
+  type ClientRequest = {
+    on(event: 'error', listener: (error: Error) => void): void;
+    write(body: string): void;
+    end(): void;
+  };
+  const https: {
+    request(
+      url: URL,
+      options: { method: string; headers: Record<string, string> },
+      callback: (response: IncomingMessage) => void,
+    ): ClientRequest;
+  };
+  export default https;
+}
