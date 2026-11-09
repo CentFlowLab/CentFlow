@@ -781,3 +781,62 @@ describe('wealth items', () => {
     expect(seen.flat()).toContain('wealth_items');
   });
 });
+
+describe('vehicles and documents', () => {
+  const vehicle = {
+    name: ' Carrinha ',
+    kind: 'van',
+    plate: ' 12-AB-34 ',
+    odometerKm: 120000,
+    inspectionDue: '2027-01-15',
+    insuranceDue: null,
+  } as const;
+
+  it('creates, edits and deletes a vehicle, trimming text and keeping optional fields null', async () => {
+    const created = await repos.vehicles.create(vehicle);
+    expect(created).toMatchObject({ name: 'Carrinha', plate: '12-AB-34', insuranceDue: null });
+    const edited = await repos.vehicles.update(created.id, {
+      ...vehicle,
+      plate: null,
+      odometerKm: null,
+    });
+    expect(edited).toMatchObject({ plate: null, odometerKm: null });
+    await repos.vehicles.delete(created.id);
+    expect(await repos.vehicles.list()).toEqual([]);
+    await expect(repos.vehicles.delete(created.id)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('validates vehicles and documents', async () => {
+    await expect(repos.vehicles.create({ ...vehicle, name: ' ' })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await expect(repos.vehicles.create({ ...vehicle, odometerKm: -5 })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await expect(
+      repos.documents.create({ title: '', category: 'tax', expiresOn: null, notes: null }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('creates, edits and deletes a document and notifies subscribers', async () => {
+    const seen: (readonly DataEntity[])[] = [];
+    repos.subscribe((entities) => seen.push(entities));
+    const doc = await repos.documents.create({
+      title: ' Cartão de cidadão ',
+      category: 'identity',
+      expiresOn: '2031-05-01',
+      notes: ' renovar em abril ',
+    });
+    expect(doc).toMatchObject({ title: 'Cartão de cidadão', notes: 'renovar em abril' });
+    const edited = await repos.documents.update(doc.id, {
+      title: doc.title,
+      category: 'identity',
+      expiresOn: null,
+      notes: null,
+    });
+    expect(edited).toMatchObject({ expiresOn: null, notes: null });
+    await repos.documents.delete(doc.id);
+    expect(await repos.documents.get(doc.id)).toBeNull();
+    expect(seen.flat()).toEqual(expect.arrayContaining(['documents']));
+  });
+});

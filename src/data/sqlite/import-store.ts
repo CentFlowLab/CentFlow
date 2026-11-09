@@ -65,6 +65,18 @@ const COPY_COLUMNS: Record<SyncEntity, readonly string[]> = {
   ],
   goals: ['id', 'name', 'target_amount', 'currency', 'target_on', 'created_at', 'updated_at'],
   goal_contributions: ['id', 'goal_id', 'amount', 'date', 'created_at', 'updated_at'],
+  vehicles: [
+    'id',
+    'name',
+    'kind',
+    'plate',
+    'odometer_km',
+    'inspection_due',
+    'insurance_due',
+    'created_at',
+    'updated_at',
+  ],
+  documents: ['id', 'title', 'category', 'expires_on', 'notes', 'created_at', 'updated_at'],
   wealth_items: [
     'id',
     'name',
@@ -166,6 +178,8 @@ export async function copyRecords(
     goals: [],
     goal_contributions: [],
     wealth_items: [],
+    vehicles: [],
+    documents: [],
     entries: [],
   };
   for (const entity of SYNC_ENTITIES) {

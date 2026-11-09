@@ -1,5 +1,5 @@
-import { ModulePlaceholderScreen } from '@/features/modules/ModulePlaceholderScreen';
+import { VehiclesScreen } from '@/features/vehicles/VehiclesScreen';
 
 export default function VehiclesRoute() {
-  return <ModulePlaceholderScreen module="vehicles" />;
+  return <VehiclesScreen />;
 }

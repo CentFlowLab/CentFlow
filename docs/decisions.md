@@ -285,6 +285,18 @@ numa migration nova. A migration `20261108000800` está no repositório e **não
 staging nem na produção; a app nova sincroniza `wealth_items` só depois de ela existir no
 servidor.
 
+## ADR-028 — Veículos e Documentos são registos com prazos, sem ficheiros
+
+**Decisão:** `vehicles` guarda nome, tipo, matrícula e quilómetros (opcionais) e as datas da
+próxima inspeção e da renovação do seguro. `documents` guarda título, categoria, validade e
+notas (até 500 caracteres). Os prazos são interpretados em `src/core/finance/deadlines.ts`
+(expirado, em breve nos próximos 30 dias, em dia) com datas de calendário, sem fusos.
+Ambos entram na fila de sincronização como as restantes entidades.
+**Consequências:** os documentos não guardam o ficheiro: isso exigiria Supabase Storage,
+regras de acesso e um fluxo de eliminação (RGPD), por isso fica para uma decisão própria. Ainda
+não há notificações de prazos nem custos por veículo. A migration `20261108000900` depende da
+`20261108000800`, está no repositório e **não foi aplicada** na cloud.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

@@ -14,6 +14,10 @@ import {
   type SavingsGoalInput,
   type WealthItemInput,
   WEALTH_TYPES,
+  type VehicleInput,
+  type DocumentInput,
+  VEHICLE_KINDS,
+  DOCUMENT_CATEGORIES,
   type SubscriptionInput,
   type Category,
   type CategoryInput,
@@ -263,5 +267,49 @@ export function validateWealthItemInput(input: WealthItemInput): ValidationError
   }
   if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
   if (!isValidCalendarDate(input.valuedOn)) errors.valuedOn = 'invalidDate';
+  return errors;
+}
+
+export type VehicleField = keyof VehicleInput;
+
+export function validateVehicleInput(input: VehicleInput): ValidationErrors<VehicleField> {
+  const errors: ValidationErrors<VehicleField> = {};
+  const name = validateName(input.name);
+  if (name) errors.name = name;
+  if (!(VEHICLE_KINDS as readonly string[]).includes(input.kind)) errors.kind = 'invalid';
+  if (input.plate !== null && (input.plate.length < 1 || input.plate.length > 16)) {
+    errors.plate = 'invalid';
+  }
+  if (
+    input.odometerKm !== null &&
+    (!Number.isSafeInteger(input.odometerKm) ||
+      input.odometerKm < 0 ||
+      input.odometerKm > 10_000_000)
+  ) {
+    errors.odometerKm = 'invalid';
+  }
+  if (input.inspectionDue !== null && !isValidCalendarDate(input.inspectionDue)) {
+    errors.inspectionDue = 'invalidDate';
+  }
+  if (input.insuranceDue !== null && !isValidCalendarDate(input.insuranceDue)) {
+    errors.insuranceDue = 'invalidDate';
+  }
+  return errors;
+}
+
+export type DocumentField = keyof DocumentInput;
+
+export function validateDocumentInput(input: DocumentInput): ValidationErrors<DocumentField> {
+  const errors: ValidationErrors<DocumentField> = {};
+  const title = input.title.trim();
+  if (title.length === 0) errors.title = 'required';
+  else if (title.length > 80) errors.title = 'tooLong';
+  if (!(DOCUMENT_CATEGORIES as readonly string[]).includes(input.category)) {
+    errors.category = 'invalid';
+  }
+  if (input.expiresOn !== null && !isValidCalendarDate(input.expiresOn)) {
+    errors.expiresOn = 'invalidDate';
+  }
+  if (input.notes !== null && input.notes.length > 500) errors.notes = 'tooLong';
   return errors;
 }

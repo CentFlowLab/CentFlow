@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   formatDate,
   formatDateTime,
+  formatInteger,
   formatMonthYear,
   formatPercent,
   type DateStyle,
@@ -29,6 +30,7 @@ export function useLocaleFormat() {
       formatDate: (date: Date, style?: DateStyle) => formatDate(date, locale, style),
       formatDateTime: (date: Date) => formatDateTime(date, locale),
       formatMonthYear: (date: Date) => formatMonthYear(date, locale),
+      formatNumber: (value: number) => formatInteger(value, locale),
       formatPercent: (ratio: number, maximumFractionDigits?: number) =>
         formatPercent(ratio, locale, maximumFractionDigits),
     };

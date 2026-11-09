@@ -344,6 +344,8 @@ export function createSyncEngine({
         'goals',
         'goal_contributions',
         'wealth_items',
+        'vehicles',
+        'documents',
         'entries',
       ] as const
     ).every((entity) => {

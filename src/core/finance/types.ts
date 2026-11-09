@@ -161,3 +161,45 @@ export type WealthItemInput = Pick<
   WealthItem,
   'name' | 'type' | 'amount' | 'currency' | 'valuedOn'
 >;
+
+export const VEHICLE_KINDS = ['car', 'motorcycle', 'van', 'bicycle', 'other'] as const;
+export type VehicleKind = (typeof VEHICLE_KINDS)[number];
+
+/** Veículo. Datas e campos opcionais são `null` quando não preenchidos. */
+export type Vehicle = SyncMetadata & {
+  id: Id;
+  name: string;
+  kind: VehicleKind;
+  plate: string | null;
+  odometerKm: number | null;
+  inspectionDue: CalendarDate | null;
+  insuranceDue: CalendarDate | null;
+};
+
+export type VehicleInput = Pick<
+  Vehicle,
+  'name' | 'kind' | 'plate' | 'odometerKm' | 'inspectionDue' | 'insuranceDue'
+>;
+
+export const DOCUMENT_CATEGORIES = [
+  'identity',
+  'vehicle',
+  'home',
+  'health',
+  'tax',
+  'insurance',
+  'work',
+  'other',
+] as const;
+export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
+
+/** Registo de um documento (só metadados e validade; não guarda o ficheiro). */
+export type DocumentRecord = SyncMetadata & {
+  id: Id;
+  title: string;
+  category: DocumentCategory;
+  expiresOn: CalendarDate | null;
+  notes: string | null;
+};
+
+export type DocumentInput = Pick<DocumentRecord, 'title' | 'category' | 'expiresOn' | 'notes'>;

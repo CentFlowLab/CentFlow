@@ -15,6 +15,8 @@ export const SYNC_ENTITIES: readonly SyncEntity[] = [
   'goals',
   'goal_contributions',
   'wealth_items',
+  'vehicles',
+  'documents',
   'entries',
 ];
 
@@ -117,6 +119,28 @@ const COLUMNS: Record<SyncEntity, readonly string[]> = {
     'deleted_at',
   ],
   goal_contributions: ['id', 'goal_id', 'amount', 'date', 'created_at', 'updated_at', 'deleted_at'],
+  vehicles: [
+    'id',
+    'name',
+    'kind',
+    'plate',
+    'odometer_km',
+    'inspection_due',
+    'insurance_due',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  ],
+  documents: [
+    'id',
+    'title',
+    'category',
+    'expires_on',
+    'notes',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  ],
   wealth_items: [
     'id',
     'name',

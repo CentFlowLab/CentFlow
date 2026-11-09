@@ -25,7 +25,7 @@ describe('app navigation (phone layout)', () => {
 
     await fireEvent.press(await screen.findByRole('button', { name: /^Veículos/ }));
     expect(screen).toHavePathname('/vehicles');
-    expect(await screen.findByText('Em breve')).toBeOnTheScreen();
+    expect(await screen.findByText('Ainda não há veículos')).toBeOnTheScreen();
   });
 
   it('opens quick entry from the centre button', async () => {

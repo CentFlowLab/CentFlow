@@ -33,6 +33,10 @@ function RootLayout() {
         <Stack.Screen name="goal/[id]" options={MODAL} />
         <Stack.Screen name="wealth/new" options={MODAL} />
         <Stack.Screen name="wealth/[id]" options={MODAL} />
+        <Stack.Screen name="vehicles/new" options={MODAL} />
+        <Stack.Screen name="vehicles/[id]" options={MODAL} />
+        <Stack.Screen name="documents/new" options={MODAL} />
+        <Stack.Screen name="documents/[id]" options={MODAL} />
         <Stack.Screen name="auth/sign-in" options={MODAL} />
         <Stack.Screen name="auth/sign-up" options={MODAL} />
         <Stack.Screen name="auth/forgot-password" options={MODAL} />

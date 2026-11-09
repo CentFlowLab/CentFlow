@@ -11,9 +11,9 @@ em curso, com aprovação do responsável: orçamentos, subscrições e objetivo
 no cliente e no staging (histórico `20261108000100` a `20261108000700`, ensaiados em
 2026-11-08). Os relatórios estão no cliente (ADR-024): calculam sobre os dados já
 existentes e não acrescentam migration. A produção continua só com `20261108000100` e
-`20261108000200`. A Fase 4 foi aprovada pelo responsável a 2026-11-09 e está em curso: o Património (ADR-027) está no
-cliente, com migration `20261108000800` no repositório e **não aplicada** no staging nem na
-produção. Veículos e Documentos ainda são "Em breve". **A Fase 5 não avança sem decisões do
+`20261108000200`. A Fase 4 foi aprovada pelo responsável a 2026-11-09 e está no cliente: Património (ADR-027),
+Veículos e Documentos (ADR-028). As migrations `20261108000800` e `20261108000900` estão no
+repositório e **não foram aplicadas** no staging nem na produção. **A Fase 5 não avança sem decisões do
 responsável sobre fornecedores (D-5, D-6).**
 Não fazer `git push` sem autorização. Não escrever na produção (`slfgslfzolfvqavuccom`) nem
 aplicar migrations remotas sem autorização explícita para esse passo. Staging:

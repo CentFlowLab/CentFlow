@@ -147,4 +147,24 @@ describe('local finance flow (real SQLite)', () => {
     expect(await screen.findByText('Hipoteca')).toBeOnTheScreen();
     expect(await screen.findByText(eur('80\\s000,00'))).toBeOnTheScreen();
   });
+
+  it('registers a vehicle and a document with their deadlines', async () => {
+    await renderRouter('./src/app', { initialUrl: '/vehicles' });
+    expect(await screen.findByText('Ainda não há veículos')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Adicionar o primeiro veículo' }));
+    expect(screen).toHavePathname('/vehicles/new');
+    await fireEvent.changeText(await screen.findByLabelText('Nome'), 'Carrinha');
+    await fireEvent.press(screen.getByRole('radio', { name: 'Carrinha' }));
+    await fireEvent.changeText(screen.getByLabelText('Quilómetros (opcional)'), '120000');
+    await fireEvent.press(screen.getByRole('button', { name: 'Guardar veículo' }));
+    expect(await screen.findByText('Carrinha')).toBeOnTheScreen();
+
+    await act(() => router.navigate('/documents'));
+    expect(await screen.findByText('Ainda não há documentos')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Adicionar o primeiro documento' }));
+    await fireEvent.changeText(await screen.findByLabelText('Título'), 'Seguro auto');
+    await fireEvent.press(screen.getByRole('button', { name: 'Guardar documento' }));
+    expect(await screen.findByText('Seguro auto')).toBeOnTheScreen();
+    expect(screen.getByText(/Sem validade/)).toBeOnTheScreen();
+  });
 });

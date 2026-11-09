@@ -19,6 +19,10 @@ import type {
   SavingsGoal,
   SavingsGoalInput,
   WealthItem,
+  Vehicle,
+  VehicleInput,
+  DocumentRecord,
+  DocumentInput,
   WealthItemInput,
   Subscription,
   SubscriptionInput,
@@ -164,6 +168,22 @@ export interface WealthRepository {
   delete(id: Id): Promise<void>;
 }
 
+export interface VehicleRepository {
+  list(): Promise<Vehicle[]>;
+  get(id: Id): Promise<Vehicle | null>;
+  create(input: VehicleInput): Promise<Vehicle>;
+  update(id: Id, input: VehicleInput): Promise<Vehicle>;
+  delete(id: Id): Promise<void>;
+}
+
+export interface DocumentRepository {
+  list(): Promise<DocumentRecord[]>;
+  get(id: Id): Promise<DocumentRecord | null>;
+  create(input: DocumentInput): Promise<DocumentRecord>;
+  update(id: Id, input: DocumentInput): Promise<DocumentRecord>;
+  delete(id: Id): Promise<void>;
+}
+
 export interface BudgetRepository {
   list(): Promise<Budget[]>;
   get(id: Id): Promise<Budget | null>;
@@ -181,7 +201,9 @@ export type DataEntity =
   | 'goal_contributions'
   | 'goals'
   | 'subscriptions'
-  | 'wealth_items';
+  | 'wealth_items'
+  | 'vehicles'
+  | 'documents';
 
 export interface Repositories {
   accounts: AccountRepository;
@@ -191,6 +213,8 @@ export interface Repositories {
   subscriptions: SubscriptionRepository;
   goals: SavingsGoalRepository;
   wealth: WealthRepository;
+  vehicles: VehicleRepository;
+  documents: DocumentRepository;
   /** Notifica após cada escrita confirmada. Devolve a função para cancelar. */
   subscribe(listener: (entities: readonly DataEntity[]) => void): () => void;
 }

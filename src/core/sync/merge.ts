@@ -18,6 +18,8 @@ export type SyncEntity =
   | 'goals'
   | 'goal_contributions'
   | 'wealth_items'
+  | 'vehicles'
+  | 'documents'
   | 'entries';
 
 export type SyncValue = string | number | null;
@@ -42,6 +44,16 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
   goals: ['name', 'target_amount', 'currency', 'target_on', 'deleted_at'],
   goal_contributions: ['goal_id', 'amount', 'date', 'deleted_at'],
   wealth_items: ['name', 'type', 'amount', 'currency', 'valued_on', 'deleted_at'],
+  vehicles: [
+    'name',
+    'kind',
+    'plate',
+    'odometer_km',
+    'inspection_due',
+    'insurance_due',
+    'deleted_at',
+  ],
+  documents: ['title', 'category', 'expires_on', 'notes', 'deleted_at'],
   entries: [
     'type',
     'amount',
@@ -63,6 +75,8 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   goals: [],
   goal_contributions: [],
   wealth_items: [],
+  vehicles: [],
+  documents: [],
   entries: [['type', 'category_id', 'account_id', 'destination_account_id']],
 };
 

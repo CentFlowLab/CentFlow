@@ -81,6 +81,7 @@ describe('database initialization', () => {
       'accounts',
       'budgets',
       'categories',
+      'documents',
       'entries',
       'goal_contributions',
       'goals',
@@ -90,6 +91,7 @@ describe('database initialization', () => {
       'sync_inbox',
       'sync_outbox',
       'sync_state',
+      'vehicles',
       'wealth_items',
     ]);
     const indexes = await db.all<{ name: string }>(
@@ -175,7 +177,7 @@ describe('database initialization', () => {
 
     await migrate(db, MIGRATIONS);
 
-    expect(await getSchemaVersion(db)).toBe(7);
+    expect(await getSchemaVersion(db)).toBe(8);
     expect(await db.first('SELECT amount, version FROM budgets WHERE id = ?', ['b1'])).toEqual({
       amount: 5000,
       version: 0,

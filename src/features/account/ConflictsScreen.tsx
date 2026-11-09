@@ -51,6 +51,12 @@ function useDescribe() {
         detail: typeof version.date === 'string' ? version.date : undefined,
       };
     }
+    if (conflict.entity === 'vehicles') {
+      return { title: String(version.name || t('conflicts.entities.vehicles')) };
+    }
+    if (conflict.entity === 'documents') {
+      return { title: String(version.title || t('conflicts.entities.documents')) };
+    }
     if (conflict.entity === 'wealth_items') {
       const amount =
         typeof version.amount === 'number' && typeof version.currency === 'string'

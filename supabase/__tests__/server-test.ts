@@ -43,6 +43,8 @@ type Op = {
     | 'goals'
     | 'goal_contributions'
     | 'wealth_items'
+    | 'vehicles'
+    | 'documents'
     | 'entries';
   record_id: string;
   base_version: number;
@@ -167,12 +169,14 @@ describe('schema', () => {
         'accounts',
         'budgets',
         'categories',
+        'documents',
         'entries',
         'goal_contributions',
         'goals',
         'profiles',
         'subscriptions',
         'sync_metadata',
+        'vehicles',
         'wealth_items',
       ].map((relname) => ({
         relname,
@@ -536,6 +540,8 @@ describe('purge of deleted rows', () => {
           goal_contributions: 0,
           goals: 0,
           wealth_items: 0,
+          vehicles: 0,
+          documents: 0,
           categories: 0,
           accounts: 0,
         },
@@ -554,6 +560,8 @@ describe('purge of deleted rows', () => {
           goal_contributions: 0,
           goals: 0,
           wealth_items: 0,
+          vehicles: 0,
+          documents: 0,
           categories: 0,
           accounts: 0,
         },
@@ -983,5 +991,77 @@ describe('wealth items', () => {
     expect(badType).toMatchObject({ status: 'rejected' });
     const [badAmount] = await push(alice, [itemOp(0, { amount: 0 })]);
     expect(badAmount).toMatchObject({ status: 'rejected' });
+  });
+});
+
+describe('vehicles and documents', () => {
+  const VEHICLE = '90000000-0000-4000-8000-000000000001';
+  const DOCUMENT = '90000000-0000-4000-8000-000000000002';
+
+  const vehicleOp = (base: number, data: Record<string, unknown> = {}) => ({
+    op_id: opId(),
+    tx_id: null,
+    entity: 'vehicles' as const,
+    record_id: VEHICLE,
+    base_version: base,
+    data: {
+      name: 'Carrinha',
+      kind: 'van',
+      plate: null,
+      odometer_km: 120000,
+      inspection_due: '2027-01-15',
+      insurance_due: null,
+      deleted_at: null,
+      ...data,
+    },
+  });
+  const documentOp = (base: number, data: Record<string, unknown> = {}) => ({
+    op_id: opId(),
+    tx_id: null,
+    entity: 'documents' as const,
+    record_id: DOCUMENT,
+    base_version: base,
+    data: {
+      title: 'Seguro auto',
+      category: 'insurance',
+      expires_on: '2027-03-01',
+      notes: null,
+      deleted_at: null,
+      ...data,
+    },
+  });
+
+  it('syncs both entities, counts them and isolates users', async () => {
+    const [vehicle, document] = await push(alice, [vehicleOp(0), documentOp(0)]);
+    expect(vehicle).toMatchObject({ status: 'applied' });
+    expect(document).toMatchObject({ status: 'applied' });
+    expect(await bob.query('select id from public.vehicles')).toEqual([]);
+    expect(await bob.query('select id from public.documents')).toEqual([]);
+
+    type Pull = { changes: { entity: string }[] };
+    const pulled = await alice.rpc<Pull>('sync_pull_v2', { p_since: 0 });
+    const entities = pulled.changes.map((change) => change.entity);
+    expect(entities).toEqual(expect.arrayContaining(['vehicles', 'documents']));
+
+    const counts = await alice.rpc<{ vehicles: { live: number }; documents: { live: number } }>(
+      'sync_counts',
+      {},
+    );
+    expect(counts.vehicles.live).toBe(1);
+    expect(counts.documents.live).toBe(1);
+
+    const [edited] = await push(alice, [vehicleOp(1, { odometer_km: 125000 })]);
+    expect(edited).toMatchObject({ status: 'applied' });
+    const [stale] = await push(alice, [vehicleOp(1, { odometer_km: 1 })]);
+    expect(stale).toMatchObject({ status: 'conflict' });
+  });
+
+  it('rejects invalid kinds, categories and negative mileage', async () => {
+    const [kind] = await push(alice, [vehicleOp(0, { kind: 'boat' })]);
+    expect(kind).toMatchObject({ status: 'rejected' });
+    const [km] = await push(alice, [vehicleOp(0, { odometer_km: -1 })]);
+    expect(km).toMatchObject({ status: 'rejected' });
+    const [category] = await push(alice, [documentOp(0, { category: 'secret' })]);
+    expect(category).toMatchObject({ status: 'rejected' });
   });
 });

@@ -1,5 +1,5 @@
-import { ModulePlaceholderScreen } from '@/features/modules/ModulePlaceholderScreen';
+import { DocumentsScreen } from '@/features/documents/DocumentsScreen';
 
 export default function DocumentsRoute() {
-  return <ModulePlaceholderScreen module="documents" />;
+  return <DocumentsScreen />;
 }
