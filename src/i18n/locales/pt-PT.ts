@@ -116,6 +116,13 @@ const ptPT = {
     subtitle: 'Todas as áreas do Miven',
   },
   settings: {
+    analytics: {
+      title: 'Estatísticas de utilização',
+      off: 'Não partilhar',
+      on: 'Partilhar',
+      description:
+        'Se partilhares, o Miven envia ao PostHog (servidores na UE) só o nome dos ecrãs que abres, para perceber o que melhorar. Nunca valores, descrições, contas nem o teu email. Podes desligar a qualquer momento.',
+    },
     title: 'Definições',
     appearance: 'Aparência',
     theme: {

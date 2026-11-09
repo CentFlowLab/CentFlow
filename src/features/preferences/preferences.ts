@@ -8,11 +8,14 @@ export type LanguagePreference = 'system' | SupportedLanguage;
 export type Preferences = Readonly<{
   theme: ThemePreference;
   language: LanguagePreference;
+  /** Estatísticas de utilização anónimas. Desligadas até o utilizador as ligar. */
+  analytics: boolean;
 }>;
 
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'system',
   language: 'system',
+  analytics: false,
 };
 
 const STORAGE_KEY = 'preferences.v1';
@@ -38,6 +41,7 @@ export function parsePreferences(raw: string | null): Preferences {
       language: isLanguagePreference(record.language)
         ? record.language
         : DEFAULT_PREFERENCES.language,
+      analytics: record.analytics === true,
     };
   } catch {
     return DEFAULT_PREFERENCES;

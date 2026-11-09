@@ -119,6 +119,13 @@ const en: Translation = {
     subtitle: 'Every area of Miven',
   },
   settings: {
+    analytics: {
+      title: 'Usage statistics',
+      off: "Don't share",
+      on: 'Share',
+      description:
+        'If you share, Miven sends PostHog (EU servers) only the names of the screens you open, to learn what to improve. Never amounts, descriptions, accounts or your email. You can turn this off at any time.',
+    },
     title: 'Settings',
     appearance: 'Appearance',
     theme: {

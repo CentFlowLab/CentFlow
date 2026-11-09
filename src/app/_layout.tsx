@@ -4,6 +4,7 @@ import '@/i18n';
 import * as Sentry from '@sentry/react-native';
 import { Stack } from 'expo-router';
 
+import { AnalyticsTracker } from '@/features/app-shell/AnalyticsTracker';
 import { AppProviders } from '@/features/app-shell/AppProviders';
 import { RootErrorBoundary } from '@/features/app-shell/RootErrorBoundary';
 
@@ -17,6 +18,7 @@ const MODAL = { presentation: 'modal' } as const;
 function RootLayout() {
   return (
     <AppProviders>
+      <AnalyticsTracker />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="new-transaction" options={MODAL} />

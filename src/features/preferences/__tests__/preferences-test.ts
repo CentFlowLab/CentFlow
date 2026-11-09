@@ -13,10 +13,12 @@ describe('parsePreferences', () => {
     expect(parsePreferences(JSON.stringify({ theme: 'dark', language: 'xx' }))).toEqual({
       theme: 'dark',
       language: 'system',
+      analytics: false,
     });
     expect(parsePreferences(JSON.stringify({ theme: 'neon', language: 'es' }))).toEqual({
       theme: 'system',
       language: 'es',
+      analytics: false,
     });
   });
 });
@@ -24,8 +26,20 @@ describe('parsePreferences', () => {
 describe('preferences repository', () => {
   it('round-trips saved preferences', async () => {
     const repository = createPreferencesRepository(createMemoryStore());
-    await repository.save({ theme: 'light', language: 'en' });
-    await expect(repository.load()).resolves.toEqual({ theme: 'light', language: 'en' });
+    await repository.save({ theme: 'light', language: 'en', analytics: true });
+    await expect(repository.load()).resolves.toEqual({
+      theme: 'light',
+      language: 'en',
+      analytics: true,
+    });
+  });
+
+  it('keeps usage statistics off unless explicitly turned on', async () => {
+    const store = createMemoryStore();
+    await store.setItem('preferences.v1', JSON.stringify({ theme: 'dark', analytics: 'yes' }));
+    await expect(createPreferencesRepository(store).load()).resolves.toMatchObject({
+      analytics: false,
+    });
   });
 
   it('falls back to defaults when storage fails', async () => {

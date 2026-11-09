@@ -26,7 +26,7 @@ type Options = {
 export async function renderWithProviders(ui: ReactElement, { preferences }: Options = {}) {
   const store = createMemoryStore();
   const repository = createPreferencesRepository(store);
-  await repository.save({ theme: 'light', language: 'pt-PT', ...preferences });
+  await repository.save({ theme: 'light', language: 'pt-PT', analytics: false, ...preferences });
 
   const result = await render(
     <SafeAreaProvider initialMetrics={TEST_METRICS}>

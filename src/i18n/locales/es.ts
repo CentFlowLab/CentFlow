@@ -119,6 +119,13 @@ const es: Translation = {
     subtitle: 'Todas las áreas de Miven',
   },
   settings: {
+    analytics: {
+      title: 'Estadísticas de uso',
+      off: 'No compartir',
+      on: 'Compartir',
+      description:
+        'Si compartes, Miven envía a PostHog (servidores en la UE) solo el nombre de las pantallas que abres, para saber qué mejorar. Nunca importes, descripciones, cuentas ni tu email. Puedes desactivarlo en cualquier momento.',
+    },
     title: 'Ajustes',
     appearance: 'Apariencia',
     theme: {

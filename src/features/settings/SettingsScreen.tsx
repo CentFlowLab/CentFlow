@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet } from 'react-native';
 
 import { AccountSection } from '@/features/account/AccountSection';
 import {
@@ -9,6 +10,7 @@ import {
   type ThemePreference,
 } from '@/features/preferences';
 import { LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
+import { analyticsAvailable } from '@/lib/analytics';
 import {
   Card,
   Divider,
@@ -43,6 +45,25 @@ export function SettingsScreen() {
           />
         </Card>
       </Section>
+
+      {analyticsAvailable() ? (
+        <Section title={t('settings.analytics.title')}>
+          <Card padding="md" style={styles.analytics}>
+            <SegmentedControl
+              accessibilityLabel={t('settings.analytics.title')}
+              value={preferences.analytics ? 'on' : 'off'}
+              onChange={(value) => updatePreferences({ analytics: value === 'on' })}
+              options={[
+                { value: 'off', label: t('settings.analytics.off') },
+                { value: 'on', label: t('settings.analytics.on') },
+              ]}
+            />
+            <Text variant="footnote" tone="secondary">
+              {t('settings.analytics.description')}
+            </Text>
+          </Card>
+        </Section>
+      ) : null}
 
       <Section title={t('settings.language')}>
         <Card padding="xs" accessibilityRole="radiogroup">
@@ -85,3 +106,7 @@ export function SettingsScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  analytics: { gap: spacing.md },
+});
