@@ -194,6 +194,9 @@ widgets.
   `20261108000100` e `20261108000200`. Os relatórios (ADR-024) estão no cliente e não
   acrescentam tabela nem migration. As Fases 4 e 5 não avançam sem
   aprovação explícita.
+- **Fase 4 — património, veículos e documentos (em curso):** o Património está no cliente
+  (ADR-027), com a migration `20261108000800` por aplicar. Veículos e Documentos ainda são
+  "Em breve".
 - **Fase 5 — IA e automação:** chamadas a modelos e OCR apenas em Edge Functions (chaves nunca no
   cliente); a IA propõe, o utilizador confirma. Importação de extratos e Open Banking através de
   fornecedores autorizados (PSD2), sempre com consentimento explícito.

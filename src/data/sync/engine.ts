@@ -343,13 +343,15 @@ export function createSyncEngine({
         'subscriptions',
         'goals',
         'goal_contributions',
+        'wealth_items',
         'entries',
       ] as const
-    ).every(
-      (entity) =>
-        server[entity].live === local[entity].live &&
-        server[entity].deleted === local[entity].deleted,
-    );
+    ).every((entity) => {
+      // Um servidor sem a migration desta entidade (ex.: `wealth_items`) não a conta: ignora-se até a migration existir.
+      const remote = (server as Partial<typeof server>)[entity];
+      if (remote === undefined) return true;
+      return remote.live === local[entity].live && remote.deleted === local[entity].deleted;
+    });
   }
 
   async function syncOnce(): Promise<void> {

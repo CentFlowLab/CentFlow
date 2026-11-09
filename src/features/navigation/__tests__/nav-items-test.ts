@@ -9,7 +9,6 @@ describe('navigation config', () => {
 
   it('marks only unbuilt areas as planned', () => {
     expect(NAV_ITEMS.filter((item) => isPlannedModule(item.key)).map((item) => item.key)).toEqual([
-      'wealth',
       'vehicles',
       'documents',
     ]);

@@ -7,6 +7,7 @@ import { createChangeHub, type ChangeHub, type SqliteRepositoryContext } from '.
 import { createSqliteEntryRepository } from './entry-repository';
 import { createSqliteSavingsGoalRepository } from './goal-repository';
 import { createSqliteSubscriptionRepository } from './subscription-repository';
+import { createSqliteWealthRepository } from './wealth-repository';
 
 export { createChangeHub, type ChangeHub } from './context';
 
@@ -33,6 +34,7 @@ export function createSqliteRepositories(
     budgets: createSqliteBudgetRepository(context),
     subscriptions: createSqliteSubscriptionRepository(context),
     goals: createSqliteSavingsGoalRepository(context),
+    wealth: createSqliteWealthRepository(context),
     categories: createSqliteCategoryRepository(context),
     entries: createSqliteEntryRepository(context),
     subscribe: changes.subscribe,

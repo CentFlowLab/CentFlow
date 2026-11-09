@@ -44,6 +44,7 @@ const IMPLEMENTED: readonly NavKey[] = [
   'budgets',
   'subscriptions',
   'goals',
+  'wealth',
   'reports',
   'categories',
   'settings',
@@ -52,7 +53,14 @@ const IMPLEMENTED: readonly NavKey[] = [
 /** Áreas com ecrã próprio ainda por implementar. */
 export type PlannedModule = Exclude<
   DescribedArea,
-  'transactions' | 'accounts' | 'categories' | 'budgets' | 'subscriptions' | 'goals' | 'reports'
+  | 'transactions'
+  | 'accounts'
+  | 'categories'
+  | 'budgets'
+  | 'subscriptions'
+  | 'goals'
+  | 'wealth'
+  | 'reports'
 >;
 
 export function isPlannedModule(key: NavKey): key is PlannedModule {

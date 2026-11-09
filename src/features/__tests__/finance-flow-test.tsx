@@ -124,4 +124,27 @@ describe('local finance flow (real SQLite)', () => {
     await fireEvent.changeText(screen.getByLabelText('Pesquisar'), 'zzz');
     expect(await screen.findByText('Nada encontrado')).toBeOnTheScreen();
   });
+
+  it('records wealth items and shows the net worth without changing account totals', async () => {
+    await renderRouter('./src/app', { initialUrl: '/wealth' });
+    expect(await screen.findByText('Ainda não há património')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Adicionar o primeiro item' }));
+    expect(screen).toHavePathname('/wealth/new');
+    await fireEvent.changeText(await screen.findByLabelText('Nome'), 'Casa');
+    await fireEvent.changeText(screen.getByLabelText('Valor atual'), '200000');
+    await fireEvent.press(screen.getByRole('button', { name: 'Guardar item' }));
+
+    expect(await screen.findByText('Casa')).toBeOnTheScreen();
+    expect(await screen.findAllByText(eur('200\\s000,00'))).not.toHaveLength(0);
+
+    await act(() => router.navigate('/wealth/new'));
+    await fireEvent.press(await screen.findByRole('radio', { name: 'Crédito habitação' }));
+    await fireEvent.changeText(await screen.findByLabelText('Nome'), 'Hipoteca');
+    await fireEvent.changeText(screen.getByLabelText('Valor em dívida'), '120000');
+    await fireEvent.press(screen.getByRole('button', { name: 'Guardar item' }));
+
+    expect(await screen.findByText('Hipoteca')).toBeOnTheScreen();
+    expect(await screen.findByText(eur('80\\s000,00'))).toBeOnTheScreen();
+  });
 });

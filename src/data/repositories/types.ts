@@ -18,6 +18,8 @@ import type {
   GoalContributionInput,
   SavingsGoal,
   SavingsGoalInput,
+  WealthItem,
+  WealthItemInput,
   Subscription,
   SubscriptionInput,
 } from '@/core/finance';
@@ -153,6 +155,15 @@ export interface SavingsGoalRepository {
   deleteContribution(id: Id): Promise<void>;
 }
 
+export interface WealthRepository {
+  list(): Promise<WealthItem[]>;
+  get(id: Id): Promise<WealthItem | null>;
+  /** Não cria movimentos nem altera saldos de contas. */
+  create(input: WealthItemInput): Promise<WealthItem>;
+  update(id: Id, input: WealthItemInput): Promise<WealthItem>;
+  delete(id: Id): Promise<void>;
+}
+
 export interface BudgetRepository {
   list(): Promise<Budget[]>;
   get(id: Id): Promise<Budget | null>;
@@ -169,7 +180,8 @@ export type DataEntity =
   | 'entries'
   | 'goal_contributions'
   | 'goals'
-  | 'subscriptions';
+  | 'subscriptions'
+  | 'wealth_items';
 
 export interface Repositories {
   accounts: AccountRepository;
@@ -178,6 +190,7 @@ export interface Repositories {
   budgets: BudgetRepository;
   subscriptions: SubscriptionRepository;
   goals: SavingsGoalRepository;
+  wealth: WealthRepository;
   /** Notifica após cada escrita confirmada. Devolve a função para cancelar. */
   subscribe(listener: (entities: readonly DataEntity[]) => void): () => void;
 }

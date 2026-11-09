@@ -90,6 +90,7 @@ describe('database initialization', () => {
       'sync_inbox',
       'sync_outbox',
       'sync_state',
+      'wealth_items',
     ]);
     const indexes = await db.all<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_%'",
@@ -174,7 +175,7 @@ describe('database initialization', () => {
 
     await migrate(db, MIGRATIONS);
 
-    expect(await getSchemaVersion(db)).toBe(6);
+    expect(await getSchemaVersion(db)).toBe(7);
     expect(await db.first('SELECT amount, version FROM budgets WHERE id = ?', ['b1'])).toEqual({
       amount: 5000,
       version: 0,

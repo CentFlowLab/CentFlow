@@ -12,6 +12,8 @@ import {
   type BudgetInput,
   type GoalContributionInput,
   type SavingsGoalInput,
+  type WealthItemInput,
+  WEALTH_TYPES,
   type SubscriptionInput,
   type Category,
   type CategoryInput,
@@ -244,5 +246,22 @@ export function validateGoalContributionInput(
     errors.amount = 'amountTooLarge';
   }
   if (!isValidCalendarDate(input.date)) errors.date = 'invalidDate';
+  return errors;
+}
+
+export type WealthItemField = keyof WealthItemInput;
+
+export function validateWealthItemInput(input: WealthItemInput): ValidationErrors<WealthItemField> {
+  const errors: ValidationErrors<WealthItemField> = {};
+  const name = validateName(input.name);
+  if (name) errors.name = name;
+  if (!(WEALTH_TYPES as readonly string[]).includes(input.type)) errors.type = 'invalid';
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) {
+    errors.amount = 'amountNotPositive';
+  } else if (input.amount > MAX_AMOUNT_MINOR) {
+    errors.amount = 'amountTooLarge';
+  }
+  if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
+  if (!isValidCalendarDate(input.valuedOn)) errors.valuedOn = 'invalidDate';
   return errors;
 }

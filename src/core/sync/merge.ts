@@ -17,6 +17,7 @@ export type SyncEntity =
   | 'subscriptions'
   | 'goals'
   | 'goal_contributions'
+  | 'wealth_items'
   | 'entries';
 
 export type SyncValue = string | number | null;
@@ -40,6 +41,7 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
   ],
   goals: ['name', 'target_amount', 'currency', 'target_on', 'deleted_at'],
   goal_contributions: ['goal_id', 'amount', 'date', 'deleted_at'],
+  wealth_items: ['name', 'type', 'amount', 'currency', 'valued_on', 'deleted_at'],
   entries: [
     'type',
     'amount',
@@ -60,6 +62,7 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   subscriptions: [],
   goals: [],
   goal_contributions: [],
+  wealth_items: [],
   entries: [['type', 'category_id', 'account_id', 'destination_account_id']],
 };
 

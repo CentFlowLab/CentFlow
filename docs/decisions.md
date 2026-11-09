@@ -271,6 +271,20 @@ dependem deles. Os ficheiros `centflow.db` e `centflow-u-<userId>.db` também fi
 repositório GitHub e os projetos Supabase não foram renomeados. O alojamento de miven.pt
 continua por escolher.
 
+## ADR-027 — Património: bens e dívidas numa só entidade
+
+**Decisão:** o Património guarda cada bem ou dívida em `wealth_items` (nome, tipo, valor em
+unidades mínimas, moeda e data do valor). O valor é sempre positivo; o sinal vem do tipo (bens:
+imóvel, investimentos, reforma, bens de valor, outro; dívidas: crédito habitação, empréstimo,
+cartão, outra). O património líquido é bens menos dívidas por moeda, calculado em
+`src/core/finance/wealth.ts`. Os itens entram na fila de sincronização como as outras
+entidades e não criam movimentos nem mudam saldos de contas.
+**Consequências:** não há histórico de valorizações: editar o valor substitui o anterior, por
+isso ainda não há gráfico de evolução. Se for preciso, acrescenta-se uma tabela de valorizações
+numa migration nova. A migration `20261108000800` está no repositório e **não foi aplicada** no
+staging nem na produção; a app nova sincroniza `wealth_items` só depois de ela existir no
+servidor.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

@@ -736,3 +736,48 @@ describe('savings goals', () => {
     ).rejects.toBeInstanceOf(ValidationError);
   });
 });
+
+describe('wealth items', () => {
+  const input = {
+    name: ' Casa ',
+    type: 'property',
+    amount: 20000000,
+    currency: 'eur',
+    valuedOn: '2026-11-08',
+  } as const;
+
+  it('creates, edits and soft-deletes an item without touching balances', async () => {
+    const before = await repos.accounts.list();
+    const item = await repos.wealth.create(input);
+    expect(item).toMatchObject({ name: 'Casa', currency: 'EUR', type: 'property' });
+    expect(await repos.wealth.list()).toHaveLength(1);
+
+    const edited = await repos.wealth.update(item.id, {
+      ...input,
+      name: 'Casa nova',
+      amount: 21000000,
+    });
+    expect(edited).toMatchObject({ name: 'Casa nova', amount: 21000000 });
+
+    const after = await repos.accounts.list();
+    expect(after).toEqual(before);
+
+    await repos.wealth.delete(item.id);
+    expect(await repos.wealth.get(item.id)).toBeNull();
+    expect(await repos.wealth.list()).toEqual([]);
+    await expect(repos.wealth.delete(item.id)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('validates input and notifies subscribers', async () => {
+    await expect(repos.wealth.create({ ...input, amount: 0 })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await expect(repos.wealth.create({ ...input, name: '  ' })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    const seen: (readonly DataEntity[])[] = [];
+    repos.subscribe((entities) => seen.push(entities));
+    await repos.wealth.create(input);
+    expect(seen.flat()).toContain('wealth_items');
+  });
+});

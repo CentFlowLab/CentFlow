@@ -51,6 +51,16 @@ function useDescribe() {
         detail: typeof version.date === 'string' ? version.date : undefined,
       };
     }
+    if (conflict.entity === 'wealth_items') {
+      const amount =
+        typeof version.amount === 'number' && typeof version.currency === 'string'
+          ? formatMoney({ amountMinor: version.amount, currency: version.currency })
+          : null;
+      return {
+        title: String(version.name || t('conflicts.entities.wealth_items')),
+        detail: amount ?? undefined,
+      };
+    }
     if (conflict.entity === 'subscriptions') {
       const amount =
         typeof version.amount === 'number' && typeof version.currency === 'string'

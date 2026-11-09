@@ -42,6 +42,7 @@ type Op = {
     | 'subscriptions'
     | 'goals'
     | 'goal_contributions'
+    | 'wealth_items'
     | 'entries';
   record_id: string;
   base_version: number;
@@ -172,6 +173,7 @@ describe('schema', () => {
         'profiles',
         'subscriptions',
         'sync_metadata',
+        'wealth_items',
       ].map((relname) => ({
         relname,
         relrowsecurity: true,
@@ -197,6 +199,7 @@ describe('schema', () => {
       { table_name: 'goal_contributions', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'goals', column_name: 'target_amount', data_type: 'bigint' },
       { table_name: 'subscriptions', column_name: 'amount', data_type: 'bigint' },
+      { table_name: 'wealth_items', column_name: 'amount', data_type: 'bigint' },
     ]);
   });
 
@@ -532,6 +535,7 @@ describe('purge of deleted rows', () => {
           subscriptions: 0,
           goal_contributions: 0,
           goals: 0,
+          wealth_items: 0,
           categories: 0,
           accounts: 0,
         },
@@ -549,6 +553,7 @@ describe('purge of deleted rows', () => {
           subscriptions: 0,
           goal_contributions: 0,
           goals: 0,
+          wealth_items: 0,
           categories: 0,
           accounts: 0,
         },
@@ -926,5 +931,57 @@ describe('savings goals', () => {
 
     const [missing] = await push(bob, [contributionOp(0)]);
     expect(missing).toMatchObject({ status: 'rejected', reason: 'goal_unavailable' });
+  });
+});
+
+describe('wealth items', () => {
+  const ITEM = '80000000-0000-4000-8000-000000000001';
+
+  function itemOp(base: number, data: Record<string, unknown> = {}) {
+    return {
+      op_id: opId(),
+      tx_id: null,
+      entity: 'wealth_items' as const,
+      record_id: ITEM,
+      base_version: base,
+      data: {
+        name: 'Casa',
+        type: 'property',
+        amount: 20000000,
+        currency: 'EUR',
+        valued_on: '2026-11-08',
+        deleted_at: null,
+        ...data,
+      },
+    };
+  }
+
+  it('syncs an item, isolates users and does not create entries', async () => {
+    const [created] = await push(alice, [itemOp(0)]);
+    expect(created).toMatchObject({ status: 'applied' });
+    expect(await alice.query('select count(*)::int as n from public.entries')).toEqual([{ n: 0 }]);
+    expect(await bob.query('select id from public.wealth_items')).toEqual([]);
+
+    type Pull = { changes: { entity: string }[] };
+    const fresh = await alice.rpc<Pull>('sync_pull_v2', { p_since: 0 });
+    expect(fresh.changes.some((change) => change.entity === 'wealth_items')).toBe(true);
+    const counts = await alice.rpc<{ wealth_items: { live: number } }>('sync_counts', {});
+    expect(counts.wealth_items.live).toBe(1);
+
+    const [edited] = await push(alice, [itemOp(1, { amount: 21000000 })]);
+    expect(edited).toMatchObject({ status: 'applied' });
+    const [stale] = await push(alice, [itemOp(1, { amount: 1 })]);
+    expect(stale).toMatchObject({ status: 'conflict' });
+
+    await expect(
+      alice.query(`insert into public.wealth_items (id, name) values ('${ITEM}', 'x')`),
+    ).rejects.toThrow();
+  });
+
+  it('rejects an unknown type and a non-positive amount', async () => {
+    const [badType] = await push(alice, [itemOp(0, { type: 'crypto' })]);
+    expect(badType).toMatchObject({ status: 'rejected' });
+    const [badAmount] = await push(alice, [itemOp(0, { amount: 0 })]);
+    expect(badAmount).toMatchObject({ status: 'rejected' });
   });
 });

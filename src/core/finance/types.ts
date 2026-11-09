@@ -133,3 +133,31 @@ export type GoalContribution = SyncMetadata & {
 };
 
 export type GoalContributionInput = Pick<GoalContribution, 'goalId' | 'amount' | 'date'>;
+
+export const WEALTH_ASSET_TYPES = [
+  'property',
+  'investment',
+  'retirement',
+  'valuables',
+  'other_asset',
+] as const;
+export const WEALTH_LIABILITY_TYPES = ['mortgage', 'loan', 'credit', 'other_debt'] as const;
+export const WEALTH_TYPES = [...WEALTH_ASSET_TYPES, ...WEALTH_LIABILITY_TYPES] as const;
+export type WealthType = (typeof WEALTH_TYPES)[number];
+
+/** Bem ou dívida. O valor é positivo; o sinal vem do tipo. Não altera saldos de contas. */
+export type WealthItem = SyncMetadata & {
+  id: Id;
+  name: string;
+  type: WealthType;
+  /** Unidades mínimas. Sempre positivo. */
+  amount: number;
+  currency: CurrencyCode;
+  /** Data a que o valor se refere. */
+  valuedOn: CalendarDate;
+};
+
+export type WealthItemInput = Pick<
+  WealthItem,
+  'name' | 'type' | 'amount' | 'currency' | 'valuedOn'
+>;

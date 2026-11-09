@@ -2,6 +2,7 @@ export * from './balances';
 export * from './budgets';
 export * from './dates';
 export * from './goals';
+export * from './wealth';
 export * from './default-categories';
 export * from './overview';
 export * from './periods';
