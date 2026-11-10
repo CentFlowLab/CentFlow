@@ -226,6 +226,11 @@ export type AuthActions = {
   ): Promise<AuthResult<'signedIn' | 'confirmEmail'>>;
   signOut(): Promise<AuthResult>;
   requestPasswordReset(email: string): Promise<AuthResult>;
+  /**
+   * Novo email de confirmação (o anterior deixa de servir). Com um nome de utilizador, o email
+   * só se obtém com a palavra-passe certa, como em `signIn`.
+   */
+  resendConfirmation(identifier: string, password: string): Promise<AuthResult>;
   /** Troca o código de um link de email por uma sessão (PKCE). */
   exchangeCode(code: string): Promise<AuthResult>;
   /** Confirma o email em qualquer dispositivo. Não depende do verificador PKCE. */
@@ -255,6 +260,7 @@ function createActions(client: SupabaseClient | null): AuthActions {
       signUp: unavailable,
       signOut: unavailable,
       requestPasswordReset: unavailable,
+      resendConfirmation: unavailable,
       exchangeCode: unavailable,
       verifyEmail: unavailable,
       updatePassword: unavailable,
@@ -334,6 +340,31 @@ function createActions(client: SupabaseClient | null): AuthActions {
     signOut: () =>
       guard(async () => {
         const { error } = await auth.signOut({ scope: 'local' });
+        return error ? fail(error) : ok(undefined);
+      }),
+    resendConfirmation: (identifier, password) =>
+      guard(async () => {
+        let email = identifier.trim();
+        if (!email.includes('@')) {
+          const { data, error } = await client.rpc('login_email', {
+            target_username: normalizeUsername(email),
+            target_password: password,
+          });
+          if (error) {
+            const limited =
+              typeof error.message === 'string' && error.message.includes('rate_limited');
+            return { ok: false, error: limited ? 'rateLimited' : 'unknown' };
+          }
+          if (typeof data !== 'string' || !data) {
+            return { ok: false, error: 'invalidUsernameCredentials' };
+          }
+          email = data;
+        }
+        const { error } = await auth.resend({
+          type: 'signup',
+          email,
+          options: { emailRedirectTo: authRedirectUrl('/auth/callback') },
+        });
         return error ? fail(error) : ok(undefined);
       }),
     requestPasswordReset: (email) =>

@@ -806,6 +806,8 @@ const en: Translation = {
     legalAnd: 'and the',
     legalPrivacy: 'Privacy policy',
     signInWithApple: 'Continue with Apple',
+    resendConfirmation: 'Resend confirmation email',
+    resendSent: 'We sent a new link. Open the most recent email: older ones stop working.',
     confirmEmail: {
       title: 'Confirm your email',
       lead: 'We sent a link to activate the account. Open it, then sign in.',

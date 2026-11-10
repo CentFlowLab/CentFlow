@@ -813,6 +813,9 @@ const es: Translation = {
     legalAnd: 'y la',
     legalPrivacy: 'Política de privacidad',
     signInWithApple: 'Continuar con Apple',
+    resendConfirmation: 'Reenviar correo de confirmación',
+    resendSent:
+      'Enviamos un nuevo enlace. Abre el correo más reciente: los anteriores dejan de funcionar.',
     confirmEmail: {
       title: 'Confirma tu correo',
       lead: 'Enviamos un enlace para activar la cuenta. Ábrelo y luego entra.',

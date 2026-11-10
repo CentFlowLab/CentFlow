@@ -807,6 +807,9 @@ const ptPT = {
     legalAnd: 'e a',
     legalPrivacy: 'Política de privacidade',
     signInWithApple: 'Continuar com a Apple',
+    resendConfirmation: 'Reenviar email de confirmação',
+    resendSent:
+      'Enviámos um novo link. Abre o email mais recente: os anteriores deixam de funcionar.',
     confirmEmail: {
       title: 'Confirma o teu email',
       lead: 'Enviámos um link para ativares a conta. Abre-o e depois entra.',

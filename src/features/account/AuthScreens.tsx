@@ -18,6 +18,7 @@ import {
   useAuth,
   USERNAME_PATTERN,
   type AuthErrorCode,
+  type AuthResult,
 } from './AuthProvider';
 import { PasswordField } from './PasswordField';
 
@@ -112,7 +113,15 @@ function ErrorText({ code }: { code: AuthErrorCode | null }) {
   );
 }
 
-function ConfirmEmail({ email, onDone }: { email: string; onDone: () => void }) {
+function ConfirmEmail({
+  email,
+  onDone,
+  onResend,
+}: {
+  email: string;
+  onDone: () => void;
+  onResend?: () => Promise<AuthResult>;
+}) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const steps = [
@@ -156,6 +165,38 @@ function ConfirmEmail({ email, onDone }: { email: string; onDone: () => void }) 
         {t('auth.confirmEmail.spam')}
       </Text>
       <Button label={t('auth.confirmEmail.ready')} onPress={onDone} fullWidth />
+      {onResend ? <ResendConfirmation onResend={onResend} /> : null}
+    </View>
+  );
+}
+
+/** Pede um novo email de confirmação e diz o resultado. */
+function ResendConfirmation({ onResend }: { onResend: () => Promise<AuthResult> }) {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<'sent' | AuthErrorCode | null>(null);
+  return (
+    <View style={styles.resend}>
+      <Button
+        label={t('auth.resendConfirmation')}
+        icon="mail-outline"
+        variant="secondary"
+        loading={busy}
+        onPress={async () => {
+          setBusy(true);
+          const outcome = await onResend();
+          setBusy(false);
+          setResult(outcome.ok ? 'sent' : outcome.error);
+        }}
+        fullWidth
+      />
+      {result === 'sent' ? (
+        <Text variant="callout" tone="accent" accessibilityLiveRegion="polite">
+          {t('auth.resendSent')}
+        </Text>
+      ) : result ? (
+        <ErrorText code={result} />
+      ) : null}
     </View>
   );
 }
@@ -247,6 +288,9 @@ export function SignInScreen() {
         errorText={fieldError(errors.password)}
       />
       <ErrorText code={error} />
+      {error === 'emailNotConfirmed' ? (
+        <ResendConfirmation onResend={() => actions.resendConfirmation(email, password)} />
+      ) : null}
       <View style={styles.links}>
         <Button
           label={t('auth.forgotPassword')}
@@ -308,7 +352,11 @@ export function SignUpScreen() {
   if (awaitingConfirmation) {
     return (
       <AuthLayout title={t('auth.signUpTitle')}>
-        <ConfirmEmail email={email.trim()} onDone={() => router.replace('/auth/sign-in' as Href)} />
+        <ConfirmEmail
+          email={email.trim()}
+          onDone={() => router.replace('/auth/sign-in' as Href)}
+          onResend={() => actions.resendConfirmation(email, password)}
+        />
       </AuthLayout>
     );
   }
@@ -721,6 +769,10 @@ export function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
+  resend: {
+    alignSelf: 'stretch',
+    gap: spacing.sm,
+  },
   links: {
     alignItems: 'flex-start',
     gap: spacing.xs,

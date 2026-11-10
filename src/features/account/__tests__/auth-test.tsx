@@ -133,6 +133,7 @@ type AuthApi = {
   updateUser: jest.Mock;
   signInWithIdToken: jest.Mock;
   signInWithOAuth: jest.Mock;
+  resend: jest.Mock;
 };
 
 function fakeClient(
@@ -159,6 +160,7 @@ function fakeClient(
     updateUser: jest.fn(async () => ({ error: null })),
     signInWithIdToken: jest.fn(async () => ({ error: null })),
     signInWithOAuth: jest.fn(async () => ({ error: null })),
+    resend: jest.fn(async () => ({ error: null })),
     ...overrides,
   };
   return { client: { auth, rpc } as unknown as SupabaseClient, auth };
@@ -436,5 +438,50 @@ describe('auth screens', () => {
       await screen.findByText('Este nome de utilizador já está em uso. Escolhe outro.'),
     ).toBeOnTheScreen();
     expect(auth.signUp).not.toHaveBeenCalled();
+  });
+  it('resends the confirmation email when sign-in says the email is not confirmed', async () => {
+    const { client, auth } = fakeClient({
+      signInWithPassword: jest.fn(async () => ({ error: authError('email_not_confirmed') })),
+    });
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignInScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'nova@b.pt',
+    );
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    await fireEvent.press(
+      await screen.findByRole('button', { name: 'Reenviar email de confirmação' }),
+    );
+    await waitFor(() =>
+      expect(auth.resend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'nova@b.pt',
+        options: { emailRedirectTo: 'https://miven.pt/auth/callback' },
+      }),
+    );
+    expect(await screen.findByText(/Enviámos um novo link/)).toBeOnTheScreen();
+  });
+
+  it('offers to resend the email right after sign-up', async () => {
+    const { client, auth } = fakeClient();
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignUpScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'nova.conta');
+    await fillBirthDate('12', '04', '1995');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    await fireEvent.press(
+      await screen.findByRole('button', { name: 'Reenviar email de confirmação' }),
+    );
+    await waitFor(() => expect(auth.resend).toHaveBeenCalled());
   });
 });
