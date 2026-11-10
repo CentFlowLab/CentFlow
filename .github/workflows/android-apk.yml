@@ -157,9 +157,16 @@ jobs:
             echo "O Gradle não produziu o APK de lançamento."
             exit 1
           fi
-          signer="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
-          "$signer" verify --print-certs "$apk" | grep -E 'Signer #1 certificate (DN|SHA-256)'
-          if "$signer" verify --print-certs "$apk" | grep -q 'CN=Android Debug'; then
+          signer="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          echo "apksigner: $signer"
+          report="$RUNNER_TEMP/apksigner.txt"
+          "$signer" verify --verbose --print-certs "$apk" > "$report" 2>&1 || true
+          cat "$report"
+          if ! grep -q '^Verifies' "$report"; then
+            echo "O APK não passou a verificação de assinatura."
+            exit 1
+          fi
+          if grep -q 'CN=Android Debug' "$report"; then
             echo "O APK ficou assinado com a chave de depuração."
             exit 1
           fi
