@@ -1,23 +1,56 @@
+/* Base de todas as páginas de miven.pt (as dos emails e a inicial). */
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/fonts/inter-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/assets/fonts/inter-latin-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/assets/fonts/inter-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/assets/fonts/inter-latin-700.woff2') format('woff2');
+}
+
 :root {
-  --navy: #101b2d;
+  --navy: #0a1220;
   --emerald: #10b981;
   --mint: #6ee7b7;
-  --ice: #f8fafc;
-  --text: #101b2d;
-  --muted: #475569;
+  --on-emerald: #06281d;
+  --text: #0a1220;
+  --muted: #4a5568;
   --card: #ffffff;
-  --border: #e2e8f0;
-  --bg: #f8fafc;
+  --border: rgba(10, 18, 32, 0.09);
+  --bg: #fbfcfd;
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #f8fafc;
-    --muted: #b6c2d3;
-    --card: #1e293b;
-    --border: #334155;
-    --bg: #101b2d;
+    --text: #f3f6fa;
+    --muted: #aab6c6;
+    --card: #111c2e;
+    --border: rgba(243, 246, 250, 0.1);
+    --bg: #0a1220;
   }
 }
 
@@ -35,12 +68,13 @@ body {
   background: var(--bg);
   color: var(--text);
   font:
-    16px/1.6 -apple-system,
+    16px/1.6 Inter,
+    -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
-    Inter,
     Roboto,
     sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 main {
@@ -54,9 +88,9 @@ main {
   justify-content: center;
   gap: 10px;
   margin-bottom: 24px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 22px;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.02em;
 }
 
 .brand img {
@@ -68,8 +102,9 @@ main {
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 28px 24px;
+  border-radius: 28px;
+  padding: 36px 28px;
+  box-shadow: 0 30px 60px -36px rgba(10, 18, 32, 0.35);
   text-align: center;
 }
 
@@ -93,8 +128,11 @@ main {
 }
 
 h1 {
-  font-size: 22px;
-  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 10px;
 }
 
 p {
@@ -109,8 +147,8 @@ p {
   padding: 12px 20px;
   border-radius: 999px;
   background: var(--emerald);
-  color: var(--navy);
-  font-weight: 700;
+  color: var(--on-emerald);
+  font-weight: 600;
   text-decoration: none;
   margin-top: 8px;
 }

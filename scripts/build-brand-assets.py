@@ -93,6 +93,7 @@ def main() -> None:
     save(rounded, 'site/assets/logo.png', 256)
     save(rounded, 'site/favicon.png', 64)
     save(rounded, 'site/assets/email-logo.png', 120)
+    save(rounded, 'site/assets/app-icon.webp', 320)
     print(f'fundo do ícone adaptativo: #{bg[0]:02X}{bg[1]:02X}{bg[2]:02X}')
 
 

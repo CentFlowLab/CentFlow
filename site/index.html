@@ -2,32 +2,32 @@
 <html lang="pt-PT">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Miven — Gestão Financeira Pessoal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Miven — As tuas finanças, finalmente claras</title>
     <meta
       name="description"
-      content="Organiza contas, despesas, orçamentos, poupanças e património com a Miven. A tua vida financeira, num só lugar." />
+      content="Contas, despesas, orçamentos, objetivos e património numa só app. Sabe quanto tens, para onde vai e quanto podes poupar. Na web e no iPhone." />
     <link rel="canonical" href="https://miven.pt/" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fbfcfd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a1220" media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="pt_PT" />
     <meta property="og:site_name" content="Miven" />
     <meta property="og:url" content="https://miven.pt/" />
-    <meta property="og:title" content="Miven — Gestão Financeira Pessoal" />
+    <meta property="og:title" content="Miven — As tuas finanças, finalmente claras" />
     <meta
       property="og:description"
-      content="Organiza contas, despesas, orçamentos, poupanças e património com a Miven. A tua vida financeira, num só lugar." />
+      content="Contas, despesas, orçamentos, objetivos e património numa só app. Sabe quanto tens, para onde vai e quanto podes poupar." />
     <meta property="og:image" content="https://miven.pt/assets/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Miven, gestão financeira pessoal" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Miven — Gestão Financeira Pessoal" />
+    <meta name="twitter:title" content="Miven — As tuas finanças, finalmente claras" />
     <meta
       name="twitter:description"
-      content="Organiza contas, despesas, orçamentos, poupanças e património com a Miven. A tua vida financeira, num só lugar." />
+      content="Contas, despesas, orçamentos, objetivos e património numa só app. Sabe quanto tens, para onde vai e quanto podes poupar." />
     <meta name="twitter:image" content="https://miven.pt/assets/og.png" />
     <meta name="twitter:image:alt" content="Miven, gestão financeira pessoal" />
     <link rel="icon" href="/favicon.png" />
@@ -52,346 +52,256 @@
         "operatingSystem": "Web, iOS",
         "url": "https://miven.pt/",
         "inLanguage": "pt-PT",
-        "description": "Organiza contas, despesas, orçamentos, poupanças e património com a Miven. A tua vida financeira, num só lugar.",
+        "description": "Contas, despesas, orçamentos, objetivos e património numa só app.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
         "email": "mivenapp@gmail.com"
       }
     </script>
   </head>
   <body class="home">
     <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
+
     <header class="site-header">
-      <a class="brand" href="/"
-        ><img src="/assets/logo.png" width="32" height="32" alt="" />Miven</a
-      >
-      <div class="header-actions">
-        <button
-          type="button"
-          class="nav-toggle"
-          id="nav-toggle"
-          aria-expanded="false"
-          aria-controls="site-nav">
-          <span class="nav-toggle-icon" aria-hidden="true"></span>
-          <span class="visually-hidden">Menu</span>
-        </button>
-        <a class="button small" href="/app/">Entrar</a>
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="Miven, página inicial">
+          <img src="/assets/logo.png" width="28" height="28" alt="" />
+          <span>Miven</span>
+        </a>
+        <nav id="site-nav" class="site-nav" aria-label="Principal">
+          <a href="#produto">Produto</a>
+          <a href="#privacidade">Privacidade</a>
+          <a href="#plataformas">Plataformas</a>
+          <a class="nav-login" href="/app/">Entrar</a>
+        </nav>
+        <div class="header-actions">
+          <a class="login" href="/app/">Entrar</a>
+          <a class="button small" href="/app/">Experimentar</a>
+          <button
+            type="button"
+            class="nav-toggle"
+            id="nav-toggle"
+            aria-expanded="false"
+            aria-controls="site-nav">
+            <span class="nav-toggle-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Menu</span>
+          </button>
+        </div>
       </div>
-      <nav id="site-nav" class="site-nav" aria-label="Secções">
-        <a href="#funcionalidades">Funcionalidades</a>
-        <a href="#seguranca">Segurança</a>
-        <a href="#plataformas">Plataformas</a>
-      </nav>
     </header>
 
     <main id="conteudo">
+      <!-- 1. Promessa -->
       <section class="hero" aria-labelledby="hero-title">
-        <div class="wrap hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow">Gestão financeira pessoal</p>
-            <h1 id="hero-title">Toda a tua vida financeira.<br />Num só lugar.</h1>
-            <p class="lead">
-              Contas, despesas, orçamentos, poupanças e património. Tudo organizado, sincronizado e
-              sob o teu controlo.
-            </p>
-            <div class="cta">
-              <a class="button" href="/app/">Começar agora</a>
-              <a class="button secondary" href="#funcionalidades">Descobrir a Miven</a>
-            </div>
-            <p class="phase">Em fase de testes.</p>
+        <div class="wrap hero-copy">
+          <img class="hero-icon" src="/assets/app-icon.webp" width="88" height="88" alt="" />
+          <h1 id="hero-title">As tuas finanças.<br /><span>Finalmente claras.</span></h1>
+          <p class="lead">
+            Contas, despesas, orçamentos e objetivos numa só app. Sabes quanto tens, para onde vai e
+            quanto podes poupar.
+          </p>
+          <div class="cta">
+            <a class="button large" href="/app/">Experimentar grátis</a>
+            <a class="text-link" href="#produto"
+              >Ver como funciona <span aria-hidden="true">→</span></a
+            >
           </div>
-          <figure class="stage">
-            <div class="phone">
-              <div class="phone-top">
-                <img src="/assets/logo.png" width="28" height="28" alt="" />
-                <span>Miven</span>
+          <p class="fine">Grátis durante a fase de testes · Web e iPhone</p>
+        </div>
+
+        <figure class="stage" aria-label="Ilustração da aplicação">
+          <div class="device device-main" aria-hidden="true">
+            <div class="screen">
+              <div class="s-status"><span>9:41</span><i></i></div>
+              <p class="s-greeting">Boa tarde</p>
+              <div class="s-hero">
+                <span class="s-label">Saldo total</span>
+                <span class="s-amount"></span>
+                <div class="s-split">
+                  <span><small>Rendimentos</small><b></b></span>
+                  <span><small>Despesas</small><b></b></span>
+                </div>
               </div>
-              <p class="phone-screen">Início</p>
-              <ul>
-                <li><span>Contas</span><small>Saldos por conta</small></li>
-                <li><span>Movimentos</span><small>Agrupados por dia</small></li>
-                <li><span>Orçamentos</span><small>Progresso do gasto</small></li>
-                <li><span>Objetivos</span><small>Contribuições</small></li>
+              <p class="s-section">Despesas por categoria</p>
+              <div class="s-bars">
+                <i style="--h: 72%"></i><i style="--h: 48%"></i><i style="--h: 88%"></i
+                ><i style="--h: 36%"></i><i style="--h: 60%"></i><i style="--h: 42%"></i>
+              </div>
+              <p class="s-section">Últimos movimentos</p>
+              <ul class="s-rows">
+                <li><i class="dot a"></i><span></span><b></b></li>
+                <li><i class="dot b"></i><span></span><b></b></li>
+                <li><i class="dot c"></i><span></span><b></b></li>
               </ul>
-              <div class="phone-tabs">
-                <span class="is-current">Início</span>
-                <span>Movimentos</span>
-                <span>Orçamentos</span>
-                <span>Mais</span>
+              <div class="s-tabs">
+                <span class="on">Início</span><span>Movimentos</span><em>+</em
+                ><span>Orçamentos</span><span>Mais</span>
               </div>
             </div>
-            <figcaption>Esquema da aplicação, sem valores financeiros.</figcaption>
-          </figure>
+          </div>
+          <div class="device device-side" aria-hidden="true">
+            <div class="screen">
+              <div class="s-status"><span>9:41</span><i></i></div>
+              <p class="s-title">Orçamentos</p>
+              <div class="s-ring"><span>Disponível</span></div>
+              <ul class="s-budgets">
+                <li><span></span><i style="--p: 64%"></i></li>
+                <li><span></span><i style="--p: 38%"></i></li>
+                <li><span></span><i style="--p: 82%"></i></li>
+                <li><span></span><i style="--p: 21%"></i></li>
+              </ul>
+            </div>
+          </div>
+          <figcaption>Ilustração da interface, sem dados reais.</figcaption>
+        </figure>
+      </section>
+
+      <!-- 2. Três benefícios -->
+      <section class="pillars" id="produto" aria-labelledby="pillars-title">
+        <div class="wrap">
+          <h2 id="pillars-title" class="kicker reveal">Uma app. Toda a tua vida financeira.</h2>
+
+          <article class="pillar reveal">
+            <p class="pillar-tag">Visão total</p>
+            <h3>Tudo o que tens,<br />num só ecrã.</h3>
+            <p>
+              Bancos, cartões, dinheiro e poupanças lado a lado. Cada movimento atualiza o saldo, e
+              percebes de imediato para onde foi o mês.
+            </p>
+          </article>
+
+          <article class="pillar reveal">
+            <p class="pillar-tag">Controlo inteligente</p>
+            <h3>Decide antes<br />de gastar.</h3>
+            <p>
+              Um limite por categoria mostra quanto ainda podes gastar. As subscrições ficam à
+              vista, com o custo real por mês e por ano. E cada objetivo de poupança tem o seu
+              progresso.
+            </p>
+          </article>
+
+          <article class="pillar reveal">
+            <p class="pillar-tag">Futuro financeiro</p>
+            <h3>Sabe quanto<br />vales, de facto.</h3>
+            <p>
+              Casa, carro, investimentos e créditos no mesmo sítio. O património líquido diz-te onde
+              estás, e os relatórios mostram para onde vais.
+            </p>
+          </article>
         </div>
       </section>
 
-      <section class="band" id="funcionalidades" aria-labelledby="features-title">
+      <!-- 3. A experiência -->
+      <section class="details" aria-labelledby="details-title">
         <div class="wrap">
-          <div class="section-head">
-            <h2 id="features-title">Funcionalidades</h2>
-            <p>O que já podes usar, e o que ainda não está aberto.</p>
-          </div>
-          <div class="feature-grid">
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M3 8.5h18v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9zM3 8.5l2.2-3.5h13.6L21 8.5M16 13.5h3" />
-              </svg>
-              <h3>Contas e movimentos</h3>
-              <p>Bancos, dinheiro, cartões e poupanças. Despesas, rendimentos e transferências.</p>
+          <h2 id="details-title" class="section-title reveal">
+            Pensada para o dia a dia.<br /><span>Não para dar trabalho.</span>
+          </h2>
+          <div class="detail-list">
+            <article class="detail reveal">
+              <span class="detail-mark" aria-hidden="true">01</span>
+              <h3>Registo em segundos</h3>
+              <p>Um botão, sempre à mão. Valor, categoria, feito.</p>
             </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8" />
-                <path d="M12 4.2A8 8 0 0 1 19.2 15.2L12 12Z" fill="currentColor" stroke="none" />
-              </svg>
-              <h3>Orçamentos</h3>
-              <p>Limites por categoria, semanais, mensais ou anuais, com o progresso do gasto.</p>
+            <article class="detail reveal">
+              <span class="detail-mark" aria-hidden="true">02</span>
+              <h3>Extratos sem surpresas</h3>
+              <p>Importas o CSV do banco e revês cada linha, e os duplicados, antes de guardar.</p>
             </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M4 12a8 8 0 0 1 13.5-5.8M18 4.2V8h-3.8M20 12a8 8 0 0 1-13.5 5.8M6 19.8V16h3.8" />
-              </svg>
-              <h3>Subscrições</h3>
-              <p>Despesas que se repetem, com o custo mensal e anual das que estão ativas.</p>
-            </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 20V4.5M6 4.5h10.5L14 8.2l2.5 3.7H6" />
-              </svg>
-              <h3>Objetivos de poupança</h3>
-              <p>O progresso soma as contribuições. Não altera o saldo das contas.</p>
-            </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 16.5 9 11l4 3.2L20 7.5M20 7.5v4.8M20 7.5h-4.8" />
-              </svg>
-              <h3>Património e dívidas</h3>
-              <p>Bens, dívidas e património líquido, à parte das contas do dia a dia.</p>
-            </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M4 15h16M6.2 15 8 10h8l1.8 5M7.2 17.6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM16.8 17.6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
-              </svg>
-              <div class="feature-title">
-                <h3>Veículos e documentos</h3>
-                <span class="status soon">Em breve</span>
-              </div>
-              <p>
-                Matrícula, prazos e um registo de documentos. Estes ecrãs ainda não guardam dados.
-              </p>
-            </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 19V10M12 19V5M19 19v-7" />
-              </svg>
-              <h3>Relatórios financeiros</h3>
-              <p>Totais, categorias e evolução do período, sempre por moeda.</p>
-            </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 3.5h7.2L19 8.2V20.5H7zM14.2 3.5V8.2H19M9.2 12.5h6M9.2 16.2h4" />
-              </svg>
-              <h3>Importação de extratos CSV</h3>
-              <p>
-                Importas o ficheiro, revês os movimentos e os possíveis duplicados, e só depois
-                guardas.
-              </p>
-            </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 3.2 13.3 7.6 17.8 8.8 13.3 10.1 12 14.5 10.7 10.1 6.2 8.8 10.7 7.6zM18 14.2l.5 1.4 1.5.5-1.5.5-.5 1.4-.5-1.4-1.5-.5 1.5-.5z" />
-              </svg>
-              <div class="feature-title">
-                <h3>Registo assistido por IA</h3>
-                <span class="status later">Em preparação</span>
-              </div>
-              <p>
-                Uma frase pode sugerir o movimento. Nada fica gravado sem a tua confirmação. O
-                serviço ainda não está ligado.
-              </p>
-            </article>
-            <article class="feature">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M7 7h9.5v3.6M17 17H7.5V13.4M15.2 4.2 18 7l-2.8 2.8M8.8 19.8 6 17l2.8-2.8" />
-              </svg>
-              <h3>Sincronização entre dispositivos</h3>
-              <p>
-                A mesma conta no browser e no iPhone. Com rede, os dados encontram-se. Sem rede, a
-                app continua a funcionar dentro dos limites da plataforma.
-              </p>
+            <article class="detail reveal">
+              <span class="detail-mark" aria-hidden="true">03</span>
+              <h3>Sempre em sintonia</h3>
+              <p>No iPhone funciona sem rede. Quando volta, tudo sincroniza com a tua conta.</p>
             </article>
           </div>
         </div>
       </section>
 
-      <!--
-        Capturas reais, quando existirem: site/assets/screens/{inicio,movimentos,orcamentos,objetivos,patrimonio}.webp
-        Substituir o conteúdo de .device-body pela imagem, com alt que descreva o ecrã e sem valores apresentados como dados de um cliente.
-      -->
-      <section class="band band-muted" id="aplicacao" aria-labelledby="app-title">
+      <!-- 4. Confiança -->
+      <section class="trust" id="privacidade" aria-labelledby="trust-title">
         <div class="wrap">
-          <div class="section-head">
-            <h2 id="app-title">A aplicação</h2>
-            <p>A estrutura real dos ecrãs atuais, sem dados de exemplo.</p>
-          </div>
-          <div class="tour">
-            <article class="device">
-              <div class="device-bar"><span>Início</span></div>
-              <div class="device-body">
-                <p>Contas</p>
-                <p>Movimentos do período</p>
-                <p>Resumo por moeda</p>
-              </div>
-            </article>
-            <article class="device">
-              <div class="device-bar"><span>Movimentos</span></div>
-              <div class="device-body">
-                <p>Despesas e rendimentos</p>
-                <p>Transferências</p>
-                <p>Pesquisa e filtros</p>
-              </div>
-            </article>
-            <article class="device">
-              <div class="device-bar"><span>Orçamentos</span></div>
-              <div class="device-body">
-                <p>Limites por categoria</p>
-                <p>Semanal, mensal ou anual</p>
-                <p>Progresso do gasto</p>
-              </div>
-            </article>
-            <article class="device">
-              <div class="device-bar"><span>Objetivos</span></div>
-              <div class="device-body">
-                <p>Um objetivo de cada vez</p>
-                <p>Contribuições</p>
-                <p>Os saldos das contas não mudam</p>
-              </div>
-            </article>
-            <article class="device">
-              <div class="device-bar"><span>Património</span></div>
-              <div class="device-body">
-                <p>Bens</p>
-                <p>Dívidas</p>
-                <p>Património líquido</p>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="band" id="seguranca" aria-labelledby="security-title">
-        <div class="wrap">
-          <div class="section-head">
-            <h2 id="security-title">Segurança e privacidade</h2>
-            <p>Como os dados são tratados nesta fase.</p>
-          </div>
-          <ul class="facts">
-            <li>
-              <h3>A tua conta, os teus dados</h3>
-              <p>Cada pessoa autenticada acede apenas aos registos da própria conta.</p>
-            </li>
-            <li>
-              <h3>Autenticação</h3>
-              <p>A app pede conta. Sem sessão, só há o ecrã de boas-vindas e a entrada.</p>
-            </li>
-            <li>
-              <h3>Row Level Security</h3>
+          <h2 id="trust-title" class="section-title reveal">
+            Os teus dados<br /><span>são teus.</span>
+          </h2>
+          <div class="trust-list">
+            <article class="reveal">
+              <h3>Só tu lhes acedes.</h3>
               <p>
-                No servidor, as tabelas pessoais têm políticas que limitam cada linha à conta dona.
+                Cada registo fica ligado à tua conta, e o servidor só o entrega a quem tem sessão
+                nessa conta.
               </p>
-            </li>
-            <li>
-              <h3>No dispositivo e no servidor</h3>
-              <p>A informação financeira fica na base local e sincroniza com o servidor.</p>
-            </li>
-            <li>
-              <h3>Sem ligação</h3>
-              <p>A app continua a funcionar offline, dentro dos limites da plataforma.</p>
-            </li>
-            <li>
-              <h3>Eliminar a conta</h3>
-              <p>Podes pedir a eliminação da conta a partir da aplicação.</p>
-            </li>
-          </ul>
-          <p class="legal-note">
-            A política de privacidade e os termos ainda não estão publicados. Ficam ligados aqui
-            quando estiverem validados.
+            </article>
+            <article class="reveal">
+              <h3>Nada sem a tua confirmação.</h3>
+              <p>
+                Uma importação só fica gravada depois de a reveres. Estatísticas de utilização, só
+                se aceitares.
+              </p>
+            </article>
+            <article class="reveal">
+              <h3>Sais quando quiseres.</h3>
+              <p>Eliminas a conta na própria app, e os teus dados no servidor saem com ela.</p>
+            </article>
+          </div>
+          <p class="trust-note reveal">
+            A política de privacidade e os termos estão em preparação e ficam publicados aqui antes
+            da abertura ao público.
           </p>
         </div>
       </section>
 
-      <section class="band band-muted" id="plataformas" aria-labelledby="platforms-title">
+      <!-- 5. Plataformas -->
+      <section class="platforms" id="plataformas" aria-labelledby="platforms-title">
         <div class="wrap">
-          <div class="section-head">
-            <h2 id="platforms-title">Plataformas</h2>
-            <p>A mesma conta, onde a versão já existe.</p>
-          </div>
-          <div class="platform-grid">
-            <article class="platform">
-              <h3>Web</h3>
-              <p>Consultas e registos no browser, em https://miven.pt/app/.</p>
-              <a class="button" href="/app/">Abrir a app web</a>
-            </article>
-            <article class="platform">
-              <h3>iPhone</h3>
-              <p>A instalação é pelo SideStore, com a fonte do Miven. Não passa pela App Store.</p>
-              <button type="button" class="button secondary" data-open="install">
-                Instalar no iPhone
-              </button>
-            </article>
-            <article class="platform">
-              <h3>Android</h3>
-              <p>
-                Ainda não há um APK publicado. Quando existir, será um ficheiro assinado e o botão
-                aparece aqui.
-              </p>
-            </article>
+          <h2 id="platforms-title" class="section-title reveal">
+            Onde estiveres.<br /><span>Com a mesma conta.</span>
+          </h2>
+          <div class="platform-list reveal">
+            <a class="platform" href="/app/">
+              <span class="platform-name">Web</span>
+              <span class="platform-text">No browser, sem instalar nada.</span>
+              <span class="platform-action">Abrir <span aria-hidden="true">→</span></span>
+            </a>
+            <button type="button" class="platform" data-open="install">
+              <span class="platform-name">iPhone</span>
+              <span class="platform-text">Instalação pelo SideStore.</span>
+              <span class="platform-action">Instalar <span aria-hidden="true">→</span></span>
+            </button>
+            <div class="platform is-soon" id="android">
+              <span class="platform-name">Android</span>
+              <span class="platform-text">A caminho.</span>
+              <span class="platform-action">Em breve</span>
+            </div>
           </div>
         </div>
       </section>
 
+      <!-- 6. Fecho -->
       <section class="closing" aria-labelledby="closing-title">
         <div class="wrap">
-          <h2 id="closing-title">O teu dinheiro merece estar organizado.</h2>
-          <p>Começa hoje a ter uma visão mais clara das tuas finanças.</p>
-          <a class="button" href="/app/">Experimentar Miven</a>
-          <p class="phase">Em fase de testes.</p>
+          <img src="/assets/app-icon.webp" width="64" height="64" alt="" class="closing-icon" />
+          <h2 id="closing-title">O teu dinheiro<br />merece mais clareza.</h2>
+          <p>Cria a conta, adiciona o primeiro saldo e vê o mês com outros olhos.</p>
+          <a class="button large" href="/app/">Experimentar grátis</a>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <div class="wrap footer-grid">
-        <div class="footer-brand">
-          <a class="brand" href="/"
-            ><img src="/assets/logo.png" width="32" height="32" alt="" />Miven</a
-          >
-          <p>Gestão financeira pessoal, na tua conta.</p>
-        </div>
-        <nav aria-label="Rodapé">
-          <h2>Navegação</h2>
-          <ul>
-            <li><a href="#funcionalidades">Funcionalidades</a></li>
-            <li><a href="#seguranca">Segurança</a></li>
-            <li><a href="#plataformas">Plataformas</a></li>
-            <li><a href="/app/">App web</a></li>
-          </ul>
+      <div class="wrap footer-inner">
+        <a class="brand" href="/">
+          <img src="/assets/logo.png" width="24" height="24" alt="" />
+          <span>Miven</span>
+        </a>
+        <nav aria-label="Rodapé" class="footer-nav">
+          <a href="#produto">Produto</a>
+          <a href="#privacidade">Privacidade</a>
+          <a href="#plataformas">Plataformas</a>
+          <a href="/app/">Entrar</a>
+          <a href="mailto:mivenapp@gmail.com">Contacto</a>
         </nav>
-        <div>
-          <h2>Informação</h2>
-          <ul class="plain">
-            <li>Política de privacidade — por validar</li>
-            <li>Termos e condições — por validar</li>
-            <li><a href="mailto:mivenapp@gmail.com">Contacto — mivenapp@gmail.com</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="wrap legal-bar">
-        <span>© 2026 Miven</span>
-        <span>Fase de testes</span>
+        <p class="footer-legal">
+          © 2026 Miven · Em fase de testes · Privacidade e termos em preparação
+        </p>
       </div>
     </footer>
 
