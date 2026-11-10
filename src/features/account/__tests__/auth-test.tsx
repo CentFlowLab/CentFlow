@@ -13,7 +13,7 @@ import {
   toAuthErrorCode,
   useAuth,
 } from '../AuthProvider';
-import { SignInScreen, SignUpScreen } from '../AuthScreens';
+import { shouldWaitForIsolation, SignInScreen, SignUpScreen } from '../AuthScreens';
 
 jest.mock('@/features/finance/navigation', () => ({
   closeModal: jest.fn(),
@@ -35,6 +35,28 @@ describe('ageOn', () => {
     expect(ageOn('2010-11-11', '2026-11-10')).toBe(15);
     expect(ageOn('2010-12-01', '2026-11-10')).toBe(15);
     expect(ageOn('2000-02-29', '2026-03-01')).toBe(26);
+  });
+});
+
+describe('shouldWaitForIsolation', () => {
+  const site = {
+    web: true,
+    isolated: false,
+    workerScript: true,
+    serviceWorkers: true,
+    secure: true,
+  };
+
+  it('waits for the service worker reload only where it can happen', () => {
+    expect(shouldWaitForIsolation(site)).toBe(true);
+    expect(shouldWaitForIsolation({ ...site, isolated: true })).toBe(false);
+    expect(shouldWaitForIsolation({ ...site, web: false })).toBe(false);
+    expect(shouldWaitForIsolation({ ...site, workerScript: false })).toBe(false);
+  });
+
+  it('does not wait in iPhone browsers without service workers (Brave, Chrome, Mail)', () => {
+    expect(shouldWaitForIsolation({ ...site, serviceWorkers: false })).toBe(false);
+    expect(shouldWaitForIsolation({ ...site, secure: false })).toBe(false);
   });
 });
 

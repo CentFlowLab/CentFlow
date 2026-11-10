@@ -441,10 +441,46 @@ function one(value: string | string[] | undefined): string | undefined {
  * No site publicado, o service worker de isolamento recarrega a página uma vez.
  * Confirmar antes desse recarregamento gastava o link e o segundo carregamento falhava.
  */
+export type IsolationEnv = {
+  web: boolean;
+  isolated: boolean;
+  /** O `coi-serviceworker` está na página (site publicado). */
+  workerScript: boolean;
+  serviceWorkers: boolean;
+  secure: boolean;
+};
+
+/**
+ * Só vale a pena esperar se o service worker puder mesmo recarregar a página. Sem service
+ * workers (Brave, Chrome e o browser do Mail no iPhone usam WKWebView) esperar deixava o ecrã a
+ * carregar para sempre.
+ */
+export function shouldWaitForIsolation(env: IsolationEnv): boolean {
+  return env.web && !env.isolated && env.workerScript && env.serviceWorkers && env.secure;
+}
+
 function webMustWaitForIsolation(): boolean {
-  if (Platform.OS !== 'web' || globalThis.crossOriginIsolated === true) return false;
-  if (typeof document === 'undefined') return false;
-  return document.querySelector('script[src*="coi-serviceworker"]') !== null;
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return false;
+  return shouldWaitForIsolation({
+    web: true,
+    isolated: globalThis.crossOriginIsolated === true,
+    workerScript: document.querySelector('script[src*="coi-serviceworker"]') !== null,
+    serviceWorkers: typeof navigator !== 'undefined' && 'serviceWorker' in navigator,
+    secure: globalThis.isSecureContext !== false,
+  });
+}
+
+/** Tempo máximo à espera do recarregamento do service worker antes de confirmar na mesma. */
+export const ISOLATION_WAIT_MS = 4000;
+
+function useIsolationWait(): boolean {
+  const [waiting, setWaiting] = useState(webMustWaitForIsolation);
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setTimeout(() => setWaiting(false), ISOLATION_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [waiting]);
+  return waiting;
 }
 
 /** Troca uma única vez o código do link por uma sessão. O `token_hash` funciona em qualquer dispositivo. */
@@ -459,9 +495,8 @@ function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
   const code = one(params.code);
   const tokenHash = one(params.token_hash);
   const otpType = emailOtpType(one(params.type));
-  const waitForIsolation = webMustWaitForIsolation();
+  const waitForIsolation = useIsolationWait();
   const [status, setStatus] = useState<'working' | 'done' | AuthErrorCode>(() => {
-    if (waitForIsolation) return 'working';
     if (tokenHash) return otpType ? 'working' : 'linkInvalid';
     if (code) return 'working';
     return one(params.error_code) ? 'linkInvalid' : 'done';
