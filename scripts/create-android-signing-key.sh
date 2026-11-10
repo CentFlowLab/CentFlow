@@ -22,12 +22,22 @@ command -v gh >/dev/null || { echo "Falta o GitHub CLI (gh)."; exit 1; }
 mkdir -p "$DEST"
 umask 077
 PASS="$(openssl rand -hex 24)"
+# Evita -subj "/CN=...": no Git Bash do Windows o /CN=... é convertido para um caminho.
+cat > "$DEST/openssl.cnf" <<'EOF'
+[req]
+distinguished_name = dn
+prompt = no
+[dn]
+CN = Miven
+O = Miven
+C = PT
+EOF
 openssl req -x509 -newkey rsa:4096 -keyout "$DEST/key.pem" -out "$DEST/cert.pem" \
-  -days 10950 -nodes -subj "/CN=Miven/O=Miven/C=PT" 2>/dev/null
+  -days 10950 -nodes -config "$DEST/openssl.cnf" 2>/dev/null
 openssl pkcs12 -export -inkey "$DEST/key.pem" -in "$DEST/cert.pem" -name miven \
   -out "$DEST/miven-release.p12" -passout "pass:$PASS" \
   -keypbe AES-256-CBC -certpbe AES-256-CBC -macalg sha256
-rm -f "$DEST/key.pem"
+rm -f "$DEST/key.pem" "$DEST/openssl.cnf"
 printf '%s\n' "$PASS" > "$DEST/keystore-password.txt"
 printf 'Alias: miven\nTipo: PKCS12\nCriada: %s\n' "$(date '+%Y-%m-%d')" > "$DEST/LEIA-ME.txt"
 
