@@ -173,6 +173,12 @@ const COLUMNS: Record<SyncEntity, readonly string[]> = {
   ],
 };
 
+/**
+ * Colunas obrigatórias acrescentadas depois: um servidor sem a migração correspondente não as
+ * envia e o `null` partiria a receção. Ver o plano de publicação (docs/release-plan-0.1.9.md).
+ */
+const COLUMN_DEFAULTS: Readonly<Record<string, SyncValue>> = { essential: 0 };
+
 const TIMESTAMPS = new Set(['created_at', 'updated_at', 'deleted_at', 'archived_at']);
 
 /** O Postgres devolve `timestamptz` com fuso e microssegundos; localmente usa-se ISO UTC. */
@@ -237,7 +243,7 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
     }
     const columns = [...COLUMNS[entity], 'version', 'server_seq', 'synced_at'];
     const values: SyncValue[] = [
-      ...COLUMNS[entity].map((column) => row[column] ?? null),
+      ...COLUMNS[entity].map((column) => row[column] ?? COLUMN_DEFAULTS[column] ?? null),
       row.version,
       row.server_seq,
       now(),

@@ -107,6 +107,33 @@ describe('sync engine', () => {
     expect(await balanceOf(laptop, account.id)).toBe(await balanceOf(phone, account.id));
   });
 
+  it('still receives categories from a server without the essential column', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    await setup(phone);
+    await phone.engine.sync();
+    // Servidor antigo (sem a migração 20261111000300): as categorias chegam sem `essential`.
+    const pull = laptop.transport.pull.bind(laptop.transport);
+    laptop.transport.pull = async (since, limit) => {
+      const page = await pull(since, limit);
+      if (page.reset_required) return page;
+      return {
+        ...page,
+        changes: page.changes.map((change) => {
+          if (change.entity !== 'categories') return change;
+          const row = { ...change.row };
+          delete row.essential;
+          return { ...change, row };
+        }),
+      };
+    };
+    expect(await laptop.engine.sync()).toMatchObject({ status: 'idle', pending: 0 });
+    const categories = await laptop.repositories.categories.list('expense');
+    expect(categories.length).toBeGreaterThan(0);
+    expect(categories.every((category) => category.essential === false)).toBe(true);
+  });
+
   it('keeps working offline and catches up when the connection returns', async () => {
     const user = await newUser();
     const phone = await device(user);
