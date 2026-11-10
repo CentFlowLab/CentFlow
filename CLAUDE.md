@@ -9,8 +9,9 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 Fases 0 a 4 e a parte da Fase 5 sem fornecedor externo estão no cliente. **Produção e staging
 têm o mesmo histórico, `20261108000100` a `20261111000400`** (as três últimas, ADR-045, ADR-046 e
 ADR-048, na produção desde 2026-11-10; ver [docs/release-producao.md](docs/release-producao.md)).
-A app publicada é a 0.1.8; a 0.1.9 (migração local v11) espera os testes físicos
-([docs/release-plan-0.1.9.md](docs/release-plan-0.1.9.md)).
+App 0.1.9 publicada em 2026-11-10 (migração local v11; plano em
+[docs/release-plan-0.1.9.md](docs/release-plan-0.1.9.md)); os testes físicos da secção 5 ficam
+por fazer em aparelhos reais.
 Funções `delete-account` e
 `suggest-entry` nos dois ambientes; falta o segredo `ANTHROPIC_API_KEY`.
 **O Miven só se usa com conta (ADR-034):** sem sessão só há boas-vindas e autenticação, e não se
