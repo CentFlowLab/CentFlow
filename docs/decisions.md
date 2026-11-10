@@ -571,6 +571,20 @@ pessoa cria o atalho na app Atalhos e liga-o em Definições › Acessibilidade 
 posterior (instruções em Definições › Registo rápido). Os textos da ação estão só em português.
 No Android não há Toque posterior.
 
+## ADR-043 — Saúde financeira explicável, sem pontuação inventada
+
+**Contexto:** um "score" único de saúde financeira esconde porque foi atribuído e pode julgar quem
+ainda não registou dados.
+**Decisão:** `src/core/finance/health.ts` mede três pilares com dados reais dos três meses
+completos anteriores: taxa de poupança (boa ≥ 20 %, razoável ≥ 10 %), fundo de emergência em
+meses de despesa coberto por bancos, numerário e poupança (bom ≥ 6, razoável ≥ 3) e peso das
+subscrições ativas no rendimento (bom ≤ 35 %, razoável ≤ 50 %). Cada pilar precisa de pelo menos
+dois meses com dados; sem eles o estado é "sem dados" e a app diz o que registar. O estado geral só
+é "sólido" com pelo menos dois pilares bons e nenhum a melhorar. Cada estado traz uma ação
+concreta. As referências são gerais e a app diz que não são aconselhamento financeiro.
+**Consequências:** a evolução do património fica de fora até existir histórico (constatação 9 de
+`docs/audit-2026-11.md`).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
