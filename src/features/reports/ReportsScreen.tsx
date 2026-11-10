@@ -22,11 +22,11 @@ import {
   Amount,
   Badge,
   BarChart,
-  CalendarPicker,
   Card,
   CategoryIcon,
   Chip,
   ChipGroup,
+  DateFields,
   EmptyState,
   HeroCard,
   Icon,
@@ -106,6 +106,15 @@ export function ReportsScreen() {
     ),
   );
 
+  const dateLabels = {
+    day: t('reports.day'),
+    month: t('reports.month'),
+    year: t('reports.year'),
+    dayPlaceholder: t('reports.dayPlaceholder'),
+    monthPlaceholder: t('reports.monthPlaceholder'),
+    yearPlaceholder: t('reports.yearPlaceholder'),
+    invalid: t('reports.invalidDate'),
+  };
   const header = { title: t('reports.title'), subtitle: t('reports.subtitle') };
   const controls = (
     <View style={styles.stack}>
@@ -120,29 +129,23 @@ export function ReportsScreen() {
         ))}
       </ChipGroup>
       {preset === 'custom' ? (
-        <View style={styles.stack}>
-          <Text variant="label">{t('reports.from')}</Text>
-          <CalendarPicker
-            value={customFrom}
-            onChange={setCustomFrom}
-            locale={locale}
-            today={today}
-            labels={{
-              previousMonth: t('reports.previousMonth'),
-              nextMonth: t('reports.nextMonth'),
-            }}
-          />
-          <Text variant="label">{t('reports.to')}</Text>
-          <CalendarPicker
-            value={customTo}
-            onChange={setCustomTo}
-            locale={locale}
-            today={today}
-            labels={{
-              previousMonth: t('reports.previousMonth'),
-              nextMonth: t('reports.nextMonth'),
-            }}
-          />
+        <View style={styles.dateRow}>
+          <View style={styles.dateCell}>
+            <DateFields
+              label={t('reports.from')}
+              value={customFrom}
+              onChange={setCustomFrom}
+              labels={dateLabels}
+            />
+          </View>
+          <View style={styles.dateCell}>
+            <DateFields
+              label={t('reports.to')}
+              value={customTo}
+              onChange={setCustomTo}
+              labels={dateLabels}
+            />
+          </View>
         </View>
       ) : null}
     </View>
@@ -599,6 +602,15 @@ function Legend({ swatch, label }: { swatch: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  dateRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.lg,
+  },
+  dateCell: {
+    flexGrow: 1,
+    flexBasis: 260,
+  },
   stack: { gap: spacing.md },
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   metric: { width: '46%', flexGrow: 1, gap: spacing.xxs },

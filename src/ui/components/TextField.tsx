@@ -43,7 +43,8 @@ export function TextField({
     <TextInput
       ref={ref}
       accessibilityLabel={label}
-      accessibilityLabelledBy={`${inputId}-label`}
+      // Um rótulo explícito (ex.: "De: Dia") substitui o rótulo visível, que pode repetir-se.
+      accessibilityLabelledBy={rest.accessibilityLabel ? undefined : `${inputId}-label`}
       placeholderTextColor={colors.textTertiary}
       selectionColor={colors.primary}
       onFocus={(event) => {

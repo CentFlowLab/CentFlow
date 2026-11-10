@@ -1,9 +1,17 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { money } from '@/core/money';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { Amount, Button, EmptyState, ProgressBar, SegmentedControl } from '../components';
+import {
+  Amount,
+  Button,
+  DateFields,
+  EmptyState,
+  ProgressBar,
+  SegmentedControl,
+} from '../components';
 import { lightColors } from '../theme/colors';
 
 describe('Button', () => {
@@ -85,5 +93,50 @@ describe('EmptyState', () => {
     expect(screen.getByRole('header', { name: 'Sem contas' })).toBeOnTheScreen();
     expect(screen.getByText('Cria a primeira conta.')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Criar conta' })).toBeOnTheScreen();
+  });
+});
+
+describe('DateFields', () => {
+  const labels = {
+    day: 'Dia',
+    month: 'Mês',
+    year: 'Ano',
+    dayPlaceholder: 'DD',
+    monthPlaceholder: 'MM',
+    yearPlaceholder: 'AAAA',
+    invalid: 'Data inválida.',
+  };
+
+  it('shows the date split into day, month and year and reports only valid dates', async () => {
+    const onChange = jest.fn();
+    function Harness() {
+      const [value, setValue] = useState('2026-11-01');
+      return (
+        <DateFields
+          label="De"
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+          labels={labels}
+        />
+      );
+    }
+    await renderWithProviders(<Harness />);
+    expect(screen.getByLabelText('De: Dia')).toHaveDisplayValue('01');
+    expect(screen.getByLabelText('De: Mês')).toHaveDisplayValue('11');
+    expect(screen.getByLabelText('De: Ano')).toHaveDisplayValue('2026');
+
+    await fireEvent.changeText(screen.getByLabelText('De: Dia'), '31');
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Data inválida.')).toBeOnTheScreen();
+
+    await fireEvent.changeText(screen.getByLabelText('De: Mês'), '12');
+    expect(onChange).toHaveBeenLastCalledWith('2026-12-31');
+    expect(screen.queryByText('Data inválida.')).toBeNull();
+
+    await fireEvent.changeText(screen.getByLabelText('De: Dia'), '5');
+    expect(onChange).toHaveBeenLastCalledWith('2026-12-05');
   });
 });
