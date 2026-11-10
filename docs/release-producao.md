@@ -188,3 +188,21 @@ Autorizado pelo responsável ("Confirmo produção"). Guard antes de cada comand
 4. Verificação só de leitura: `subscriptions.previous_amount` (`bigint`) e `amount_changed_on`
    (`date`) existem; `private.sync_apply_op` com `search_path` vazio; RLS ligado em
    `subscriptions`.
+
+## Execução de 2026-11-10 (noite) — limites, histórico do património e bens vendidos
+
+Autorizado pelo responsável ("Confirmo produção"). Guard antes de cada comando. Plano em
+[release-plan-0.1.9.md](release-plan-0.1.9.md).
+
+1. Cópia: `~/Documents/Miven-backups/miven-prod-20261110-195644-{schema.sql,data.sql}`.
+2. Verificações antes: nada depende de `email_registered`; a produção **não tinha utilizadores nem
+   dados financeiros** (na cópia das 15:29 havia 1 utilizador, o seu perfil e 15 categorias; foi
+   eliminado entre as 15:29 e as 19:56, fora destes comandos; a cópia das 15:29 guarda-o).
+3. Dry-run: só `000200`, `000300`, `000400`, por esta ordem, alvo produção.
+4. `db push --skip-vault`: as três aplicadas; histórico local e remoto iguais até `20261111000400`.
+5. Verificação só de leitura: `email_registered` inexistente; `lookup_attempts` com RLS e sem
+   `select` para `anon`/`authenticated`; `categories.essential smallint`,
+   `wealth_items.value_history text`, `wealth_items.closed_on date`; `search_path` vazio em
+   `sync_apply_op`, `throttle`, `request_client`, `login_email` e `username_available`.
+6. Ensaio anónimo pela API: `email_registered` 404; `username_available` 200.
+7. App 0.1.9 **não publicada**: falta a ronda de testes físicos (secção 5 do plano).
