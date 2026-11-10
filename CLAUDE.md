@@ -10,6 +10,9 @@ Fases 0 a 4 e a parte da Fase 5 sem fornecedor externo estão no cliente. **Prod
 têm o mesmo histórico, `20261108000100` a `20261111000100`** (`001000` e `001100`, nome de
 utilizador e ADR-038, e `20261111000100`, preço anterior das subscrições e ADR-041, na produção
 desde 2026-11-10; produção desde 2026-11-09, ver [docs/release-producao.md](docs/release-producao.md)).
+**O staging tem ainda `20261111000200` (sem enumeração de contas, ADR-045) e `20261111000300`
+(histórico do património e categorias essenciais, ADR-046)**: aplicar na produção, com
+autorização, antes de publicar a app com a migração local v10.
 Funções `delete-account` e
 `suggest-entry` nos dois ambientes; falta o segredo `ANTHROPIC_API_KEY`.
 **O Miven só se usa com conta (ADR-034):** sem sessão só há boas-vindas e autenticação, e não se
