@@ -52,6 +52,16 @@ jobs:
           fi
           grep -q '^EXPO_PUBLIC_SUPABASE_URL=' .env.local
 
+      - name: Endereço do Supabase para a página de confirmação
+        shell: bash
+        run: |
+          url=$(grep '^EXPO_PUBLIC_SUPABASE_URL=' .env.local | head -n1 | cut -d= -f2- | tr -d '"' | sed 's#/*$##')
+          if ! printf '%s' "$url" | grep -qE '^https://[a-z0-9.-]+$'; then
+            echo "EXPO_PUBLIC_SUPABASE_URL inesperado."
+            exit 1
+          fi
+          echo "window.MIVEN_AUTH = { supabaseUrl: '$url' };" > site/assets/auth-config.js
+
       - name: Exportar a app web para /app
         shell: bash
         run: |
