@@ -213,6 +213,32 @@ describe('schema', () => {
       { user_id: A, last_seq: 0 },
     ]);
   });
+
+  it('keeps the username chosen at sign-up', async () => {
+    const id = '00000000-0000-4000-8000-0000000000c1';
+    await server.pg.query(
+      `insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3::jsonb)`,
+      [id, 'manu@example.test', JSON.stringify({ username: '  Manu  ' })],
+    );
+    expect(
+      await server.pg.query('select display_name from public.profiles where id = $1', [id]),
+    ).toEqual([{ display_name: 'Manu' }]);
+  });
+
+  it('tells sign-in whether an email has an account', async () => {
+    const known = await server
+      .anonymous()
+      .query<{ registered: boolean }>('select public.email_registered($1) as registered', [
+        `${A}@example.test`,
+      ]);
+    const missing = await server
+      .anonymous()
+      .query<{ registered: boolean }>('select public.email_registered($1) as registered', [
+        'ninguem@example.test',
+      ]);
+    expect(known[0]?.registered).toBe(true);
+    expect(missing[0]?.registered).toBe(false);
+  });
 });
 
 describe('row level security', () => {

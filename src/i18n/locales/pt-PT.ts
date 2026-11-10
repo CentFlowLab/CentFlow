@@ -760,7 +760,12 @@ const ptPT = {
       'Com uma conta, os teus dados ficam guardados com segurança e sincronizam entre dispositivos. A app continua a funcionar sem ligação.',
     email: 'Email',
     emailPlaceholder: 'nome@exemplo.pt',
+    username: 'Nome de utilizador',
+    usernamePlaceholder: 'Como te chamas?',
+    usernameTooLong: 'O nome de utilizador é demasiado longo.',
     password: 'Palavra-passe',
+    showPassword: 'Mostrar palavra-passe',
+    hidePassword: 'Esconder palavra-passe',
     newPassword: 'Nova palavra-passe',
     passwordHelper: 'Pelo menos {{count}} caracteres.',
     invalidEmail: 'Indica um email válido.',
@@ -771,8 +776,12 @@ const ptPT = {
     signInWithApple: 'Continuar com a Apple',
     confirmEmail: {
       title: 'Confirma o teu email',
-      message:
-        'Enviámos um link para {{email}}. Abre-o no telemóvel ou no computador para ativar a conta e depois entra na app.',
+      lead: 'Enviámos um link para ativares a conta. Abre-o e depois entra.',
+      step1: 'Abre o email no telemóvel ou no computador.',
+      step2: 'Toca em Confirmar email.',
+      step3: 'Volta ao Miven e entra com a palavra-passe.',
+      spam: 'Se não aparecer na caixa de entrada, vê o correio indesejado.',
+      ready: 'Já confirmei',
     },
     forgotTitle: 'Recuperar palavra-passe',
     forgotIntro:
@@ -791,9 +800,16 @@ const ptPT = {
       title: 'Sessão iniciada',
       message: 'Os dados da tua conta vão ser sincronizados neste dispositivo.',
     },
+    callbackConfirmed: {
+      title: 'Email confirmado',
+      message: 'A conta está ativa. Entra com o email e a palavra-passe.',
+      action: 'Entrar',
+    },
     callbackFailed: 'Não foi possível confirmar',
     errors: {
-      invalidCredentials: 'Não há conta com este email, ou a palavra-passe não está correta.',
+      invalidCredentials: 'Email ou palavra-passe incorretos.',
+      userNotFound: 'Utilizador não encontrado.',
+      confirmedElsewhere: 'O email já está confirmado. Entra com a palavra-passe.',
       emailNotConfirmed: 'Confirma primeiro o teu email através do link que recebeste.',
       emailInvalid:
         'Este email não é aceite. Domínios de exemplo ou de teste não servem; usa um endereço real.',

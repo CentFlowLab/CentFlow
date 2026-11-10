@@ -5,7 +5,13 @@ import { Text } from 'react-native';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { authRedirectUrl } from '../auth-redirect';
-import { AuthProvider, authLogCode, toAuthErrorCode, useAuth } from '../AuthProvider';
+import {
+  AuthProvider,
+  authLogCode,
+  isMissingVerifier,
+  toAuthErrorCode,
+  useAuth,
+} from '../AuthProvider';
 import { SignInScreen, SignUpScreen } from '../AuthScreens';
 
 jest.mock('@/features/finance/navigation', () => ({
@@ -53,6 +59,13 @@ describe('toAuthErrorCode', () => {
       'network',
     );
     expect(toAuthErrorCode(authError('something_else'))).toBe('unknown');
+    expect(
+      isMissingVerifier({
+        name: 'AuthPKCECodeVerifierMissingError',
+        message: 'PKCE code verifier not found in storage.',
+      } as AuthError),
+    ).toBe(true);
+    expect(toAuthErrorCode(authError('otp_expired'))).toBe('linkInvalid');
   });
 
   it('logs only the error code', () => {
@@ -76,12 +89,16 @@ type AuthApi = {
   signOut: jest.Mock;
   resetPasswordForEmail: jest.Mock;
   exchangeCodeForSession: jest.Mock;
+  verifyOtp: jest.Mock;
   updateUser: jest.Mock;
   signInWithIdToken: jest.Mock;
   signInWithOAuth: jest.Mock;
 };
 
-function fakeClient(overrides: Partial<AuthApi> = {}): {
+function fakeClient(
+  overrides: Partial<AuthApi> = {},
+  rpc: jest.Mock = jest.fn(async () => ({ data: true, error: null })),
+): {
   client: SupabaseClient;
   auth: AuthApi;
 } {
@@ -98,12 +115,13 @@ function fakeClient(overrides: Partial<AuthApi> = {}): {
     signOut: jest.fn(async () => ({ error: null })),
     resetPasswordForEmail: jest.fn(async () => ({ error: null })),
     exchangeCodeForSession: jest.fn(async () => ({ error: null })),
+    verifyOtp: jest.fn(async () => ({ error: null })),
     updateUser: jest.fn(async () => ({ error: null })),
     signInWithIdToken: jest.fn(async () => ({ error: null })),
     signInWithOAuth: jest.fn(async () => ({ error: null })),
     ...overrides,
   };
-  return { client: { auth } as unknown as SupabaseClient, auth };
+  return { client: { auth, rpc } as unknown as SupabaseClient, auth };
 }
 
 function StatusProbe() {
@@ -175,10 +193,40 @@ describe('auth screens', () => {
     await fireEvent.changeText(await screen.findByLabelText('Email'), 'a@b.pt');
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'wrong');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
-    expect(
-      await screen.findByText('Não há conta com este email, ou a palavra-passe não está correta.'),
-    ).toBeOnTheScreen();
+    expect(await screen.findByText('Email ou palavra-passe incorretos.')).toBeOnTheScreen();
     expect(auth.signInWithPassword).toHaveBeenCalled();
+  });
+
+  it('says the user was not found when the email has no account', async () => {
+    const { client } = fakeClient(
+      {
+        signInWithPassword: jest.fn(async () => ({
+          error: authError('invalid_credentials'),
+        })),
+      },
+      jest.fn(async () => ({ data: false, error: null })),
+    );
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignInScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(await screen.findByLabelText('Email'), 'apagada@b.pt');
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'wrong');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    expect(await screen.findByText('Utilizador não encontrado.')).toBeOnTheScreen();
+  });
+
+  it('lets the password be shown', async () => {
+    const { client } = fakeClient();
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignInScreen />
+      </AuthProvider>,
+    );
+    expect(await screen.findByRole('button', { name: 'Mostrar palavra-passe' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Mostrar palavra-passe' }));
+    expect(screen.getByRole('button', { name: 'Esconder palavra-passe' })).toBeOnTheScreen();
   });
 
   it('validates the email before calling the server', async () => {
@@ -202,7 +250,8 @@ describe('auth screens', () => {
         <SignUpScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Email'), 'nova@b.pt');
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'Manu');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
     await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
     await waitFor(() =>
@@ -211,7 +260,7 @@ describe('auth screens', () => {
         password: 'secret-password',
         options: {
           emailRedirectTo: 'https://miven.pt/auth/callback',
-          data: { locale: 'pt' },
+          data: { locale: 'pt', username: 'Manu' },
         },
       }),
     );
@@ -236,7 +285,8 @@ describe('auth screens', () => {
         <SignUpScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Email'), 'nova@b.pt');
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'Manu');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
     await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
     expect(

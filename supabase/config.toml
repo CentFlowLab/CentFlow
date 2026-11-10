@@ -6,14 +6,18 @@ project_id = "slfgslfzolfvqavuccom"
 [auth]
 # Origem pública: miven.pt. Não foi aplicada no painel. Não correr `config push`.
 site_url = "https://miven.pt"
-# URLs exatas, com e sem www. O esquema nativo é o da app.
+# URLs exatas, com e sem www. O esquema nativo é o da app. A app web vive em /app.
 additional_redirect_urls = [
   "miven://auth/callback",
   "miven://auth/reset-password",
   "https://miven.pt/auth/callback",
   "https://miven.pt/auth/reset-password",
+  "https://miven.pt/app/auth/callback",
+  "https://miven.pt/app/auth/reset-password",
   "https://www.miven.pt/auth/callback",
   "https://www.miven.pt/auth/reset-password",
+  "https://www.miven.pt/app/auth/callback",
+  "https://www.miven.pt/app/auth/reset-password",
 ]
 enable_signup = true
 # Igual ao mínimo pedido no ecrã (8). O servidor recusa abaixo disto com weak_password.

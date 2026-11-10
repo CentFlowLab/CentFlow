@@ -8,7 +8,12 @@ import { emailLocaleFor } from '../AuthProvider';
 
 describe('appAccessFor', () => {
   it('only grants access with a session', () => {
-    const user = { id: '00000000-0000-4000-8000-000000000001', email: null, locale: null };
+    const user = {
+      id: '00000000-0000-4000-8000-000000000001',
+      email: null,
+      username: null,
+      locale: null,
+    };
     expect(appAccessFor({ status: 'signedIn', user }, false)).toBe('granted');
     expect(appAccessFor({ status: 'signedOut', expired: false }, true)).toBe('signedOut');
     expect(appAccessFor({ status: 'loading' }, false)).toBe('loading');

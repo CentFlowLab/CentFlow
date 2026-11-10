@@ -1,4 +1,4 @@
-import { useId, useState, type Ref } from 'react';
+import { useId, useState, type ReactNode, type Ref } from 'react';
 import {
   StyleSheet,
   TextInput,
@@ -16,6 +16,8 @@ type Props = Omit<TextInputProps, 'style'> & {
   label: string;
   helperText?: string;
   errorText?: string;
+  /** Controlo dentro do campo, por exemplo mostrar ou esconder a palavra-passe. */
+  trailing?: ReactNode;
   inputStyle?: StyleProp<TextStyle>;
   ref?: Ref<TextInputInstance>;
 };
@@ -24,6 +26,7 @@ export function TextField({
   label,
   helperText,
   errorText,
+  trailing,
   inputStyle,
   onFocus,
   onBlur,
@@ -36,39 +39,60 @@ export function TextField({
   const hasError = Boolean(errorText);
 
   const borderColor = hasError ? colors.negative : focused ? colors.primary : colors.border;
+  const input = (
+    <TextInput
+      ref={ref}
+      accessibilityLabel={label}
+      accessibilityLabelledBy={`${inputId}-label`}
+      placeholderTextColor={colors.textTertiary}
+      selectionColor={colors.primary}
+      onFocus={(event) => {
+        setFocused(true);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        setFocused(false);
+        onBlur?.(event);
+      }}
+      style={[
+        typography.body,
+        styles.input,
+        trailing ? styles.inputWithTrailing : null,
+        trailing
+          ? { color: colors.text }
+          : {
+              color: colors.text,
+              backgroundColor: colors.surface,
+              borderColor,
+              borderWidth: focused || hasError ? 1.5 : 1,
+            },
+        inputStyle,
+      ]}
+      {...rest}
+    />
+  );
 
   return (
     <View style={styles.container}>
       <Text variant="label" tone="secondary" nativeID={`${inputId}-label`}>
         {label}
       </Text>
-      <TextInput
-        ref={ref}
-        accessibilityLabel={label}
-        accessibilityLabelledBy={`${inputId}-label`}
-        placeholderTextColor={colors.textTertiary}
-        selectionColor={colors.primary}
-        onFocus={(event) => {
-          setFocused(true);
-          onFocus?.(event);
-        }}
-        onBlur={(event) => {
-          setFocused(false);
-          onBlur?.(event);
-        }}
-        style={[
-          typography.body,
-          styles.input,
-          {
-            color: colors.text,
-            backgroundColor: colors.surface,
-            borderColor,
-            borderWidth: focused || hasError ? 1.5 : 1,
-          },
-          inputStyle,
-        ]}
-        {...rest}
-      />
+      {trailing ? (
+        <View
+          style={[
+            styles.trailingRow,
+            {
+              backgroundColor: colors.surface,
+              borderColor,
+              borderWidth: focused || hasError ? 1.5 : 1,
+            },
+          ]}>
+          {input}
+          {trailing}
+        </View>
+      ) : (
+        input
+      )}
       {errorText || helperText ? (
         <Text
           variant="footnote"
@@ -90,5 +114,20 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.md + 2,
     paddingVertical: spacing.sm,
+  },
+  inputWithTrailing: {
+    flex: 1,
+    minWidth: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    paddingLeft: 0,
+    paddingRight: spacing.xs,
+  },
+  trailingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: layout.minTouchTarget + 4,
+    borderRadius: radius.lg,
+    paddingLeft: spacing.md + 2,
   },
 });

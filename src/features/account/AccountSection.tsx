@@ -6,21 +6,12 @@ import { StyleSheet, View } from 'react-native';
 import { cancelImport, getImportState, type ImportState, type SyncStatus } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import { appStorage } from '@/lib/storage/key-value-store';
-import {
-  Badge,
-  Button,
-  Card,
-  Dialog,
-  Divider,
-  ListItem,
-  Section,
-  Text,
-  TextField,
-} from '@/ui/components';
+import { Badge, Button, Card, Dialog, Divider, ListItem, Section, Text } from '@/ui/components';
 import { spacing } from '@/ui/theme';
 
 import { useActiveSpace } from '../app-shell/DataGate';
-import { useAuth } from './AuthProvider';
+import { useAuth, type AuthUser } from './AuthProvider';
+import { PasswordField } from './PasswordField';
 import { isAppleSignInAvailable } from './apple-sign-in';
 import { markPendingAccountDeletion } from './pending-account-deletion';
 import { useSync } from './SyncProvider';
@@ -74,7 +65,7 @@ export function AccountSection() {
   return <SignedInAccount user={state.user} />;
 }
 
-function SignedInAccount({ user }: { user: { id: string; email: string | null } }) {
+function SignedInAccount({ user }: { user: AuthUser }) {
   const { t } = useTranslation();
   const { client, actions } = useAuth();
   const { space, store } = useActiveSpace();
@@ -159,8 +150,8 @@ function SignedInAccount({ user }: { user: { id: string; email: string | null } 
       <Card padding="xs">
         <ListItem
           icon="person-circle-outline"
-          title={user.email ?? t('account.signedIn')}
-          subtitle={t('account.signedIn')}
+          title={user.username ?? user.email ?? t('account.signedIn')}
+          subtitle={user.username && user.email ? user.email : t('account.signedIn')}
         />
         <Divider inset={spacing.lg} />
         <ListItem
@@ -266,16 +257,13 @@ function SignedInAccount({ user }: { user: { id: string; email: string | null } 
           },
           { label: t('common.cancel'), variant: 'ghost', onPress: () => setDialog(null) },
         ]}>
-        <TextField
+        <PasswordField
           label={t('account.deletePassword')}
           helperText={
             appleAvailable ? t('account.deleteAppleHint') : t('account.deletePasswordHint')
           }
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
           editable={!busy}
         />
       </Dialog>

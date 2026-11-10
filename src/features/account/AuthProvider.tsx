@@ -1,4 +1,4 @@
-import type { AuthError, SupabaseClient } from '@supabase/supabase-js';
+import type { AuthError, EmailOtpType, SupabaseClient } from '@supabase/supabase-js';
 import {
   createContext,
   useCallback,
@@ -21,6 +21,8 @@ export { authRedirectUrl } from './auth-redirect';
 export type AuthUser = {
   id: string;
   email: string | null;
+  /** Nome escolhido no registo, guardado nos metadados da conta. */
+  username: string | null;
   /** Língua dos emails de autenticação, guardada nos metadados da conta (ADR-035). */
   locale: EmailLocale | null;
 };
@@ -39,6 +41,15 @@ function readLocale(metadata: unknown): EmailLocale | null {
   return value === 'pt' || value === 'en' || value === 'es' ? value : null;
 }
 
+const MAX_USERNAME_LENGTH = 40;
+
+export function readUsername(metadata: unknown): string | null {
+  const value = (metadata as { username?: unknown } | null | undefined)?.username;
+  if (typeof value !== 'string') return null;
+  const name = value.trim();
+  return name ? name.slice(0, MAX_USERNAME_LENGTH) : null;
+}
+
 export type AuthState =
   /** Projeto Supabase não configurado nesta build: só uso sem conta. */
   | { status: 'unavailable' }
@@ -49,6 +60,9 @@ export type AuthState =
 
 export type AuthErrorCode =
   | 'invalidCredentials'
+  | 'userNotFound'
+  /** O email já foi confirmado, mas este dispositivo não tem o verificador PKCE. */
+  | 'confirmedElsewhere'
   | 'emailNotConfirmed'
   | 'emailInvalid'
   | 'emailSendFailed'
@@ -109,8 +123,47 @@ export function toAuthErrorCode(error: AuthError | Error | null | undefined): Au
     case 'bad_code_verifier':
       return 'linkInvalid';
     default:
-      return 'unknown';
+      return isMissingVerifier(error) ? 'confirmedElsewhere' : 'unknown';
   }
+}
+
+const OTP_TYPES = new Set<EmailOtpType>([
+  'signup',
+  'invite',
+  'magiclink',
+  'recovery',
+  'email_change',
+  'email',
+]);
+
+export function emailOtpType(value: string | undefined): EmailOtpType | null {
+  return value && OTP_TYPES.has(value as EmailOtpType) ? (value as EmailOtpType) : null;
+}
+
+/**
+ * O Supabase devolve `invalid_credentials` tanto para uma conta apagada como para uma
+ * palavra-passe errada. A função `email_registered` distingue os dois. Se ainda não
+ * existir no servidor, fica a mensagem da palavra-passe.
+ */
+async function lookupRegistered(client: SupabaseClient, email: string): Promise<boolean | null> {
+  try {
+    const { data, error } = await client.rpc('email_registered', { target_email: email.trim() });
+    if (error || typeof data !== 'boolean') return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/** O código PKCE só se troca no browser que pediu o email. Noutro dispositivo o email já está confirmado. */
+export function isMissingVerifier(error: AuthError | Error | null | undefined): boolean {
+  if (!error) return false;
+  const code = (error as AuthError).code;
+  if (code === 'pkce_verifier_missing' || code === 'AuthPKCECodeVerifierMissingError') return true;
+  if (error.name === 'AuthPKCECodeVerifierMissingError') return true;
+  const message =
+    typeof (error as AuthError).message === 'string' ? (error as AuthError).message : '';
+  return message.toLowerCase().includes('code verifier not found');
 }
 
 /** Código seguro para o log. Nunca a mensagem: ela pode incluir o email. */
@@ -131,11 +184,17 @@ export { isAppleSignInAvailable } from './apple-sign-in';
 export type AuthActions = {
   signIn(email: string, password: string): Promise<AuthResult>;
   /** `confirmEmail`: conta criada, à espera da confirmação por email. */
-  signUp(email: string, password: string): Promise<AuthResult<'signedIn' | 'confirmEmail'>>;
+  signUp(
+    email: string,
+    password: string,
+    username: string,
+  ): Promise<AuthResult<'signedIn' | 'confirmEmail'>>;
   signOut(): Promise<AuthResult>;
   requestPasswordReset(email: string): Promise<AuthResult>;
   /** Troca o código de um link de email por uma sessão (PKCE). */
   exchangeCode(code: string): Promise<AuthResult>;
+  /** Confirma o email em qualquer dispositivo. Não depende do verificador PKCE. */
+  verifyEmail(tokenHash: string, type: EmailOtpType): Promise<AuthResult>;
   updatePassword(password: string): Promise<AuthResult>;
   signInWithApple(): Promise<AuthResult>;
   /**
@@ -162,6 +221,7 @@ function createActions(client: SupabaseClient | null): AuthActions {
       signOut: unavailable,
       requestPasswordReset: unavailable,
       exchangeCode: unavailable,
+      verifyEmail: unavailable,
       updatePassword: unavailable,
       signInWithApple: unavailable,
       reauthenticateWithApple: unavailable,
@@ -181,9 +241,17 @@ function createActions(client: SupabaseClient | null): AuthActions {
     signIn: (email, password) =>
       guard(async () => {
         const { error } = await auth.signInWithPassword({ email: email.trim(), password });
-        return error ? fail(error) : ok(undefined);
+        if (!error) return ok(undefined);
+        if (toAuthErrorCode(error) === 'invalidCredentials') {
+          const registered = await lookupRegistered(client, email);
+          if (registered === false) {
+            console.error('[auth] user_not_found');
+            return { ok: false, error: 'userNotFound' };
+          }
+        }
+        return fail(error);
       }),
-    signUp: (email, password) =>
+    signUp: (email, password, username) =>
       guard(async () => {
         const { data, error } = await auth.signUp({
           email: email.trim(),
@@ -191,7 +259,7 @@ function createActions(client: SupabaseClient | null): AuthActions {
           options: {
             emailRedirectTo: authRedirectUrl('/auth/callback'),
             // Os emails seguem a língua da app (modelos em supabase/templates).
-            data: { locale: emailLocaleFor(i18n.language) },
+            data: { locale: emailLocaleFor(i18n.language), username: username.trim() },
           },
         });
         if (error) return fail(error);
@@ -212,6 +280,16 @@ function createActions(client: SupabaseClient | null): AuthActions {
     exchangeCode: (code) =>
       guard(async () => {
         const { error } = await auth.exchangeCodeForSession(code);
+        if (!error) return ok(undefined);
+        if (isMissingVerifier(error)) {
+          console.error('[auth] pkce_verifier_missing');
+          return { ok: false, error: 'confirmedElsewhere' };
+        }
+        return fail(error);
+      }),
+    verifyEmail: (tokenHash, type) =>
+      guard(async () => {
+        const { error } = await auth.verifyOtp({ token_hash: tokenHash, type });
         return error ? fail(error) : ok(undefined);
       }),
     updatePassword: (password) =>
@@ -270,6 +348,7 @@ export function AuthProvider({
           user: {
             id: session.user.id,
             email: session.user.email ?? null,
+            username: readUsername(session.user.user_metadata),
             locale: readLocale(session.user.user_metadata),
           },
         });

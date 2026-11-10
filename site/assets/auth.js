@@ -1,5 +1,5 @@
-// Páginas de retorno dos emails do Miven (ADR-034). Não guardam nem enviam nada: mostram o
-// resultado e reencaminham o mesmo código para a app (miven://), onde a sessão é criada.
+// Páginas de retorno dos emails do Miven (ADR-034). Não guardam nem enviam nada.
+// O código PKCE segue para a app (miven://). O token_hash abre a app web, que confirma em qualquer dispositivo.
 (function () {
   let TEXT = {
     pt: {
@@ -14,6 +14,11 @@
       ],
       open: 'Abrir a app Miven',
       hint: 'Se a app não abrir, abre o Miven no telemóvel e entra com o teu email e palavra-passe.',
+      confirm: [
+        'Ativa a conta',
+        'Continua no browser para confirmares o email. Depois entra com a mesma conta.',
+      ],
+      continueWeb: 'Continuar no browser',
     },
     en: {
       callbackOk: [
@@ -30,6 +35,11 @@
       ],
       open: 'Open the Miven app',
       hint: "If the app doesn't open, open Miven on your phone and sign in with your email and password.",
+      confirm: [
+        'Activate the account',
+        'Continue in the browser to confirm your email. Then sign in with the same account.',
+      ],
+      continueWeb: 'Continue in the browser',
     },
     es: {
       callbackOk: [
@@ -46,6 +56,11 @@
       ],
       open: 'Abrir la app Miven',
       hint: 'Si la app no se abre, abre Miven en el móvil y entra con tu email y contraseña.',
+      confirm: [
+        'Activa la cuenta',
+        'Continúa en el browser para confirmar el correo. Después entra con la misma cuenta.',
+      ],
+      continueWeb: 'Continuar en el browser',
     },
   };
 
@@ -57,31 +72,46 @@
   let query = new URLSearchParams(window.location.search);
   let hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   let failed = query.has('error') || query.has('error_code') || hash.has('error');
-  let content = failed ? t.error : page === 'reset' ? t.resetOk : t.callbackOk;
+  let tokenHash = query.get('token_hash') || hash.get('token_hash');
+  let content = failed
+    ? t.error
+    : page === 'reset'
+      ? t.resetOk
+      : tokenHash
+        ? t.confirm
+        : t.callbackOk;
 
   document.getElementById('title').textContent = content[0];
   document.getElementById('message').textContent = content[1];
-  document.getElementById('hint').textContent = t.hint;
+  document.getElementById('hint').textContent = tokenHash && !failed ? '' : t.hint;
   let icon = document.getElementById('icon');
-  icon.textContent = failed ? '!' : '✓';
+  icon.textContent = failed ? '!' : tokenHash ? '→' : '✓';
   if (failed) icon.classList.add('error');
 
-  // Só se passa o código (uso único, ligado ao dispositivo que o pediu) e o motivo do erro.
+  // O código PKCE só cria sessão no dispositivo que o pediu. O token_hash confirma em qualquer um
+  // e a app web é que o troca: a app já instalada ainda não o conhece.
   let forward = new URLSearchParams();
-  ['code', 'error', 'error_code', 'error_description'].forEach(function (key) {
-    let value = query.get(key) || hash.get(key);
-    if (value) forward.set(key, value);
-  });
-  let target = 'miven://auth/' + (page === 'reset' ? 'reset-password' : 'callback');
-  let deepLink = target + (forward.toString() ? '?' + forward.toString() : '');
+  ['code', 'error', 'error_code', 'error_description', 'token_hash', 'type'].forEach(
+    function (key) {
+      let value = query.get(key) || hash.get(key);
+      if (value) forward.set(key, value);
+    },
+  );
+  let path = page === 'reset' ? 'reset-password' : 'callback';
+  let deepLink = 'miven://auth/' + path + (forward.toString() ? '?' + forward.toString() : '');
+  let webTarget =
+    'https://miven.pt/app/auth/' + path + (forward.toString() ? '?' + forward.toString() : '');
   let button = document.getElementById('open');
-  button.textContent = t.open;
-  button.setAttribute('href', deepLink);
-
-  // No telemóvel tenta abrir a app de imediato; no computador fica só a mensagem.
-  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) && forward.has('code')) {
-    window.setTimeout(function () {
-      window.location.href = deepLink;
-    }, 400);
+  if (tokenHash && !failed) {
+    button.textContent = t.continueWeb;
+    button.setAttribute('href', webTarget);
+  } else {
+    button.textContent = t.open;
+    button.setAttribute('href', deepLink);
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) && forward.has('code')) {
+      window.setTimeout(function () {
+        window.location.href = deepLink;
+      }, 400);
+    }
   }
 })();

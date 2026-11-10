@@ -151,16 +151,33 @@ const FOOTER = {
 // O idioma vem dos metadados da conta; sem valor, português.
 const LANG = '{{ $l := or .Data.locale "pt" }}';
 
-function block(copy, footer) {
+// O link fica em miven.pt e traz o token_hash: qualquer dispositivo confirma, sem o
+// verificador PKCE do browser que pediu o email, e sem passar por supabase.co.
+const OTP_TYPE = {
+  confirmation: 'email',
+  recovery: 'recovery',
+  magic_link: 'magiclink',
+  email_change: 'email_change',
+  invite: 'invite',
+};
+
+function actionHref(type) {
+  const otp = OTP_TYPE[type];
+  if (!otp) return null;
+  return `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=${otp}`;
+}
+
+function block(copy, footer, href) {
   const action = copy.action
     ? `<tr><td align="center" style="padding:8px 32px 8px">
-<a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#10B981;color:#101B2D;font-weight:700;font-size:16px;text-decoration:none;padding:14px 28px;border-radius:999px">${copy.action}</a>
+<a href="${href}" style="display:inline-block;background:#10B981;color:#101B2D;font-weight:700;font-size:16px;text-decoration:none;padding:14px 28px;border-radius:999px">${copy.action}</a>
 </td></tr>
-<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">${footer.link}<br><a href="{{ .ConfirmationURL }}" style="color:#047857;word-break:break-all">{{ .ConfirmationURL }}</a></td></tr>`
+<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">${footer.link}<br><a href="${href}" style="color:#047857;word-break:break-all">${href}</a></td></tr>`
     : `<tr><td align="center" style="padding:8px 32px">
 <div style="display:inline-block;font-size:32px;letter-spacing:8px;font-weight:700;color:#101B2D;background:#EEF2F6;border-radius:12px;padding:12px 20px">{{ .Token }}</div>
 </td></tr>`;
-  return `<tr><td style="padding:8px 32px 0"><h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#101B2D">${copy.title}</h1>
+  return `<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#F1F5F9">${copy.body}</td></tr>
+<tr><td style="padding:8px 32px 0"><h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#101B2D">${copy.title}</h1>
 <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#334155">${copy.body}</p></td></tr>
 ${action}
 <tr><td style="padding:24px 32px 32px;font-size:13px;line-height:1.5;color:#475569">${footer.ignore}</td></tr>`;
@@ -168,7 +185,8 @@ ${action}
 
 function html(type) {
   const c = COPY[type];
-  const body = `{{ if eq $l "en" }}${block(c.en, FOOTER.en)}{{ else if eq $l "es" }}${block(c.es, FOOTER.es)}{{ else }}${block(c.pt, FOOTER.pt)}{{ end }}`;
+  const href = actionHref(type);
+  const body = `{{ if eq $l "en" }}${block(c.en, FOOTER.en, href)}{{ else if eq $l "es" }}${block(c.es, FOOTER.es, href)}{{ else }}${block(c.pt, FOOTER.pt, href)}{{ end }}`;
   const sent = `{{ if eq $l "en" }}${FOOTER.en.sent}{{ else if eq $l "es" }}${FOOTER.es.sent}{{ else }}${FOOTER.pt.sent}{{ end }}`;
   return `${LANG}<!doctype html>
 <html lang="{{ $l }}">

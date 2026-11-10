@@ -768,7 +768,12 @@ const es: Translation = {
       'Con una cuenta, tus datos se guardan de forma segura y se sincronizan entre dispositivos. La app sigue funcionando sin conexión.',
     email: 'Correo electrónico',
     emailPlaceholder: 'nombre@ejemplo.es',
+    username: 'Nombre de usuario',
+    usernamePlaceholder: '¿Cómo te llamas?',
+    usernameTooLong: 'El nombre de usuario es demasiado largo.',
     password: 'Contraseña',
+    showPassword: 'Mostrar contraseña',
+    hidePassword: 'Ocultar contraseña',
     newPassword: 'Nueva contraseña',
     passwordHelper: 'Al menos {{count}} caracteres.',
     invalidEmail: 'Introduce un correo válido.',
@@ -779,8 +784,12 @@ const es: Translation = {
     signInWithApple: 'Continuar con Apple',
     confirmEmail: {
       title: 'Confirma tu correo',
-      message:
-        'Enviamos un enlace a {{email}}. Ábrelo en el móvil o en el ordenador para activar la cuenta y luego entra en la app.',
+      lead: 'Enviamos un enlace para activar la cuenta. Ábrelo y luego entra.',
+      step1: 'Abre el correo en el móvil o en el ordenador.',
+      step2: 'Toca en Confirmar email.',
+      step3: 'Vuelve a Miven y entra con la contraseña.',
+      spam: 'Si no aparece en la bandeja de entrada, mira el correo no deseado.',
+      ready: 'Ya lo he confirmado',
     },
     forgotTitle: 'Recuperar contraseña',
     forgotIntro:
@@ -799,9 +808,16 @@ const es: Translation = {
       title: 'Sesión iniciada',
       message: 'Los datos de tu cuenta se sincronizarán en este dispositivo.',
     },
+    callbackConfirmed: {
+      title: 'Correo confirmado',
+      message: 'La cuenta está activa. Entra con el correo y la contraseña.',
+      action: 'Entrar',
+    },
     callbackFailed: 'No se ha podido confirmar',
     errors: {
-      invalidCredentials: 'No hay cuenta con este correo, o la contraseña no es correcta.',
+      invalidCredentials: 'Correo o contraseña incorrectos.',
+      userNotFound: 'Usuario no encontrado.',
+      confirmedElsewhere: 'El correo ya está confirmado. Entra con la contraseña.',
       emailNotConfirmed: 'Confirma primero tu correo con el enlace que has recibido.',
       emailInvalid:
         'Este correo no se acepta. Los dominios de ejemplo o de prueba no sirven; usa una dirección real.',

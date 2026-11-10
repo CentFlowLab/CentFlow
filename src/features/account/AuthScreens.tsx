@@ -3,11 +3,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { Button, EmptyState, FormScreen, Text, TextField } from '@/ui/components';
-import { spacing, useTheme } from '@/ui/theme';
+import { Button, EmptyState, FormScreen, Icon, Text, TextField } from '@/ui/components';
+import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { closeModal } from '../finance/navigation';
-import { isAppleSignInAvailable, useAuth, type AuthErrorCode } from './AuthProvider';
+import { emailOtpType, isAppleSignInAvailable, useAuth, type AuthErrorCode } from './AuthProvider';
+import { PasswordField } from './PasswordField';
 
 /** Ecrã inicial sem sessão (fora das rotas tipadas até o Expo as regenerar). */
 const WELCOME = '/welcome' as Href;
@@ -15,11 +16,25 @@ const WELCOME = '/welcome' as Href;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const MIN_PASSWORD_LENGTH = 8;
 
-type Field = 'email' | 'password';
-type FieldErrors = Partial<Record<Field, 'invalidEmail' | 'passwordTooShort' | 'required'>>;
+const MAX_USERNAME_LENGTH = 40;
 
-function validate(email: string | null, password: string | null, strict: boolean): FieldErrors {
+type Field = 'username' | 'email' | 'password';
+type FieldErrors = Partial<
+  Record<Field, 'invalidEmail' | 'passwordTooShort' | 'usernameTooLong' | 'required'>
+>;
+
+function validate(
+  email: string | null,
+  password: string | null,
+  strict: boolean,
+  username: string | null = null,
+): FieldErrors {
   const errors: FieldErrors = {};
+  if (username !== null) {
+    const name = username.trim();
+    if (!name) errors.username = 'required';
+    else if (name.length > MAX_USERNAME_LENGTH) errors.username = 'usernameTooLong';
+  }
   if (email !== null) {
     if (!email.trim()) errors.email = 'required';
     else if (!EMAIL.test(email.trim())) errors.email = 'invalidEmail';
@@ -74,6 +89,54 @@ function ErrorText({ code }: { code: AuthErrorCode | null }) {
     <Text variant="callout" tone="negative" accessibilityLiveRegion="polite">
       {t(`auth.errors.${code}`)}
     </Text>
+  );
+}
+
+function ConfirmEmail({ email, onDone }: { email: string; onDone: () => void }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const steps = [
+    t('auth.confirmEmail.step1'),
+    t('auth.confirmEmail.step2'),
+    t('auth.confirmEmail.step3'),
+  ];
+  return (
+    <View style={styles.confirm}>
+      <View style={[styles.iconRing, { backgroundColor: colors.surfaceMuted }]}>
+        <View style={[styles.iconCore, { backgroundColor: colors.primaryMuted }]}>
+          <Icon name="mail-outline" size={32} color="primaryText" />
+        </View>
+      </View>
+      <Text variant="title2" align="center">
+        {t('auth.confirmEmail.title')}
+      </Text>
+      <Text variant="callout" tone="secondary" align="center">
+        {t('auth.confirmEmail.lead')}
+      </Text>
+      <View style={[styles.emailPill, { backgroundColor: colors.surfaceMuted }]}>
+        <Text variant="label" align="center" numberOfLines={1}>
+          {email}
+        </Text>
+      </View>
+      <View style={styles.steps}>
+        {steps.map((step, index) => (
+          <View key={step} style={styles.step}>
+            <View style={[styles.stepNo, { backgroundColor: colors.primaryMuted }]}>
+              <Text variant="label" tone="accent">
+                {index + 1}
+              </Text>
+            </View>
+            <Text variant="callout" style={styles.stepText}>
+              {step}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <Text variant="footnote" tone="tertiary" align="center">
+        {t('auth.confirmEmail.spam')}
+      </Text>
+      <Button label={t('auth.confirmEmail.ready')} onPress={onDone} fullWidth />
+    </View>
   );
 }
 
@@ -137,11 +200,10 @@ export function SignInScreen() {
         textContentType="emailAddress"
         errorText={fieldError(errors.email)}
       />
-      <TextField
+      <PasswordField
         label={t('auth.password')}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
         autoComplete="current-password"
         textContentType="password"
         onSubmitEditing={submit}
@@ -180,6 +242,7 @@ export function SignUpScreen() {
   const { t } = useTranslation();
   const { actions } = useAuth();
   const fieldError = useFieldError();
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -188,12 +251,12 @@ export function SignUpScreen() {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   const submit = async () => {
-    const found = validate(email, password, true);
+    const found = validate(email, password, true, username);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setBusy(true);
     setError(null);
-    const result = await actions.signUp(email, password);
+    const result = await actions.signUp(email, password, username.trim());
     setBusy(false);
     if (!result.ok) setError(result.error);
     // Sessão imediata: o router abre a app sozinho.
@@ -203,11 +266,7 @@ export function SignUpScreen() {
   if (awaitingConfirmation) {
     return (
       <AuthLayout title={t('auth.signUpTitle')}>
-        <Notice
-          title={t('auth.confirmEmail.title')}
-          message={t('auth.confirmEmail.message', { email: email.trim() })}
-          action={<Button label={t('common.ok')} onPress={() => closeModal(WELCOME)} />}
-        />
+        <ConfirmEmail email={email.trim()} onDone={() => router.replace('/auth/sign-in' as Href)} />
       </AuthLayout>
     );
   }
@@ -217,6 +276,16 @@ export function SignUpScreen() {
       title={t('auth.signUpTitle')}
       intro={t('auth.signUpIntro')}
       footer={<Button label={t('auth.signUp')} loading={busy} onPress={submit} fullWidth />}>
+      <TextField
+        label={t('auth.username')}
+        value={username}
+        onChangeText={setUsername}
+        placeholder={t('auth.usernamePlaceholder')}
+        autoComplete="username"
+        autoCorrect={false}
+        maxLength={MAX_USERNAME_LENGTH}
+        errorText={fieldError(errors.username)}
+      />
       <TextField
         label={t('auth.email')}
         value={email}
@@ -228,11 +297,10 @@ export function SignUpScreen() {
         textContentType="emailAddress"
         errorText={fieldError(errors.email)}
       />
-      <TextField
+      <PasswordField
         label={t('auth.password')}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
         autoComplete="new-password"
         textContentType="newPassword"
         helperText={t('auth.passwordHelper', { count: MIN_PASSWORD_LENGTH })}
@@ -306,21 +374,45 @@ export function ForgotPasswordScreen() {
   );
 }
 
-/** Troca uma única vez o código PKCE do link por uma sessão. */
+function one(value: string | string[] | undefined): string | undefined {
+  const found = Array.isArray(value) ? value[0] : value;
+  return found || undefined;
+}
+
+/** Troca uma única vez o código do link por uma sessão. O `token_hash` funciona em qualquer dispositivo. */
 function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
   const { actions } = useAuth();
-  const params = useLocalSearchParams<{ code?: string; error_code?: string }>();
-  const [status, setStatus] = useState<'working' | 'done' | AuthErrorCode>(
-    params.code ? 'working' : params.error_code ? 'linkInvalid' : 'done',
-  );
+  const params = useLocalSearchParams<{
+    code?: string | string[];
+    error_code?: string | string[];
+    token_hash?: string | string[];
+    type?: string | string[];
+  }>();
+  const code = one(params.code);
+  const tokenHash = one(params.token_hash);
+  const otpType = emailOtpType(one(params.type));
+  const [status, setStatus] = useState<'working' | 'done' | AuthErrorCode>(() => {
+    if (tokenHash) return otpType ? 'working' : 'linkInvalid';
+    if (code) return 'working';
+    return one(params.error_code) ? 'linkInvalid' : 'done';
+  });
   const started = useRef(false);
   useEffect(() => {
-    if (!params.code || started.current) return;
+    if (started.current) return;
+    if (tokenHash) {
+      if (!otpType) return;
+      started.current = true;
+      void actions.verifyEmail(tokenHash, otpType).then((result) => {
+        setStatus(result.ok ? 'done' : result.error);
+      });
+      return;
+    }
+    if (!code) return;
     started.current = true;
-    void actions.exchangeCode(params.code).then((result) => {
+    void actions.exchangeCode(code).then((result) => {
       setStatus(result.ok ? 'done' : result.error);
     });
-  }, [actions, params.code]);
+  }, [actions, code, otpType, tokenHash]);
   return status;
 }
 
@@ -340,6 +432,16 @@ export function AuthCallbackScreen() {
           message={t('auth.callbackDone.message')}
           action={<Button label={t('common.ok')} onPress={() => router.replace('/')} />}
         />
+      ) : status === 'confirmedElsewhere' ? (
+        <EmptyState
+          icon="checkmark-circle-outline"
+          title={t('auth.callbackConfirmed.title')}
+          description={t('auth.callbackConfirmed.message')}>
+          <Button
+            label={t('auth.callbackConfirmed.action')}
+            onPress={() => router.replace('/auth/sign-in' as Href)}
+          />
+        </EmptyState>
       ) : (
         <EmptyState
           icon="alert-circle-outline"
@@ -389,7 +491,9 @@ export function ResetPasswordScreen() {
         <EmptyState
           icon="alert-circle-outline"
           title={t('auth.callbackFailed')}
-          description={t(`auth.errors.${exchange === 'done' ? 'linkInvalid' : exchange}`)}>
+          description={t(
+            `auth.errors.${exchange === 'done' || exchange === 'confirmedElsewhere' ? 'linkInvalid' : exchange}`,
+          )}>
           <Button
             label={t('auth.sendLink')}
             onPress={() => router.replace('/auth/forgot-password' as Href)}
@@ -413,11 +517,10 @@ export function ResetPasswordScreen() {
     <AuthLayout
       title={t('auth.resetTitle')}
       footer={<Button label={t('auth.resetSave')} loading={busy} onPress={submit} fullWidth />}>
-      <TextField
+      <PasswordField
         label={t('auth.newPassword')}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
         autoComplete="new-password"
         textContentType="newPassword"
         helperText={t('auth.passwordHelper', { count: MIN_PASSWORD_LENGTH })}
@@ -436,5 +539,51 @@ const styles = StyleSheet.create({
   },
   notice: {
     gap: spacing.md,
+  },
+  confirm: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+  },
+  iconRing: {
+    width: 96,
+    height: 96,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  iconCore: {
+    width: 68,
+    height: 68,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emailPill: {
+    alignSelf: 'stretch',
+    borderRadius: radius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  steps: {
+    alignSelf: 'stretch',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  stepNo: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepText: {
+    flex: 1,
   },
 });
