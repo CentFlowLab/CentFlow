@@ -52,8 +52,10 @@ jobs:
       - name: Reservar a compilação seguinte
         shell: bash
         run: |
-          count="$(gh release list --limit 500 --json tagName --jq '[.[].tagName | select(startswith("android-build-"))] | length')"
-          code=$((count + 1))
+          # O maior número já publicado + 1 (contar as releases repetia números quando falta uma).
+          # O Android só atualiza por cima com um versionCode maior.
+          last="$(gh release list --limit 500 --json tagName --jq '[.[].tagName | select(startswith("android-build-")) | ltrimstr("android-build-") | tonumber] | max // 0')"
+          code=$((last + 1))
           version="$(node -p "require('./app.json').expo.version")"
           printf 'VERSION_CODE=%s\nVERSION_NAME=%s\n' "$code" "$version" >> "$GITHUB_ENV"
           VERSION_CODE="$code" node <<'EOF'
