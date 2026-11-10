@@ -14,6 +14,15 @@
       "tintColor": "#10B981",
       "versions": [
         {
+          "version": "0.1.6",
+          "buildVersion": "12",
+          "date": "2026-11-10",
+          "localizedDescription": "Compilação 12. Atualiza por cima da instalação existente e mantém os dados locais.",
+          "downloadURL": "https://github.com/CentFlowLab/CentFlow/releases/download/sideload-build-12/centflow-unsigned.ipa",
+          "size": 22411570,
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "0.1.5",
           "buildVersion": "9",
           "date": "2026-11-09",
@@ -95,9 +104,9 @@
           "minOSVersion": "16.4"
         }
       ],
-      "version": "0.1.5",
-      "downloadURL": "https://github.com/CentFlowLab/CentFlow/releases/download/sideload-build-9/centflow-unsigned.ipa",
-      "size": 22401386
+      "version": "0.1.6",
+      "downloadURL": "https://github.com/CentFlowLab/CentFlow/releases/download/sideload-build-12/centflow-unsigned.ipa",
+      "size": 22411570
     }
   ],
   "news": []
