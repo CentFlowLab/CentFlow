@@ -757,6 +757,8 @@ const en: Translation = {
     signUp: 'Create account',
     signInTitle: 'Sign in',
     signInIntro: 'Your account data syncs across your devices.',
+    confirmedSignIn: 'Your email is confirmed. Sign in to continue on this device.',
+    confirmLinkUsed: 'This link can no longer open a session. If the account is active, sign in.',
     signUpTitle: 'Create account',
     signUpIntro:
       'With an account, your data is stored securely and syncs across devices. The app keeps working offline.',

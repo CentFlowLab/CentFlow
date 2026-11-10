@@ -763,6 +763,9 @@ const es: Translation = {
     signUp: 'Crear cuenta',
     signInTitle: 'Iniciar sesión',
     signInIntro: 'Los datos de tu cuenta se sincronizan entre tus dispositivos.',
+    confirmedSignIn: 'El correo está confirmado. Entra para continuar en este dispositivo.',
+    confirmLinkUsed:
+      'Este enlace ya no abre la sesión. Si la cuenta está activa, entra con la contraseña.',
     signUpTitle: 'Crear cuenta',
     signUpIntro:
       'Con una cuenta, tus datos se guardan de forma segura y se sincronizan entre dispositivos. La app sigue funcionando sin conexión.',

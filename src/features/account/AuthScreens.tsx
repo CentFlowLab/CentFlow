@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { Button, EmptyState, FormScreen, Icon, Text, TextField } from '@/ui/components';
 import { radius, spacing, useTheme } from '@/ui/theme';
@@ -166,6 +166,7 @@ export function SignInScreen() {
   const { actions } = useAuth();
   const fieldError = useFieldError();
   const appleAvailable = useAppleAvailable();
+  const confirmed = one(useLocalSearchParams<{ confirmed?: string | string[] }>().confirmed);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -189,6 +190,15 @@ export function SignInScreen() {
       title={t('auth.signInTitle')}
       intro={t('auth.signInIntro')}
       footer={<Button label={t('auth.signIn')} loading={busy} onPress={submit} fullWidth />}>
+      {confirmed === '1' ? (
+        <Text variant="callout" tone="accent">
+          {t('auth.confirmedSignIn')}
+        </Text>
+      ) : confirmed === 'link' ? (
+        <Text variant="callout" tone="secondary">
+          {t('auth.confirmLinkUsed')}
+        </Text>
+      ) : null}
       <TextField
         label={t('auth.email')}
         value={email}
@@ -379,6 +389,16 @@ function one(value: string | string[] | undefined): string | undefined {
   return found || undefined;
 }
 
+/**
+ * No site publicado, o service worker de isolamento recarrega a página uma vez.
+ * Confirmar antes desse recarregamento gastava o link e o segundo carregamento falhava.
+ */
+function webMustWaitForIsolation(): boolean {
+  if (Platform.OS !== 'web' || globalThis.crossOriginIsolated === true) return false;
+  if (typeof document === 'undefined') return false;
+  return document.querySelector('script[src*="coi-serviceworker"]') !== null;
+}
+
 /** Troca uma única vez o código do link por uma sessão. O `token_hash` funciona em qualquer dispositivo. */
 function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
   const { actions } = useAuth();
@@ -391,14 +411,16 @@ function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
   const code = one(params.code);
   const tokenHash = one(params.token_hash);
   const otpType = emailOtpType(one(params.type));
+  const waitForIsolation = webMustWaitForIsolation();
   const [status, setStatus] = useState<'working' | 'done' | AuthErrorCode>(() => {
+    if (waitForIsolation) return 'working';
     if (tokenHash) return otpType ? 'working' : 'linkInvalid';
     if (code) return 'working';
     return one(params.error_code) ? 'linkInvalid' : 'done';
   });
   const started = useRef(false);
   useEffect(() => {
-    if (started.current) return;
+    if (waitForIsolation || started.current) return;
     if (tokenHash) {
       if (!otpType) return;
       started.current = true;
@@ -412,7 +434,7 @@ function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
     void actions.exchangeCode(code).then((result) => {
       setStatus(result.ok ? 'done' : result.error);
     });
-  }, [actions, code, otpType, tokenHash]);
+  }, [actions, code, otpType, tokenHash, waitForIsolation]);
   return status;
 }
 
@@ -420,35 +442,59 @@ function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
 export function AuthCallbackScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const { state } = useAuth();
+  const link = useLocalSearchParams<{ code?: string | string[]; token_hash?: string | string[] }>();
+  const hadLink = Boolean(one(link.code) || one(link.token_hash));
   const status = useCodeExchange();
+
+  const entering = status === 'done' && state.status === 'signedIn';
+
+  useEffect(() => {
+    if (entering) router.replace('/');
+    else if (status === 'confirmedElsewhere') router.replace('/auth/sign-in?confirmed=1' as Href);
+    else if (status === 'linkInvalid') router.replace('/auth/sign-in?confirmed=link' as Href);
+  }, [entering, status]);
+
+  if (status === 'done' && (entering || hadLink)) {
+    return (
+      <AuthLayout title={t('auth.callbackTitle')}>
+        <ActivityIndicator color={colors.primary} accessibilityLabel={t('common.loading')} />
+      </AuthLayout>
+    );
+  }
+
+  if (status === 'done') {
+    return (
+      <AuthLayout title={t('auth.callbackTitle')}>
+        <Notice
+          title={t('auth.callbackConfirmed.title')}
+          message={t('auth.callbackConfirmed.message')}
+          action={
+            <Button
+              label={t('auth.callbackConfirmed.action')}
+              onPress={() => router.replace('/auth/sign-in' as Href)}
+            />
+          }
+        />
+      </AuthLayout>
+    );
+  }
+
+  if (status === 'working' || status === 'confirmedElsewhere' || status === 'linkInvalid') {
+    return (
+      <AuthLayout title={t('auth.callbackTitle')}>
+        <ActivityIndicator color={colors.primary} accessibilityLabel={t('common.loading')} />
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout title={t('auth.callbackTitle')}>
-      {status === 'working' ? (
-        <ActivityIndicator color={colors.primary} accessibilityLabel={t('common.loading')} />
-      ) : status === 'done' ? (
-        <Notice
-          title={t('auth.callbackDone.title')}
-          message={t('auth.callbackDone.message')}
-          action={<Button label={t('common.ok')} onPress={() => router.replace('/')} />}
-        />
-      ) : status === 'confirmedElsewhere' ? (
-        <EmptyState
-          icon="checkmark-circle-outline"
-          title={t('auth.callbackConfirmed.title')}
-          description={t('auth.callbackConfirmed.message')}>
-          <Button
-            label={t('auth.callbackConfirmed.action')}
-            onPress={() => router.replace('/auth/sign-in' as Href)}
-          />
-        </EmptyState>
-      ) : (
-        <EmptyState
-          icon="alert-circle-outline"
-          title={t('auth.callbackFailed')}
-          description={t(`auth.errors.${status}`)}
-        />
-      )}
+      <EmptyState
+        icon="alert-circle-outline"
+        title={t('auth.callbackFailed')}
+        description={t(`auth.errors.${status}`)}
+      />
     </AuthLayout>
   );
 }

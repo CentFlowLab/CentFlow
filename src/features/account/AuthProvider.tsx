@@ -159,7 +159,13 @@ async function lookupRegistered(client: SupabaseClient, email: string): Promise<
 export function isMissingVerifier(error: AuthError | Error | null | undefined): boolean {
   if (!error) return false;
   const code = (error as AuthError).code;
-  if (code === 'pkce_verifier_missing' || code === 'AuthPKCECodeVerifierMissingError') return true;
+  if (
+    code === 'pkce_code_verifier_not_found' ||
+    code === 'pkce_verifier_missing' ||
+    code === 'AuthPKCECodeVerifierMissingError'
+  ) {
+    return true;
+  }
   if (error.name === 'AuthPKCECodeVerifierMissingError') return true;
   const message =
     typeof (error as AuthError).message === 'string' ? (error as AuthError).message : '';

@@ -63,8 +63,10 @@ describe('toAuthErrorCode', () => {
       isMissingVerifier({
         name: 'AuthPKCECodeVerifierMissingError',
         message: 'PKCE code verifier not found in storage.',
+        code: 'pkce_code_verifier_not_found',
       } as AuthError),
     ).toBe(true);
+    expect(toAuthErrorCode(authError('pkce_code_verifier_not_found'))).toBe('confirmedElsewhere');
     expect(toAuthErrorCode(authError('otp_expired'))).toBe('linkInvalid');
   });
 

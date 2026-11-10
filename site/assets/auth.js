@@ -14,10 +14,7 @@
       ],
       open: 'Abrir a app Miven',
       hint: 'Se a app não abrir, abre o Miven no telemóvel e entra com o teu email e palavra-passe.',
-      confirm: [
-        'Ativa a conta',
-        'Continua no browser para confirmares o email. Depois entra com a mesma conta.',
-      ],
+      confirm: ['A abrir a conta', 'Estamos a confirmar o email e a abrir o Miven.'],
       continueWeb: 'Continuar no browser',
     },
     en: {
@@ -35,10 +32,7 @@
       ],
       open: 'Open the Miven app',
       hint: "If the app doesn't open, open Miven on your phone and sign in with your email and password.",
-      confirm: [
-        'Activate the account',
-        'Continue in the browser to confirm your email. Then sign in with the same account.',
-      ],
+      confirm: ['Opening your account', 'Confirming your email and opening Miven.'],
       continueWeb: 'Continue in the browser',
     },
     es: {
@@ -56,10 +50,7 @@
       ],
       open: 'Abrir la app Miven',
       hint: 'Si la app no se abre, abre Miven en el móvil y entra con tu email y contraseña.',
-      confirm: [
-        'Activa la cuenta',
-        'Continúa en el browser para confirmar el correo. Después entra con la misma cuenta.',
-      ],
+      confirm: ['Abriendo la cuenta', 'Estamos confirmando el correo y abriendo Miven.'],
       continueWeb: 'Continuar en el browser',
     },
   };
@@ -105,6 +96,7 @@
   if (tokenHash && !failed) {
     button.textContent = t.continueWeb;
     button.setAttribute('href', webTarget);
+    window.location.replace(webTarget);
   } else {
     button.textContent = t.open;
     button.setAttribute('href', deepLink);

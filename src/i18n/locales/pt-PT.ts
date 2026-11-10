@@ -755,6 +755,9 @@ const ptPT = {
     signUp: 'Criar conta',
     signInTitle: 'Entrar na conta',
     signInIntro: 'Os dados da tua conta sincronizam entre os teus dispositivos.',
+    confirmedSignIn: 'O email está confirmado. Entra para continuares neste dispositivo.',
+    confirmLinkUsed:
+      'Este link já não abre a sessão. Se a conta ficou ativa, entra com a palavra-passe.',
     signUpTitle: 'Criar conta',
     signUpIntro:
       'Com uma conta, os teus dados ficam guardados com segurança e sincronizam entre dispositivos. A app continua a funcionar sem ligação.',
