@@ -830,6 +830,13 @@ const en: Translation = {
       title: 'Signed in',
       message: 'Your account data will be synced on this device.',
     },
+    confirmedOtherBrowser: {
+      title: 'Email confirmed',
+      message:
+        'Your account is active. Continue in the Miven app on your phone or in Safari at miven.pt/app, and sign in with your email or username.',
+      copy: 'Copy app address',
+      copied: 'Address copied',
+    },
     callbackConfirmed: {
       title: 'Email confirmed',
       message: 'The account is active. Sign in with your email and password.',

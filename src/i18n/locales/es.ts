@@ -839,6 +839,13 @@ const es: Translation = {
       title: 'Sesión iniciada',
       message: 'Los datos de tu cuenta se sincronizarán en este dispositivo.',
     },
+    confirmedOtherBrowser: {
+      title: 'Correo confirmado',
+      message:
+        'Tu cuenta está activa. Continúa en la app Miven del móvil o en Safari, en miven.pt/app, y entra con tu correo o nombre de usuario.',
+      copy: 'Copiar dirección de la app',
+      copied: 'Dirección copiada',
+    },
     callbackConfirmed: {
       title: 'Correo confirmado',
       message: 'La cuenta está activa. Entra con el correo y la contraseña.',

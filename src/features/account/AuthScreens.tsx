@@ -6,6 +6,7 @@ import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { Button, DateFields, EmptyState, FormScreen, Icon, Text, TextField } from '@/ui/components';
 import { radius, spacing, useTheme } from '@/ui/theme';
 
+import { copyAppAddress, isolationFailure, readIsolationEnv } from '../app-shell/web-isolation';
 import { closeModal } from '../finance/navigation';
 import { useToday } from '../finance/useToday';
 import { ageOn, MIN_SIGN_UP_AGE } from './age';
@@ -541,6 +542,30 @@ function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
   return status;
 }
 
+/** Email confirmado num browser que não corre a app (sem armazenamento). */
+function ConfirmedInOtherBrowser() {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  return (
+    <Notice
+      title={t('auth.confirmedOtherBrowser.title')}
+      message={t('auth.confirmedOtherBrowser.message')}
+      action={
+        <Button
+          label={
+            copied ? t('auth.confirmedOtherBrowser.copied') : t('auth.confirmedOtherBrowser.copy')
+          }
+          icon={copied ? 'checkmark' : 'copy-outline'}
+          variant="secondary"
+          onPress={() => {
+            void copyAppAddress().then(setCopied);
+          }}
+        />
+      }
+    />
+  );
+}
+
 /** `/auth/callback` — link de confirmação de email (ou regresso de um fornecedor OAuth). */
 export function AuthCallbackScreen() {
   const { t } = useTranslation();
@@ -550,13 +575,27 @@ export function AuthCallbackScreen() {
   const hadLink = Boolean(one(link.code) || one(link.token_hash));
   const status = useCodeExchange();
 
-  const entering = status === 'done' && state.status === 'signedIn';
+  // Brave, Chrome e o browser do Mail no iPhone confirmam o email mas não guardam os dados:
+  // em vez de abrir a app (e mostrar o erro de armazenamento), dizemos onde continuar.
+  const [cannotStore] = useState(() => isolationFailure(readIsolationEnv()) === 'explain');
+  const confirmedHere =
+    cannotStore && hadLink && (status === 'done' || status === 'confirmedElsewhere');
+  const entering = !confirmedHere && status === 'done' && state.status === 'signedIn';
 
   useEffect(() => {
+    if (confirmedHere) return;
     if (entering) router.replace('/');
     else if (status === 'confirmedElsewhere') router.replace('/auth/sign-in?confirmed=1' as Href);
     else if (status === 'linkInvalid') router.replace('/auth/sign-in?confirmed=link' as Href);
-  }, [entering, status]);
+  }, [confirmedHere, entering, status]);
+
+  if (confirmedHere) {
+    return (
+      <AuthLayout title={t('auth.callbackTitle')}>
+        <ConfirmedInOtherBrowser />
+      </AuthLayout>
+    );
+  }
 
   if (status === 'done' && (entering || hadLink)) {
     return (

@@ -833,6 +833,13 @@ const ptPT = {
       title: 'Sessão iniciada',
       message: 'Os dados da tua conta vão ser sincronizados neste dispositivo.',
     },
+    confirmedOtherBrowser: {
+      title: 'Email confirmado',
+      message:
+        'A tua conta está ativa. Continua na app Miven do telemóvel ou no Safari, em miven.pt/app, e entra com o email ou o nome de utilizador.',
+      copy: 'Copiar endereço da app',
+      copied: 'Endereço copiado',
+    },
     callbackConfirmed: {
       title: 'Email confirmado',
       message: 'A conta está ativa. Entra com o email e a palavra-passe.',
