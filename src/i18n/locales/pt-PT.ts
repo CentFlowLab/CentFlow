@@ -724,6 +724,15 @@ const ptPT = {
         'Mais de metade do rendimento vai para despesas fixas. Revê as que podes renegociar ou cancelar.',
       noData: 'Regista as despesas fixas (renda, telefone, ginásio…) como subscrições.',
     },
+    howCalculated: 'Como é calculado',
+    hideCalculation: 'Esconder o cálculo',
+    definitions: {
+      savingsRate:
+        'Taxa de poupança: (rendimentos − despesas) ÷ rendimentos dos meses completos anteriores com rendimentos. Transferências não contam.',
+      emergencyFund:
+        'Fundo de emergência: dinheiro em bancos, numerário e poupança ÷ despesa mensal média. Usa todas as despesas, não só as essenciais, por isso é uma estimativa prudente.',
+      fixedCosts: 'Encargos fixos: custo mensal das subscrições ativas ÷ rendimento mensal médio.',
+    },
     disclaimer:
       'Referências gerais (poupança de 20%, reserva de 3 a 6 meses), não aconselhamento financeiro.',
   },
@@ -749,7 +758,7 @@ const ptPT = {
     priceRise: '{{name}} subiu de {{previous}} para {{amount}}: mais {{yearly}} por ano.',
     endNegative: 'Ao ritmo atual, acabas o mês com {{amount}}.',
     categoryAbove:
-      '{{category}}: já gastaste {{spent}}, {{percent}} acima do habitual para esta altura do mês. A este ritmo, o mês fecha {{extra}} acima da tua média ({{yearly}} num ano).',
+      '{{category}}: já gastaste {{spent}}, {{percent}} acima do habitual para esta altura do mês. A este ritmo, o mês fecha {{extra}} acima da tua média. Estimativa: se isso se repetisse todos os meses, seriam {{yearly}} num ano (a diferença do mês × 12, não uma previsão).',
     spendingBelow: 'Estás a gastar {{percent}} abaixo do habitual para esta altura do mês.',
   },
   obligations: {

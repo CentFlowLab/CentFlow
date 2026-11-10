@@ -731,6 +731,16 @@ const es: Translation = {
         'Más de la mitad de los ingresos va a gastos fijos. Revisa los que puedes renegociar o cancelar.',
       noData: 'Registra los gastos fijos (alquiler, teléfono, gimnasio…) como suscripciones.',
     },
+    howCalculated: 'Cómo se calcula',
+    hideCalculation: 'Ocultar el cálculo',
+    definitions: {
+      savingsRate:
+        'Tasa de ahorro: (ingresos − gastos) ÷ ingresos de los meses completos anteriores con ingresos. Las transferencias no cuentan.',
+      emergencyFund:
+        'Fondo de emergencia: dinero en bancos, efectivo y ahorro ÷ gasto mensual medio. Usa todos los gastos, no solo los esenciales, así que es una estimación prudente.',
+      fixedCosts:
+        'Gastos fijos: coste mensual de las suscripciones activas ÷ ingreso mensual medio.',
+    },
     disclaimer:
       'Referencias generales (ahorro del 20%, reserva de 3 a 6 meses), no asesoramiento financiero.',
   },
@@ -755,7 +765,7 @@ const es: Translation = {
     priceRise: '{{name}} subió de {{previous}} a {{amount}}: {{yearly}} más al año.',
     endNegative: 'A este ritmo, terminas el mes con {{amount}}.',
     categoryAbove:
-      '{{category}}: llevas {{spent}}, un {{percent}} más de lo habitual a estas alturas del mes. A este ritmo, el mes cierra {{extra}} por encima de tu media ({{yearly}} en un año).',
+      '{{category}}: llevas {{spent}}, un {{percent}} más de lo habitual a estas alturas del mes. A este ritmo, el mes cierra {{extra}} por encima de tu media. Estimación: si se repitiera cada mes, serían {{yearly}} al año (la diferencia del mes × 12, no una previsión).',
     spendingBelow: 'Estás gastando un {{percent}} menos de lo habitual a estas alturas del mes.',
   },
   obligations: {

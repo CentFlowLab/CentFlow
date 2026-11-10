@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
@@ -11,7 +11,7 @@ import {
 import type { CurrencyCode } from '@/core/money';
 import { useDataQuery, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import { Card, Divider, Icon, Section, Text, type IconName } from '@/ui/components';
+import { Button, Card, Divider, Icon, Section, Text, type IconName } from '@/ui/components';
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { loadForecastInput } from './MonthInsights';
@@ -51,6 +51,7 @@ export function FinancialHealthCard({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { formatPercent } = useLocaleFormat();
+  const [showCalculation, setShowCalculation] = useState(false);
   const query = useDataQuery(
     useCallback(
       (repositories: Repositories) => loadHealth(repositories, today, currency),
@@ -129,9 +130,26 @@ export function FinancialHealthCard({
             </View>
           );
         })}
-        <Text variant="caption" tone="tertiary">
-          {t('health.disclaimer')}
-        </Text>
+        {showCalculation ? (
+          <View style={styles.definitions}>
+            {health.pillars.map((pillar) => (
+              <Text key={pillar.key} variant="footnote" tone="secondary">
+                {t(`health.definitions.${pillar.key}`)}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+        <View style={styles.footer}>
+          <Text variant="caption" tone="tertiary" style={styles.flex}>
+            {t('health.disclaimer')}
+          </Text>
+          <Button
+            label={t(showCalculation ? 'health.hideCalculation' : 'health.howCalculated')}
+            variant="ghost"
+            size="sm"
+            onPress={() => setShowCalculation((value) => !value)}
+          />
+        </View>
       </Card>
     </Section>
   );
@@ -167,5 +185,13 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  definitions: {
+    gap: spacing.sm,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 });

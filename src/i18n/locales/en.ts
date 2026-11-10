@@ -727,6 +727,15 @@ const en: Translation = {
         'More than half of your income goes to fixed costs. Review what you can renegotiate or cancel.',
       noData: 'Record fixed costs (rent, phone, gym…) as subscriptions.',
     },
+    howCalculated: 'How it is calculated',
+    hideCalculation: 'Hide the calculation',
+    definitions: {
+      savingsRate:
+        'Savings rate: (income − expenses) ÷ income over the previous full months with income. Transfers do not count.',
+      emergencyFund:
+        'Emergency fund: money in banks, cash and savings ÷ average monthly spending. It uses all expenses, not only essential ones, so it is a cautious estimate.',
+      fixedCosts: 'Fixed costs: monthly cost of active subscriptions ÷ average monthly income.',
+    },
     disclaimer: 'General references (20% savings, 3 to 6 months of reserve), not financial advice.',
   },
   insights: {
@@ -751,7 +760,7 @@ const en: Translation = {
     priceRise: '{{name}} went up from {{previous}} to {{amount}}: {{yearly}} more a year.',
     endNegative: 'At this pace, you end the month with {{amount}}.',
     categoryAbove:
-      '{{category}}: {{spent}} so far, {{percent}} above usual for this point in the month. At this pace, the month ends {{extra}} above your average ({{yearly}} over a year).',
+      '{{category}}: {{spent}} so far, {{percent}} above usual for this point in the month. At this pace, the month ends {{extra}} above your average. Estimate: if that happened every month, it would be {{yearly}} a year (the month difference × 12, not a forecast).',
     spendingBelow: "You're spending {{percent}} below usual for this point in the month.",
   },
   obligations: {

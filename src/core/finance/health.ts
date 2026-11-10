@@ -14,7 +14,10 @@ export type HealthStatus = 'good' | 'fair' | 'attention' | 'noData';
 export type HealthPillar =
   /** (rendimentos − despesas) ÷ rendimentos nos meses anteriores. */
   | { key: 'savingsRate'; status: HealthStatus; value: number | null }
-  /** Meses de despesas cobertos pelo dinheiro em bancos, numerário e poupança. */
+  /**
+   * Meses de despesas cobertos pelo dinheiro em bancos, numerário e poupança. Usa a despesa
+   * mensal média total (não só a essencial): é uma estimativa prudente.
+   */
   | { key: 'emergencyFund'; status: HealthStatus; value: number | null }
   /** Encargos fixos registados como subscrições ÷ rendimento médio. */
   | { key: 'fixedCosts'; status: HealthStatus; value: number | null };
