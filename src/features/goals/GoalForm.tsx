@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
   calendarDateToLocalDate,
@@ -49,6 +49,7 @@ type Props = {
 
 export function GoalForm({ goal, onClose, onSaved }: Props) {
   const { t } = useTranslation();
+  const targetRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
   const { formatDate, locale } = useLocaleFormat();
   const today = useToday();
@@ -130,11 +131,15 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
         <View style={styles.form}>
           <TextField
             label={t('goals.form.name')}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => targetRef.current?.focus()}
             value={name}
             onChangeText={setName}
             errorText={validationMessage(t, errors.name)}
           />
           <TextField
+            ref={targetRef}
             label={t('goals.form.target')}
             value={amountText}
             onChangeText={(text) => {

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
   hasErrors,
@@ -26,6 +26,8 @@ type FieldErrors = ValidationErrors<keyof VehicleInput>;
 
 export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
   const { t } = useTranslation();
+  const plateRef = useRef<TextInputInstance>(null);
+  const odometerRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
   const today = useToday();
   const editing = vehicle !== undefined;
@@ -106,18 +108,26 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
         </ChipGroup>
         <TextField
           label={t('vehicles.form.name')}
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => plateRef.current?.focus()}
           value={name}
           onChangeText={setName}
           errorText={validationMessage(t, errors.name)}
         />
         <TextField
+          ref={plateRef}
           label={t('vehicles.form.plate')}
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => odometerRef.current?.focus()}
           value={plate}
           onChangeText={setPlate}
           autoCapitalize="characters"
           errorText={validationMessage(t, errors.plate)}
         />
         <TextField
+          ref={odometerRef}
           label={t('vehicles.form.odometer')}
           value={odometer}
           onChangeText={setOdometer}

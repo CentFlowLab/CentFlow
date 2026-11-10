@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
   calendarDateToLocalDate,
@@ -51,6 +51,7 @@ type Props = { item?: WealthItem };
 
 export function WealthForm({ item }: Props) {
   const { t } = useTranslation();
+  const valueRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
   const { formatDate, locale } = useLocaleFormat();
   const today = useToday();
@@ -160,11 +161,15 @@ export function WealthForm({ item }: Props) {
           </ChipGroup>
           <TextField
             label={t('wealth.form.name')}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => valueRef.current?.focus()}
             value={name}
             onChangeText={setName}
             errorText={validationMessage(t, errors.name)}
           />
           <TextField
+            ref={valueRef}
             label={t(isLiabilityType(type) ? 'wealth.form.owed' : 'wealth.form.value')}
             value={amountText}
             onChangeText={(text) => {

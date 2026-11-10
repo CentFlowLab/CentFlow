@@ -107,6 +107,28 @@ describe('DateFields', () => {
     invalid: 'Data inválida.',
   };
 
+  it('moves on when the year is complete, not while deleting', async () => {
+    const onComplete = jest.fn();
+    await renderWithProviders(
+      <DateFields
+        label="Nascimento"
+        value={null}
+        onChange={jest.fn()}
+        onComplete={onComplete}
+        labels={labels}
+      />,
+    );
+    await fireEvent.changeText(screen.getByLabelText('Nascimento: Dia'), '5');
+    await fireEvent.changeText(screen.getByLabelText('Nascimento: Mês'), '02');
+    await fireEvent.changeText(screen.getByLabelText('Nascimento: Ano'), '199');
+    expect(onComplete).not.toHaveBeenCalled();
+    await fireEvent.changeText(screen.getByLabelText('Nascimento: Ano'), '1998');
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    await fireEvent.changeText(screen.getByLabelText('Nascimento: Ano'), '199');
+    await fireEvent.changeText(screen.getByLabelText('Nascimento: Ano'), '1998');
+    expect(onComplete).toHaveBeenCalledTimes(2);
+  });
+
   it('shows the date split into day, month and year and reports only valid dates', async () => {
     const onChange = jest.fn();
     function Harness() {

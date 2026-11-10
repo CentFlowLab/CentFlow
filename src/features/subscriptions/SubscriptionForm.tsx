@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
   calendarDateToLocalDate,
@@ -58,6 +58,7 @@ type Props = {
 
 export function SubscriptionForm({ subscription, onClose, onSaved }: Props) {
   const { t } = useTranslation();
+  const amountRef = useRef<TextInputInstance>(null);
   const { scheme } = useTheme();
   const repositories = useRepositories();
   const { formatDate, locale } = useLocaleFormat();
@@ -152,11 +153,15 @@ export function SubscriptionForm({ subscription, onClose, onSaved }: Props) {
         <View style={styles.form}>
           <TextField
             label={t('subscriptions.form.name')}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => amountRef.current?.focus()}
             value={name}
             onChangeText={setName}
             errorText={validationMessage(t, errors.name)}
           />
           <TextField
+            ref={amountRef}
             label={t('subscriptions.form.amount')}
             value={amountText}
             onChangeText={(text) => {

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
   ACCOUNT_TYPES,
@@ -44,6 +44,7 @@ type DialogState =
 
 export function AccountForm({ account }: { account?: AccountWithBalance }) {
   const { t } = useTranslation();
+  const balanceRef = useRef<TextInputInstance>(null);
   const { locale, formatMoney } = useLocaleFormat();
   const repositories = useRepositories();
   const isEditing = account !== undefined;
@@ -203,6 +204,9 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
         <View style={styles.currency}>
           <TextField
             label={t('accountForm.currency')}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => balanceRef.current?.focus()}
             value={currency}
             onChangeText={(text) => setCurrency(text.toUpperCase())}
             autoCapitalize="characters"
@@ -217,6 +221,7 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
         </View>
         <View style={styles.flex}>
           <TextField
+            ref={balanceRef}
             label={t('accountForm.initialBalance')}
             value={initialBalanceText}
             onChangeText={setInitialBalanceText}

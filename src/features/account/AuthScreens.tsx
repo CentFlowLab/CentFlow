@@ -1,7 +1,13 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 
 import { Button, DateFields, EmptyState, FormScreen, Text, TextField } from '@/ui/components';
 import { spacing, useTheme } from '@/ui/theme';
@@ -144,6 +150,7 @@ export function SignInScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<AuthErrorCode | null>(null);
   const [busy, setBusy] = useState(false);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const submit = async () => {
     // Com "@" é um email; sem, um nome de utilizador.
@@ -188,14 +195,19 @@ export function SignInScreen() {
         autoComplete="username"
         keyboardType="email-address"
         textContentType="username"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => passwordRef.current?.focus()}
         errorText={fieldError(errors.email)}
       />
       <PasswordField
+        ref={passwordRef}
         label={t('auth.password')}
         value={password}
         onChangeText={setPassword}
         autoComplete="current-password"
         textContentType="password"
+        returnKeyType="go"
         onSubmitEditing={submit}
         errorText={fieldError(errors.password)}
       />
@@ -240,6 +252,10 @@ export function SignUpScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<AuthErrorCode | null>(null);
   const [busy, setBusy] = useState(false);
+  // Cada campo passa ao seguinte: "Seguinte" no teclado, ou o ano completo na data.
+  const birthRef = useRef<{ focus(): void }>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const submit = async () => {
     const found = validate(email, password, true, username);
@@ -270,10 +286,15 @@ export function SignUpScreen() {
         autoComplete="username-new"
         autoCorrect={false}
         maxLength={24}
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => birthRef.current?.focus()}
         helperText={t('auth.usernameHelper')}
         errorText={fieldError(errors.username)}
       />
       <DateFields
+        ref={birthRef}
+        onComplete={() => emailRef.current?.focus()}
         label={t('auth.birthDate')}
         value={birthDate}
         onChange={setBirthDate}
@@ -290,6 +311,7 @@ export function SignUpScreen() {
         }}
       />
       <TextField
+        ref={emailRef}
         label={t('auth.email')}
         value={email}
         onChangeText={setEmail}
@@ -298,15 +320,20 @@ export function SignUpScreen() {
         autoComplete="email"
         keyboardType="email-address"
         textContentType="emailAddress"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => passwordRef.current?.focus()}
         errorText={fieldError(errors.email)}
       />
       <PasswordField
+        ref={passwordRef}
         label={t('auth.password')}
         value={password}
         onChangeText={setPassword}
         autoComplete="new-password"
         textContentType="newPassword"
         helperText={t('auth.passwordHelper', { count: MIN_PASSWORD_LENGTH })}
+        returnKeyType="go"
         onSubmitEditing={submit}
         errorText={fieldError(errors.password)}
       />
@@ -388,6 +415,7 @@ export function ForgotPasswordScreen() {
         autoComplete="email"
         keyboardType="email-address"
         textContentType="emailAddress"
+        returnKeyType="send"
         onSubmitEditing={submit}
         errorText={fieldError(errors.email)}
       />

@@ -72,6 +72,7 @@ export function TextField({
         typography.body,
         styles.input,
         trailing ? styles.inputWithTrailing : null,
+        trailing && Platform.OS === 'web' ? WEB_NO_OUTLINE : null,
         trailing
           ? { color: colors.text }
           : {
@@ -118,6 +119,9 @@ export function TextField({
     </View>
   );
 }
+
+/** Web: com um botão ao lado, o foco já se vê na borda da linha; sem o contorno do browser. */
+const WEB_NO_OUTLINE = { outlineStyle: 'none' } as unknown as TextStyle;
 
 const styles = StyleSheet.create({
   container: {
