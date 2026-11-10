@@ -991,7 +991,6 @@ const ptPT = {
     callbackFailed: 'Não foi possível confirmar',
     errors: {
       invalidCredentials: 'Email ou palavra-passe incorretos.',
-      userNotFound: 'Utilizador não encontrado.',
       usernameTaken: 'Este nome de utilizador já está em uso. Escolhe outro.',
       invalidUsernameCredentials: 'Nome de utilizador ou palavra-passe incorretos.',
       confirmedElsewhere: 'O email já está confirmado. Entra com a palavra-passe.',

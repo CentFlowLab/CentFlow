@@ -998,7 +998,6 @@ const es: Translation = {
     callbackFailed: 'No se ha podido confirmar',
     errors: {
       invalidCredentials: 'Correo o contraseña incorrectos.',
-      userNotFound: 'Usuario no encontrado.',
       usernameTaken: 'Este nombre de usuario ya está en uso. Elige otro.',
       invalidUsernameCredentials: 'Nombre de usuario o contraseña incorrectos.',
       confirmedElsewhere: 'El correo ya está confirmado. Entra con la contraseña.',

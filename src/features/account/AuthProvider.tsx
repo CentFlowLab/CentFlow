@@ -62,7 +62,6 @@ export type AuthErrorCode =
   | 'invalidCredentials'
   /** Entrada com nome de utilizador: nome ou palavra-passe errados (o servidor não diz qual). */
   | 'invalidUsernameCredentials'
-  | 'userNotFound'
   | 'usernameTaken'
   /** O email já foi confirmado, mas este dispositivo não tem o verificador PKCE. */
   | 'confirmedElsewhere'
@@ -151,21 +150,6 @@ const OTP_TYPES = new Set<EmailOtpType>([
 
 export function emailOtpType(value: string | undefined): EmailOtpType | null {
   return value && OTP_TYPES.has(value as EmailOtpType) ? (value as EmailOtpType) : null;
-}
-
-/**
- * O Supabase devolve `invalid_credentials` tanto para uma conta apagada como para uma
- * palavra-passe errada. A função `email_registered` distingue os dois. Se ainda não
- * existir no servidor, fica a mensagem da palavra-passe.
- */
-async function lookupRegistered(client: SupabaseClient, email: string): Promise<boolean | null> {
-  try {
-    const { data, error } = await client.rpc('email_registered', { target_email: email.trim() });
-    if (error || typeof data !== 'boolean') return null;
-    return data;
-  } catch {
-    return null;
-  }
 }
 
 /** Nomes de utilizador: minúsculas, algarismos, ponto e sublinhado (igual ao servidor). */
@@ -336,13 +320,8 @@ function createActions(client: SupabaseClient | null, pending: PendingStore): Au
         // Conta por confirmar: a app mostra o ecrã de confirmação em vez de um erro.
         if (toAuthErrorCode(error) === 'emailNotConfirmed')
           pending.wait({ email, password }, false);
-        if (toAuthErrorCode(error) === 'invalidCredentials') {
-          const registered = await lookupRegistered(client, email);
-          if (registered === false) {
-            console.error('[auth] user_not_found');
-            return { ok: false, error: 'userNotFound' };
-          }
-        }
+        // Conta inexistente e palavra-passe errada dão a mesma resposta: não se revela se o email
+        // tem conta (ADR-045).
         return fail(error);
       }),
     signUp: (email, password, username, birthDate) =>

@@ -174,6 +174,7 @@ describe('schema', () => {
         'goal_contributions',
         'goals',
         'login_attempts',
+        'lookup_attempts',
         'profiles',
         'subscriptions',
         'sync_metadata',
@@ -226,19 +227,61 @@ describe('schema', () => {
     ).toEqual([{ display_name: 'Manu' }]);
   });
 
-  it('tells sign-in whether an email has an account', async () => {
-    const known = await server
-      .anonymous()
-      .query<{ registered: boolean }>('select public.email_registered($1) as registered', [
-        `${A}@example.test`,
-      ]);
-    const missing = await server
-      .anonymous()
-      .query<{ registered: boolean }>('select public.email_registered($1) as registered', [
-        'ninguem@example.test',
-      ]);
-    expect(known[0]?.registered).toBe(true);
-    expect(missing[0]?.registered).toBe(false);
+  it('no longer tells anyone whether an email has an account', async () => {
+    await expect(
+      server.anonymous().query('select public.email_registered($1)', [`${A}@example.test`]),
+    ).rejects.toThrow(/does not exist/);
+  });
+});
+
+describe('abuse limits by origin', () => {
+  const setOrigin = (ip: string | null) =>
+    server.pg.query(`select set_config('request.headers', $1, false)`, [
+      ip === null ? '' : JSON.stringify({ 'x-forwarded-for': `${ip}, 10.0.0.1` }),
+    ]);
+
+  afterEach(() => setOrigin(null));
+
+  it('limits username lookups per origin, never without one', async () => {
+    await setOrigin('203.0.113.7');
+    for (let index = 0; index < 30; index += 1) {
+      await server.anonymous().query('select public.username_available($1)', [`livre${index}`]);
+    }
+    await expect(
+      server.anonymous().query('select public.username_available($1)', ['mais.um']),
+    ).rejects.toThrow(/rate_limited/);
+    // Outra origem não é afetada.
+    await setOrigin('198.51.100.2');
+    await expect(
+      server.anonymous().query('select public.username_available($1)', ['mais.um']),
+    ).resolves.toBeDefined();
+    // Sem origem conhecida (chamadas internas), não há limite por origem.
+    await setOrigin(null);
+    for (let index = 0; index < 35; index += 1) {
+      await server.anonymous().query('select public.username_available($1)', [`sem${index}`]);
+    }
+  });
+
+  it('stops trying passwords across many usernames from one origin', async () => {
+    await setOrigin('203.0.113.9');
+    for (let index = 0; index < 30; index += 1) {
+      const rows = await server
+        .anonymous()
+        .query<{ email: string | null }>('select public.login_email($1, $2) as email', [
+          `nome${index}`,
+          'palavra-errada',
+        ]);
+      expect(rows[0]?.email).toBeNull();
+    }
+    await expect(
+      server.anonymous().query('select public.login_email($1, $2)', ['outro.nome', 'x']),
+    ).rejects.toThrow(/rate_limited/);
+    expect(
+      await server
+        .anonymous()
+        .query('select * from public.lookup_attempts')
+        .catch((error) => String(error)),
+    ).toMatch(/permission denied/);
   });
 });
 

@@ -987,7 +987,6 @@ const en: Translation = {
     callbackFailed: 'Could not confirm',
     errors: {
       invalidCredentials: 'Incorrect email or password.',
-      userNotFound: 'User not found.',
       usernameTaken: 'This username is already taken. Choose another one.',
       invalidUsernameCredentials: 'Incorrect username or password.',
       confirmedElsewhere: 'The email is already confirmed. Sign in with your password.',

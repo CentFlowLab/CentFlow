@@ -599,6 +599,23 @@ cartão do Início para criar a primeira conta.
 **Consequências:** quem já tem contas nunca o vê. A marca é por dispositivo: noutro dispositivo
 sem contas sincronizadas ainda, pode aparecer uma vez.
 
+## ADR-045 — Sem enumeração de contas e limites por origem
+
+**Contexto:** `email_registered` dizia a qualquer pessoa, sem sessão, se um email tinha conta (só
+servia para a mensagem "Utilizador não encontrado"). `username_available` não tinha limite e
+`login_email` só limitava por nome, não por quem tenta muitos nomes.
+**Decisão:** migração `20261111000200`: remove `email_registered`; a app diz sempre "Email ou
+palavra-passe incorretos" (a mesma resposta do GoTrue para os dois casos). Tabela
+`lookup_attempts` (RLS, sem políticas nem permissões) e `private.throttle`: 30 consultas de nomes
+por origem em 10 minutos e 30 falhas de `login_email` por origem em 15 minutos, além das 10 falhas
+por nome. A origem é o primeiro IP de `x-forwarded-for`, que a API do Supabase preenche
+(confirmado no staging: o 31.º pedido devolve `rate_limited`). Sem origem não há limite por
+origem, para nunca bloquear toda a gente. A recuperação de palavra-passe e o registo já não
+revelam contas (respostas iguais do GoTrue).
+**Consequências:** a disponibilidade de um nome continua visível por natureza (é preciso para o
+registo), agora com limite. As apps 0.1.8 tratam a função em falta como "não sei" e mostram a
+mesma frase. Aplicada no staging em 2026-11-10; a produção precisa de autorização.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

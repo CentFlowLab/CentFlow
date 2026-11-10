@@ -253,14 +253,15 @@ describe('auth screens', () => {
     expect(auth.signInWithPassword).toHaveBeenCalled();
   });
 
-  it('says the user was not found when the email has no account', async () => {
+  it('answers a missing account exactly like a wrong password, without asking the server', async () => {
+    const rpc = jest.fn(async () => ({ data: false, error: null }));
     const { client } = fakeClient(
       {
         signInWithPassword: jest.fn(async () => ({
           error: authError('invalid_credentials'),
         })),
       },
-      jest.fn(async () => ({ data: false, error: null })),
+      rpc,
     );
     await renderWithProviders(
       <AuthProvider client={client}>
@@ -273,7 +274,9 @@ describe('auth screens', () => {
     );
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'wrong');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
-    expect(await screen.findByText('Utilizador não encontrado.')).toBeOnTheScreen();
+    expect(await screen.findByText('Email ou palavra-passe incorretos.')).toBeOnTheScreen();
+    // Nenhuma consulta que diga se o email tem conta (ADR-045).
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it('lets the password be shown', async () => {
