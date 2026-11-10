@@ -237,7 +237,16 @@ export type SpendingInsight =
   /** Uma subscrição subiu de preço há pouco tempo. */
   | ({ kind: 'priceRise' } & PriceRise)
   /** Uma categoria vai acima do habitual para esta altura do mês. */
-  | { kind: 'categoryAbove'; categoryId: Id; spent: number; usual: number; ratio: number }
+  | {
+      kind: 'categoryAbove';
+      categoryId: Id;
+      spent: number;
+      /** Média mensal dos meses anteriores com movimentos. */
+      usual: number;
+      ratio: number;
+      /** A este ritmo, quanto o mês fecha acima da média (estimativa, não um valor real). */
+      monthExtra: number;
+    }
   /** O mês inteiro vai abaixo do habitual para esta altura. */
   | { kind: 'spendingBelow'; spent: number; usual: number; ratio: number }
   /** A previsão acaba o mês com saldo negativo. */
@@ -290,6 +299,7 @@ export function spendingInsights(
           categoryId: id,
           spent,
           usual,
+          monthExtra: Math.max(0, Math.round(spent / share) - usual),
           ratio: spent / expectedSoFar,
         });
       }

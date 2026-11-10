@@ -160,7 +160,14 @@ describe('spendingInsights', () => {
       { endBalance: 10_000 },
     );
     expect(insights).toEqual([
-      { kind: 'categoryAbove', categoryId: 'fun', spent: 12_000, usual: 10_000, ratio: 2.4 },
+      {
+        kind: 'categoryAbove',
+        categoryId: 'fun',
+        spent: 12_000,
+        usual: 10_000,
+        ratio: 2.4,
+        monthExtra: 14_000,
+      },
     ]);
   });
 

@@ -654,6 +654,46 @@ const ptPT = {
     note: 'A despesa entra na conta que usaste por último e aparece no Miven da próxima vez que o abrires.',
     openShortcuts: 'Abrir a app Atalhos',
   },
+  health: {
+    title: 'Saúde financeira',
+    lead: 'Com base nos teus últimos três meses completos.',
+    overall: {
+      solid: 'Situação sólida',
+      fair: 'No bom caminho',
+      attention: 'Há pontos a melhorar',
+      noData: 'Ainda sem dados suficientes',
+    },
+    status: { good: 'Bom', fair: 'Razoável', attention: 'A melhorar', noData: 'Sem dados' },
+    months_one: '{{count}} mês',
+    months_other: '{{count}} meses',
+    lessThanMonth: 'Menos de 1 mês',
+    ofIncome: '{{percent}} do rendimento',
+    savingsRate: {
+      title: 'Taxa de poupança',
+      good: 'Guardas pelo menos 20% do que ganhas. Mantém o ritmo.',
+      fair: 'Estás a poupar, mas abaixo dos 20% de referência. Um orçamento numa categoria ajuda a subir.',
+      attention: 'Gastas quase tudo o que ganhas, ou mais. Começa pela categoria que mais cresceu.',
+      noData: 'Aparece com rendimentos registados em pelo menos dois meses.',
+    },
+    emergencyFund: {
+      title: 'Fundo de emergência',
+      good: 'Tens reserva para pelo menos 6 meses de despesas.',
+      fair: 'Tens entre 3 e 6 meses de despesas de reserva. 6 meses dão mais segurança.',
+      attention:
+        'Tens menos de 3 meses de despesas de reserva. Um objetivo de poupança ajuda a construí-la.',
+      noData: 'Aparece com despesas registadas em pelo menos dois meses.',
+    },
+    fixedCosts: {
+      title: 'Encargos fixos',
+      good: 'As despesas fixas deixam margem no teu rendimento.',
+      fair: 'As despesas fixas levam uma parte grande do rendimento. Revê as subscrições.',
+      attention:
+        'Mais de metade do rendimento vai para despesas fixas. Revê as que podes renegociar ou cancelar.',
+      noData: 'Regista as despesas fixas (renda, telefone, ginásio…) como subscrições.',
+    },
+    disclaimer:
+      'Referências gerais (poupança de 20%, reserva de 3 a 6 meses), não aconselhamento financeiro.',
+  },
   insights: {
     title: 'Este mês',
     endOfMonth: 'Previsão para o fim do mês',
@@ -676,7 +716,7 @@ const ptPT = {
     priceRise: '{{name}} subiu de {{previous}} para {{amount}}: mais {{yearly}} por ano.',
     endNegative: 'Ao ritmo atual, acabas o mês com {{amount}}.',
     categoryAbove:
-      '{{category}}: já gastaste {{spent}}, {{percent}} acima do habitual para esta altura do mês.',
+      '{{category}}: já gastaste {{spent}}, {{percent}} acima do habitual para esta altura do mês. A este ritmo, o mês fecha {{extra}} acima da tua média ({{yearly}} num ano).',
     spendingBelow: 'Estás a gastar {{percent}} abaixo do habitual para esta altura do mês.',
   },
   obligations: {

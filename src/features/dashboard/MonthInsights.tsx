@@ -168,6 +168,8 @@ export function MonthInsights({
           category: lookups.data?.categories.get(insight.categoryId)?.name ?? '—',
           spent: money(insight.spent),
           percent: formatPercent(insight.ratio - 1, 0),
+          extra: money(insight.monthExtra),
+          yearly: money(insight.monthExtra * 12),
         });
       case 'spendingBelow':
         return t('insights.spendingBelow', { percent: formatPercent(1 - insight.ratio, 0) });

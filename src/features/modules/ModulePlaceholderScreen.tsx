@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next';
 
-import { getNavItem, type PlannedModule } from '@/features/navigation/nav-items';
+import { getNavItem, type DescribedArea } from '@/features/navigation/nav-items';
 import { Badge, Card, EmptyState, Screen } from '@/ui/components';
 
 /**
  * Ecrã de um módulo ainda não implementado. Diz claramente "Em breve"
  * em vez de mostrar dados ou controlos fictícios.
  */
-export function ModulePlaceholderScreen({ module }: { module: PlannedModule }) {
+export function ModulePlaceholderScreen({ module }: { module: DescribedArea }) {
   const { t } = useTranslation();
   const item = getNavItem(module);
   const title = t(`nav.${module}`);

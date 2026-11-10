@@ -4,6 +4,7 @@ export * from './dates';
 export * from './forecast';
 export * from './obligations';
 export * from './goals';
+export * from './health';
 export * from './wealth';
 export * from './deadlines';
 export * from './default-categories';

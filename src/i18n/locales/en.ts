@@ -657,6 +657,45 @@ const en: Translation = {
     note: 'The expense goes to the account you used last and shows up in Miven the next time you open it.',
     openShortcuts: 'Open the Shortcuts app',
   },
+  health: {
+    title: 'Financial health',
+    lead: 'Based on your last three full months.',
+    overall: {
+      solid: 'Solid position',
+      fair: 'On the right track',
+      attention: 'Room to improve',
+      noData: 'Not enough data yet',
+    },
+    status: { good: 'Good', fair: 'Fair', attention: 'Needs work', noData: 'No data' },
+    months_one: '{{count}} month',
+    months_other: '{{count}} months',
+    lessThanMonth: 'Less than 1 month',
+    ofIncome: '{{percent}} of income',
+    savingsRate: {
+      title: 'Savings rate',
+      good: 'You keep at least 20% of what you earn. Keep it up.',
+      fair: "You're saving, but below the 20% reference. A budget on one category helps.",
+      attention: 'You spend almost all you earn, or more. Start with the category that grew most.',
+      noData: 'Shows up once income is recorded in at least two months.',
+    },
+    emergencyFund: {
+      title: 'Emergency fund',
+      good: 'You have a reserve for at least 6 months of expenses.',
+      fair: 'You have 3 to 6 months of expenses in reserve. 6 months is safer.',
+      attention:
+        'You have less than 3 months of expenses in reserve. A savings goal helps build it.',
+      noData: 'Shows up once expenses are recorded in at least two months.',
+    },
+    fixedCosts: {
+      title: 'Fixed costs',
+      good: 'Your fixed costs leave room in your income.',
+      fair: 'Fixed costs take a large share of your income. Review your subscriptions.',
+      attention:
+        'More than half of your income goes to fixed costs. Review what you can renegotiate or cancel.',
+      noData: 'Record fixed costs (rent, phone, gym…) as subscriptions.',
+    },
+    disclaimer: 'General references (20% savings, 3 to 6 months of reserve), not financial advice.',
+  },
   insights: {
     title: 'This month',
     endOfMonth: 'End-of-month forecast',
@@ -679,7 +718,7 @@ const en: Translation = {
     priceRise: '{{name}} went up from {{previous}} to {{amount}}: {{yearly}} more a year.',
     endNegative: 'At this pace, you end the month with {{amount}}.',
     categoryAbove:
-      '{{category}}: {{spent}} so far, {{percent}} above usual for this point in the month.',
+      '{{category}}: {{spent}} so far, {{percent}} above usual for this point in the month. At this pace, the month ends {{extra}} above your average ({{yearly}} over a year).',
     spendingBelow: "You're spending {{percent}} below usual for this point in the month.",
   },
   obligations: {

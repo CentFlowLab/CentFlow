@@ -40,6 +40,7 @@ import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
 import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
+import { FinancialHealthCard } from './FinancialHealthCard';
 import { MonthInsights } from './MonthInsights';
 import { UpcomingObligations } from './UpcomingObligations';
 
@@ -434,6 +435,8 @@ export function DashboardScreen() {
       <BudgetSummary reference={referenceForMonth(month, today)} />
 
       {month === currentMonth ? <UpcomingObligations today={today} /> : null}
+
+      {month === currentMonth ? <FinancialHealthCard today={today} currency={currency} /> : null}
 
       {breakpoint === 'expanded' ? (
         <View style={styles.columns}>

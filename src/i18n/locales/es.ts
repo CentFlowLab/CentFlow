@@ -660,6 +660,47 @@ const es: Translation = {
     note: 'El gasto va a la cuenta que usaste por última vez y aparece en Miven la próxima vez que lo abras.',
     openShortcuts: 'Abrir la app Atajos',
   },
+  health: {
+    title: 'Salud financiera',
+    lead: 'Según tus últimos tres meses completos.',
+    overall: {
+      solid: 'Situación sólida',
+      fair: 'Por buen camino',
+      attention: 'Hay aspectos que mejorar',
+      noData: 'Aún sin datos suficientes',
+    },
+    status: { good: 'Bien', fair: 'Aceptable', attention: 'A mejorar', noData: 'Sin datos' },
+    months_one: '{{count}} mes',
+    months_other: '{{count}} meses',
+    lessThanMonth: 'Menos de 1 mes',
+    ofIncome: '{{percent}} de los ingresos',
+    savingsRate: {
+      title: 'Tasa de ahorro',
+      good: 'Guardas al menos el 20% de lo que ganas. Sigue así.',
+      fair: 'Estás ahorrando, pero por debajo del 20% de referencia. Un presupuesto en una categoría ayuda.',
+      attention:
+        'Gastas casi todo lo que ganas, o más. Empieza por la categoría que más ha crecido.',
+      noData: 'Aparece con ingresos registrados en al menos dos meses.',
+    },
+    emergencyFund: {
+      title: 'Fondo de emergencia',
+      good: 'Tienes reserva para al menos 6 meses de gastos.',
+      fair: 'Tienes entre 3 y 6 meses de gastos en reserva. 6 meses dan más seguridad.',
+      attention:
+        'Tienes menos de 3 meses de gastos en reserva. Un objetivo de ahorro ayuda a construirla.',
+      noData: 'Aparece con gastos registrados en al menos dos meses.',
+    },
+    fixedCosts: {
+      title: 'Gastos fijos',
+      good: 'Tus gastos fijos dejan margen en tus ingresos.',
+      fair: 'Los gastos fijos se llevan una parte grande de los ingresos. Revisa tus suscripciones.',
+      attention:
+        'Más de la mitad de los ingresos va a gastos fijos. Revisa los que puedes renegociar o cancelar.',
+      noData: 'Registra los gastos fijos (alquiler, teléfono, gimnasio…) como suscripciones.',
+    },
+    disclaimer:
+      'Referencias generales (ahorro del 20%, reserva de 3 a 6 meses), no asesoramiento financiero.',
+  },
   insights: {
     title: 'Este mes',
     endOfMonth: 'Previsión para final de mes',
@@ -681,7 +722,7 @@ const es: Translation = {
     priceRise: '{{name}} subió de {{previous}} a {{amount}}: {{yearly}} más al año.',
     endNegative: 'A este ritmo, terminas el mes con {{amount}}.',
     categoryAbove:
-      '{{category}}: llevas {{spent}}, un {{percent}} más de lo habitual a estas alturas del mes.',
+      '{{category}}: llevas {{spent}}, un {{percent}} más de lo habitual a estas alturas del mes. A este ritmo, el mes cierra {{extra}} por encima de tu media ({{yearly}} en un año).',
     spendingBelow: 'Estás gastando un {{percent}} menos de lo habitual a estas alturas del mes.',
   },
   obligations: {
