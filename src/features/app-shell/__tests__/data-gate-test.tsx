@@ -1,11 +1,29 @@
 import { fireEvent, screen } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 import { DatabaseUnavailableError, useDataQuery, type LocalStore, type Repositories } from '@/data';
 import { openTestStore } from '@/test-utils/node-sqlite-driver';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { DataGate } from '../DataGate';
+
+let mockPathname = '/';
+jest.mock('expo-router', () => ({
+  ...jest.requireActual('expo-router'),
+  usePathname: () => mockPathname,
+}));
+
+jest.mock('../web-isolation', () => ({
+  ...jest.requireActual('../web-isolation'),
+  readIsolationEnv: () => ({
+    web: true,
+    isolated: false,
+    coiScript: true,
+    serviceWorker: false,
+    controller: false,
+    reloads: 0,
+  }),
+}));
 
 const listCategoryNames = async (repositories: Repositories) =>
   (await repositories.categories.list()).map((category) => category.name);
@@ -58,6 +76,19 @@ describe('DataGate', () => {
     });
     await renderWithProviders(<DataGate open={open}>{null}</DataGate>);
     expect(await screen.findByText('Este browser não guarda os dados')).toBeOnTheScreen();
+  });
+
+  it('says the email is confirmed when the link opened in a browser without storage', async () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    mockPathname = '/auth/callback';
+    const open = jest.fn(async () => {
+      throw new DatabaseUnavailableError('notIsolated');
+    });
+    await renderWithProviders(<DataGate open={open}>{null}</DataGate>);
+    expect(await screen.findByText('Email confirmado')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Copiar endereço da app' })).toBeOnTheScreen();
+    expect(screen.queryByText('Este browser não guarda os dados')).toBeNull();
+    mockPathname = '/';
   });
 
   it('does not offer a retry when the schema is newer than the app', async () => {

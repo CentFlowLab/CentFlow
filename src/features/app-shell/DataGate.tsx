@@ -6,6 +6,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
+import { usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
@@ -133,6 +134,9 @@ export function DataGate({
     setAttempt((value) => value + 1);
   }, [state]);
 
+  const pathname = usePathname();
+  const onEmailConfirmation = Platform.OS === 'web' && pathname.startsWith('/auth/callback');
+
   const copyAddress = useCallback(() => {
     void copyAppAddress().then((ok) => {
       if (!ok) return;
@@ -144,6 +148,32 @@ export function DataGate({
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} accessibilityLabel={t('database.opening')} />
+      </View>
+    );
+  }
+
+  // O link do email abriu num browser que não guarda dados (Brave, Chrome, Mail no iPhone).
+  // Com sessão, o email já está confirmado: diz isso em vez do erro de armazenamento.
+  if (state.status === 'error' && state.reason === 'notIsolated' && onEmailConfirmation) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon="checkmark-circle-outline"
+          title={t('auth.confirmedOtherBrowser.title')}
+          description={t('auth.confirmedOtherBrowser.message')}>
+          <View style={styles.actions}>
+            <Button
+              label={
+                copied
+                  ? t('auth.confirmedOtherBrowser.copied')
+                  : t('auth.confirmedOtherBrowser.copy')
+              }
+              icon={copied ? 'checkmark' : 'copy-outline'}
+              onPress={copyAddress}
+              fullWidth
+            />
+          </View>
+        </EmptyState>
       </View>
     );
   }
