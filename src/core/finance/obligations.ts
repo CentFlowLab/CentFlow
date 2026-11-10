@@ -20,12 +20,23 @@ export type Obligation =
       amount: number;
       currency: CurrencyCode;
     }
-  /** Validar faturas no e-fatura (até 25 de fevereiro). */
+  /** Validar faturas no e-fatura: fim de fevereiro (ou o dia útil seguinte). */
   | { kind: 'efatura'; date: CalendarDate }
   /** Fim do prazo de entrega do IRS (1 de abril a 30 de junho). */
   | { kind: 'irs'; date: CalendarDate }
   /** Prestação do IMI: maio (única ou 1.ª), agosto (> 500 €) e novembro (> 100 €). */
-  | { kind: 'imi'; date: CalendarDate; installment: 'may' | 'august' | 'november' };
+  | { kind: 'imi'; date: CalendarDate; installment: 'may' | 'august' | 'november' }
+  /**
+   * IUC com o calendário do Decreto-Lei n.º 161/2026. Em 2027 (transição): outubro, ou julho e
+   * outubro acima de 500 €. A partir de 2028: abril; julho (> 500 €) e outubro (> 100 €).
+   * Até 2026 paga-se no mês da matrícula, que a app não guarda.
+   */
+  | { kind: 'iuc'; date: CalendarDate; installment: IucInstallment };
+
+export type IucInstallment = 'transitionJuly' | 'transitionOctober' | 'april' | 'july' | 'october';
+
+/** Ano a partir do qual o IUC tem datas fixas (Decreto-Lei n.º 161/2026). */
+export const IUC_FIXED_CALENDAR_FROM = 2027;
 
 export type ObligationKind = Obligation['kind'];
 
@@ -40,12 +51,36 @@ export type ObligationsInput = {
   hasProperty: boolean;
 };
 
+/** Fim de fevereiro; se calhar ao fim de semana, passa para segunda-feira. */
+function efaturaDeadline(year: number): CalendarDate {
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const last = `${year}-02-${leap ? 29 : 28}`;
+  const weekday = new Date(Date.UTC(year, 1, leap ? 29 : 28)).getUTCDay();
+  return weekday === 6 ? addDays(last, 2) : weekday === 0 ? addDays(last, 1) : last;
+}
+
+function iucDates(year: number): Obligation[] {
+  if (year < IUC_FIXED_CALENDAR_FROM) return [];
+  if (year === IUC_FIXED_CALENDAR_FROM) {
+    return [
+      { kind: 'iuc', date: `${year}-07-31`, installment: 'transitionJuly' },
+      { kind: 'iuc', date: `${year}-10-31`, installment: 'transitionOctober' },
+    ];
+  }
+  return [
+    { kind: 'iuc', date: `${year}-04-30`, installment: 'april' },
+    { kind: 'iuc', date: `${year}-07-31`, installment: 'july' },
+    { kind: 'iuc', date: `${year}-10-31`, installment: 'october' },
+  ];
+}
+
 /** Datas fiscais gerais de um ano. */
-function taxDates(year: number, hasProperty: boolean): Obligation[] {
+function taxDates(year: number, hasProperty: boolean, hasMotorVehicle: boolean): Obligation[] {
   const dates: Obligation[] = [
-    { kind: 'efatura', date: `${year}-02-25` },
+    { kind: 'efatura', date: efaturaDeadline(year) },
     { kind: 'irs', date: `${year}-06-30` },
   ];
+  if (hasMotorVehicle) dates.push(...iucDates(year));
   if (hasProperty) {
     dates.push(
       { kind: 'imi', date: `${year}-05-31`, installment: 'may' },
@@ -110,9 +145,10 @@ export function upcomingObligations(input: ObligationsInput): Obligation[] {
   }
 
   const year = Number(today.slice(0, 4));
+  const hasMotorVehicle = input.vehicles.some((vehicle) => vehicle.kind !== 'bicycle');
   for (const tax of [
-    ...taxDates(year, input.hasProperty),
-    ...taxDates(year + 1, input.hasProperty),
+    ...taxDates(year, input.hasProperty, hasMotorVehicle),
+    ...taxDates(year + 1, input.hasProperty, hasMotorVehicle),
   ]) {
     if (tax.date < today) continue;
     // O IRS aparece durante todo o prazo de entrega (abril a junho); o resto só dentro do horizonte.

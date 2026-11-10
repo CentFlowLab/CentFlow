@@ -27,6 +27,7 @@ const ICONS: Record<Obligation['kind'], IconName> = {
   efatura: 'receipt-outline',
   irs: 'calculator-outline',
   imi: 'home-outline',
+  iuc: 'car-outline',
 };
 
 async function loadObligations(repositories: Repositories, today: CalendarDate) {
@@ -75,6 +76,8 @@ export function UpcomingObligations({ today }: { today: CalendarDate }) {
         return t('obligations.irs');
       case 'imi':
         return t(`obligations.imi.${item.installment}`);
+      case 'iuc':
+        return t(`obligations.iuc.${item.installment}`);
     }
   };
 
