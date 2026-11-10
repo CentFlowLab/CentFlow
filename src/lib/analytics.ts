@@ -1,4 +1,4 @@
-import PostHog from 'posthog-react-native';
+import type PostHog from 'posthog-react-native';
 
 /**
  * Estatísticas de utilização (PostHog, região UE). Só arranca com a chave definida e o
@@ -24,7 +24,9 @@ export function screenName(pathname: string): string {
 export async function setAnalyticsConsent(granted: boolean): Promise<void> {
   if (!analyticsAvailable()) return;
   if (granted) {
-    client ??= new PostHog(apiKey, {
+    // Só se carrega o PostHog (≈ 460 KB) com consentimento (ADR-047).
+    const { default: PostHogClient } = await import('posthog-react-native');
+    client ??= new PostHogClient(apiKey, {
       host,
       defaultOptIn: false,
       captureAppLifecycleEvents: false,

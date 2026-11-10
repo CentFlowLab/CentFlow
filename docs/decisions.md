@@ -635,6 +635,21 @@ não muda. Migrações: local v10 e `20261111000300` (as apps anteriores não ap
 **Consequências:** bens eliminados saem de todo o histórico. Os bens existentes começam o histórico
 com a avaliação atual. Aplicada no staging em 2026-11-10; a produção precisa de autorização.
 
+## ADR-047 — Web: Sentry depois do primeiro ecrã e PostHog só com consentimento
+
+**Contexto:** a app web carregava ≈ 4,3 MB de JavaScript para abrir (medido com source maps):
+≈ 1,5 MB era o Sentry e ≈ 0,46 MB o PostHog, que só funciona com consentimento.
+**Decisão:** `src/lib/monitoring.web.tsx` carrega o Sentry (mesma configuração de `sentry.ts`) num
+pedaço à parte quando o browser fica livre depois do primeiro ecrã; o ecrã de erro reporta o erro
+carregando-o se for preciso. Um único `import()` (dois com o Sentry em comum iam para o pacote
+inicial). No telemóvel nada muda (`monitoring.tsx`). `analytics.ts` só importa o PostHog quando
+há consentimento. Sem dependências novas.
+**Medição (build de produção, JavaScript para abrir a app):** antes 4,29 MB (1,03 MB com gzip),
+depois 2,19 MB (0,55 MB com gzip). O Sentry (0,38 MB com gzip) chega depois; o PostHog (0,13 MB)
+só com consentimento.
+**Consequências:** um erro nos primeiros instantes da web, antes de o Sentry carregar, só é
+reportado se chegar ao ecrã de erro.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

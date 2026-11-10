@@ -1,15 +1,14 @@
-import '@/lib/sentry';
 import '@/i18n';
 
-import * as Sentry from '@sentry/react-native';
 import { Stack } from 'expo-router';
 
 import { useAppAccess } from '@/features/account/AccountGate';
 import { AnalyticsTracker } from '@/features/app-shell/AnalyticsTracker';
 import { AppProviders } from '@/features/app-shell/AppProviders';
 import { RootErrorBoundary } from '@/features/app-shell/RootErrorBoundary';
+import { wrapErrorBoundary, wrapRoot } from '@/lib/monitoring';
 
-export const ErrorBoundary = Sentry.wrapExpoRouterErrorBoundary(RootErrorBoundary);
+export const ErrorBoundary = wrapErrorBoundary(RootErrorBoundary);
 
 /** Abrir um formulário diretamente por URL (ou recarregar a página) mantém as tabs por baixo. */
 export const unstable_settings = { anchor: '(tabs)' };
@@ -70,4 +69,4 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+export default wrapRoot(RootLayout);

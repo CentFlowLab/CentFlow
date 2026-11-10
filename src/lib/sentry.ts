@@ -15,3 +15,6 @@ Sentry.init({
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
 });
+
+/** Módulo do Sentry já iniciado (a web carrega-o à parte, ADR-047). */
+export { Sentry };
