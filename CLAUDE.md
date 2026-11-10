@@ -7,8 +7,8 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 ## Estado
 
 Fases 0 a 4 e a parte da Fase 5 sem fornecedor externo estão no cliente. **Produção e staging
-partilham `20261108000100` a `20261108000900`; `20261110001000` e `20261110001100` (nome de
-utilizador, ADR-038) só estão no staging** — falta autorização para a produção (desde 2026-11-09, ver
+têm o mesmo histórico, `20261108000100` a `20261110001100`** (`001000` e `001100`, nome de
+utilizador e ADR-038, na produção desde 2026-11-10; produção desde 2026-11-09, ver
 [docs/release-producao.md](docs/release-producao.md)). Funções `delete-account` e
 `suggest-entry` nos dois ambientes; falta o segredo `ANTHROPIC_API_KEY`.
 **O Miven só se usa com conta (ADR-034):** sem sessão só há boas-vindas e autenticação, e não se
