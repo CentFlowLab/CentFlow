@@ -456,6 +456,7 @@ const es: Translation = {
     subtitle: 'Gastos que se repiten. No cambian el saldo de las cuentas.',
     activeCount_one: '{{count}} activa',
     activeCount_other: '{{count}} activas',
+    priceRose: 'Subió desde {{previous}}',
     add: 'Nueva suscripción',
     emptyTitle: 'Aún no hay suscripciones',
     emptyDescription:
@@ -666,6 +667,7 @@ const es: Translation = {
       'Hasta final de mes (hoy), después de las suscripciones. No cuenta el dinero que aún no ha entrado.',
     perDayHint_other:
       'Hasta final de mes ({{count}} días), después de las suscripciones. No cuenta el dinero que aún no ha entrado.',
+    priceRise: '{{name}} subió de {{previous}} a {{amount}}: {{yearly}} más al año.',
     endNegative: 'A este ritmo, terminas el mes con {{amount}}.',
     categoryAbove:
       '{{category}}: llevas {{spent}}, un {{percent}} más de lo habitual a estas alturas del mes.',
@@ -685,6 +687,13 @@ const es: Translation = {
       may: 'Pagar el IMI (pago único o 1.º plazo)',
       august: 'IMI: 2.º plazo (si el IMI supera 500 €)',
       november: 'IMI: último plazo (si el IMI supera 100 €)',
+    },
+    iuc: {
+      transitionJuly: 'IUC: 1.er plazo (solo si el IUC supera 500 €)',
+      transitionOctober: 'Pagar el IUC (o el 2.º plazo, si supera 500 €)',
+      april: 'Pagar el IUC (pago único o 1.er plazo)',
+      july: 'IUC: 2.º plazo (si el IUC supera 500 €)',
+      october: 'IUC: último plazo (si el IUC supera 100 €)',
     },
     today: 'Hoy',
     inDays_one: 'Mañana · {{date}}',

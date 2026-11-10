@@ -92,6 +92,7 @@ const INSIGHT_ICONS: Record<
   { icon: IconName; tone: 'negative' | 'warning' | 'positive' }
 > = {
   endNegative: { icon: 'alert-circle-outline', tone: 'negative' },
+  priceRise: { icon: 'pricetag-outline', tone: 'warning' },
   categoryAbove: { icon: 'trending-up', tone: 'warning' },
   spendingBelow: { icon: 'trending-down', tone: 'positive' },
 };
@@ -155,6 +156,13 @@ export function MonthInsights({
     switch (insight.kind) {
       case 'endNegative':
         return t('insights.endNegative', { amount: money(insight.endBalance) });
+      case 'priceRise':
+        return t('insights.priceRise', {
+          name: insight.name,
+          previous: money(insight.previous),
+          amount: money(insight.amount),
+          yearly: money(insight.yearlyIncrease),
+        });
       case 'categoryAbove':
         return t('insights.categoryAbove', {
           category: lookups.data?.categories.get(insight.categoryId)?.name ?? '—',
@@ -233,7 +241,13 @@ export function MonthInsights({
                 const { icon, tone } = INSIGHT_ICONS[insight.kind];
                 return (
                   <View
-                    key={insight.kind === 'categoryAbove' ? insight.categoryId : insight.kind}
+                    key={
+                      insight.kind === 'categoryAbove'
+                        ? insight.categoryId
+                        : insight.kind === 'priceRise'
+                          ? insight.subscriptionId
+                          : insight.kind
+                    }
                     style={styles.insight}
                     accessible>
                     <View

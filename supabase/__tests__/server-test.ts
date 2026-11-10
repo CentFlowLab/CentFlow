@@ -943,6 +943,26 @@ describe('subscriptions', () => {
     ).rejects.toThrow();
   });
 
+  it('keeps the previous price, also when an older app updates without it', async () => {
+    await push(alice, [subscriptionOp()]);
+    await push(alice, [
+      {
+        ...subscriptionOp({ amount: 1800, previous_amount: 1500, amount_changed_on: '2026-11-11' }),
+        base_version: 1,
+        op_id: opId(),
+      },
+    ]);
+    // Uma app sem os campos novos (0.1.7) muda só o nome: o preço anterior fica.
+    await push(alice, [
+      { ...subscriptionOp({ amount: 1800, name: 'Telemóvel' }), base_version: 2, op_id: opId() },
+    ]);
+    expect(
+      await alice.query(
+        'select name, amount, previous_amount, amount_changed_on::text as changed from public.subscriptions',
+      ),
+    ).toEqual([{ name: 'Telemóvel', amount: 1800, previous_amount: 1500, changed: '2026-11-11' }]);
+  });
+
   it('rejects an income category and a next date before the start', async () => {
     await seedBasics(alice);
     await push(alice, [

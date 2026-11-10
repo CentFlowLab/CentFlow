@@ -135,6 +135,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'vehicles and documents (metadata only), enrolled in sync',
     sql: migrationV8(),
   },
+  {
+    version: 9,
+    description: 'subscriptions: previous amount and change date (price rises)',
+    sql: migrationV9(),
+  },
 ];
 
 /**
@@ -1241,6 +1246,58 @@ function migrationV8(): string {
     CREATE INDEX idx_sync_conflicts_open ON sync_conflicts (created_at) WHERE resolved_at IS NULL;
 
     ${triggers}
+  `;
+}
+
+/** v9 — preço anterior das subscrições, para avisar quando sobem. Também vai para a fila. */
+function migrationV9(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const fields = [
+    'name',
+    'amount',
+    'currency',
+    'period',
+    'status',
+    'starts_on',
+    'next_on',
+    'category_id',
+    'previous_amount',
+    'amount_changed_on',
+    'created_at',
+    'deleted_at',
+  ];
+  const json = (row: 'NEW' | 'OLD') =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const base = (row: 'NEW' | 'OLD') => `COALESCE(
+    (SELECT base_version + 1 FROM sync_outbox
+      WHERE entity = 'subscriptions' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+    ${row}.version)`;
+  return `
+    ALTER TABLE subscriptions ADD COLUMN previous_amount INTEGER
+      CHECK (previous_amount IS NULL OR (typeof(previous_amount) = 'integer' AND previous_amount > 0));
+    ALTER TABLE subscriptions ADD COLUMN amount_changed_on TEXT
+      CHECK (amount_changed_on IS NULL OR amount_changed_on GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]');
+
+    DROP TRIGGER IF EXISTS sync_subscriptions_insert;
+    DROP TRIGGER IF EXISTS sync_subscriptions_update;
+    CREATE TRIGGER sync_subscriptions_insert AFTER INSERT ON subscriptions
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'subscriptions', NEW.id,
+        ${base('NEW')}, NULL, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
+    CREATE TRIGGER sync_subscriptions_update AFTER UPDATE ON subscriptions
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'subscriptions', NEW.id,
+        ${base('OLD')}, ${json('OLD')}, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
   `;
 }
 

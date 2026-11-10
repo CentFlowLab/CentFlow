@@ -177,7 +177,7 @@ describe('database initialization', () => {
 
     await migrate(db, MIGRATIONS);
 
-    expect(await getSchemaVersion(db)).toBe(8);
+    expect(await getSchemaVersion(db)).toBe(LATEST_SCHEMA_VERSION);
     expect(await db.first('SELECT amount, version FROM budgets WHERE id = ?', ['b1'])).toEqual({
       amount: 5000,
       version: 0,
@@ -191,6 +191,45 @@ describe('database initialization', () => {
           WHERE type = 'trigger' AND name = 'sync_budgets_insert'`,
       ),
     ).toEqual({ n: 1 });
+    await db.close();
+  });
+});
+
+describe('schema v9 (subscription price)', () => {
+  it('keeps subscriptions from v8 and sends the previous price through the outbox', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 8),
+    );
+    await db.run(
+      `INSERT INTO subscriptions
+         (id, name, amount, currency, period, status, starts_on, next_on, created_at, updated_at)
+       VALUES ('s1', 'Ginásio', 3000, 'EUR', 'monthly', 'active', '2026-11-01', '2026-12-01', ?, ?)`,
+      [NOW, NOW],
+    );
+    await migrate(db, MIGRATIONS);
+    expect(
+      await db.first('SELECT amount, previous_amount, amount_changed_on FROM subscriptions'),
+    ).toEqual({ amount: 3000, previous_amount: null, amount_changed_on: null });
+
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(
+      `UPDATE subscriptions SET amount = 3500, previous_amount = 3000,
+         amount_changed_on = '2026-11-11' WHERE id = 's1'`,
+    );
+    const op = await db.first<{ data: string }>(
+      `SELECT data FROM sync_outbox WHERE entity = 'subscriptions' ORDER BY seq DESC LIMIT 1`,
+    );
+    expect(JSON.parse(op!.data)).toMatchObject({
+      amount: 3500,
+      previous_amount: 3000,
+      amount_changed_on: '2026-11-11',
+    });
+    await expect(
+      db.run(`UPDATE subscriptions SET previous_amount = -1 WHERE id = 's1'`),
+    ).rejects.toThrow();
     await db.close();
   });
 });

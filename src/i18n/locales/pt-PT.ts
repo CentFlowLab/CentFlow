@@ -452,6 +452,7 @@ const ptPT = {
     subtitle: 'Despesas que se repetem. Não alteram o saldo das contas.',
     activeCount_one: '{{count}} ativa',
     activeCount_other: '{{count}} ativas',
+    priceRose: 'Subiu de {{previous}}',
     add: 'Nova subscrição',
     emptyTitle: 'Ainda não há subscrições',
     emptyDescription:
@@ -661,6 +662,7 @@ const ptPT = {
       'Até ao fim do mês (hoje), depois das subscrições. Não conta com dinheiro que ainda não entrou.',
     perDayHint_other:
       'Até ao fim do mês ({{count}} dias), depois das subscrições. Não conta com dinheiro que ainda não entrou.',
+    priceRise: '{{name}} subiu de {{previous}} para {{amount}}: mais {{yearly}} por ano.',
     endNegative: 'Ao ritmo atual, acabas o mês com {{amount}}.',
     categoryAbove:
       '{{category}}: já gastaste {{spent}}, {{percent}} acima do habitual para esta altura do mês.',
@@ -680,6 +682,13 @@ const ptPT = {
       may: 'Pagar o IMI (prestação única ou 1.ª)',
       august: 'IMI: 2.ª prestação (se o IMI for superior a 500 €)',
       november: 'IMI: última prestação (se o IMI for superior a 100 €)',
+    },
+    iuc: {
+      transitionJuly: 'IUC: 1.ª prestação (só se o IUC for superior a 500 €)',
+      transitionOctober: 'Pagar o IUC (ou a 2.ª prestação, acima de 500 €)',
+      april: 'Pagar o IUC (pagamento único ou 1.ª prestação)',
+      july: 'IUC: 2.ª prestação (se o IUC for superior a 500 €)',
+      october: 'IUC: última prestação (se o IUC for superior a 100 €)',
     },
     today: 'Hoje',
     inDays_one: 'Amanhã · {{date}}',

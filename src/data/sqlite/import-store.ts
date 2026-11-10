@@ -60,6 +60,8 @@ const COPY_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'starts_on',
     'next_on',
     'category_id',
+    'previous_amount',
+    'amount_changed_on',
     'created_at',
     'updated_at',
   ],

@@ -530,10 +530,27 @@ negativo). O "habitual" são os 3 meses anteriores, com pelo menos 2 com movimen
 o ritmo do mês a partir do dia 7 e, antes, diz que ainda não há previsão (nunca números
 inventados). "Próximos prazos" (`obligations.ts`): inspeções e seguros dos carros, validades dos
 documentos, próximas cobranças das subscrições (calculadas a partir de `nextOn` e do período) e
-as datas fiscais gerais em Portugal: e-fatura (25 de fevereiro), IRS (até 30 de junho, durante o
-prazo) e IMI (maio, agosto e novembro, só com um imóvel no património).
-**Consequências:** sem alterações à base de dados. Falta o IUC (precisa do mês da matrícula no
-veículo) e confirmar as datas fiscais a cada ano.
+as datas fiscais gerais em Portugal, confirmadas em novembro de 2026: e-fatura (fim de fevereiro,
+ou o dia útil seguinte; em 2026 foi 2 de março), IRS (1 de abril a 30 de junho, durante o prazo),
+IMI (maio, agosto e novembro, só com um imóvel no património) e IUC com o calendário fixo do
+Decreto-Lei n.º 161/2026 (2027: julho e outubro; a partir de 2028: abril, julho e outubro), só
+com um veículo a motor. Até 2026 o IUC paga-se no mês da matrícula; como esse regime acaba, a app
+não pede a data da matrícula.
+**Consequências:** sem alterações à base de dados. As datas fiscais têm de ser revistas quando a
+lei mudar (`src/core/finance/obligations.ts`).
+
+## ADR-041 — Subscrições: preço anterior para avisar subidas
+
+**Contexto:** uma subida de preço numa subscrição passa despercebida; a app só guardava o valor
+atual.
+**Decisão:** `subscriptions.previous_amount` e `amount_changed_on` (migração local v9 e
+`20261111000100` no servidor). O repositório preenche-os ao gravar um valor diferente na mesma
+moeda; mudar de moeda limpa-os. Sincronizam com o valor (fusão acoplada `amount` +
+`previous_amount` + `amount_changed_on`). No servidor, uma app anterior que não envie os campos não
+os apaga. O Início assinala subidas dos últimos 60 dias com o custo a mais por ano; a lista de
+subscrições, durante um ano. A lista mostra também a próxima cobrança calculada a partir de hoje.
+**Consequências:** aplicada no staging em 2026-11-10; a produção precisa de autorização
+(`CONFIRMO-PRODUCAO`) antes de publicar a app com esta versão.
 
 ## Decisões pendentes
 

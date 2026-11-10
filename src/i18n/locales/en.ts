@@ -455,6 +455,7 @@ const en: Translation = {
     subtitle: 'Expenses that repeat. They do not change account balances.',
     activeCount_one: '{{count}} active',
     activeCount_other: '{{count}} active',
+    priceRose: 'Up from {{previous}}',
     add: 'New subscription',
     emptyTitle: 'No subscriptions yet',
     emptyDescription:
@@ -664,6 +665,7 @@ const en: Translation = {
       "Until month end (today), after subscriptions. It doesn't count money that hasn't come in yet.",
     perDayHint_other:
       "Until month end ({{count}} days), after subscriptions. It doesn't count money that hasn't come in yet.",
+    priceRise: '{{name}} went up from {{previous}} to {{amount}}: {{yearly}} more a year.',
     endNegative: 'At this pace, you end the month with {{amount}}.',
     categoryAbove:
       '{{category}}: {{spent}} so far, {{percent}} above usual for this point in the month.',
@@ -683,6 +685,13 @@ const en: Translation = {
       may: 'Pay IMI (single or 1st instalment)',
       august: 'IMI: 2nd instalment (if IMI is over €500)',
       november: 'IMI: last instalment (if IMI is over €100)',
+    },
+    iuc: {
+      transitionJuly: 'IUC: 1st instalment (only if IUC is over €500)',
+      transitionOctober: 'Pay IUC (or the 2nd instalment, if over €500)',
+      april: 'Pay IUC (single or 1st instalment)',
+      july: 'IUC: 2nd instalment (if IUC is over €500)',
+      october: 'IUC: last instalment (if IUC is over €100)',
     },
     today: 'Today',
     inDays_one: 'Tomorrow · {{date}}',

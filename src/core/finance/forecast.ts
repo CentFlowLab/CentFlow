@@ -1,7 +1,8 @@
 import type { CurrencyCode } from '../money';
 import { addDays, addMonths, monthOf, monthRange, type CalendarDate, type MonthKey } from './dates';
+import { daysUntil } from './deadlines';
 import { annualAmountMinor } from './subscriptions';
-import type { Id, Subscription } from './types';
+import type { Id, Subscription, SubscriptionPeriod } from './types';
 
 /**
  * Previsão do mês e alertas a partir dos dados que a pessoa já registou. Nada aqui é inventado:
@@ -191,7 +192,50 @@ export function buildMonthForecast(input: ForecastInput): MonthForecast {
   };
 }
 
+/** Dias em que uma subida de preço continua a ser assinalada no Início. */
+export const PRICE_RISE_WINDOW_DAYS = 60;
+
+export type PriceRise = {
+  subscriptionId: Id;
+  name: string;
+  period: SubscriptionPeriod;
+  currency: string;
+  previous: number;
+  amount: number;
+  changedOn: CalendarDate;
+  /** Quanto custa a mais por ano. */
+  yearlyIncrease: number;
+};
+
+/** Subscrições ativas cujo preço subiu nos últimos `windowDays` dias (a maior subida primeiro). */
+export function recentPriceRises(
+  subscriptions: readonly Subscription[],
+  today: CalendarDate,
+  windowDays: number = PRICE_RISE_WINDOW_DAYS,
+): PriceRise[] {
+  const rises: PriceRise[] = [];
+  for (const item of subscriptions) {
+    if (item.status !== 'active' || item.previousAmount === null || !item.amountChangedOn) continue;
+    if (item.amount <= item.previousAmount) continue;
+    const age = -(daysUntil(item.amountChangedOn, today) ?? 0);
+    if (age < 0 || age > windowDays) continue;
+    rises.push({
+      subscriptionId: item.id,
+      name: item.name,
+      period: item.period,
+      currency: item.currency,
+      previous: item.previousAmount,
+      amount: item.amount,
+      changedOn: item.amountChangedOn,
+      yearlyIncrease: annualAmountMinor(item.period, item.amount - item.previousAmount),
+    });
+  }
+  return rises.sort((a, b) => b.yearlyIncrease - a.yearlyIncrease);
+}
+
 export type SpendingInsight =
+  /** Uma subscrição subiu de preço há pouco tempo. */
+  | ({ kind: 'priceRise' } & PriceRise)
   /** Uma categoria vai acima do habitual para esta altura do mês. */
   | { kind: 'categoryAbove'; categoryId: Id; spent: number; usual: number; ratio: number }
   /** O mês inteiro vai abaixo do habitual para esta altura. */
@@ -207,13 +251,19 @@ const MIN_DAY_FOR_PACE_INSIGHTS = 5;
 
 /** Até `limit` observações, das mais importantes para as menos. */
 export function spendingInsights(
-  input: Pick<ForecastInput, 'today' | 'monthToDate' | 'history'>,
+  input: Pick<ForecastInput, 'today' | 'monthToDate' | 'history'> &
+    Partial<Pick<ForecastInput, 'subscriptions' | 'currency'>>,
   forecast: Pick<MonthForecast, 'endBalance'>,
   limit = 3,
 ): SpendingInsight[] {
   const insights: SpendingInsight[] = [];
   if (forecast.endBalance !== null && forecast.endBalance < 0) {
     insights.push({ kind: 'endNegative', endBalance: forecast.endBalance });
+  }
+  for (const rise of recentPriceRises(input.subscriptions ?? [], input.today)) {
+    if (!input.currency || rise.currency === input.currency) {
+      insights.push({ kind: 'priceRise', ...rise });
+    }
   }
 
   const usable = usableHistory(input.history);

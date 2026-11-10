@@ -671,6 +671,28 @@ describe('subscriptions', () => {
     expect(await repos.subscriptions.get(created.id)).toBeNull();
   });
 
+  it('remembers the previous price when the amount changes', async () => {
+    const created = await repos.subscriptions.create(input());
+    expect(created).toMatchObject({ previousAmount: null, amountChangedOn: null });
+    const raised = await repos.subscriptions.update(created.id, {
+      ...input(),
+      amount: input().amount + 300,
+    });
+    expect(raised.previousAmount).toBe(input().amount);
+    expect(raised.amountChangedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Mudar outra coisa mantém a última mudança de preço.
+    const renamed = await repos.subscriptions.update(created.id, {
+      ...input(),
+      amount: input().amount + 300,
+      name: 'Outro nome',
+    });
+    expect(renamed.previousAmount).toBe(input().amount);
+    expect(await repos.subscriptions.get(created.id)).toEqual(renamed);
+    // Noutra moeda, os valores não se comparam.
+    const usd = await repos.subscriptions.update(created.id, { ...input(), currency: 'USD' });
+    expect(usd).toMatchObject({ previousAmount: null, amountChangedOn: null });
+  });
+
   it('rejects an income category and a next date before the start', async () => {
     await expect(
       repos.subscriptions.create({ ...input(), categoryId: salary.id }),

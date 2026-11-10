@@ -1,6 +1,7 @@
 import {
   buildMonthForecast,
   chargesBetween,
+  recentPriceRises,
   spendingInsights,
   type ForecastInput,
   type MonthHistory,
@@ -18,6 +19,8 @@ function subscription(overrides: Partial<Subscription> = {}): Subscription {
     startsOn: '2026-01-15',
     nextOn: '2026-01-15',
     categoryId: null,
+    previousAmount: null,
+    amountChangedOn: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
@@ -183,6 +186,49 @@ describe('spendingInsights', () => {
         },
         { endBalance: null },
       ),
+    ).toEqual([]);
+  });
+});
+
+describe('price rises', () => {
+  const raised = subscription({
+    previousAmount: 1000,
+    amount: 1300,
+    amountChangedOn: '2026-11-01',
+  });
+
+  it('finds recent rises with the yearly cost, not drops or old changes', () => {
+    expect(recentPriceRises([raised], '2026-11-10')).toEqual([
+      {
+        subscriptionId: 's1',
+        name: 'Streaming',
+        period: 'monthly',
+        currency: 'EUR',
+        previous: 1000,
+        amount: 1300,
+        changedOn: '2026-11-01',
+        yearlyIncrease: 3600,
+      },
+    ]);
+    expect(recentPriceRises([{ ...raised, amount: 900 }], '2026-11-10')).toEqual([]);
+    expect(recentPriceRises([raised], '2027-02-01')).toEqual([]);
+    expect(recentPriceRises([{ ...raised, status: 'cancelled' }], '2026-11-10')).toEqual([]);
+  });
+
+  it('puts a rise among the month insights, in the same currency', () => {
+    const base = {
+      today: '2026-11-10',
+      history: [],
+      monthToDate: { income: 0, expense: 0, byCategory: new Map() },
+    };
+    expect(
+      spendingInsights(
+        { ...base, subscriptions: [raised], currency: 'EUR' },
+        { endBalance: null },
+      ).map((item) => item.kind),
+    ).toEqual(['priceRise']);
+    expect(
+      spendingInsights({ ...base, subscriptions: [raised], currency: 'USD' }, { endBalance: null }),
     ).toEqual([]);
   });
 });

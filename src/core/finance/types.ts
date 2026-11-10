@@ -103,6 +103,10 @@ export type Subscription = SyncMetadata & {
   startsOn: CalendarDate;
   nextOn: CalendarDate;
   categoryId: Id | null;
+  /** Valor antes da última mudança de preço (mesma moeda). Guardado pela app, não pela pessoa. */
+  previousAmount: number | null;
+  /** Dia em que o valor mudou pela última vez. */
+  amountChangedOn: CalendarDate | null;
 };
 
 export type SubscriptionInput = Pick<

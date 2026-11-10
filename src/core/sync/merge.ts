@@ -39,6 +39,8 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'starts_on',
     'next_on',
     'category_id',
+    'previous_amount',
+    'amount_changed_on',
     'deleted_at',
   ],
   goals: ['name', 'target_amount', 'currency', 'target_on', 'deleted_at'],
@@ -71,7 +73,8 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   accounts: [],
   categories: [],
   budgets: [],
-  subscriptions: [],
+  // O preço anterior só faz sentido com o valor que o substituiu.
+  subscriptions: [['amount', 'previous_amount', 'amount_changed_on']],
   goals: [],
   goal_contributions: [],
   wealth_items: [],

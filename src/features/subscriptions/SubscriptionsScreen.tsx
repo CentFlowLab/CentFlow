@@ -5,11 +5,16 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import {
   activeSubscriptionCosts,
+  addDays,
   calendarDateToLocalDate,
+  chargesBetween,
+  recentPriceRises,
+  type Subscription,
   type SubscriptionStatus,
 } from '@/core/finance';
 import { useDataQuery, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
+import { useToday } from '@/features/finance/useToday';
 import {
   Amount,
   Badge,
@@ -55,6 +60,7 @@ export function SubscriptionsScreen() {
   const { colors } = useTheme();
   const breakpoint = useBreakpoint();
   const { formatDate, formatMoney } = useLocaleFormat();
+  const today = useToday();
   const query = useDataQuery(useCallback((repositories: Repositories) => load(repositories), []));
 
   const add = () => router.push(NEW_HREF);
@@ -89,6 +95,10 @@ export function SubscriptionsScreen() {
 
   const { subscriptions, costs } = query.data;
   const activeCount = subscriptions.filter((item) => item.status === 'active').length;
+  // Na lista, uma subida fica assinalada durante um ano.
+  const risesById = new Map(
+    recentPriceRises(subscriptions, today, 365).map((rise) => [rise.subscriptionId, rise]),
+  );
 
   if (subscriptions.length === 0) {
     return (
@@ -136,16 +146,30 @@ export function SubscriptionsScreen() {
       ) : null}
       <Card padding="xs">
         {subscriptions.map((item, index) => {
+          const subtitleFor = (subscription: Subscription) => {
+            // A data guardada pode já ter passado: mostra a próxima cobrança a partir de hoje.
+            const next =
+              chargesBetween(subscription, today, addDays(today, 400))[0] ?? subscription.nextOn;
+            const parts = [
+              `${t('subscriptions.nextOn')}: ${formatDate(calendarDateToLocalDate(next), 'medium')}`,
+            ];
+            const rise = risesById.get(subscription.id);
+            if (rise) {
+              parts.push(
+                t('subscriptions.priceRose', {
+                  previous: formatMoney({ amountMinor: rise.previous, currency: rise.currency }),
+                }),
+              );
+            }
+            return parts.join(' · ');
+          };
           const iconColors = STATUS_ICON_COLORS[item.status];
           return (
             <Fragment key={item.id}>
               {index > 0 ? <Divider inset={DIVIDER_INSET} /> : null}
               <ListItem
                 title={item.name}
-                subtitle={`${t('subscriptions.nextOn')}: ${formatDate(
-                  calendarDateToLocalDate(item.nextOn),
-                  'medium',
-                )}`}
+                subtitle={subtitleFor(item)}
                 icon="repeat-outline"
                 iconColor={iconColors.color}
                 iconBackground={iconColors.background}

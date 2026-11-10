@@ -1,5 +1,6 @@
 import {
   hasErrors,
+  toCalendarDate,
   validateSubscriptionInput,
   ValidationError,
   type Id,
@@ -24,12 +25,14 @@ type SubscriptionRow = {
   starts_on: string;
   next_on: string;
   category_id: string | null;
+  previous_amount: number | null;
+  amount_changed_on: string | null;
   created_at: string;
   updated_at: string;
 };
 
 const COLUMNS = `id, name, amount, currency, period, status, starts_on, next_on, category_id,
-  created_at, updated_at`;
+  previous_amount, amount_changed_on, created_at, updated_at`;
 
 function toSubscription(row: SubscriptionRow): Subscription {
   return {
@@ -42,6 +45,8 @@ function toSubscription(row: SubscriptionRow): Subscription {
     startsOn: row.starts_on,
     nextOn: row.next_on,
     categoryId: row.category_id,
+    previousAmount: row.previous_amount,
+    amountChangedOn: row.amount_changed_on,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -124,7 +129,14 @@ export function createSqliteSubscriptionRepository(
               timestamp,
             ],
           );
-          return { id, ...input, createdAt: timestamp, updatedAt: timestamp };
+          return {
+            id,
+            ...input,
+            previousAmount: null,
+            amountChangedOn: null,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          };
         }),
       );
     },
@@ -140,10 +152,25 @@ export function createSqliteSubscriptionRepository(
           const input = prepare(raw);
           await assertExpenseCategory(tx, input.categoryId);
           const timestamp = context.now();
+          // Mudança de preço na mesma moeda: guarda o valor anterior. Outra moeda: não compara.
+          const before = toSubscription(existing);
+          const price =
+            input.currency !== before.currency
+              ? { previousAmount: null, amountChangedOn: null }
+              : input.amount !== before.amount
+                ? {
+                    previousAmount: before.amount,
+                    amountChangedOn: toCalendarDate(new Date(timestamp)),
+                  }
+                : {
+                    previousAmount: before.previousAmount,
+                    amountChangedOn: before.amountChangedOn,
+                  };
           await tx.run(
             `UPDATE subscriptions
                 SET name = ?, amount = ?, currency = ?, period = ?, status = ?, starts_on = ?,
-                    next_on = ?, category_id = ?, updated_at = ?
+                    next_on = ?, category_id = ?, previous_amount = ?, amount_changed_on = ?,
+                    updated_at = ?
               WHERE id = ?`,
             [
               input.name,
@@ -154,11 +181,13 @@ export function createSqliteSubscriptionRepository(
               input.startsOn,
               input.nextOn,
               input.categoryId,
+              price.previousAmount,
+              price.amountChangedOn,
               timestamp,
               id,
             ],
           );
-          return { ...toSubscription(existing), ...input, updatedAt: timestamp };
+          return { ...before, ...input, ...price, updatedAt: timestamp };
         }),
       );
     },
