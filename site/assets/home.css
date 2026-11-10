@@ -1259,36 +1259,12 @@ body.home .brand img {
   transform: none;
 }
 
-.js .hero-copy > * {
-  animation: rise 0.9s var(--ease) both;
-}
-
-.js .hero-copy > :nth-child(2) {
-  animation-delay: 0.06s;
-}
-
-.js .hero-copy > :nth-child(3) {
-  animation-delay: 0.12s;
-}
-
-.js .hero-copy > :nth-child(4),
-.js .hero-copy > :nth-child(5) {
-  animation-delay: 0.18s;
-}
-
 .js .device {
   animation: device-in 1.2s var(--ease) 0.2s both;
 }
 
 .js .device-side {
   animation-delay: 0.35s;
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
 }
 
 @keyframes device-in {
@@ -1300,7 +1276,6 @@ body.home .brand img {
 
 @media (prefers-reduced-motion: reduce) {
   .js .reveal,
-  .js .hero-copy > *,
   .install-dialog[open] {
     opacity: 1;
     transform: none;
