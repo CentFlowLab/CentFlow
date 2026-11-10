@@ -195,6 +195,52 @@ describe('database initialization', () => {
   });
 });
 
+describe('schema v10 (wealth history, essential categories)', () => {
+  it('keeps v9 rows and sends the new fields through the outbox', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 9),
+    );
+    await db.run(
+      `INSERT INTO categories (id, name, type, icon, color, created_at, updated_at)
+       VALUES ('c1', 'Renda', 'expense', 'home', 'blue', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO wealth_items (id, name, type, amount, currency, valued_on, created_at, updated_at)
+       VALUES ('w1', 'Casa', 'property', 100, 'EUR', '2026-01-01', ?, ?)`,
+      [NOW, NOW],
+    );
+    await migrate(db, MIGRATIONS);
+    expect(await db.first('SELECT essential FROM categories')).toEqual({ essential: 0 });
+    expect(await db.first('SELECT value_history FROM wealth_items')).toEqual({
+      value_history: null,
+    });
+
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(`UPDATE categories SET essential = 1 WHERE id = 'c1'`);
+    await db.run(
+      `UPDATE wealth_items SET amount = 200, valued_on = '2026-06-01',
+         value_history = '[{"amount":100,"valued_on":"2026-01-01"}]' WHERE id = 'w1'`,
+    );
+    const ops = await db.all<{ entity: string; data: string }>(
+      'SELECT entity, data FROM sync_outbox ORDER BY seq',
+    );
+    expect(JSON.parse(ops.find((op) => op.entity === 'categories')!.data)).toMatchObject({
+      essential: 1,
+    });
+    expect(JSON.parse(ops.find((op) => op.entity === 'wealth_items')!.data)).toMatchObject({
+      value_history: '[{"amount":100,"valued_on":"2026-01-01"}]',
+    });
+    await expect(
+      db.run(`UPDATE wealth_items SET value_history = '{"not":"a list"}' WHERE id = 'w1'`),
+    ).rejects.toThrow();
+    await db.close();
+  });
+});
+
 describe('schema v9 (subscription price)', () => {
   it('keeps subscriptions from v8 and sends the previous price through the outbox', async () => {
     const db = createSqlDatabase(createNodeSqliteDriver());

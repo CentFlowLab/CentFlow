@@ -443,7 +443,63 @@ describe('accounts', () => {
   });
 });
 
+describe('balance history', () => {
+  it('returns month-end flows per account, with transfers on both sides', async () => {
+    await repos.entries.create(baseExpense());
+    await repos.entries.create({
+      ...baseExpense(),
+      type: 'transfer',
+      amount: 5000,
+      categoryId: null,
+      destinationAccountId: savings.id,
+      date: '2026-10-03',
+    });
+    await repos.entries.create({ ...baseExpense(), amount: 999, date: '2026-10-05' });
+    const { accounts, flows } = await repos.accounts.balanceHistory();
+    // A transferência de outubro é anterior à criação: a conta conta a partir daí.
+    expect(accounts.find((account) => account.id === bank.id)).toMatchObject({
+      initialBalance: 100000,
+      since: '2026-10-03',
+    });
+    expect(flows).toEqual(
+      expect.arrayContaining([
+        { accountId: bank.id, month: '2026-11', net: -1250 },
+        { accountId: bank.id, month: '2026-10', net: -5000 - 999 },
+        { accountId: savings.id, month: '2026-10', net: 5000 },
+      ]),
+    );
+  });
+});
+
 describe('categories', () => {
+  it('marks expense categories as essential and never income ones', async () => {
+    const rent = await repos.categories.create({
+      name: 'Renda',
+      type: 'expense',
+      icon: 'home',
+      color: 'blue',
+      essential: true,
+    });
+    expect(rent.essential).toBe(true);
+    // Sem o campo, a edição mantém a marca.
+    const renamed = await repos.categories.update(rent.id, {
+      name: 'Renda da casa',
+      type: 'expense',
+      icon: 'home',
+      color: 'blue',
+    });
+    expect(renamed.essential).toBe(true);
+    expect((await repos.categories.get(rent.id))?.essential).toBe(true);
+    const income = await repos.categories.create({
+      name: 'Prémio',
+      type: 'income',
+      icon: 'gift',
+      color: 'green',
+      essential: true,
+    });
+    expect(income.essential).toBe(false);
+  });
+
   it('lists by type with usage counts', async () => {
     await repos.entries.create(baseExpense());
     const expenses = await repos.categories.listWithUsage('expense');
@@ -776,6 +832,34 @@ describe('savings goals', () => {
 });
 
 describe('wealth items', () => {
+  it('keeps the previous valuation when the value changes, not on a same-day correction', async () => {
+    const house = await repos.wealth.create({
+      name: 'Casa',
+      type: 'property',
+      amount: 20_000_000,
+      currency: 'EUR',
+      valuedOn: '2026-01-15',
+    });
+    expect(house.valueHistory).toEqual([]);
+    const corrected = await repos.wealth.update(house.id, {
+      name: 'Casa',
+      type: 'property',
+      amount: 19_500_000,
+      currency: 'EUR',
+      valuedOn: '2026-01-15',
+    });
+    expect(corrected.valueHistory).toEqual([]);
+    const revalued = await repos.wealth.update(house.id, {
+      name: 'Casa',
+      type: 'property',
+      amount: 21_000_000,
+      currency: 'EUR',
+      valuedOn: '2026-06-01',
+    });
+    expect(revalued.valueHistory).toEqual([{ amount: 19_500_000, valuedOn: '2026-01-15' }]);
+    expect(await repos.wealth.get(house.id)).toEqual(revalued);
+  });
+
   const input = {
     name: ' Casa ',
     type: 'property',

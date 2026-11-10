@@ -7,6 +7,7 @@ import {
   type AccountFlows,
   type AccountInput,
   type Id,
+  toCalendarDate,
 } from '@/core/finance';
 
 import type { SqlExecutor } from '../db/sql-database';
@@ -226,6 +227,53 @@ export function createSqliteAccountRepository(context: SqliteRepositoryContext):
     async getFlows() {
       const rows = await db.all<AccountFlowRow>(`${FLOWS_QUERY} GROUP BY a.id`);
       return new Map(rows.map((row) => [row.id, toFlows(row)]));
+    },
+
+    async balanceHistory() {
+      return db.transaction(async (tx) => {
+        const accounts = await tx.all<{
+          id: string;
+          type: Account['type'];
+          currency: string;
+          initial_balance: number;
+          created_at: string;
+          first_entry: string | null;
+        }>(
+          `SELECT a.id, a.type, a.currency, a.initial_balance, a.created_at,
+                  (SELECT MIN(e.date) FROM entries e
+                    WHERE e.deleted_at IS NULL
+                      AND (e.account_id = a.id OR e.destination_account_id = a.id)) AS first_entry
+             FROM accounts a WHERE a.deleted_at IS NULL`,
+        );
+        // Despesa sai da conta; rendimento entra; transferência sai da origem e entra no destino.
+        const flows = await tx.all<{ account_id: string; month: string; net: number }>(
+          `SELECT account_id, month, SUM(delta) AS net FROM (
+             SELECT account_id, substr(date, 1, 7) AS month,
+                    CASE type WHEN 'income' THEN amount ELSE -amount END AS delta
+               FROM entries WHERE deleted_at IS NULL
+             UNION ALL
+             SELECT destination_account_id, substr(date, 1, 7), amount
+               FROM entries WHERE deleted_at IS NULL AND type = 'transfer'
+           ) GROUP BY account_id, month`,
+        );
+        return {
+          accounts: accounts.map((row) => {
+            const created = toCalendarDate(new Date(row.created_at));
+            return {
+              id: row.id,
+              type: row.type,
+              currency: row.currency,
+              initialBalance: row.initial_balance,
+              since: row.first_entry && row.first_entry < created ? row.first_entry : created,
+            };
+          }),
+          flows: flows.map((row) => ({
+            accountId: row.account_id,
+            month: row.month,
+            net: row.net,
+          })),
+        };
+      });
     },
   };
 }

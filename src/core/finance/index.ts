@@ -5,6 +5,7 @@ export * from './forecast';
 export * from './obligations';
 export * from './goals';
 export * from './health';
+export * from './net-worth-history';
 export * from './wealth';
 export * from './deadlines';
 export * from './default-categories';

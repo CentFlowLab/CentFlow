@@ -21,6 +21,9 @@ import {
 import type { IconName } from '@/ui/components';
 import { spacing, useTheme } from '@/ui/theme';
 
+import { useToday } from '../finance/useToday';
+import { NetWorthHistoryCard } from './NetWorthHistoryCard';
+
 const ICONS: Record<WealthItem['type'], IconName> = {
   property: 'home-outline',
   investment: 'trending-up-outline',
@@ -37,6 +40,7 @@ export function WealthScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { formatDate, formatMoney } = useLocaleFormat();
+  const today = useToday();
   const query = useDataQuery(
     useCallback((repositories: Repositories) => repositories.wealth.list(), []),
   );
@@ -72,6 +76,7 @@ export function WealthScreen() {
           description={t('wealth.emptyDescription')}>
           <Button label={t('wealth.start')} onPress={add} />
         </EmptyState>
+        <NetWorthHistoryCard today={today} />
       </Screen>
     );
   }
@@ -120,6 +125,7 @@ export function WealthScreen() {
             </View>
           </HeroCard>
         ))}
+        <NetWorthHistoryCard today={today} />
         {groups.map((group) =>
           group.rows.length === 0 ? null : (
             <View key={group.key} style={styles.group}>

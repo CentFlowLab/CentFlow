@@ -49,6 +49,7 @@ export function CategoryForm({ category, others, initialType = 'expense' }: Prop
     category?.icon ?? CATEGORY_ICON_CHOICES[0] ?? 'pricetag-outline',
   );
   const [color, setColor] = useState(category?.color ?? 'indigo');
+  const [essential, setEssential] = useState(category?.essential ?? false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -86,7 +87,13 @@ export function CategoryForm({ category, others, initialType = 'expense' }: Prop
   };
 
   const save = () => {
-    const input: CategoryInput = { name: name.trim(), type, icon, color };
+    const input: CategoryInput = {
+      name: name.trim(),
+      type,
+      icon,
+      color,
+      essential: type === 'expense' && essential,
+    };
     const fieldErrors: FieldErrors = {};
     for (const [field, code] of Object.entries(validateCategoryInput(input))) {
       fieldErrors[field as CategoryField] = validationMessage(t, code);
@@ -175,6 +182,26 @@ export function CategoryForm({ category, others, initialType = 'expense' }: Prop
           </Text>
         ) : null}
       </View>
+
+      {type === 'expense' ? (
+        <View style={styles.field}>
+          <Text variant="label" tone="secondary">
+            {t('categoryForm.essential')}
+          </Text>
+          <SegmentedControl
+            accessibilityLabel={t('categoryForm.essential')}
+            value={essential ? 'yes' : 'no'}
+            onChange={(value) => setEssential(value === 'yes')}
+            options={[
+              { value: 'no', label: t('common.no') },
+              { value: 'yes', label: t('common.yes') },
+            ]}
+          />
+          <Text variant="footnote" tone="tertiary">
+            {t('categoryForm.essentialHelper')}
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.field}>
         <Text variant="label" tone="secondary">

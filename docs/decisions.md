@@ -582,8 +582,9 @@ subscrições ativas no rendimento (bom ≤ 35 %, razoável ≤ 50 %). Cada pila
 dois meses com dados; sem eles o estado é "sem dados" e a app diz o que registar. O estado geral só
 é "sólido" com pelo menos dois pilares bons e nenhum a melhorar. Cada estado traz uma ação
 concreta. As referências são gerais e a app diz que não são aconselhamento financeiro.
-**Consequências:** a evolução do património fica de fora até existir histórico (constatação 9 de
-`docs/audit-2026-11.md`).
+**Consequências:** a evolução do património passou a existir no ecrã Património (ADR-046). O fundo
+de emergência usa todas as despesas até haver categorias marcadas como essenciais (ADR-046); a
+definição de cada pilar está na app, em "Como é calculado".
 
 ## ADR-044 — Onboarding curto na primeira utilização
 
@@ -615,6 +616,24 @@ revelam contas (respostas iguais do GoTrue).
 **Consequências:** a disponibilidade de um nome continua visível por natureza (é preciso para o
 registo), agora com limite. As apps 0.1.8 tratam a função em falta como "não sei" e mostram a
 mesma frase. Aplicada no staging em 2026-11-10; a produção precisa de autorização.
+
+## ADR-046 — Histórico do património sem fotografias e categorias essenciais
+
+**Contexto:** não havia forma de ver se o património crescia. Guardar fotografias mensais criaria
+uma segunda fonte de verdade, que ficaria errada sempre que um movimento antigo fosse corrigido.
+**Decisão:** o património total no fim de cada mês (`src/core/finance/net-worth-history.ts`) junta:
+(1) o saldo de cada conta, calculado dos movimentos por SQL (`accounts.balanceHistory`, variação
+líquida por conta e mês, com as transferências dos dois lados); a conta conta desde o dia em que
+foi criada ou do primeiro movimento, se for anterior; (2) bens e dívidas pelo histórico das
+avaliações: `wealth_items.value_history` (JSON, até 120 pontos) recebe a avaliação anterior quando o
+valor ou a data mudam; uma alteração no mesmo dia é uma correção e não fica; mudar de moeda recomeça
+o histórico. Um bem só conta a partir da primeira avaliação conhecida. O ecrã Património mostra
+"Evolução do património total" (contas + bens − dívidas), separado do "Património líquido" do
+topo (só bens − dívidas), com a explicação. `categories.essential` permite marcar despesas
+essenciais; com alguma marcada, o fundo de emergência usa só essas despesas. Sem marcas, o cálculo
+não muda. Migrações: local v10 e `20261111000300` (as apps anteriores não apagam os campos novos).
+**Consequências:** bens eliminados saem de todo o histórico. Os bens existentes começam o histórico
+com a avaliação atual. Aplicada no staging em 2026-11-10; a produção precisa de autorização.
 
 ## Decisões pendentes
 

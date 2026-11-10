@@ -26,6 +26,8 @@ import type {
   WealthItemInput,
   Subscription,
   SubscriptionInput,
+  AccountMonthFlow,
+  AccountSnapshotInput,
 } from '@/core/finance';
 
 /**
@@ -51,6 +53,11 @@ export interface AccountRepository {
   /** Elimina a conta e todos os movimentos onde participa, numa única transação. */
   deleteWithEntries(id: Id): Promise<number>;
   getFlows(): Promise<Map<Id, AccountFlows>>;
+  /**
+   * Dados para o saldo de cada conta no fim de cada mês (histórico do património): contas não
+   * eliminadas (incluindo arquivadas) e a variação líquida de cada uma por mês.
+   */
+  balanceHistory(): Promise<{ accounts: AccountSnapshotInput[]; flows: AccountMonthFlow[] }>;
 }
 
 export type CategoryWithUsage = Category & { entryCount: number };

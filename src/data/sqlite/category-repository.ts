@@ -18,11 +18,12 @@ type CategoryRow = {
   type: Category['type'];
   icon: string;
   color: string;
+  essential: number;
   created_at: string;
   updated_at: string;
 };
 
-const COLUMNS = 'c.id, c.name, c.type, c.icon, c.color, c.created_at, c.updated_at';
+const COLUMNS = 'c.id, c.name, c.type, c.icon, c.color, c.essential, c.created_at, c.updated_at';
 const ORDER = 'ORDER BY c.type, c.created_at, c.rowid';
 const SEED_KEY = 'seed.defaultCategories';
 
@@ -33,6 +34,7 @@ function toCategory(row: CategoryRow): Category {
     type: row.type,
     icon: row.icon,
     color: row.color,
+    essential: row.essential === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -69,19 +71,22 @@ export function createSqliteCategoryRepository(
     const timestamp = context.now();
     const category: Category = {
       ...input,
+      // Só as despesas podem ser essenciais.
+      essential: input.type === 'expense' && input.essential === true,
       id: context.newId(),
       createdAt: timestamp,
       updatedAt: timestamp,
     };
     await tx.run(
-      `INSERT INTO categories (id, name, type, icon, color, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO categories (id, name, type, icon, color, essential, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         category.id,
         category.name,
         category.type,
         category.icon,
         category.color,
+        category.essential ? 1 : 0,
         timestamp,
         timestamp,
       ],
@@ -133,11 +138,14 @@ export function createSqliteCategoryRepository(
             throw new ValidationError({ type: 'typeLocked' });
           }
           const timestamp = context.now();
+          const essential =
+            input.type === 'expense' && (input.essential ?? existing.essential === 1);
           await tx.run(
-            'UPDATE categories SET name = ?, type = ?, icon = ?, color = ?, updated_at = ? WHERE id = ?',
-            [input.name, input.type, input.icon, input.color, timestamp, id],
+            `UPDATE categories SET name = ?, type = ?, icon = ?, color = ?, essential = ?,
+               updated_at = ? WHERE id = ?`,
+            [input.name, input.type, input.icon, input.color, essential ? 1 : 0, timestamp, id],
           );
-          return { ...toCategory(existing), ...input, updatedAt: timestamp };
+          return { ...toCategory(existing), ...input, essential, updatedAt: timestamp };
         }),
       );
     },

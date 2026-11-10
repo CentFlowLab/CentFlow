@@ -285,6 +285,20 @@ describe('abuse limits by origin', () => {
   });
 });
 
+describe('essential categories', () => {
+  const CAT = '90000000-0000-4000-8000-000000000001';
+
+  it('syncs the essential mark and an older app does not clear it', async () => {
+    await push(alice, [categoryOp(CAT, 0, { essential: 1 })]);
+    await push(alice, [categoryOp(CAT, 1, { name: 'Mercearia' })]);
+    expect(
+      await alice.query('select name, essential from public.categories where id = $1', [CAT]),
+    ).toEqual([{ name: 'Mercearia', essential: 1 }]);
+    const [rejected] = await push(alice, [categoryOp(CAT, 2, { essential: 2 })]);
+    expect(rejected).not.toMatchObject({ status: 'applied' });
+  });
+});
+
 describe('usernames', () => {
   let server: TestServer;
   const MANU = '00000000-0000-4000-8000-0000000000d1';
@@ -1129,6 +1143,19 @@ describe('wealth items', () => {
       },
     };
   }
+
+  it('keeps the valuation history, also when an older app updates without it', async () => {
+    const history = '[{"amount":19000000,"valued_on":"2026-01-01"}]';
+    await push(alice, [itemOp(0, { value_history: history })]);
+    // A app 0.1.8 não conhece o campo e muda só o nome.
+    await push(alice, [itemOp(1, { name: 'Casa de família' })]);
+    expect(await alice.query('select name, value_history from public.wealth_items')).toEqual([
+      { name: 'Casa de família', value_history: history },
+    ]);
+    await expect(push(alice, [itemOp(2, { value_history: '{"x":1}' })])).resolves.toEqual([
+      expect.objectContaining({ status: expect.not.stringMatching(/^applied$/) }),
+    ]);
+  });
 
   it('syncs an item, isolates users and does not create entries', async () => {
     const [created] = await push(alice, [itemOp(0)]);

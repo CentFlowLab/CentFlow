@@ -19,6 +19,8 @@ const en: Translation = {
     today: 'Today',
     yesterday: 'Yesterday',
     optional: 'Optional',
+    yes: 'Yes',
+    no: 'No',
     ok: 'OK',
   },
   nav: {
@@ -368,6 +370,9 @@ const en: Translation = {
     },
   },
   categoryForm: {
+    essential: 'Essential expense',
+    essentialHelper:
+      'Housing, health, groceries, transport… Once a category is essential, the emergency fund uses only these expenses.',
     newTitle: 'New category',
     editTitle: 'Edit category',
     name: 'Name',
@@ -538,6 +543,15 @@ const en: Translation = {
     },
   },
   wealth: {
+    history: {
+      title: 'Total net worth over time',
+      notEnough: 'The trend appears once there is data in at least two months.',
+      current: 'End of {{month}}',
+      change: '{{amount}} since {{since}}',
+      point: '{{month}}: {{amount}}',
+      explanation:
+        'Accounts + assets − debts on the last day of each month, over the last {{months}} months. Accounts come from your entries; each asset counts from its first saved valuation.',
+    },
     subtitle: 'Assets and debts, separate from accounts. It never changes a balance.',
     add: 'New item',
     emptyTitle: 'No wealth items yet',
@@ -734,6 +748,8 @@ const en: Translation = {
         'Savings rate: (income − expenses) ÷ income over the previous full months with income. Transfers do not count.',
       emergencyFund:
         'Emergency fund: money in banks, cash and savings ÷ average monthly spending. It uses all expenses, not only essential ones, so it is a cautious estimate.',
+      emergencyFundEssential:
+        'Emergency fund: money in banks, cash and savings ÷ average monthly spending in categories marked as essential.',
       fixedCosts: 'Fixed costs: monthly cost of active subscriptions ÷ average monthly income.',
     },
     disclaimer: 'General references (20% savings, 3 to 6 months of reserve), not financial advice.',

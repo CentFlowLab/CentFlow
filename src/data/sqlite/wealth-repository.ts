@@ -1,5 +1,7 @@
 import {
   hasErrors,
+  recordValuation,
+  type WealthValuation,
   validateWealthItemInput,
   ValidationError,
   type WealthItem,
@@ -17,11 +19,36 @@ type WealthRow = {
   amount: number;
   currency: string;
   valued_on: string;
+  value_history: string | null;
   created_at: string;
   updated_at: string;
 };
 
-const COLUMNS = `id, name, type, amount, currency, valued_on, created_at, updated_at`;
+const COLUMNS = `id, name, type, amount, currency, valued_on, value_history, created_at, updated_at`;
+
+/** Lê o histórico guardado; um valor estragado conta como vazio em vez de partir a lista. */
+function parseHistory(text: string | null): WealthValuation[] {
+  if (!text) return [];
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((point) => {
+      const item = point as { amount?: unknown; valued_on?: unknown };
+      return Number.isSafeInteger(item.amount) && typeof item.valued_on === 'string'
+        ? [{ amount: item.amount as number, valuedOn: item.valued_on }]
+        : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function serializeHistory(history: readonly WealthValuation[]): string | null {
+  if (history.length === 0) return null;
+  return JSON.stringify(
+    history.map((point) => ({ amount: point.amount, valued_on: point.valuedOn })),
+  );
+}
 
 function toItem(row: WealthRow): WealthItem {
   return {
@@ -31,6 +58,7 @@ function toItem(row: WealthRow): WealthItem {
     amount: row.amount,
     currency: row.currency,
     valuedOn: row.valued_on,
+    valueHistory: parseHistory(row.value_history),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -88,7 +116,7 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
               timestamp,
             ],
           );
-          return { id, ...input, createdAt: timestamp, updatedAt: timestamp };
+          return { id, ...input, valueHistory: [], createdAt: timestamp, updatedAt: timestamp };
         }),
       );
     },
@@ -103,13 +131,26 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
           if (!existing) throw new NotFoundError('wealth_item', id);
           const input = prepare(raw);
           const timestamp = context.now();
+          const before = toItem(existing);
+          // Guarda a avaliação anterior (ou corrige a do mesmo dia) para o histórico do património.
+          const valueHistory = recordValuation(before, input);
           await tx.run(
             `UPDATE wealth_items
-                SET name = ?, type = ?, amount = ?, currency = ?, valued_on = ?, updated_at = ?
+                SET name = ?, type = ?, amount = ?, currency = ?, valued_on = ?, value_history = ?,
+                    updated_at = ?
               WHERE id = ?`,
-            [input.name, input.type, input.amount, input.currency, input.valuedOn, timestamp, id],
+            [
+              input.name,
+              input.type,
+              input.amount,
+              input.currency,
+              input.valuedOn,
+              serializeHistory(valueHistory),
+              timestamp,
+              id,
+            ],
           );
-          return { ...toItem(existing), ...input, updatedAt: timestamp };
+          return { ...before, ...input, valueHistory, updatedAt: timestamp };
         }),
       );
     },

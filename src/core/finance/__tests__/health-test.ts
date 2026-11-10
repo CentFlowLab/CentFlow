@@ -55,7 +55,7 @@ describe('buildFinancialHealth', () => {
     );
     expect(health.pillars).toEqual([
       { key: 'savingsRate', status: 'good', value: 0.3 },
-      { key: 'emergencyFund', status: 'good', value: 900_000 / 140_000 },
+      { key: 'emergencyFund', status: 'good', value: 900_000 / 140_000, basis: 'allExpenses' },
       { key: 'fixedCosts', status: 'good', value: 0.35 },
     ]);
     expect(health.overall).toBe('solid');
@@ -69,7 +69,12 @@ describe('buildFinancialHealth', () => {
       }),
     );
     expect(health.pillars[0]).toMatchObject({ status: 'attention' });
-    expect(health.pillars[1]).toEqual({ key: 'emergencyFund', status: 'attention', value: 0 });
+    expect(health.pillars[1]).toEqual({
+      key: 'emergencyFund',
+      status: 'attention',
+      value: 0,
+      basis: 'allExpenses',
+    });
     // Sem subscrições não se sabe o peso dos encargos fixos.
     expect(health.pillars[2]).toMatchObject({ status: 'noData' });
     expect(health.overall).toBe('attention');
@@ -81,5 +86,31 @@ describe('buildFinancialHealth', () => {
     );
     expect(health.pillars[0]).toMatchObject({ status: 'noData' });
     expect(health.pillars[1]).toMatchObject({ status: 'attention' });
+  });
+
+  it('uses only essential spending once a category is marked essential', () => {
+    const month = (id: string): MonthHistory => ({
+      month: id,
+      income: 200_000,
+      expense: 150_000,
+      byCategory: new Map([
+        ['rent', 70_000],
+        ['fun', 80_000],
+      ]),
+    });
+    const base = {
+      history: [month('2026-09'), month('2026-10')],
+      accounts: [{ type: 'bank' as const, currency: 'EUR', balance: 420_000 }],
+    };
+    // Todas as despesas: 4200 € ÷ 1500 € = 2,8 meses.
+    expect(buildFinancialHealth(input(base)).pillars[1]).toMatchObject({
+      value: 420_000 / 150_000,
+      status: 'attention',
+      basis: 'allExpenses',
+    });
+    // Só a renda é essencial: 4200 € ÷ 700 € = 6 meses.
+    expect(
+      buildFinancialHealth(input({ ...base, essentialCategoryIds: new Set(['rent']) })).pillars[1],
+    ).toMatchObject({ value: 6, status: 'good', basis: 'essentialExpenses' });
   });
 });

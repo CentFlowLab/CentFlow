@@ -15,10 +15,15 @@ export type HealthPillar =
   /** (rendimentos − despesas) ÷ rendimentos nos meses anteriores. */
   | { key: 'savingsRate'; status: HealthStatus; value: number | null }
   /**
-   * Meses de despesas cobertos pelo dinheiro em bancos, numerário e poupança. Usa a despesa
-   * mensal média total (não só a essencial): é uma estimativa prudente.
+   * Meses de despesas cobertos pelo dinheiro em bancos, numerário e poupança. Sem categorias
+   * essenciais marcadas usa a despesa total (estimativa prudente); com alguma, só as essenciais.
    */
-  | { key: 'emergencyFund'; status: HealthStatus; value: number | null }
+  | {
+      key: 'emergencyFund';
+      status: HealthStatus;
+      value: number | null;
+      basis: 'allExpenses' | 'essentialExpenses';
+    }
   /** Encargos fixos registados como subscrições ÷ rendimento médio. */
   | { key: 'fixedCosts'; status: HealthStatus; value: number | null };
 
@@ -43,12 +48,13 @@ export type HealthInput = {
   /** Meses completos anteriores, nesta moeda. */
   history: readonly MonthHistory[];
   subscriptions: readonly Subscription[];
+  /** Categorias de despesa marcadas como essenciais (vazio: usa todas as despesas). */
+  essentialCategoryIds?: ReadonlySet<string>;
 };
 
 export function buildFinancialHealth(input: HealthInput): FinancialHealth {
   const months = input.history.filter((month) => month.income > 0 || month.expense > 0);
   const withIncome = months.filter((month) => month.income > 0);
-  const withExpense = months.filter((month) => month.expense > 0);
 
   // Taxa de poupança: só com rendimentos registados em pelo menos dois meses.
   let savingsRate: HealthPillar = { key: 'savingsRate', status: 'noData', value: null };
@@ -64,16 +70,32 @@ export function buildFinancialHealth(input: HealthInput): FinancialHealth {
   }
 
   // Fundo de emergência: dinheiro disponível ÷ despesa mensal média.
-  let emergencyFund: HealthPillar = { key: 'emergencyFund', status: 'noData', value: null };
-  if (withExpense.length >= MIN_HISTORY_MONTHS) {
+  const essential = input.essentialCategoryIds ?? new Set<string>();
+  const basis = essential.size > 0 ? 'essentialExpenses' : 'allExpenses';
+  const monthlyNeed = (month: MonthHistory) =>
+    basis === 'allExpenses'
+      ? month.expense
+      : [...month.byCategory].reduce(
+          (sum, [categoryId, amount]) => (essential.has(categoryId) ? sum + amount : sum),
+          0,
+        );
+  const needMonths = months.filter((month) => monthlyNeed(month) > 0);
+  let emergencyFund: HealthPillar = {
+    key: 'emergencyFund',
+    status: 'noData',
+    value: null,
+    basis,
+  };
+  if (needMonths.length >= MIN_HISTORY_MONTHS) {
     const averageExpense =
-      withExpense.reduce((sum, month) => sum + month.expense, 0) / withExpense.length;
+      needMonths.reduce((sum, month) => sum + monthlyNeed(month), 0) / needMonths.length;
     const reserve = input.accounts
       .filter((account) => account.currency === input.currency && RESERVE_TYPES.has(account.type))
       .reduce((sum, account) => sum + account.balance, 0);
     const covered = Math.max(0, reserve) / averageExpense;
     emergencyFund = {
       key: 'emergencyFund',
+      basis,
       value: covered,
       status:
         covered >= EMERGENCY_MONTHS_GOOD

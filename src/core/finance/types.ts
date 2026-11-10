@@ -49,6 +49,8 @@ export type Category = SyncMetadata & {
   icon: string;
   /** Chave da paleta de categorias (ex.: "indigo"), não um valor hexadecimal. */
   color: string;
+  /** Despesa essencial (casa, saúde…), usada no fundo de emergência quando há alguma marcada. */
+  essential: boolean;
 };
 
 export type Budget = SyncMetadata & {
@@ -75,7 +77,10 @@ export type Entry = SyncMetadata & {
 };
 
 export type AccountInput = Pick<Account, 'name' | 'type' | 'currency' | 'initialBalance'>;
-export type CategoryInput = Pick<Category, 'name' | 'type' | 'icon' | 'color'>;
+export type CategoryInput = Pick<Category, 'name' | 'type' | 'icon' | 'color'> & {
+  /** Sem valor: mantém o que estava (falso numa categoria nova). Só nas despesas. */
+  essential?: boolean;
+};
 export type EntryInput = Pick<
   Entry,
   | 'type'
@@ -159,7 +164,11 @@ export type WealthItem = SyncMetadata & {
   currency: CurrencyCode;
   /** Data a que o valor se refere. */
   valuedOn: CalendarDate;
+  /** Avaliações anteriores (a mais antiga primeiro), guardadas pela app quando o valor muda. */
+  valueHistory: WealthValuation[];
 };
+
+export type WealthValuation = { amount: number; valuedOn: CalendarDate };
 
 export type WealthItemInput = Pick<
   WealthItem,

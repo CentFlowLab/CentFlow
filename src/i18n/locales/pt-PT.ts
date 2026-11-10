@@ -17,6 +17,8 @@ const ptPT = {
     today: 'Hoje',
     yesterday: 'Ontem',
     optional: 'Opcional',
+    yes: 'Sim',
+    no: 'Não',
     ok: 'OK',
   },
   nav: {
@@ -366,6 +368,9 @@ const ptPT = {
     },
   },
   categoryForm: {
+    essential: 'Despesa essencial',
+    essentialHelper:
+      'Casa, saúde, alimentação, transportes… Com alguma categoria essencial, o fundo de emergência passa a usar só estas despesas.',
     newTitle: 'Nova categoria',
     editTitle: 'Editar categoria',
     name: 'Nome',
@@ -533,6 +538,15 @@ const ptPT = {
     },
   },
   wealth: {
+    history: {
+      title: 'Evolução do património total',
+      notEnough: 'A evolução aparece quando houver dados em pelo menos dois meses.',
+      current: 'Fim de {{month}}',
+      change: '{{amount}} desde {{since}}',
+      point: '{{month}}: {{amount}}',
+      explanation:
+        'Contas + bens − dívidas no último dia de cada mês, nos últimos {{months}} meses. As contas vêm dos movimentos; cada bem conta a partir da primeira avaliação guardada.',
+    },
     subtitle: 'Bens e dívidas à parte das contas. Não altera nenhum saldo.',
     add: 'Novo item',
     emptyTitle: 'Ainda não há património',
@@ -731,6 +745,8 @@ const ptPT = {
         'Taxa de poupança: (rendimentos − despesas) ÷ rendimentos dos meses completos anteriores com rendimentos. Transferências não contam.',
       emergencyFund:
         'Fundo de emergência: dinheiro em bancos, numerário e poupança ÷ despesa mensal média. Usa todas as despesas, não só as essenciais, por isso é uma estimativa prudente.',
+      emergencyFundEssential:
+        'Fundo de emergência: dinheiro em bancos, numerário e poupança ÷ média mensal das despesas nas categorias marcadas como essenciais.',
       fixedCosts: 'Encargos fixos: custo mensal das subscrições ativas ÷ rendimento mensal médio.',
     },
     disclaimer:

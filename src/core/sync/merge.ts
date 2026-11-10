@@ -28,7 +28,7 @@ export type SyncRecord = Readonly<Record<string, SyncValue>>;
 /** Campos sincronizados e editáveis de cada entidade (`created_at` é imutável). */
 export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
   accounts: ['name', 'type', 'currency', 'initial_balance', 'archived_at', 'deleted_at'],
-  categories: ['name', 'type', 'icon', 'color', 'system_key', 'deleted_at'],
+  categories: ['name', 'type', 'icon', 'color', 'system_key', 'essential', 'deleted_at'],
   budgets: ['category_id', 'amount', 'currency', 'period', 'starts_on', 'deleted_at'],
   subscriptions: [
     'name',
@@ -45,7 +45,7 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
   ],
   goals: ['name', 'target_amount', 'currency', 'target_on', 'deleted_at'],
   goal_contributions: ['goal_id', 'amount', 'date', 'deleted_at'],
-  wealth_items: ['name', 'type', 'amount', 'currency', 'valued_on', 'deleted_at'],
+  wealth_items: ['name', 'type', 'amount', 'currency', 'valued_on', 'value_history', 'deleted_at'],
   vehicles: [
     'name',
     'kind',
@@ -77,7 +77,8 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   subscriptions: [['amount', 'previous_amount', 'amount_changed_on']],
   goals: [],
   goal_contributions: [],
-  wealth_items: [],
+  // O histórico das avaliações acompanha o valor e a data que o substituíram.
+  wealth_items: [['amount', 'valued_on', 'value_history']],
   vehicles: [],
   documents: [],
   entries: [['type', 'category_id', 'account_id', 'destination_account_id']],

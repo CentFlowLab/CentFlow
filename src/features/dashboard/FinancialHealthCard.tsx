@@ -19,11 +19,15 @@ import { loadForecastInput } from './MonthInsights';
 async function loadHealth(repositories: Repositories, today: CalendarDate, currency: CurrencyCode) {
   const forecast = await loadForecastInput(repositories, today, currency);
   const accounts = await repositories.accounts.listWithBalances();
+  const categories = await repositories.categories.list('expense');
   return buildFinancialHealth({
     currency,
     accounts,
     history: forecast.history,
     subscriptions: forecast.subscriptions,
+    essentialCategoryIds: new Set(
+      categories.filter((category) => category.essential).map((category) => category.id),
+    ),
   });
 }
 
@@ -134,7 +138,9 @@ export function FinancialHealthCard({
           <View style={styles.definitions}>
             {health.pillars.map((pillar) => (
               <Text key={pillar.key} variant="footnote" tone="secondary">
-                {t(`health.definitions.${pillar.key}`)}
+                {pillar.key === 'emergencyFund' && pillar.basis === 'essentialExpenses'
+                  ? t('health.definitions.emergencyFundEssential')
+                  : t(`health.definitions.${pillar.key}`)}
               </Text>
             ))}
           </View>

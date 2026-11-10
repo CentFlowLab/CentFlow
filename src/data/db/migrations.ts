@@ -140,6 +140,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'subscriptions: previous amount and change date (price rises)',
     sql: migrationV9(),
   },
+  {
+    version: 10,
+    description: 'wealth value history and essential categories',
+    sql: migrationV10(),
+  },
 ];
 
 /**
@@ -1298,6 +1303,72 @@ function migrationV9(): string {
       VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'subscriptions', NEW.id,
         ${base('OLD')}, ${json('OLD')}, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
     END;
+  `;
+}
+
+/** v10 — histórico das avaliações do património e categorias essenciais, na fila de sincronização. */
+function migrationV10(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const synced = {
+    categories: [
+      'name',
+      'type',
+      'icon',
+      'color',
+      'system_key',
+      'essential',
+      'created_at',
+      'deleted_at',
+    ],
+    wealth_items: [
+      'name',
+      'type',
+      'amount',
+      'currency',
+      'valued_on',
+      'value_history',
+      'created_at',
+      'deleted_at',
+    ],
+  } as const;
+  const json = (row: 'NEW' | 'OLD', fields: readonly string[]) =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const base = (table: string, row: 'NEW' | 'OLD') => `COALESCE(
+    (SELECT base_version + 1 FROM sync_outbox
+      WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+    ${row}.version)`;
+  const triggers = Object.entries(synced)
+    .map(
+      ([table, fields]) => `
+    DROP TRIGGER IF EXISTS sync_${table}_insert;
+    DROP TRIGGER IF EXISTS sync_${table}_update;
+    CREATE TRIGGER sync_${table}_insert AFTER INSERT ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'NEW')}, NULL, ${json('NEW', fields)}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
+    CREATE TRIGGER sync_${table}_update AFTER UPDATE ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'OLD')}, ${json('OLD', fields)}, ${json('NEW', fields)},
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;`,
+    )
+    .join('\n');
+  return `
+    ALTER TABLE categories ADD COLUMN essential INTEGER NOT NULL DEFAULT 0
+      CHECK (essential IN (0, 1));
+    ALTER TABLE wealth_items ADD COLUMN value_history TEXT
+      CHECK (value_history IS NULL OR (json_valid(value_history) AND json_type(value_history) = 'array'));
+    ${triggers}
   `;
 }
 

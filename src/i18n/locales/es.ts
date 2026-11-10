@@ -19,6 +19,8 @@ const es: Translation = {
     today: 'Hoy',
     yesterday: 'Ayer',
     optional: 'Opcional',
+    yes: 'Sí',
+    no: 'No',
     ok: 'Aceptar',
   },
   nav: {
@@ -370,6 +372,9 @@ const es: Translation = {
     },
   },
   categoryForm: {
+    essential: 'Gasto esencial',
+    essentialHelper:
+      'Vivienda, salud, alimentación, transporte… Con alguna categoría esencial, el fondo de emergencia usa solo estos gastos.',
     newTitle: 'Nueva categoría',
     editTitle: 'Editar categoría',
     name: 'Nombre',
@@ -538,6 +543,15 @@ const es: Translation = {
     },
   },
   wealth: {
+    history: {
+      title: 'Evolución del patrimonio total',
+      notEnough: 'La evolución aparece cuando haya datos en al menos dos meses.',
+      current: 'Fin de {{month}}',
+      change: '{{amount}} desde {{since}}',
+      point: '{{month}}: {{amount}}',
+      explanation:
+        'Cuentas + bienes − deudas el último día de cada mes, en los últimos {{months}} meses. Las cuentas salen de los movimientos; cada bien cuenta desde su primera valoración guardada.',
+    },
     subtitle: 'Bienes y deudas aparte de las cuentas. Nunca cambia un saldo.',
     add: 'Nuevo elemento',
     emptyTitle: 'Aún no hay patrimonio',
@@ -738,6 +752,8 @@ const es: Translation = {
         'Tasa de ahorro: (ingresos − gastos) ÷ ingresos de los meses completos anteriores con ingresos. Las transferencias no cuentan.',
       emergencyFund:
         'Fondo de emergencia: dinero en bancos, efectivo y ahorro ÷ gasto mensual medio. Usa todos los gastos, no solo los esenciales, así que es una estimación prudente.',
+      emergencyFundEssential:
+        'Fondo de emergencia: dinero en bancos, efectivo y ahorro ÷ gasto mensual medio en las categorías marcadas como esenciales.',
       fixedCosts:
         'Gastos fijos: coste mensual de las suscripciones activas ÷ ingreso mensual medio.',
     },
