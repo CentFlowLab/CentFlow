@@ -3,8 +3,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
-import { Button, DateFields, EmptyState, FormScreen, Icon, Text, TextField } from '@/ui/components';
-import { radius, spacing, useTheme } from '@/ui/theme';
+import { Button, DateFields, EmptyState, FormScreen, Text, TextField } from '@/ui/components';
+import { spacing, useTheme } from '@/ui/theme';
 
 import { copyAppAddress, isolationFailure, readIsolationEnv } from '../app-shell/web-isolation';
 import { closeModal } from '../finance/navigation';
@@ -18,7 +18,6 @@ import {
   useAuth,
   USERNAME_PATTERN,
   type AuthErrorCode,
-  type AuthResult,
 } from './AuthProvider';
 import { PasswordField } from './PasswordField';
 
@@ -113,94 +112,6 @@ function ErrorText({ code }: { code: AuthErrorCode | null }) {
   );
 }
 
-function ConfirmEmail({
-  email,
-  onDone,
-  onResend,
-}: {
-  email: string;
-  onDone: () => void;
-  onResend?: () => Promise<AuthResult>;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const steps = [
-    t('auth.confirmEmail.step1'),
-    t('auth.confirmEmail.step2'),
-    t('auth.confirmEmail.step3'),
-  ];
-  return (
-    <View style={styles.confirm}>
-      <View style={[styles.iconRing, { backgroundColor: colors.surfaceMuted }]}>
-        <View style={[styles.iconCore, { backgroundColor: colors.primaryMuted }]}>
-          <Icon name="mail-outline" size={32} color="primaryText" />
-        </View>
-      </View>
-      <Text variant="title2" align="center">
-        {t('auth.confirmEmail.title')}
-      </Text>
-      <Text variant="callout" tone="secondary" align="center">
-        {t('auth.confirmEmail.lead')}
-      </Text>
-      <View style={[styles.emailPill, { backgroundColor: colors.surfaceMuted }]}>
-        <Text variant="label" align="center" numberOfLines={1}>
-          {email}
-        </Text>
-      </View>
-      <View style={styles.steps}>
-        {steps.map((step, index) => (
-          <View key={step} style={styles.step}>
-            <View style={[styles.stepNo, { backgroundColor: colors.primaryMuted }]}>
-              <Text variant="label" tone="accent">
-                {index + 1}
-              </Text>
-            </View>
-            <Text variant="callout" style={styles.stepText}>
-              {step}
-            </Text>
-          </View>
-        ))}
-      </View>
-      <Text variant="footnote" tone="tertiary" align="center">
-        {t('auth.confirmEmail.spam')}
-      </Text>
-      <Button label={t('auth.confirmEmail.ready')} onPress={onDone} fullWidth />
-      {onResend ? <ResendConfirmation onResend={onResend} /> : null}
-    </View>
-  );
-}
-
-/** Pede um novo email de confirmação e diz o resultado. */
-function ResendConfirmation({ onResend }: { onResend: () => Promise<AuthResult> }) {
-  const { t } = useTranslation();
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<'sent' | AuthErrorCode | null>(null);
-  return (
-    <View style={styles.resend}>
-      <Button
-        label={t('auth.resendConfirmation')}
-        icon="mail-outline"
-        variant="secondary"
-        loading={busy}
-        onPress={async () => {
-          setBusy(true);
-          const outcome = await onResend();
-          setBusy(false);
-          setResult(outcome.ok ? 'sent' : outcome.error);
-        }}
-        fullWidth
-      />
-      {result === 'sent' ? (
-        <Text variant="callout" tone="accent" accessibilityLiveRegion="polite">
-          {t('auth.resendSent')}
-        </Text>
-      ) : result ? (
-        <ErrorText code={result} />
-      ) : null}
-    </View>
-  );
-}
-
 function Notice({ title, message, action }: { title: string; message: string; action: ReactNode }) {
   return (
     <View style={styles.notice}>
@@ -249,7 +160,8 @@ export function SignInScreen() {
     const result = await actions.signIn(email, password);
     setBusy(false);
     // Com sessão, as páginas de quem não tem conta deixam de existir e o router abre a app.
-    if (!result.ok) setError(result.error);
+    // Email por confirmar: a app mostra o ecrã de confirmação (`ConfirmEmailScreen`).
+    if (!result.ok && result.error !== 'emailNotConfirmed') setError(result.error);
   };
 
   return (
@@ -288,9 +200,6 @@ export function SignInScreen() {
         errorText={fieldError(errors.password)}
       />
       <ErrorText code={error} />
-      {error === 'emailNotConfirmed' ? (
-        <ResendConfirmation onResend={() => actions.resendConfirmation(email, password)} />
-      ) : null}
       <View style={styles.links}>
         <Button
           label={t('auth.forgotPassword')}
@@ -331,7 +240,6 @@ export function SignUpScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<AuthErrorCode | null>(null);
   const [busy, setBusy] = useState(false);
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   const submit = async () => {
     const found = validate(email, password, true, username);
@@ -344,22 +252,9 @@ export function SignUpScreen() {
     setError(null);
     const result = await actions.signUp(email, password, username, birthDate);
     setBusy(false);
+    // Sessão imediata: o router abre a app. À espera do email: `ConfirmEmailScreen`.
     if (!result.ok) setError(result.error);
-    // Sessão imediata: o router abre a app sozinho.
-    else if (result.value !== 'signedIn') setAwaitingConfirmation(true);
   };
-
-  if (awaitingConfirmation) {
-    return (
-      <AuthLayout title={t('auth.signUpTitle')}>
-        <ConfirmEmail
-          email={email.trim()}
-          onDone={() => router.replace('/auth/sign-in' as Href)}
-          onResend={() => actions.resendConfirmation(email, password)}
-        />
-      </AuthLayout>
-    );
-  }
 
   return (
     <AuthLayout
@@ -554,7 +449,9 @@ function useIsolationWait(): boolean {
 
 /** Troca uma única vez o código do link por uma sessão. O `token_hash` funciona em qualquer dispositivo. */
 function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
-  const { actions } = useAuth();
+  const { actions, state } = useAuth();
+  // O ecrã de confirmação já entrou com este link: não volta a gastá-lo.
+  const [alreadyIn] = useState(() => state.status === 'signedIn');
   const params = useLocalSearchParams<{
     code?: string | string[];
     error_code?: string | string[];
@@ -566,13 +463,14 @@ function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
   const otpType = emailOtpType(one(params.type));
   const waitForIsolation = useIsolationWait();
   const [status, setStatus] = useState<'working' | 'done' | AuthErrorCode>(() => {
+    if (alreadyIn) return 'done';
     if (tokenHash) return otpType ? 'working' : 'linkInvalid';
     if (code) return 'working';
     return one(params.error_code) ? 'linkInvalid' : 'done';
   });
   const started = useRef(false);
   useEffect(() => {
-    if (waitForIsolation || started.current) return;
+    if (alreadyIn || waitForIsolation || started.current) return;
     if (tokenHash) {
       if (!otpType) return;
       started.current = true;
@@ -586,7 +484,7 @@ function useCodeExchange(): 'working' | 'done' | AuthErrorCode {
     void actions.exchangeCode(code).then((result) => {
       setStatus(result.ok ? 'done' : result.error);
     });
-  }, [actions, code, otpType, tokenHash, waitForIsolation]);
+  }, [actions, alreadyIn, code, otpType, tokenHash, waitForIsolation]);
   return status;
 }
 
@@ -769,61 +667,11 @@ export function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  resend: {
-    alignSelf: 'stretch',
-    gap: spacing.sm,
-  },
   links: {
     alignItems: 'flex-start',
     gap: spacing.xs,
   },
   notice: {
     gap: spacing.md,
-  },
-  confirm: {
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.lg,
-  },
-  iconRing: {
-    width: 96,
-    height: 96,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  iconCore: {
-    width: 68,
-    height: 68,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emailPill: {
-    alignSelf: 'stretch',
-    borderRadius: radius.full,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  steps: {
-    alignSelf: 'stretch',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  step: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  stepNo: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepText: {
-    flex: 1,
   },
 });

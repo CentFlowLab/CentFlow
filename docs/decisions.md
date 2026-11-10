@@ -500,6 +500,24 @@ definirem. A política de privacidade (D-4) tem de mencionar a data de nasciment
 precisa de ser aplicada no staging e, com autorização, na produção; antes disso a app continua a
 entrar com email e o registo segue sem verificação prévia do nome.
 
+## ADR-039 — Confirmação do email: ecrã obrigatório e link que abre a app
+
+**Contexto:** depois de criar conta, a app mostrava "Confirma o teu email" com um botão que voltava
+ao início, e o link do email abria o Miven no browser (a app web), não na app instalada. Quem
+fechava esse ecrã ficava sem saber como continuar.
+**Decisão:** como nas apps de bancos e carteiras, uma conta por confirmar fica num ecrã próprio
+(`ConfirmEmailScreen`, mostrado pelo `AccountGate`) de onde só se sai confirmando ou escolhendo
+"Usar outra conta". A app entra sozinha: tenta entrar com o email e a palavra-passe guardados **só
+em memória** ao voltar à app, quando o link a abre e de 15 em 15 segundos (abaixo do limite de
+entradas do Supabase). "Não recebeste o email?" reenvia, com 60 s de intervalo (o do Supabase).
+Fechar a app esquece a palavra-passe; ao entrar de novo, a mesma conta volta a este ecrã.
+O link do email (`miven.pt/auth/callback?token_hash=…`) confirma na própria página: com
+JavaScript, segue para `/auth/v1/verify` do Supabase (os antivírus do correio não executam
+JavaScript, por isso não gastam o link) e volta com `?code=`, que abre `miven://` no telemóvel.
+O endereço público do Supabase entra em `site/assets/auth-config.js` no workflow do site. Sem ele,
+o comportamento antigo (abrir a app web) mantém-se.
+**Consequências:** quem cria conta na web continua a confirmar na web (`emailRedirectTo` da web).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

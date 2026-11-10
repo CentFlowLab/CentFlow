@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { AuthError, Session, SupabaseClient, User } from '@supabase/supabase-js';
+import type { ReactNode } from 'react';
 import { Text } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
@@ -14,6 +15,7 @@ import {
   useAuth,
 } from '../AuthProvider';
 import { shouldWaitForIsolation, SignInScreen, SignUpScreen } from '../AuthScreens';
+import { ConfirmEmailScreen } from '../ConfirmEmailScreen';
 
 jest.mock('@/features/finance/navigation', () => ({
   closeModal: jest.fn(),
@@ -166,6 +168,12 @@ function fakeClient(
   return { client: { auth, rpc } as unknown as SupabaseClient, auth };
 }
 
+/** Como o `AccountGate`: com uma conta à espera, só o ecrã de confirmação. */
+function PendingGate({ children }: { children: ReactNode }) {
+  const { pending } = useAuth();
+  return pending ? <ConfirmEmailScreen pending={pending} /> : children;
+}
+
 function StatusProbe() {
   const { state } = useAuth();
   const label =
@@ -301,7 +309,9 @@ describe('auth screens', () => {
     const { client, auth } = fakeClient();
     await renderWithProviders(
       <AuthProvider client={client}>
-        <SignUpScreen />
+        <PendingGate>
+          <SignUpScreen />
+        </PendingGate>
       </AuthProvider>,
     );
     await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'Manu.Silva');
@@ -439,13 +449,37 @@ describe('auth screens', () => {
     ).toBeOnTheScreen();
     expect(auth.signUp).not.toHaveBeenCalled();
   });
-  it('resends the confirmation email when sign-in says the email is not confirmed', async () => {
+  it('keeps a new account on the confirmation screen, with resend after the cooldown', async () => {
+    const { client, auth } = fakeClient();
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <PendingGate>
+          <SignUpScreen />
+        </PendingGate>
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'nova.conta');
+    await fillBirthDate('12', '04', '1995');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(await screen.findByText('Confirma o teu email')).toBeOnTheScreen();
+    expect(screen.getByText('nova@b.pt')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Criar conta' })).toBeNull();
+    // O email acabou de ser enviado: reenviar só depois de 60 s.
+    expect(screen.getByRole('button', { name: /Reenviar dentro de 60/ })).toBeDisabled();
+    expect(auth.resend).not.toHaveBeenCalled();
+  });
+
+  it('opens the confirmation screen when sign-in says the email is not confirmed', async () => {
     const { client, auth } = fakeClient({
       signInWithPassword: jest.fn(async () => ({ error: authError('email_not_confirmed') })),
     });
     await renderWithProviders(
       <AuthProvider client={client}>
-        <SignInScreen />
+        <PendingGate>
+          <SignInScreen />
+        </PendingGate>
       </AuthProvider>,
     );
     await fireEvent.changeText(
@@ -454,9 +488,9 @@ describe('auth screens', () => {
     );
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
-    await fireEvent.press(
-      await screen.findByRole('button', { name: 'Reenviar email de confirmação' }),
-    );
+    expect(await screen.findByText('Confirma o teu email')).toBeOnTheScreen();
+    expect(screen.getByText('Não recebeste o email?')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Reenviar email' }));
     await waitFor(() =>
       expect(auth.resend).toHaveBeenCalledWith({
         type: 'signup',
@@ -465,23 +499,84 @@ describe('auth screens', () => {
       }),
     );
     expect(await screen.findByText(/Enviámos um novo link/)).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: /Reenviar dentro de/ })).toBeDisabled();
   });
 
-  it('offers to resend the email right after sign-up', async () => {
-    const { client, auth } = fakeClient();
+  it('uses the email behind a username for the confirmation screen', async () => {
+    const rpc = jest.fn(async () => ({ data: 'nova@b.pt', error: null }));
+    const { client, auth } = fakeClient(
+      { signInWithPassword: jest.fn(async () => ({ error: authError('email_not_confirmed') })) },
+      rpc,
+    );
     await renderWithProviders(
       <AuthProvider client={client}>
-        <SignUpScreen />
+        <PendingGate>
+          <SignInScreen />
+        </PendingGate>
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'nova.conta');
-    await fillBirthDate('12', '04', '1995');
-    await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
-    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
-    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
-    await fireEvent.press(
-      await screen.findByRole('button', { name: 'Reenviar email de confirmação' }),
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'nova.conta',
     );
-    await waitFor(() => expect(auth.resend).toHaveBeenCalled());
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    expect(await screen.findByText('nova@b.pt')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Reenviar email' }));
+    await waitFor(() =>
+      expect(auth.resend).toHaveBeenCalledWith(expect.objectContaining({ email: 'nova@b.pt' })),
+    );
+  });
+
+  it('signs in from the confirmation screen once the email is confirmed', async () => {
+    const signInWithPassword = jest
+      .fn()
+      .mockResolvedValueOnce({ error: authError('email_not_confirmed') })
+      .mockResolvedValueOnce({ error: authError('email_not_confirmed') })
+      .mockResolvedValue({ error: null });
+    const { client, auth } = fakeClient({ signInWithPassword });
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <PendingGate>
+          <SignInScreen />
+        </PendingGate>
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'nova@b.pt',
+    );
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Já confirmei' }));
+    expect(await screen.findByText(/Ainda não está confirmado/)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Já confirmei' }));
+    await waitFor(() => expect(screen.queryByText('Confirma o teu email')).toBeNull());
+    expect(auth.signInWithPassword).toHaveBeenLastCalledWith({
+      email: 'nova@b.pt',
+      password: 'secret-password',
+    });
+  });
+
+  it('lets the person leave the confirmation screen to use another account', async () => {
+    const { client } = fakeClient({
+      signInWithPassword: jest.fn(async () => ({ error: authError('email_not_confirmed') })),
+    });
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <PendingGate>
+          <SignInScreen />
+        </PendingGate>
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'nova@b.pt',
+    );
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Usar outra conta' }));
+    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeOnTheScreen();
+    expect(screen.queryByText(/Confirma primeiro/)).toBeNull();
   });
 });

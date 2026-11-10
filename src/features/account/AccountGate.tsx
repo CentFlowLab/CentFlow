@@ -11,6 +11,7 @@ import { useTheme } from '@/ui/theme';
 import { DataGate } from '../app-shell/DataGate';
 import { appAccessFor, type AppAccess } from './app-access';
 import { emailLocaleFor, useAuth } from './AuthProvider';
+import { ConfirmEmailScreen } from './ConfirmEmailScreen';
 import { resumePendingAccountDeletion } from './pending-account-deletion';
 import { SyncProvider } from './SyncProvider';
 
@@ -28,7 +29,7 @@ export function useAppAccess(): AppAccess {
 export function AccountGate({ children }: PropsWithChildren) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { state, actions } = useAuth();
+  const { state, actions, pending } = useAuth();
   const access = useAppAccess();
   const [resumeSettled, setResumeSettled] = useState(false);
   const userId = state.status === 'signedIn' ? state.user.id : null;
@@ -82,7 +83,8 @@ export function AccountGate({ children }: PropsWithChildren) {
     );
   }
 
-  if (access === 'signedOut') return children;
+  // Conta à espera do email: não se sai deste ecrã até confirmar ou escolher outra conta.
+  if (access === 'signedOut') return pending ? <ConfirmEmailScreen pending={pending} /> : children;
 
   // `unavailable` só chega aqui em desenvolvimento e nos testes (sem Supabase configurado).
   const space: LocalSpace =

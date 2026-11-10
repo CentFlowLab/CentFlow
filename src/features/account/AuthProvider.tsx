@@ -77,6 +77,16 @@ export type AuthErrorCode =
   | 'linkInvalid'
   | 'unknown';
 
+/**
+ * Conta criada, ou entrada recusada, à espera da confirmação do email. A palavra-passe fica só em
+ * memória (nunca em estado nem em disco) para a app entrar sozinha quando o email for confirmado.
+ */
+export type PendingConfirmation = {
+  email: string;
+  /** Hora (ms) do último email enviado pela app; `null` se não foi esta sessão a enviá-lo. */
+  sentAt: number | null;
+};
+
 export type AuthResult<T = void> = { ok: true; value: T } | { ok: false; error: AuthErrorCode };
 
 /** A mensagem do servidor pode citar o email. Só serve para distinguir o código genérico. */
@@ -226,11 +236,12 @@ export type AuthActions = {
   ): Promise<AuthResult<'signedIn' | 'confirmEmail'>>;
   signOut(): Promise<AuthResult>;
   requestPasswordReset(email: string): Promise<AuthResult>;
-  /**
-   * Novo email de confirmação (o anterior deixa de servir). Com um nome de utilizador, o email
-   * só se obtém com a palavra-passe certa, como em `signIn`.
-   */
-  resendConfirmation(identifier: string, password: string): Promise<AuthResult>;
+  /** Novo email de confirmação para a conta à espera (o anterior deixa de servir). */
+  resendConfirmation(): Promise<AuthResult>;
+  /** Tenta entrar com a conta à espera. `true`: email confirmado e sessão aberta. */
+  checkConfirmation(): Promise<AuthResult<boolean>>;
+  /** Desiste da conta à espera (ex.: email mal escrito) e volta às boas-vindas. */
+  abandonConfirmation(): void;
   /** Troca o código de um link de email por uma sessão (PKCE). */
   exchangeCode(code: string): Promise<AuthResult>;
   /** Confirma o email em qualquer dispositivo. Não depende do verificador PKCE. */
@@ -248,11 +259,27 @@ export type AuthActions = {
   updateEmailLocale(locale: EmailLocale): Promise<AuthResult>;
 };
 
-type AuthContextValue = { state: AuthState; client: SupabaseClient | null; actions: AuthActions };
+type AuthContextValue = {
+  state: AuthState;
+  client: SupabaseClient | null;
+  actions: AuthActions;
+  /** Sem sessão e com uma conta à espera da confirmação do email. */
+  pending: PendingConfirmation | null;
+};
+
+type Credentials = { email: string; password: string };
+
+/** Ligação de `createActions` à conta à espera, guardada no `AuthProvider`. */
+type PendingStore = {
+  wait(credentials: Credentials, sent: boolean): void;
+  credentials(): Credentials | null;
+  markSent(): void;
+  clear(): void;
+};
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function createActions(client: SupabaseClient | null): AuthActions {
+function createActions(client: SupabaseClient | null, pending: PendingStore): AuthActions {
   const unavailable = async () => ({ ok: false, error: 'unknown' }) as const;
   if (!client) {
     return {
@@ -261,6 +288,8 @@ function createActions(client: SupabaseClient | null): AuthActions {
       signOut: unavailable,
       requestPasswordReset: unavailable,
       resendConfirmation: unavailable,
+      checkConfirmation: unavailable,
+      abandonConfirmation: () => undefined,
       exchangeCode: unavailable,
       verifyEmail: unavailable,
       updatePassword: unavailable,
@@ -300,7 +329,13 @@ function createActions(client: SupabaseClient | null): AuthActions {
           email = data;
         }
         const { error } = await auth.signInWithPassword({ email, password });
-        if (!error) return ok(undefined);
+        if (!error) {
+          pending.clear();
+          return ok(undefined);
+        }
+        // Conta por confirmar: a app mostra o ecrã de confirmação em vez de um erro.
+        if (toAuthErrorCode(error) === 'emailNotConfirmed')
+          pending.wait({ email, password }, false);
         if (toAuthErrorCode(error) === 'invalidCredentials') {
           const registered = await lookupRegistered(client, email);
           if (registered === false) {
@@ -335,38 +370,44 @@ function createActions(client: SupabaseClient | null): AuthActions {
           return { ok: false, error: 'usernameTaken' };
         }
         if (error) return fail(error);
-        return ok(data.session ? 'signedIn' : 'confirmEmail');
+        if (data.session) {
+          pending.clear();
+          return ok('signedIn');
+        }
+        pending.wait({ email: email.trim(), password }, true);
+        return ok('confirmEmail');
       }),
     signOut: () =>
       guard(async () => {
         const { error } = await auth.signOut({ scope: 'local' });
         return error ? fail(error) : ok(undefined);
       }),
-    resendConfirmation: (identifier, password) =>
+    resendConfirmation: () =>
       guard(async () => {
-        let email = identifier.trim();
-        if (!email.includes('@')) {
-          const { data, error } = await client.rpc('login_email', {
-            target_username: normalizeUsername(email),
-            target_password: password,
-          });
-          if (error) {
-            const limited =
-              typeof error.message === 'string' && error.message.includes('rate_limited');
-            return { ok: false, error: limited ? 'rateLimited' : 'unknown' };
-          }
-          if (typeof data !== 'string' || !data) {
-            return { ok: false, error: 'invalidUsernameCredentials' };
-          }
-          email = data;
-        }
+        const credentials = pending.credentials();
+        if (!credentials) return { ok: false, error: 'unknown' };
         const { error } = await auth.resend({
           type: 'signup',
-          email,
+          email: credentials.email,
           options: { emailRedirectTo: authRedirectUrl('/auth/callback') },
         });
-        return error ? fail(error) : ok(undefined);
+        if (error) return fail(error);
+        pending.markSent();
+        return ok(undefined);
       }),
+    checkConfirmation: () =>
+      guard(async () => {
+        const credentials = pending.credentials();
+        if (!credentials) return { ok: false, error: 'unknown' };
+        const { error } = await auth.signInWithPassword(credentials);
+        if (!error) {
+          pending.clear();
+          return ok(true);
+        }
+        if (toAuthErrorCode(error) === 'emailNotConfirmed') return ok(false);
+        return fail(error);
+      }),
+    abandonConfirmation: () => pending.clear(),
     requestPasswordReset: (email) =>
       guard(async () => {
         const { error } = await auth.resetPasswordForEmail(email.trim(), {
@@ -422,6 +463,31 @@ function createActions(client: SupabaseClient | null): AuthActions {
   };
 }
 
+function createPendingStore(
+  setPending: (
+    update: (previous: PendingConfirmation | null) => PendingConfirmation | null,
+  ) => void,
+): PendingStore {
+  let credentials: Credentials | null = null;
+  return {
+    wait: (next, sent) => {
+      credentials = next;
+      setPending((previous) => ({
+        email: next.email,
+        sentAt: sent ? Date.now() : previous?.email === next.email ? previous.sentAt : null,
+      }));
+    },
+    credentials: () => credentials,
+    markSent: () => {
+      setPending((previous) => (previous ? { ...previous, sentAt: Date.now() } : previous));
+    },
+    clear: () => {
+      credentials = null;
+      setPending(() => null);
+    },
+  };
+}
+
 export function AuthProvider({
   children,
   client = getSupabase(),
@@ -430,6 +496,8 @@ export function AuthProvider({
     client ? { status: 'loading' } : { status: 'unavailable' },
   );
   const signingOut = useRef(false);
+  const [pending, setPending] = useState<PendingConfirmation | null>(null);
+  const [pendingStore] = useState(() => createPendingStore(setPending));
 
   useEffect(() => {
     if (!client) return;
@@ -440,6 +508,8 @@ export function AuthProvider({
     ) => {
       if (cancelled) return;
       if (session?.user) {
+        // Com sessão (ex.: o link abriu a app), deixa de haver conta à espera.
+        pendingStore.clear();
         setState({
           status: 'signedIn',
           user: {
@@ -471,17 +541,17 @@ export function AuthProvider({
       cancelled = true;
       data.subscription.unsubscribe();
     };
-  }, [client]);
+  }, [client, pendingStore]);
 
-  const baseActions = useMemo(() => createActions(client), [client]);
+  const baseActions = useMemo(() => createActions(client, pendingStore), [client, pendingStore]);
   const signOut = useCallback(async (): Promise<AuthResult> => {
     signingOut.current = true;
     return baseActions.signOut();
   }, [baseActions]);
   const actions = useMemo<AuthActions>(() => ({ ...baseActions, signOut }), [baseActions, signOut]);
   const value = useMemo<AuthContextValue>(
-    () => ({ state, client, actions }),
-    [state, client, actions],
+    () => ({ state, client, actions, pending: state.status === 'signedIn' ? null : pending }),
+    [state, client, actions, pending],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
