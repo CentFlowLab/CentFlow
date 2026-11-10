@@ -793,7 +793,7 @@ const ptPT = {
     },
     callbackFailed: 'Não foi possível confirmar',
     errors: {
-      invalidCredentials: 'Email ou palavra-passe incorretos.',
+      invalidCredentials: 'Não há conta com este email, ou a palavra-passe não está correta.',
       emailNotConfirmed: 'Confirma primeiro o teu email através do link que recebeste.',
       emailInvalid:
         'Este email não é aceite. Domínios de exemplo ou de teste não servem; usa um endereço real.',

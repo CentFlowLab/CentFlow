@@ -793,7 +793,7 @@ const en: Translation = {
     },
     callbackFailed: 'Could not confirm',
     errors: {
-      invalidCredentials: 'Incorrect email or password.',
+      invalidCredentials: 'There is no account with this email, or the password is incorrect.',
       emailNotConfirmed: 'Confirm your email first using the link you received.',
       emailInvalid:
         'This email is not accepted. Example or test domains do not work; use a real address.',

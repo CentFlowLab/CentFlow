@@ -175,7 +175,9 @@ describe('auth screens', () => {
     await fireEvent.changeText(await screen.findByLabelText('Email'), 'a@b.pt');
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'wrong');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
-    expect(await screen.findByText('Email ou palavra-passe incorretos.')).toBeOnTheScreen();
+    expect(
+      await screen.findByText('Não há conta com este email, ou a palavra-passe não está correta.'),
+    ).toBeOnTheScreen();
     expect(auth.signInWithPassword).toHaveBeenCalled();
   });
 

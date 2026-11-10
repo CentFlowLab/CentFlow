@@ -801,7 +801,7 @@ const es: Translation = {
     },
     callbackFailed: 'No se ha podido confirmar',
     errors: {
-      invalidCredentials: 'Correo o contraseña incorrectos.',
+      invalidCredentials: 'No hay cuenta con este correo, o la contraseña no es correcta.',
       emailNotConfirmed: 'Confirma primero tu correo con el enlace que has recibido.',
       emailInvalid:
         'Este correo no se acepta. Los dominios de ejemplo o de prueba no sirven; usa una dirección real.',
