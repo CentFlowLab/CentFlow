@@ -76,7 +76,10 @@ export function netWorthHistory(input: {
   currency: CurrencyCode;
   accounts: readonly AccountSnapshotInput[];
   flows: readonly AccountMonthFlow[];
-  wealth: readonly Pick<WealthItem, 'type' | 'currency' | 'amount' | 'valuedOn' | 'valueHistory'>[];
+  wealth: readonly (Pick<
+    WealthItem,
+    'type' | 'currency' | 'amount' | 'valuedOn' | 'valueHistory'
+  > & { closedOn?: CalendarDate | null })[];
 }): NetWorthPoint[] {
   const accounts = input.accounts.filter((account) => account.currency === input.currency);
   const wealth = input.wealth.filter((item) => item.currency === input.currency);
@@ -98,6 +101,8 @@ export function netWorthHistory(input: {
     let liabilities = 0;
     let anyWealth = false;
     for (const item of wealth) {
+      // Vendido ou pago antes do fim do mês: já não conta nesse mês.
+      if (item.closedOn && item.closedOn <= end) continue;
       const value = valueOn(item, end);
       if (value === null) continue;
       anyWealth = true;

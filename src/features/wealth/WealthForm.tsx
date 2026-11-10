@@ -125,9 +125,19 @@ export function WealthForm({ item }: Props) {
             disabled={saving}
             onPress={() => void save()}
           />
+          {editing && item?.closedOn ? (
+            <Button
+              label={t('wealth.reopen')}
+              variant="secondary"
+              fullWidth
+              onPress={() => {
+                void repositories.wealth.reopen(item.id).then(close, () => undefined);
+              }}
+            />
+          ) : null}
           {editing ? (
             <Button
-              label={t('wealth.delete')}
+              label={item?.closedOn ? t('wealth.delete') : t('wealth.remove')}
               variant="ghost"
               fullWidth
               onPress={() => setConfirmingDelete(true)}
@@ -222,12 +232,23 @@ export function WealthForm({ item }: Props) {
       )}
       <Dialog
         visible={confirmingDelete}
-        title={t('wealth.deleteTitle')}
-        message={t('wealth.deleteMessage')}
+        title={item?.closedOn ? t('wealth.deleteTitle') : t('wealth.removeTitle')}
+        message={item?.closedOn ? t('wealth.deleteMessage') : t('wealth.removeMessage')}
         onDismiss={() => setConfirmingDelete(false)}
         actions={[
+          ...(item && !item.closedOn
+            ? [
+                {
+                  label: t(isLiabilityType(item.type) ? 'wealth.closePaid' : 'wealth.closeSold'),
+                  onPress: () => {
+                    setConfirmingDelete(false);
+                    void repositories.wealth.close(item.id, today).then(close, () => undefined);
+                  },
+                },
+              ]
+            : []),
           {
-            label: t('wealth.delete'),
+            label: item?.closedOn ? t('wealth.delete') : t('wealth.deleteMistake'),
             variant: 'destructive',
             onPress: () => {
               setConfirmingDelete(false);

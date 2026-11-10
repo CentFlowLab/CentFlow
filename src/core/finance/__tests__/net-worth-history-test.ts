@@ -97,4 +97,33 @@ describe('netWorthHistory', () => {
       },
     ]);
   });
+
+  it('carries balances through months without entries and follows revaluations and payoffs', () => {
+    const points = netWorthHistory({
+      months: ['2026-04', '2026-05', '2026-06', '2026-07'],
+      currency: 'EUR',
+      accounts: [
+        { id: 'bank', type: 'bank', currency: 'EUR', initialBalance: 50_000, since: '2026-04-01' },
+      ],
+      // Só há movimentos em abril: maio, junho e julho repetem o saldo.
+      flows: [{ accountId: 'bank', month: '2026-04', net: -10_000 }],
+      wealth: [
+        {
+          type: 'loan',
+          currency: 'EUR',
+          amount: 200_000,
+          valuedOn: '2026-06-01',
+          valueHistory: [{ amount: 300_000, valuedOn: '2026-04-01' }],
+          // Pago a 15 de julho: em julho já não conta.
+          closedOn: '2026-07-15',
+        },
+      ],
+    });
+    expect(points.map((point) => [point.month, point.accounts, point.liabilities])).toEqual([
+      ['2026-04', 40_000, 300_000],
+      ['2026-05', 40_000, 300_000],
+      ['2026-06', 40_000, 200_000],
+      ['2026-07', 40_000, 0],
+    ]);
+  });
 });

@@ -16,6 +16,8 @@ export type WealthTotals = {
 export function wealthTotals(items: readonly WealthItem[]): WealthTotals[] {
   const byCurrency = new Map<string, WealthTotals>();
   for (const item of items) {
+    // Vendido ou pago: já não faz parte do património atual (fica no histórico).
+    if (item.closedOn) continue;
     const totals = byCurrency.get(item.currency) ?? {
       currency: item.currency,
       assets: 0,

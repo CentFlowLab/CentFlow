@@ -45,7 +45,16 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
   ],
   goals: ['name', 'target_amount', 'currency', 'target_on', 'deleted_at'],
   goal_contributions: ['goal_id', 'amount', 'date', 'deleted_at'],
-  wealth_items: ['name', 'type', 'amount', 'currency', 'valued_on', 'value_history', 'deleted_at'],
+  wealth_items: [
+    'name',
+    'type',
+    'amount',
+    'currency',
+    'valued_on',
+    'value_history',
+    'closed_on',
+    'deleted_at',
+  ],
   vehicles: [
     'name',
     'kind',

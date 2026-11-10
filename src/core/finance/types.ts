@@ -166,6 +166,8 @@ export type WealthItem = SyncMetadata & {
   valuedOn: CalendarDate;
   /** Avaliações anteriores (a mais antiga primeiro), guardadas pela app quando o valor muda. */
   valueHistory: WealthValuation[];
+  /** Dia em que foi vendido (bem) ou pago (dívida); conta no histórico até lá. */
+  closedOn: CalendarDate | null;
 };
 
 export type WealthValuation = { amount: number; valuedOn: CalendarDate };

@@ -177,6 +177,11 @@ export interface WealthRepository {
   /** Não cria movimentos nem altera saldos de contas. */
   create(input: WealthItemInput): Promise<WealthItem>;
   update(id: Id, input: WealthItemInput): Promise<WealthItem>;
+  /** Vendido ou pago nesse dia: sai do património atual e fica no histórico até lá. */
+  close(id: Id, closedOn: CalendarDate): Promise<WealthItem>;
+  /** Volta a contar no património atual. */
+  reopen(id: Id): Promise<WealthItem>;
+  /** Engano: sai de todo o lado, incluindo do histórico. */
   delete(id: Id): Promise<void>;
 }
 

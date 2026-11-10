@@ -43,7 +43,7 @@ async function loadObligations(repositories: Repositories, today: CalendarDate) 
     vehicles,
     documents,
     subscriptions,
-    hasProperty: wealth.some((item) => item.type === 'property'),
+    hasProperty: wealth.some((item) => item.type === 'property' && !item.closedOn),
   });
 }
 

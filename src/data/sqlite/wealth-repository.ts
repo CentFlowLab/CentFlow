@@ -1,5 +1,6 @@
 import {
   hasErrors,
+  isValidCalendarDate,
   recordValuation,
   type WealthValuation,
   validateWealthItemInput,
@@ -20,11 +21,13 @@ type WealthRow = {
   currency: string;
   valued_on: string;
   value_history: string | null;
+  closed_on: string | null;
   created_at: string;
   updated_at: string;
 };
 
-const COLUMNS = `id, name, type, amount, currency, valued_on, value_history, created_at, updated_at`;
+const COLUMNS = `id, name, type, amount, currency, valued_on, value_history, closed_on, created_at,
+  updated_at`;
 
 /** Lê o histórico guardado; um valor estragado conta como vazio em vez de partir a lista. */
 function parseHistory(text: string | null): WealthValuation[] {
@@ -59,6 +62,7 @@ function toItem(row: WealthRow): WealthItem {
     currency: row.currency,
     valuedOn: row.valued_on,
     valueHistory: parseHistory(row.value_history),
+    closedOn: row.closed_on,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -79,6 +83,28 @@ function prepare(raw: WealthItemInput): WealthItemInput {
 
 export function createSqliteWealthRepository(context: SqliteRepositoryContext): WealthRepository {
   const { db } = context;
+
+  function setClosed(id: string, closedOn: string | null): Promise<WealthItem> {
+    if (closedOn !== null && !isValidCalendarDate(closedOn)) {
+      return Promise.reject(new ValidationError({ closedOn: 'invalidDate' }));
+    }
+    return write(context, ['wealth_items'], () =>
+      db.transaction(async (tx) => {
+        const existing = await tx.first<WealthRow>(
+          `SELECT ${COLUMNS} FROM wealth_items WHERE id = ? AND deleted_at IS NULL`,
+          [id],
+        );
+        if (!existing) throw new NotFoundError('wealth_item', id);
+        const timestamp = context.now();
+        await tx.run('UPDATE wealth_items SET closed_on = ?, updated_at = ? WHERE id = ?', [
+          closedOn,
+          timestamp,
+          id,
+        ]);
+        return { ...toItem(existing), closedOn, updatedAt: timestamp };
+      }),
+    );
+  }
 
   return {
     async list() {
@@ -116,7 +142,14 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
               timestamp,
             ],
           );
-          return { id, ...input, valueHistory: [], createdAt: timestamp, updatedAt: timestamp };
+          return {
+            id,
+            ...input,
+            valueHistory: [],
+            closedOn: null,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          };
         }),
       );
     },
@@ -153,6 +186,14 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
           return { ...before, ...input, valueHistory, updatedAt: timestamp };
         }),
       );
+    },
+
+    close(id, closedOn) {
+      return setClosed(id, closedOn);
+    },
+
+    reopen(id) {
+      return setClosed(id, null);
     },
 
     delete(id) {

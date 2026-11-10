@@ -82,9 +82,12 @@ export function WealthScreen() {
   }
 
   const totals = wealthTotals(items);
+  const current = items.filter((item) => !item.closedOn);
   const groups = [
-    { key: 'assets', rows: items.filter((item) => !isLiabilityType(item.type)) },
-    { key: 'liabilities', rows: items.filter((item) => isLiabilityType(item.type)) },
+    { key: 'assets', rows: current.filter((item) => !isLiabilityType(item.type)) },
+    { key: 'liabilities', rows: current.filter((item) => isLiabilityType(item.type)) },
+    // Vendidos ou pagos: fora dos totais, no histórico até à data.
+    { key: 'closedGroup', rows: items.filter((item) => item.closedOn) },
   ] as const;
 
   return (
@@ -137,10 +140,13 @@ export function WealthScreen() {
                   <ListItem
                     key={item.id}
                     title={item.name}
-                    subtitle={`${t(`wealth.types.${item.type}`)} · ${formatDate(
-                      new Date(`${item.valuedOn}T12:00:00`),
-                      'medium',
-                    )}`}
+                    subtitle={`${t(`wealth.types.${item.type}`)} · ${
+                      item.closedOn
+                        ? t('wealth.closedOn', {
+                            date: formatDate(new Date(`${item.closedOn}T12:00:00`), 'medium'),
+                          })
+                        : formatDate(new Date(`${item.valuedOn}T12:00:00`), 'medium')
+                    }`}
                     icon={ICONS[item.type]}
                     onPress={() => router.push(`/wealth/${item.id}` as Href)}
                     trailing={

@@ -1,5 +1,7 @@
 import { useEffect, type ComponentType } from 'react';
 
+import { createEarlyErrorBuffer } from './early-errors';
+
 type SentryModule = (typeof import('./sentry'))['Sentry'];
 
 let loading: Promise<SentryModule> | null = null;
@@ -14,12 +16,31 @@ function loadSentry(): Promise<SentryModule> {
   return loading;
 }
 
+/** Erros antes de o Sentry carregar: guardados e enviados quando ele chega. */
+const early = createEarlyErrorBuffer();
+
 if (typeof window !== 'undefined') {
+  const onError = (event: ErrorEvent) => {
+    early.push(event.error ?? new Error('window.onerror'));
+  };
+  const onRejection = (event: PromiseRejectionEvent) => {
+    early.push(event.reason);
+  };
+  window.addEventListener('error', onError);
+  window.addEventListener('unhandledrejection', onRejection);
+
   const start = () => {
-    loadSentry().catch(() => {
-      loading = null;
-      console.error('[monitoring] load_failed');
-    });
+    loadSentry()
+      .then((sentry) => {
+        // A partir daqui o Sentry tem os seus próprios ouvintes globais.
+        window.removeEventListener('error', onError);
+        window.removeEventListener('unhandledrejection', onRejection);
+        early.flush((error) => sentry.captureException(error));
+      })
+      .catch(() => {
+        loading = null;
+        console.error('[monitoring] load_failed');
+      });
   };
   const idle = (
     window as { requestIdleCallback?: (callback: () => void, options?: object) => void }

@@ -152,6 +152,7 @@ const COLUMNS: Record<SyncEntity, readonly string[]> = {
     'currency',
     'valued_on',
     'value_history',
+    'closed_on',
     'created_at',
     'updated_at',
     'deleted_at',

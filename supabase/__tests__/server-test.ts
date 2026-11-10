@@ -262,6 +262,32 @@ describe('abuse limits by origin', () => {
     }
   });
 
+  it('forgets attempts once the window has passed', async () => {
+    await setOrigin('203.0.113.20');
+    // 30 consultas há 11 minutos (fora da janela de 10): não contam.
+    await server.pg.query(
+      `insert into public.lookup_attempts (kind, client, attempted_at)
+       select 'username_available', '203.0.113.20', now() - interval '11 minutes'
+       from generate_series(1, 30)`,
+    );
+    await expect(
+      server.anonymous().query('select public.username_available($1)', ['ainda.livre']),
+    ).resolves.toBeDefined();
+  });
+
+  it('keeps the per-username limit when the origin keeps changing (distributed attempts)', async () => {
+    for (let index = 0; index < 10; index += 1) {
+      await setOrigin(`198.51.100.${index + 10}`);
+      await server
+        .anonymous()
+        .query('select public.login_email($1, $2)', ['alvo.unico', `errada${index}`]);
+    }
+    await setOrigin('198.51.100.99');
+    await expect(
+      server.anonymous().query('select public.login_email($1, $2)', ['alvo.unico', 'outra']),
+    ).rejects.toThrow(/rate_limited/);
+  });
+
   it('stops trying passwords across many usernames from one origin', async () => {
     await setOrigin('203.0.113.9');
     for (let index = 0; index < 30; index += 1) {
@@ -1155,6 +1181,14 @@ describe('wealth items', () => {
     await expect(push(alice, [itemOp(2, { value_history: '{"x":1}' })])).resolves.toEqual([
       expect.objectContaining({ status: expect.not.stringMatching(/^applied$/) }),
     ]);
+  });
+
+  it('syncs the sold or paid date and an older app does not clear it', async () => {
+    await push(alice, [itemOp(0, { closed_on: '2026-10-31' })]);
+    await push(alice, [itemOp(1, { name: 'Casa antiga' })]);
+    expect(
+      await alice.query('select name, closed_on::text as closed from public.wealth_items'),
+    ).toEqual([{ name: 'Casa antiga', closed: '2026-10-31' }]);
   });
 
   it('syncs an item, isolates users and does not create entries', async () => {

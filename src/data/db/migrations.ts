@@ -145,6 +145,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'wealth value history and essential categories',
     sql: migrationV10(),
   },
+  {
+    version: 11,
+    description: 'wealth items: sold or paid off date (closed_on)',
+    sql: migrationV11(),
+  },
 ];
 
 /**
@@ -1369,6 +1374,53 @@ function migrationV10(): string {
     ALTER TABLE wealth_items ADD COLUMN value_history TEXT
       CHECK (value_history IS NULL OR (json_valid(value_history) AND json_type(value_history) = 'array'));
     ${triggers}
+  `;
+}
+
+/** v11 — data de venda ou pagamento dos itens de património, na fila de sincronização. */
+function migrationV11(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const fields = [
+    'name',
+    'type',
+    'amount',
+    'currency',
+    'valued_on',
+    'value_history',
+    'closed_on',
+    'created_at',
+    'deleted_at',
+  ];
+  const json = (row: 'NEW' | 'OLD') =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const base = (row: 'NEW' | 'OLD') => `COALESCE(
+    (SELECT base_version + 1 FROM sync_outbox
+      WHERE entity = 'wealth_items' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+    ${row}.version)`;
+  return `
+    ALTER TABLE wealth_items ADD COLUMN closed_on TEXT
+      CHECK (closed_on IS NULL OR closed_on GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]');
+
+    DROP TRIGGER IF EXISTS sync_wealth_items_insert;
+    DROP TRIGGER IF EXISTS sync_wealth_items_update;
+    CREATE TRIGGER sync_wealth_items_insert AFTER INSERT ON wealth_items
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'wealth_items', NEW.id,
+        ${base('NEW')}, NULL, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
+    CREATE TRIGGER sync_wealth_items_update AFTER UPDATE ON wealth_items
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'wealth_items', NEW.id,
+        ${base('OLD')}, ${json('OLD')}, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
   `;
 }
 

@@ -1,4 +1,5 @@
 import {
+  wealthTotals,
   computeBalances,
   DEFAULT_CATEGORIES,
   flowsFromEntries,
@@ -444,6 +445,19 @@ describe('accounts', () => {
 });
 
 describe('balance history', () => {
+  it('follows retroactive corrections and deletions without stored snapshots', async () => {
+    const old = await repos.entries.create({ ...baseExpense(), amount: 3000, date: '2026-08-10' });
+    let { flows } = await repos.accounts.balanceHistory();
+    expect(flows).toContainEqual({ accountId: bank.id, month: '2026-08', net: -3000 });
+    await repos.entries.update(old.id, { ...baseExpense(), amount: 4500, date: '2026-07-10' });
+    ({ flows } = await repos.accounts.balanceHistory());
+    expect(flows).toContainEqual({ accountId: bank.id, month: '2026-07', net: -4500 });
+    expect(flows.some((flow) => flow.month === '2026-08')).toBe(false);
+    await repos.entries.delete(old.id);
+    ({ flows } = await repos.accounts.balanceHistory());
+    expect(flows.some((flow) => flow.month === '2026-07')).toBe(false);
+  });
+
   it('returns month-end flows per account, with transfers on both sides', async () => {
     await repos.entries.create(baseExpense());
     await repos.entries.create({
@@ -832,6 +846,22 @@ describe('savings goals', () => {
 });
 
 describe('wealth items', () => {
+  it('closes a sold item (out of current totals, kept in history) and reopens it', async () => {
+    const car = await repos.wealth.create({
+      name: 'Carro',
+      type: 'valuables',
+      amount: 1_500_000,
+      currency: 'EUR',
+      valuedOn: '2026-01-10',
+    });
+    const closed = await repos.wealth.close(car.id, '2026-10-31');
+    expect(closed.closedOn).toBe('2026-10-31');
+    expect(wealthTotals(await repos.wealth.list())).toEqual([]);
+    const reopened = await repos.wealth.reopen(car.id);
+    expect(reopened.closedOn).toBeNull();
+    await expect(repos.wealth.close(car.id, '2026-02-30')).rejects.toBeInstanceOf(ValidationError);
+  });
+
   it('keeps the previous valuation when the value changes, not on a same-day correction', async () => {
     const house = await repos.wealth.create({
       name: 'Casa',

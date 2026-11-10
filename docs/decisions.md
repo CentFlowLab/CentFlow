@@ -650,6 +650,24 @@ só com consentimento.
 **Consequências:** um erro nos primeiros instantes da web, antes de o Sentry carregar, só é
 reportado se chegar ao ecrã de erro.
 
+## ADR-048 — Bens vendidos ou pagos, limites sem corrida e erros iniciais na web
+
+**Contexto:** eliminar um bem vendido apagava-o também do histórico; dois pedidos em simultâneo
+podiam passar o limite por corrida; na web, um erro antes de o Sentry carregar perdia-se.
+**Decisão:** `wealth_items.closed_on` (local v11, `20261111000400`): "Retirar do património"
+pergunta se foi vendido ou pago (fica no histórico até esse dia e sai dos totais e do lembrete do
+IMI) ou se foi um engano (eliminado de todo o lado); um item retirado pode voltar a contar.
+`private.throttle` e `login_email` usam `pg_advisory_xact_lock` por origem e por nome, por isso a
+contagem e o registo são atómicos. Na web, `src/lib/early-errors.ts` guarda até 20 erros globais
+(`error` e `unhandledrejection`) e envia-os quando o Sentry chega.
+**Limites conhecidos:** o limite por IP não trava um ataque distribuído por muitos endereços; o
+limite por nome (10 falhas em 15 minutos) mantém-se e protege cada conta. Os limites de
+autenticação do próprio Supabase (GoTrue) cobrem a entrada por email. Monitorizar com
+`select kind, client, count(*) from public.lookup_attempts where attempted_at > now() -
+interval '1 hour' group by 1, 2 order by 3 desc;` (só com a ligação de administração). A
+concorrência real (vários pedidos ao mesmo tempo) não é reproduzível no PGlite dos testes; está
+garantida pelo bloqueio de transação.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

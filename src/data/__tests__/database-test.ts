@@ -195,6 +195,31 @@ describe('database initialization', () => {
   });
 });
 
+describe('schema v11 (wealth closed date)', () => {
+  it('keeps v10 items and sends the closed date through the outbox', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 10),
+    );
+    await db.run(
+      `INSERT INTO wealth_items (id, name, type, amount, currency, valued_on, created_at, updated_at)
+       VALUES ('w1', 'Carro', 'valuables', 100, 'EUR', '2026-01-01', ?, ?)`,
+      [NOW, NOW],
+    );
+    await migrate(db, MIGRATIONS);
+    expect(await db.first('SELECT closed_on FROM wealth_items')).toEqual({ closed_on: null });
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(`UPDATE wealth_items SET closed_on = '2026-10-31' WHERE id = 'w1'`);
+    const op = await db.first<{ data: string }>(
+      `SELECT data FROM sync_outbox WHERE entity = 'wealth_items' ORDER BY seq DESC LIMIT 1`,
+    );
+    expect(JSON.parse(op!.data)).toMatchObject({ closed_on: '2026-10-31', value_history: null });
+    await db.close();
+  });
+});
+
 describe('schema v10 (wealth history, essential categories)', () => {
   it('keeps v9 rows and sends the new fields through the outbox', async () => {
     const db = createSqlDatabase(createNodeSqliteDriver());
