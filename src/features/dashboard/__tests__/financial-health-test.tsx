@@ -1,14 +1,12 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 
-import type { SqlDatabase } from '@/data/db/sql-database';
-import { RepositoriesProvider } from '@/data/react/RepositoriesContext';
-import type { Repositories } from '@/data/repositories/types';
+import { RepositoriesProvider, type Repositories } from '@/data';
 import { openTestRepositories } from '@/test-utils/node-sqlite-driver';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { FinancialHealthCard } from '../FinancialHealthCard';
 
-let db: SqlDatabase;
+let db: Awaited<ReturnType<typeof openTestRepositories>>['db'];
 let repos: Repositories;
 
 beforeEach(async () => {
