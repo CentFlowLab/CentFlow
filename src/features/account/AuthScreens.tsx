@@ -3,11 +3,20 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
-import { Button, EmptyState, FormScreen, Icon, Text, TextField } from '@/ui/components';
+import { Button, DateFields, EmptyState, FormScreen, Icon, Text, TextField } from '@/ui/components';
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { closeModal } from '../finance/navigation';
-import { emailOtpType, isAppleSignInAvailable, useAuth, type AuthErrorCode } from './AuthProvider';
+import { useToday } from '../finance/useToday';
+import { ageOn, MIN_SIGN_UP_AGE } from './age';
+import {
+  emailOtpType,
+  isAppleSignInAvailable,
+  normalizeUsername,
+  useAuth,
+  USERNAME_PATTERN,
+  type AuthErrorCode,
+} from './AuthProvider';
 import { PasswordField } from './PasswordField';
 
 /** Ecrã inicial sem sessão (fora das rotas tipadas até o Expo as regenerar). */
@@ -16,11 +25,18 @@ const WELCOME = '/welcome' as Href;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const MIN_PASSWORD_LENGTH = 8;
 
-const MAX_USERNAME_LENGTH = 40;
-
-type Field = 'username' | 'email' | 'password';
+type Field = 'username' | 'email' | 'password' | 'birthDate';
 type FieldErrors = Partial<
-  Record<Field, 'invalidEmail' | 'passwordTooShort' | 'usernameTooLong' | 'required'>
+  Record<
+    Field,
+    | 'invalidEmail'
+    | 'invalidIdentifier'
+    | 'passwordTooShort'
+    | 'usernameInvalid'
+    | 'birthDateInvalid'
+    | 'tooYoung'
+    | 'required'
+  >
 >;
 
 function validate(
@@ -31,9 +47,9 @@ function validate(
 ): FieldErrors {
   const errors: FieldErrors = {};
   if (username !== null) {
-    const name = username.trim();
+    const name = normalizeUsername(username);
     if (!name) errors.username = 'required';
-    else if (name.length > MAX_USERNAME_LENGTH) errors.username = 'usernameTooLong';
+    else if (!USERNAME_PATTERN.test(name)) errors.username = 'usernameInvalid';
   }
   if (email !== null) {
     if (!email.trim()) errors.email = 'required';
@@ -50,7 +66,9 @@ function useFieldError() {
   const { t } = useTranslation();
   return (code: FieldErrors[Field]) => {
     if (!code) return undefined;
-    return code === 'required' ? t('validation.required') : t(`auth.${code}`);
+    if (code === 'required') return t('validation.required');
+    if (code === 'tooYoung') return t('auth.tooYoung', { age: MIN_SIGN_UP_AGE });
+    return t(`auth.${code}`);
   };
 }
 
@@ -174,7 +192,13 @@ export function SignInScreen() {
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
-    const found = validate(email, password, false);
+    // Com "@" é um email; sem, um nome de utilizador.
+    const identifier = email.trim();
+    const found = validate(identifier.includes('@') ? identifier : null, password, false);
+    if (!identifier) found.email = 'required';
+    else if (!identifier.includes('@') && !USERNAME_PATTERN.test(normalizeUsername(identifier))) {
+      found.email = 'invalidIdentifier';
+    }
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setBusy(true);
@@ -200,14 +224,15 @@ export function SignInScreen() {
         </Text>
       ) : null}
       <TextField
-        label={t('auth.email')}
+        label={t('auth.identifier')}
         value={email}
         onChangeText={setEmail}
-        placeholder={t('auth.emailPlaceholder')}
+        placeholder={t('auth.identifierPlaceholder')}
         autoCapitalize="none"
-        autoComplete="email"
+        autoCorrect={false}
+        autoComplete="username"
         keyboardType="email-address"
-        textContentType="emailAddress"
+        textContentType="username"
         errorText={fieldError(errors.email)}
       />
       <PasswordField
@@ -252,7 +277,9 @@ export function SignUpScreen() {
   const { t } = useTranslation();
   const { actions } = useAuth();
   const fieldError = useFieldError();
+  const today = useToday();
   const [username, setUsername] = useState('');
+  const [birthDate, setBirthDate] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -262,11 +289,14 @@ export function SignUpScreen() {
 
   const submit = async () => {
     const found = validate(email, password, true, username);
+    if (!birthDate) found.birthDate = 'required';
+    else if (birthDate > today) found.birthDate = 'birthDateInvalid';
+    else if (ageOn(birthDate, today) < MIN_SIGN_UP_AGE) found.birthDate = 'tooYoung';
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0 || !birthDate) return;
     setBusy(true);
     setError(null);
-    const result = await actions.signUp(email, password, username.trim());
+    const result = await actions.signUp(email, password, username, birthDate);
     setBusy(false);
     if (!result.ok) setError(result.error);
     // Sessão imediata: o router abre a app sozinho.
@@ -291,10 +321,28 @@ export function SignUpScreen() {
         value={username}
         onChangeText={setUsername}
         placeholder={t('auth.usernamePlaceholder')}
-        autoComplete="username"
+        autoCapitalize="none"
+        autoComplete="username-new"
         autoCorrect={false}
-        maxLength={MAX_USERNAME_LENGTH}
+        maxLength={24}
+        helperText={t('auth.usernameHelper')}
         errorText={fieldError(errors.username)}
+      />
+      <DateFields
+        label={t('auth.birthDate')}
+        value={birthDate}
+        onChange={setBirthDate}
+        helperText={t('auth.birthDateHelper', { age: MIN_SIGN_UP_AGE })}
+        errorText={fieldError(errors.birthDate)}
+        labels={{
+          day: t('auth.birthDay'),
+          month: t('auth.birthMonth'),
+          year: t('auth.birthYear'),
+          dayPlaceholder: t('auth.birthDayPlaceholder'),
+          monthPlaceholder: t('auth.birthMonthPlaceholder'),
+          yearPlaceholder: t('auth.birthYearPlaceholder'),
+          invalid: t('auth.birthDateInvalid'),
+        }}
       />
       <TextField
         label={t('auth.email')}

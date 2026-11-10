@@ -20,15 +20,19 @@ type Labels = {
 type Props = {
   /** Título do grupo (ex.: "De"). */
   label: string;
-  value: CalendarDate;
+  /** `null`: campos vazios (ex.: data de nascimento ainda por indicar). */
+  value: CalendarDate | null;
   onChange: (value: CalendarDate) => void;
   labels: Labels;
+  helperText?: string;
+  /** Erro vindo de fora (ex.: campo obrigatório); tem prioridade sobre o da data. */
+  errorText?: string;
 };
 
 type Parts = { day: string; month: string; year: string };
 
-function split(value: CalendarDate): Parts {
-  const [year = '', month = '', day = ''] = value.split('-');
+function split(value: CalendarDate | null): Parts {
+  const [year = '', month = '', day = ''] = value ? value.split('-') : [];
   return { day, month, year };
 }
 
@@ -40,14 +44,14 @@ function join(parts: Parts): CalendarDate | null {
 }
 
 /** Data de calendário escrita em três campos: dia, mês e ano. */
-export function DateFields({ label, value, onChange, labels }: Props) {
+export function DateFields({ label, value, onChange, labels, helperText, errorText }: Props) {
   const [parts, setParts] = useState<Parts>(() => split(value));
   const [shown, setShown] = useState(value);
 
   // Valor mudado de fora (ex.: outro período): mostra-o, sem apagar o que se está a escrever.
   if (shown !== value) {
     setShown(value);
-    if (join(parts) !== value) setParts(split(value));
+    if (value !== null && join(parts) !== value) setParts(split(value));
   }
 
   const update = (key: keyof Parts, text: string) => {
@@ -60,7 +64,8 @@ export function DateFields({ label, value, onChange, labels }: Props) {
     }
   };
 
-  const invalid = join(parts) === null;
+  const started = Boolean(parts.day || parts.month || parts.year);
+  const message = errorText ?? (started && join(parts) === null ? labels.invalid : undefined);
 
   return (
     <View style={styles.container} accessibilityRole="none" accessibilityLabel={label}>
@@ -100,9 +105,13 @@ export function DateFields({ label, value, onChange, labels }: Props) {
           />
         </View>
       </View>
-      {invalid ? (
-        <Text variant="footnote" tone="negative">
-          {labels.invalid}
+      {message ? (
+        <Text variant="footnote" tone="negative" accessibilityLiveRegion="polite">
+          {message}
+        </Text>
+      ) : helperText ? (
+        <Text variant="footnote" tone="secondary">
+          {helperText}
         </Text>
       ) : null}
     </View>

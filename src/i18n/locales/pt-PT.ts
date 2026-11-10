@@ -113,19 +113,20 @@ const ptPT = {
   },
   welcome: {
     title: 'Bem-vindo ao Miven',
-    tagline: 'O teu dinheiro, sob controlo.',
+    tagline: 'As tuas finanças. Finalmente claras.',
     points: {
       sync: {
-        title: 'Em todos os teus dispositivos',
-        description: 'Os dados ficam na tua conta e sincronizam sozinhos.',
+        title: 'Visão total',
+        description:
+          'Contas, cartões e poupanças lado a lado, sincronizados em todos os teus dispositivos.',
       },
       private: {
-        title: 'Privado por desenho',
-        description: 'Só tu vês os teus dados. Nada é partilhado sem pedires.',
+        title: 'Os teus dados são teus',
+        description: 'Só a tua conta lhes acede. Nada é importado sem o reveres.',
       },
       plan: {
-        title: 'Planeia com calma',
-        description: 'Orçamentos, subscrições, objetivos e relatórios num só sítio.',
+        title: 'Decide antes de gastar',
+        description: 'Orçamentos, subscrições e objetivos com o progresso sempre à vista.',
       },
     },
     createAccount: 'Criar conta',
@@ -771,8 +772,23 @@ const ptPT = {
     email: 'Email',
     emailPlaceholder: 'nome@exemplo.pt',
     username: 'Nome de utilizador',
-    usernamePlaceholder: 'Como te chamas?',
-    usernameTooLong: 'O nome de utilizador é demasiado longo.',
+    usernamePlaceholder: 'ex.: ana.silva',
+    usernameHelper:
+      'Serve para entrar. 3 a 24 caracteres: letras, algarismos, ponto ou sublinhado.',
+    usernameInvalid: 'Usa 3 a 24 caracteres: letras, algarismos, ponto ou sublinhado, sem espaços.',
+    identifier: 'Email ou nome de utilizador',
+    identifierPlaceholder: 'nome@exemplo.pt ou ana.silva',
+    invalidIdentifier: 'Indica o email ou o nome de utilizador da conta.',
+    birthDate: 'Data de nascimento',
+    birthDateHelper: 'Só para confirmar a idade mínima de {{age}} anos.',
+    birthDay: 'Dia',
+    birthMonth: 'Mês',
+    birthYear: 'Ano',
+    birthDayPlaceholder: 'DD',
+    birthMonthPlaceholder: 'MM',
+    birthYearPlaceholder: 'AAAA',
+    birthDateInvalid: 'Data incompleta ou inválida.',
+    tooYoung: 'Tens de ter pelo menos {{age}} anos para criar conta.',
     password: 'Palavra-passe',
     showPassword: 'Mostrar palavra-passe',
     hidePassword: 'Esconder palavra-passe',
@@ -819,6 +835,8 @@ const ptPT = {
     errors: {
       invalidCredentials: 'Email ou palavra-passe incorretos.',
       userNotFound: 'Utilizador não encontrado.',
+      usernameTaken: 'Este nome de utilizador já está em uso. Escolhe outro.',
+      invalidUsernameCredentials: 'Nome de utilizador ou palavra-passe incorretos.',
       confirmedElsewhere: 'O email já está confirmado. Entra com a palavra-passe.',
       emailNotConfirmed: 'Confirma primeiro o teu email através do link que recebeste.',
       emailInvalid:

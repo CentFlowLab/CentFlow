@@ -4,9 +4,11 @@
 // O Node 24 aborta ao libertar um wrapper WASM (nodejs/node#66366). O `npm test` arranca o Jest
 // com --no-wasm-code-gc; este worker herda a flag.
 import { PGlite } from '@electric-sql/pglite';
+import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import { parentPort } from 'node:worker_threads';
 
-const db = await PGlite.create();
+// pgcrypto: o Supabase tem-no no esquema `extensions` (bcrypt das palavras-passe).
+const db = await PGlite.create({ extensions: { pgcrypto } });
 parentPort.postMessage({ ready: true });
 
 async function handle({ kind, sql, params, identity }) {

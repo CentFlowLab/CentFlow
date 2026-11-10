@@ -478,6 +478,28 @@ Android publicados + 1. Sem Play Store por agora.
 assinatura). Se o service worker não puder registar-se (browser sem suporte), a app web mostra
 o erro de isolamento e não abre dados.
 
+## ADR-038 — Nome de utilizador, data de nascimento e entrada com o nome
+
+**Contexto:** o registo pedia só email, palavra-passe e um nome livre. O responsável quer um
+registo ao nível de uma app premium (nome de utilizador, data de nascimento) e entrar com o nome
+de utilizador ou com o email.
+**Decisão:** migration `20261110001100_login_username.sql`. `profiles.username` (minúsculas,
+algarismos, ponto e sublinhado; 3 a 24; índice único) e `profiles.birth_date`, preenchidos pelo
+`handle_new_user` a partir dos metadados do registo. `username_available` avisa antes do registo.
+`login_email(nome, palavra-passe)` (`security definer`) devolve o email da conta **só** se a
+palavra-passe confere com o bcrypt de `auth.users` (`extensions.crypt`); a app entra depois com
+`signInWithPassword`. Sem a palavra-passe ninguém obtém o email de um nome, e a mensagem de erro
+não diz se falhou o nome ou a palavra-passe. Dez falhas em quinze minutos bloqueiam o nome
+(`login_attempts`, com RLS e sem políticas). A data de nascimento só serve para a idade mínima de
+**16 anos** (acima dos 13 do consentimento digital em Portugal, por ser uma app financeira) e não
+é mostrada nem usada para mais nada (minimização, RGPD).
+**Alternativa recusada:** uma função `nome → email` aberta, que exporia os emails de todas as
+contas. Uma Edge Function com `service_role` faria o mesmo com mais uma chave secreta.
+**Consequências:** as contas antigas não têm nome de utilizador e entram com o email até o
+definirem. A política de privacidade (D-4) tem de mencionar a data de nascimento. A migration
+precisa de ser aplicada no staging e, com autorização, na produção; antes disso a app continua a
+entrar com email e o registo segue sem verificação prévia do nome.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

@@ -15,9 +15,12 @@ const SUPABASE_SHIM = `
   create role service_role nologin bypassrls;
   create schema auth;
   grant usage on schema auth to anon, authenticated, service_role;
+  create schema extensions;
+  create extension pgcrypto with schema extensions;
   create table auth.users (
     id uuid primary key,
     email text,
+    encrypted_password text,
     raw_user_meta_data jsonb not null default '{}'::jsonb
   );
   create function auth.uid() returns uuid language sql stable as $$

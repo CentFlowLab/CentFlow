@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 
+import { ageOn } from '../age';
 import { authRedirectUrl } from '../auth-redirect';
 import {
   AuthProvider,
@@ -21,6 +22,21 @@ jest.mock('@/features/finance/navigation', () => ({
 function authError(code: string, status = 400): AuthError {
   return { name: 'AuthApiError', message: code, status, code } as AuthError;
 }
+
+async function fillBirthDate(day: string, month: string, year: string) {
+  await fireEvent.changeText(screen.getByLabelText('Data de nascimento: Dia'), day);
+  await fireEvent.changeText(screen.getByLabelText('Data de nascimento: Mês'), month);
+  await fireEvent.changeText(screen.getByLabelText('Data de nascimento: Ano'), year);
+}
+
+describe('ageOn', () => {
+  it('counts full years only', () => {
+    expect(ageOn('2010-11-10', '2026-11-10')).toBe(16);
+    expect(ageOn('2010-11-11', '2026-11-10')).toBe(15);
+    expect(ageOn('2010-12-01', '2026-11-10')).toBe(15);
+    expect(ageOn('2000-02-29', '2026-03-01')).toBe(26);
+  });
+});
 
 describe('authRedirectUrl', () => {
   it('uses the exact public pages whitelisted in Supabase, never miven:/// with three slashes', () => {
@@ -170,7 +186,10 @@ describe('auth screens', () => {
         <SignInScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Email'), 'a@b.pt');
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'a@b.pt',
+    );
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
     await waitFor(() =>
@@ -192,7 +211,10 @@ describe('auth screens', () => {
         <SignInScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Email'), 'a@b.pt');
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'a@b.pt',
+    );
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'wrong');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
     expect(await screen.findByText('Email ou palavra-passe incorretos.')).toBeOnTheScreen();
@@ -213,7 +235,10 @@ describe('auth screens', () => {
         <SignInScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Email'), 'apagada@b.pt');
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'apagada@b.pt',
+    );
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'wrong');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
     expect(await screen.findByText('Utilizador não encontrado.')).toBeOnTheScreen();
@@ -238,7 +263,10 @@ describe('auth screens', () => {
         <SignInScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Email'), 'nao-e-email');
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'nao@email',
+    );
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
     expect(await screen.findByText('Indica um email válido.')).toBeOnTheScreen();
@@ -252,7 +280,8 @@ describe('auth screens', () => {
         <SignUpScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'Manu');
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'Manu.Silva');
+    await fillBirthDate('12', '04', '1995');
     await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
     await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
@@ -262,7 +291,7 @@ describe('auth screens', () => {
         password: 'secret-password',
         options: {
           emailRedirectTo: 'https://miven.pt/auth/callback',
-          data: { locale: 'pt', username: 'Manu' },
+          data: { locale: 'pt', username: 'manu.silva', birth_date: '1995-04-12' },
         },
       }),
     );
@@ -287,7 +316,8 @@ describe('auth screens', () => {
         <SignUpScreen />
       </AuthProvider>,
     );
-    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'Manu');
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'Manu.Silva');
+    await fillBirthDate('12', '04', '1995');
     await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
     await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
     await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
@@ -300,5 +330,89 @@ describe('auth screens', () => {
     expect(logged).toContain('[auth] email_address_invalid');
     expect(logged).not.toContain('nova@b.pt');
     spy.mockRestore();
+  });
+  it('signs in with a username: the server returns the email only with the right password', async () => {
+    const rpc = jest.fn(async (fn: string) =>
+      fn === 'login_email' ? { data: 'manu@b.pt', error: null } : { data: true, error: null },
+    );
+    const { client, auth } = fakeClient({}, rpc);
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignInScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'Manu.Silva',
+    );
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    await waitFor(() =>
+      expect(auth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'manu@b.pt',
+        password: 'secret-password',
+      }),
+    );
+    expect(rpc).toHaveBeenCalledWith('login_email', {
+      target_username: 'manu.silva',
+      target_password: 'secret-password',
+    });
+  });
+
+  it('does not say whether the username or the password was wrong', async () => {
+    const rpc = jest.fn(async () => ({ data: null, error: null }));
+    const { client, auth } = fakeClient({}, rpc);
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignInScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(
+      await screen.findByLabelText('Email ou nome de utilizador'),
+      'manu.silva',
+    );
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'errada');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    expect(
+      await screen.findByText('Nome de utilizador ou palavra-passe incorretos.'),
+    ).toBeOnTheScreen();
+    expect(auth.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('refuses sign-up under the minimum age', async () => {
+    const { client, auth } = fakeClient();
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignUpScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'jovem');
+    await fillBirthDate('01', '01', '2020');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'jovem@b.pt');
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(
+      await screen.findByText('Tens de ter pelo menos 16 anos para criar conta.'),
+    ).toBeOnTheScreen();
+    expect(auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it('says when the username is taken before creating the account', async () => {
+    const rpc = jest.fn(async () => ({ data: false, error: null }));
+    const { client, auth } = fakeClient({}, rpc);
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SignUpScreen />
+      </AuthProvider>,
+    );
+    await fireEvent.changeText(await screen.findByLabelText('Nome de utilizador'), 'ocupado');
+    await fillBirthDate('12', '04', '1995');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'nova@b.pt');
+    await fireEvent.changeText(screen.getByLabelText('Palavra-passe'), 'secret-password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(
+      await screen.findByText('Este nome de utilizador já está em uso. Escolhe outro.'),
+    ).toBeOnTheScreen();
+    expect(auth.signUp).not.toHaveBeenCalled();
   });
 });

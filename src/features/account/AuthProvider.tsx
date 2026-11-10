@@ -60,7 +60,10 @@ export type AuthState =
 
 export type AuthErrorCode =
   | 'invalidCredentials'
+  /** Entrada com nome de utilizador: nome ou palavra-passe errados (o servidor não diz qual). */
+  | 'invalidUsernameCredentials'
   | 'userNotFound'
+  | 'usernameTaken'
   /** O email já foi confirmado, mas este dispositivo não tem o verificador PKCE. */
   | 'confirmedElsewhere'
   | 'emailNotConfirmed'
@@ -155,6 +158,29 @@ async function lookupRegistered(client: SupabaseClient, email: string): Promise<
   }
 }
 
+/** Nomes de utilizador: minúsculas, algarismos, ponto e sublinhado (igual ao servidor). */
+export const USERNAME_PATTERN = /^[a-z0-9._]{3,24}$/;
+
+export function normalizeUsername(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+/** Disponibilidade do nome antes do registo. `null`: o servidor ainda não tem a função. */
+async function lookupUsernameAvailable(
+  client: SupabaseClient,
+  username: string,
+): Promise<boolean | null> {
+  try {
+    const { data, error } = await client.rpc('username_available', {
+      target_username: username,
+    });
+    if (error || typeof data !== 'boolean') return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 /** O código PKCE só se troca no browser que pediu o email. Noutro dispositivo o email já está confirmado. */
 export function isMissingVerifier(error: AuthError | Error | null | undefined): boolean {
   if (!error) return false;
@@ -188,12 +214,15 @@ const fail = (error: AuthError | Error | null | undefined): AuthResult<never> =>
 export { isAppleSignInAvailable } from './apple-sign-in';
 
 export type AuthActions = {
-  signIn(email: string, password: string): Promise<AuthResult>;
+  /** `identifier`: email ou nome de utilizador. */
+  signIn(identifier: string, password: string): Promise<AuthResult>;
   /** `confirmEmail`: conta criada, à espera da confirmação por email. */
   signUp(
     email: string,
     password: string,
     username: string,
+    /** `YYYY-MM-DD`, já verificada pela app (idade mínima). */
+    birthDate: string,
   ): Promise<AuthResult<'signedIn' | 'confirmEmail'>>;
   signOut(): Promise<AuthResult>;
   requestPasswordReset(email: string): Promise<AuthResult>;
@@ -244,9 +273,27 @@ function createActions(client: SupabaseClient | null): AuthActions {
     }
   };
   return {
-    signIn: (email, password) =>
+    signIn: (identifier, password) =>
       guard(async () => {
-        const { error } = await auth.signInWithPassword({ email: email.trim(), password });
+        let email = identifier.trim();
+        if (!email.includes('@')) {
+          // O servidor só devolve o email da conta se a palavra-passe estiver certa.
+          const { data, error } = await client.rpc('login_email', {
+            target_username: normalizeUsername(email),
+            target_password: password,
+          });
+          if (error) {
+            const limited =
+              typeof error.message === 'string' && error.message.includes('rate_limited');
+            console.error(`[auth] ${limited ? 'username_rate_limited' : 'username_lookup_failed'}`);
+            return { ok: false, error: limited ? 'rateLimited' : 'unknown' };
+          }
+          if (typeof data !== 'string' || !data) {
+            return { ok: false, error: 'invalidUsernameCredentials' };
+          }
+          email = data;
+        }
+        const { error } = await auth.signInWithPassword({ email, password });
         if (!error) return ok(undefined);
         if (toAuthErrorCode(error) === 'invalidCredentials') {
           const registered = await lookupRegistered(client, email);
@@ -257,17 +304,30 @@ function createActions(client: SupabaseClient | null): AuthActions {
         }
         return fail(error);
       }),
-    signUp: (email, password, username) =>
+    signUp: (email, password, username, birthDate) =>
       guard(async () => {
+        const handle = normalizeUsername(username);
+        if ((await lookupUsernameAvailable(client, handle)) === false) {
+          return { ok: false, error: 'usernameTaken' };
+        }
         const { data, error } = await auth.signUp({
           email: email.trim(),
           password,
           options: {
             emailRedirectTo: authRedirectUrl('/auth/callback'),
             // Os emails seguem a língua da app (modelos em supabase/templates).
-            data: { locale: emailLocaleFor(i18n.language), username: username.trim() },
+            data: {
+              locale: emailLocaleFor(i18n.language),
+              username: handle,
+              birth_date: birthDate,
+            },
           },
         });
+        // Dois registos com o mesmo nome ao mesmo tempo: o índice único do servidor recusa o segundo.
+        if (error && serverMessage(error).includes('database error saving new user')) {
+          console.error('[auth] username_taken');
+          return { ok: false, error: 'usernameTaken' };
+        }
         if (error) return fail(error);
         return ok(data.session ? 'signedIn' : 'confirmEmail');
       }),

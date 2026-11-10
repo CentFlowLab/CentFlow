@@ -173,6 +173,7 @@ describe('schema', () => {
         'entries',
         'goal_contributions',
         'goals',
+        'login_attempts',
         'profiles',
         'subscriptions',
         'sync_metadata',
@@ -238,6 +239,82 @@ describe('schema', () => {
       ]);
     expect(known[0]?.registered).toBe(true);
     expect(missing[0]?.registered).toBe(false);
+  });
+});
+
+describe('usernames', () => {
+  let server: TestServer;
+  const MANU = '00000000-0000-4000-8000-0000000000d1';
+
+  beforeEach(async () => {
+    server = await createTestServer();
+    await server.pg.query(
+      `insert into auth.users (id, email, encrypted_password, raw_user_meta_data)
+       values ($1, $2, extensions.crypt('palavra-certa', extensions.gen_salt('bf')), $3::jsonb)`,
+      [
+        MANU,
+        'manu@example.test',
+        JSON.stringify({ username: ' Manu.Silva ', birth_date: '1995-04-12' }),
+      ],
+    );
+  });
+
+  afterEach(async () => {
+    await server.close();
+  });
+
+  async function anon<T>(sql: string, params: unknown[]): Promise<T | undefined> {
+    const rows = await server.anonymous().query<{ result: T }>(sql, params);
+    return rows[0]?.result;
+  }
+
+  it('stores a lowercase username and the birth date from sign-up', async () => {
+    expect(
+      await server.pg.query(
+        'select username, birth_date::text as birth from public.profiles where id = $1',
+        [MANU],
+      ),
+    ).toEqual([{ username: 'manu.silva', birth: '1995-04-12' }]);
+  });
+
+  it('says whether a username is free, ignoring case', async () => {
+    expect(await anon('select public.username_available($1) as result', ['MANU.silva'])).toBe(
+      false,
+    );
+    expect(await anon('select public.username_available($1) as result', ['outra'])).toBe(true);
+    expect(await anon('select public.username_available($1) as result', ['no'])).toBe(false);
+  });
+
+  it('refuses a second account with the same username', async () => {
+    await expect(
+      server.pg.query(
+        `insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3::jsonb)`,
+        [
+          '00000000-0000-4000-8000-0000000000d2',
+          'outra@example.test',
+          JSON.stringify({ username: 'manu.silva' }),
+        ],
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('returns the email only with the right password', async () => {
+    const sql = 'select public.login_email($1, $2) as result';
+    expect(await anon(sql, ['Manu.Silva', 'palavra-certa'])).toBe('manu@example.test');
+    expect(await anon(sql, ['manu.silva', 'errada'])).toBeNull();
+    expect(await anon(sql, ['ninguem', 'palavra-certa'])).toBeNull();
+  });
+
+  it('locks a username after ten failed attempts', async () => {
+    const sql = 'select public.login_email($1, $2) as result';
+    for (let i = 0; i < 10; i += 1) {
+      expect(await anon(sql, ['manu.silva', `errada-${i}`])).toBeNull();
+    }
+    await expect(anon(sql, ['manu.silva', 'palavra-certa'])).rejects.toThrow('rate_limited');
+  });
+
+  it('keeps the attempts table away from clients', async () => {
+    await expect(server.anonymous().query('select * from public.login_attempts')).rejects.toThrow();
   });
 });
 
