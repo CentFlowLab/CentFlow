@@ -57,7 +57,7 @@ describe('DataGate', () => {
       throw new DatabaseUnavailableError('notIsolated');
     });
     await renderWithProviders(<DataGate open={open}>{null}</DataGate>);
-    expect(await screen.findByText('Armazenamento local indisponível')).toBeOnTheScreen();
+    expect(await screen.findByText('Este browser não guarda os dados')).toBeOnTheScreen();
   });
 
   it('does not offer a retry when the schema is newer than the app', async () => {

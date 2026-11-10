@@ -7,7 +7,7 @@ import {
   type PropsWithChildren,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { DEFAULT_CATEGORIES } from '@/core/finance';
 import {
@@ -23,7 +23,14 @@ import {
 } from '@/data';
 import { i18n } from '@/i18n';
 import { Button, EmptyState } from '@/ui/components';
-import { useTheme } from '@/ui/theme';
+import { spacing, useTheme } from '@/ui/theme';
+
+import {
+  copyAppAddress,
+  isolationFailure,
+  readIsolationEnv,
+  reloadForIsolation,
+} from './web-isolation';
 
 type Opened = { space: LocalSpace; store: LocalStore };
 
@@ -77,6 +84,16 @@ export function DataGate({
   const { colors } = useTheme();
   const [state, setState] = useState<State>({ status: 'opening', current: null });
   const [attempt, setAttempt] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const failure =
+    state.status === 'error' && state.reason === 'notIsolated'
+      ? isolationFailure(readIsolationEnv())
+      : 'ignore';
+
+  useEffect(() => {
+    if (failure !== 'reload') return;
+    reloadForIsolation();
+  }, [failure]);
 
   useEffect(() => {
     let active = true;
@@ -108,9 +125,28 @@ export function DataGate({
   }, [open, close, space.kind === 'user' ? space.userId : null, attempt]);
 
   const retry = useCallback(() => {
+    if (Platform.OS === 'web' && state.status === 'error' && state.reason === 'notIsolated') {
+      reloadForIsolation();
+      return;
+    }
     setState({ status: 'opening', current: null });
     setAttempt((value) => value + 1);
+  }, [state]);
+
+  const copyAddress = useCallback(() => {
+    void copyAppAddress().then((ok) => {
+      if (!ok) return;
+      setCopied(true);
+    });
   }, []);
+
+  if (state.status === 'error' && failure === 'reload') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} accessibilityLabel={t('database.opening')} />
+      </View>
+    );
+  }
 
   if (state.status === 'error') {
     return (
@@ -120,7 +156,17 @@ export function DataGate({
           title={t(`database.${state.reason}.title`)}
           description={t(`database.${state.reason}.description`)}>
           {state.reason === 'schemaTooNew' ? null : (
-            <Button label={t('common.retry')} icon="refresh" onPress={retry} />
+            <View style={styles.actions}>
+              {state.reason === 'notIsolated' && Platform.OS === 'web' ? (
+                <Button
+                  label={copied ? t('database.notIsolated.copied') : t('database.notIsolated.copy')}
+                  icon="copy-outline"
+                  onPress={copyAddress}
+                  fullWidth
+                />
+              ) : null}
+              <Button label={t('common.retry')} icon="refresh" onPress={retry} fullWidth />
+            </View>
           )}
         </EmptyState>
       </View>
@@ -149,5 +195,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actions: {
+    alignSelf: 'stretch',
+    gap: spacing.sm,
   },
 });

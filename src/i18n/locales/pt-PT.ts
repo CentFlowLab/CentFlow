@@ -725,9 +725,11 @@ const ptPT = {
   database: {
     opening: 'A abrir os teus dados…',
     notIsolated: {
-      title: 'Armazenamento local indisponível',
+      title: 'Este browser não guarda os dados',
       description:
-        'O servidor não enviou os cabeçalhos de segurança necessários (COOP/COEP) para guardar dados neste navegador. Os teus dados não foram afetados.',
+        'No iPhone, abre a app Safari — não o browser do Outlook nem de outra app de email — e vai a miven.pt/app. No computador, usa o Chrome ou o Safari. Entra com a mesma conta.',
+      copy: 'Copiar endereço',
+      copied: 'Endereço copiado',
     },
     otherTab: {
       title: 'O Miven está aberto noutro separador',

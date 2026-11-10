@@ -733,9 +733,11 @@ const es: Translation = {
   database: {
     opening: 'Abriendo tus datos…',
     notIsolated: {
-      title: 'Almacenamiento local no disponible',
+      title: 'Este navegador no guarda los datos',
       description:
-        'El servidor no ha enviado las cabeceras de seguridad (COOP/COEP) necesarias para guardar datos en este navegador. Tus datos no se han visto afectados.',
+        'En el iPhone, abre la app Safari — no el navegador de Outlook ni de otra app de correo — y ve a miven.pt/app. En el ordenador, usa Chrome o Safari. Entra con la misma cuenta.',
+      copy: 'Copiar dirección',
+      copied: 'Dirección copiada',
     },
     otherTab: {
       title: 'Miven está abierto en otra pestaña',

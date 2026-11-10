@@ -729,9 +729,11 @@ const en: Translation = {
   database: {
     opening: 'Opening your data…',
     notIsolated: {
-      title: 'Local storage unavailable',
+      title: 'This browser cannot store your data',
       description:
-        'The server did not send the security headers (COOP/COEP) required to store data in this browser. Your data was not affected.',
+        'On iPhone, open the Safari app — not the browser inside Outlook or another email app — and go to miven.pt/app. On a computer, use Chrome or Safari. Sign in with the same account.',
+      copy: 'Copy address',
+      copied: 'Address copied',
     },
     otherTab: {
       title: 'Miven is open in another tab',
