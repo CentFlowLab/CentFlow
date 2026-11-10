@@ -22,12 +22,15 @@ const FORM_MAX_WIDTH = 560;
 export function FormScreen({ title, closeLabel, onClose, children, footer, headerRight }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  // No iOS o modal abre como folha (page sheet), já abaixo da barra de estado: somar a margem de
+  // segurança do topo deixava o "×" e o título a meio da folha.
+  const topInset = Platform.OS === 'ios' ? 0 : insets.top;
 
   return (
     <KeyboardAvoidingView
       style={[styles.root, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+      <View style={[styles.header, { paddingTop: topInset + spacing.md }]}>
         <View style={styles.headerInner}>
           <IconButton
             icon="close"
