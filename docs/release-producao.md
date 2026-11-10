@@ -197,7 +197,8 @@ Autorizado pelo responsável ("Confirmo produção"). Guard antes de cada comand
 1. Cópia: `~/Documents/Miven-backups/miven-prod-20261110-195644-{schema.sql,data.sql}`.
 2. Verificações antes: nada depende de `email_registered`; a produção **não tinha utilizadores nem
    dados financeiros** (na cópia das 15:29 havia 1 utilizador, o seu perfil e 15 categorias; foi
-   eliminado entre as 15:29 e as 19:56, fora destes comandos; a cópia das 15:29 guarda-o).
+   eliminado entre as 15:29 e as 19:56 pelo próprio responsável, a testar a eliminação de
+   conta; a cópia das 15:29 guarda-o).
 3. Dry-run: só `000200`, `000300`, `000400`, por esta ordem, alvo produção.
 4. `db push --skip-vault`: as três aplicadas; histórico local e remoto iguais até `20261111000400`.
 5. Verificação só de leitura: `email_registered` inexistente; `lookup_attempts` com RLS e sem
