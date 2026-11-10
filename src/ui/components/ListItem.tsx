@@ -20,6 +20,10 @@ type Props = {
   accessibilityHint?: string;
   /** Torna a linha uma opção de escolha única (usar dentro de um contentor "radiogroup"). */
   selected?: boolean;
+  /** `negative`: ação destrutiva (título a vermelho). */
+  tone?: 'default' | 'negative';
+  /** Linha que mostra ou esconde conteúdo por baixo (leitores de ecrã: "expandido"). */
+  expanded?: boolean;
 };
 
 export function ListItem({
@@ -34,6 +38,8 @@ export function ListItem({
   onPress,
   accessibilityHint,
   selected,
+  tone = 'default',
+  expanded,
 }: Props) {
   const { colors } = useTheme();
   const [hovered, setHovered] = useState(false);
@@ -47,7 +53,10 @@ export function ListItem({
           </View>
         ) : null)}
       <View style={styles.texts}>
-        <Text variant="bodyStrong" numberOfLines={1}>
+        <Text
+          variant="bodyStrong"
+          tone={tone === 'negative' ? 'negative' : 'primary'}
+          numberOfLines={1}>
           {title}
         </Text>
         {subtitle ? (
@@ -70,7 +79,16 @@ export function ListItem({
       accessibilityRole={selected === undefined ? 'button' : 'radio'}
       accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
       accessibilityHint={accessibilityHint}
-      accessibilityState={selected === undefined ? undefined : { checked: selected }}
+      // A web só lê o estado "expandido" a partir de `aria-expanded`.
+      aria-expanded={selected === undefined ? expanded : undefined}
+      aria-checked={selected}
+      accessibilityState={
+        selected !== undefined
+          ? { checked: selected }
+          : expanded !== undefined
+            ? { expanded }
+            : undefined
+      }
       onPress={onPress}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}

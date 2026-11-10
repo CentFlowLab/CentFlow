@@ -150,6 +150,15 @@ const ptPT = {
       description:
         'Se partilhares, o Miven envia ao PostHog (servidores na UE) só o nome dos ecrãs que abres, para perceber o que melhorar. Nunca valores, descrições, contas nem o teu email. Podes desligar a qualquer momento.',
     },
+    groups: {
+      account: 'Conta',
+      personalization: 'Personalização',
+      experience: 'Experiência',
+      help: 'Ajuda e informação',
+      danger: 'Zona de perigo',
+    },
+    quickEntryHint: 'Dois toques na traseira do iPhone',
+    deleteAccountHint: 'Apaga os teus dados no servidor e neste dispositivo.',
     title: 'Definições',
     appearance: 'Aparência',
     theme: {

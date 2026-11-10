@@ -32,6 +32,7 @@ export function Chip({
     <Pressable
       accessibilityRole="radio"
       accessibilityState={{ checked: selected, disabled: Boolean(disabled) }}
+      aria-checked={selected}
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       disabled={disabled}

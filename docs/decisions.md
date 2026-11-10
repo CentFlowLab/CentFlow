@@ -668,6 +668,21 @@ interval '1 hour' group by 1, 2 order by 3 desc;` (só com a ligação de admini
 concorrência real (vários pedidos ao mesmo tempo) não é reproduzível no PGlite dos testes; está
 garantida pelo bloqueio de transação.
 
+## ADR-049 — Definições organizadas por grupos
+
+**Contexto:** as Definições juntavam conta, sincronização, sair e eliminar conta num só cartão,
+com o idioma em quatro linhas fixas e o registo rápido sempre aberto.
+**Decisão:** cinco grupos: Conta (perfil com inicial, estado da sincronização que sincroniza ao
+tocar, conflitos e importação quando existem, alterar palavra-passe), Personalização (aparência
+escolhida no próprio cartão; idioma mostra o atual e abre as opções no lugar; estatísticas só com
+PostHog configurado), Experiência (registo rápido, só no iPhone, com os passos no próprio cartão),
+Ajuda e informação (contacto, privacidade, termos com ícone de "abrir fora"; versão) e Zona de
+perigo (terminar sessão e eliminar conta, separada e com o título a vermelho). Ícones neutros nas
+linhas; o verde fica para o que está escolhido. Coluna até 680 px, alinhada com o título. Não há
+tutorial: o onboarding cria uma conta e não deve repetir-se. `ListItem` ganhou `tone="negative"`
+e `expanded`; `ListItem`, `SegmentedControl` e `Chip` passam `aria-checked`/`aria-expanded`
+(na web, `accessibilityState` não chegava ao HTML).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

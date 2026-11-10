@@ -152,6 +152,15 @@ const es: Translation = {
       description:
         'Si compartes, Miven envía a PostHog (servidores en la UE) solo el nombre de las pantallas que abres, para saber qué mejorar. Nunca importes, descripciones, cuentas ni tu email. Puedes desactivarlo en cualquier momento.',
     },
+    groups: {
+      account: 'Cuenta',
+      personalization: 'Personalización',
+      experience: 'Experiencia',
+      help: 'Ayuda e información',
+      danger: 'Zona de peligro',
+    },
+    quickEntryHint: 'Dos toques en la parte trasera del iPhone',
+    deleteAccountHint: 'Borra tus datos en el servidor y en este dispositivo.',
     title: 'Ajustes',
     appearance: 'Apariencia',
     theme: {

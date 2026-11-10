@@ -32,6 +32,8 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             accessibilityRole="radio"
             accessibilityState={{ checked: selected }}
+            // A web só lê a opção escolhida a partir de `aria-checked`.
+            aria-checked={selected}
             accessibilityLabel={option.label}
             onPress={() => onChange(option.value)}
             style={[

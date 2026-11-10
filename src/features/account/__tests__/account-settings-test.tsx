@@ -1,0 +1,85 @@
+import { fireEvent, screen } from '@testing-library/react-native';
+import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
+import { Text } from 'react-native';
+
+import { renderWithProviders } from '@/test-utils/render';
+import { lightColors } from '@/ui/theme/colors';
+
+import { AccountSettings } from '../AccountSection';
+import { AuthProvider } from '../AuthProvider';
+
+const mockSyncNow = jest.fn(async () => ({ status: 'idle', pending: 0 }));
+
+// Objetos estáveis entre renders, como os dos providers reais.
+const mockSpace = { space: { kind: 'user', userId: 'user-1' }, store: {} };
+const mockSync = {
+  snapshot: { status: 'idle', pending: 0, conflicts: 0, lastSyncedAt: null },
+  syncNow: (...args: unknown[]) => mockSyncNow(...(args as [])),
+  offerImport: () => undefined,
+};
+
+jest.mock('../../app-shell/DataGate', () => ({ useActiveSpace: () => mockSpace }));
+jest.mock('../SyncProvider', () => ({ useSync: () => mockSync }));
+
+jest.mock('@/data', () => ({
+  ...jest.requireActual('@/data'),
+  getImportState: jest.fn(async () => ({ state: 'none' })),
+  cancelImport: jest.fn(),
+}));
+
+function signedInClient() {
+  const user = {
+    id: 'user-1',
+    email: 'ana@exemplo.pt',
+    user_metadata: { username: 'ana.silva' },
+  } as unknown as User;
+  const session = { user } as Session;
+  const auth = {
+    getSession: jest.fn(async () => ({ data: { session } })),
+    onAuthStateChange: jest.fn((listener: (event: string, value: Session | null) => void) => {
+      listener('INITIAL_SESSION', session);
+      return { data: { subscription: { unsubscribe: () => undefined } } };
+    }),
+    signOut: jest.fn(async () => ({ error: null })),
+    resetPasswordForEmail: jest.fn(async () => ({ error: null })),
+  };
+  return { client: { auth, rpc: jest.fn() } as unknown as SupabaseClient, auth };
+}
+
+describe('AccountSettings', () => {
+  it('puts the account first, the other groups in the middle and the danger zone last', async () => {
+    const { client } = signedInClient();
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <AccountSettings>
+          <Text>meio</Text>
+        </AccountSettings>
+      </AuthProvider>,
+    );
+    expect(await screen.findByText('@ana.silva')).toBeOnTheScreen();
+    expect(screen.getByText('ana@exemplo.pt')).toBeOnTheScreen();
+
+    const order = screen
+      .getAllByText(/^(Conta|meio|Zona de perigo)$/)
+      .map((node) => node.props.children as string);
+    expect(order).toEqual(['Conta', 'meio', 'Zona de perigo']);
+
+    // Eliminar conta: vermelho e com o que faz; abre a confirmação, não elimina logo.
+    expect(screen.getByText('Eliminar conta')).toHaveStyle({ color: lightColors.negative });
+    await fireEvent.press(screen.getByRole('button', { name: /^Eliminar conta/ }));
+    expect(await screen.findByText('Eliminar a conta definitivamente?')).toBeOnTheScreen();
+  });
+
+  it('syncs from the status row and signs out from the danger zone', async () => {
+    const { client, auth } = signedInClient();
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <AccountSettings>{null}</AccountSettings>
+      </AuthProvider>,
+    );
+    await fireEvent.press(await screen.findByRole('button', { name: /^Sincronizado/ }));
+    expect(mockSyncNow).toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Terminar sessão' }));
+    expect(auth.signOut).toHaveBeenCalled();
+  });
+});

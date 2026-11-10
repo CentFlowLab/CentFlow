@@ -151,6 +151,15 @@ const en: Translation = {
       description:
         'If you share, Miven sends PostHog (EU servers) only the names of the screens you open, to learn what to improve. Never amounts, descriptions, accounts or your email. You can turn this off at any time.',
     },
+    groups: {
+      account: 'Account',
+      personalization: 'Personalisation',
+      experience: 'Experience',
+      help: 'Help and information',
+      danger: 'Danger zone',
+    },
+    quickEntryHint: 'Double tap on the back of your iPhone',
+    deleteAccountHint: 'Deletes your data on the server and on this device.',
     title: 'Settings',
     appearance: 'Appearance',
     theme: {
