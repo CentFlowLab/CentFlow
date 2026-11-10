@@ -642,6 +642,50 @@ const ptPT = {
     set: 'Definir data',
     clear: 'Remover data',
   },
+  insights: {
+    title: 'Este mês',
+    endOfMonth: 'Previsão para o fim do mês',
+    notEnoughData:
+      'A previsão aparece depois de uma semana de movimentos registados e fica mais certa com dois meses.',
+    basisHistory: 'Ao teu ritmo habitual de {{amount}} por dia, mais as subscrições.',
+    basisMonth:
+      'Ao ritmo deste mês ({{amount}} por dia). Fica mais certa com dois meses de movimentos.',
+    available: 'Disponível agora (bancos, dinheiro e cartões)',
+    expectedIncome: 'Rendimento habitual ainda por receber',
+    upcomingSubscriptions_one: '{{count}} subscrição até ao fim do mês',
+    upcomingSubscriptions_other: '{{count}} subscrições até ao fim do mês',
+    projectedSpending_one: 'Gastos previstos (falta {{count}} dia)',
+    projectedSpending_other: 'Gastos previstos (faltam {{count}} dias)',
+    perDay: 'Podes gastar por dia',
+    perDayHint_one:
+      'Até ao fim do mês (hoje), depois das subscrições. Não conta com dinheiro que ainda não entrou.',
+    perDayHint_other:
+      'Até ao fim do mês ({{count}} dias), depois das subscrições. Não conta com dinheiro que ainda não entrou.',
+    endNegative: 'Ao ritmo atual, acabas o mês com {{amount}}.',
+    categoryAbove:
+      '{{category}}: já gastaste {{spent}}, {{percent}} acima do habitual para esta altura do mês.',
+    spendingBelow: 'Estás a gastar {{percent}} abaixo do habitual para esta altura do mês.',
+  },
+  obligations: {
+    title: 'Próximos prazos',
+    empty:
+      'Nada nos próximos {{days}} dias. Regista carros, documentos e subscrições para veres aqui inspeções, validades e cobranças.',
+    inspection: 'Inspeção: {{name}}',
+    insurance: 'Seguro: {{name}}',
+    document: 'Validade: {{name}}',
+    subscription: '{{name}}: {{amount}}',
+    efatura: 'Validar faturas no e-fatura',
+    irs: 'Entregar o IRS (prazo até 30 de junho)',
+    imi: {
+      may: 'Pagar o IMI (prestação única ou 1.ª)',
+      august: 'IMI: 2.ª prestação (se o IMI for superior a 500 €)',
+      november: 'IMI: última prestação (se o IMI for superior a 100 €)',
+    },
+    today: 'Hoje',
+    inDays_one: 'Amanhã · {{date}}',
+    inDays_other: 'Dentro de {{count}} dias · {{date}}',
+    overdue: 'Em atraso · {{date}}',
+  },
   deadline: {
     overdue: 'Expirado',
     soon: 'Em breve',

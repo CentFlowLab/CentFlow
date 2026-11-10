@@ -518,6 +518,23 @@ O endereço público do Supabase entra em `site/assets/auth-config.js` no workfl
 o comportamento antigo (abrir a app web) mantém-se.
 **Consequências:** quem cria conta na web continua a confirmar na web (`emailRedirectTo` da web).
 
+## ADR-040 — O Início trabalha os dados: previsão, gasto por dia, alertas e prazos
+
+**Contexto:** o Miven registava e somava, mas não interpretava; não se distinguia de outras apps.
+**Decisão:** dois blocos no Início, só no mês atual, calculados em `src/core/finance` e testados:
+"Este mês" (`forecast.ts`): saldo previsto no fim do mês (disponível nas contas de banco, dinheiro e
+cartão + rendimento habitual por receber − subscrições até ao fim do mês − gasto habitual por dia
+sem subscrições), quanto se pode gastar por dia (sem contar com dinheiro futuro) e até três
+alertas (categoria acima do habitual para esta altura do mês, mês abaixo do habitual, fim do mês
+negativo). O "habitual" são os 3 meses anteriores, com pelo menos 2 com movimentos; sem isso usa
+o ritmo do mês a partir do dia 7 e, antes, diz que ainda não há previsão (nunca números
+inventados). "Próximos prazos" (`obligations.ts`): inspeções e seguros dos carros, validades dos
+documentos, próximas cobranças das subscrições (calculadas a partir de `nextOn` e do período) e
+as datas fiscais gerais em Portugal: e-fatura (25 de fevereiro), IRS (até 30 de junho, durante o
+prazo) e IMI (maio, agosto e novembro, só com um imóvel no património).
+**Consequências:** sem alterações à base de dados. Falta o IUC (precisa do mês da matrícula no
+veículo) e confirmar as datas fiscais a cada ano.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

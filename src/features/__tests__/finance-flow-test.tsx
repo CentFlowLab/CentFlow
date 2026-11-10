@@ -36,6 +36,11 @@ async function addEntry({
   await fireEvent.press(screen.getByRole('button', { name: 'Guardar' }));
 }
 
+/** O mesmo valor pode aparecer no saldo total e no disponível de "Este mês". */
+async function expectAmount(value: string) {
+  expect((await screen.findAllByText(eur(value))).length).toBeGreaterThan(0);
+}
+
 describe('local finance flow (real SQLite)', () => {
   it('creates an account, records entries and shows real totals on the dashboard', async () => {
     await renderRouter('./src/app');
@@ -46,35 +51,38 @@ describe('local finance flow (real SQLite)', () => {
 
     expect(await screen.findByText('Saldo total')).toBeOnTheScreen();
     expect(screen).toHavePathname('/');
-    expect(await screen.findByText(eur('1000,00'))).toBeOnTheScreen();
+    await expectAmount('1000,00');
 
     await addEntry({ amount: '12,50', category: 'Supermercado', description: 'Mercearia' });
-    expect(await screen.findByText(eur('987,50'))).toBeOnTheScreen();
+    await expectAmount('987,50');
     expect(await screen.findByText('Mercearia')).toBeOnTheScreen();
 
     await addEntry({ type: 'Rendimento', amount: '2000', category: 'Salário' });
-    expect(await screen.findByText(eur('2987,50'))).toBeOnTheScreen();
+    await expectAmount('2987,50');
     // Poupança líquida = 2000 − 12,50; taxa = 1987,5 / 2000 = 99,4 %.
     expect(await screen.findByText(eur('1987,50'))).toBeOnTheScreen();
     expect(screen.getByText(/^99,4\s?%$/)).toBeOnTheScreen();
+    // "Este mês" (o conteúdo da previsão depende do dia: ver core/finance/forecast-test).
+    expect(screen.getByText('Previsão para o fim do mês')).toBeOnTheScreen();
+    expect(screen.getByText('Podes gastar por dia')).toBeOnTheScreen();
   });
 
   it('edits and deletes an entry, updating the balance each time', async () => {
     await renderRouter('./src/app', { initialUrl: '/account/new' });
     await createAccount('Carteira', '100');
     await addEntry({ amount: '10', category: 'Restaurantes', description: 'Almoço' });
-    expect(await screen.findByText(eur('90,00'))).toBeOnTheScreen();
+    await expectAmount('90,00');
 
     await fireEvent.press(await screen.findByRole('button', { name: /^Almoço/ }));
     await waitFor(() => expect(screen.getByLabelText('Valor').props.value).toBe('10,00'));
     await fireEvent.changeText(screen.getByLabelText('Valor'), '25');
     await fireEvent.press(screen.getByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText(eur('75,00'))).toBeOnTheScreen();
+    await expectAmount('75,00');
 
     await fireEvent.press(await screen.findByRole('button', { name: /^Almoço/ }));
     await fireEvent.press(await screen.findByRole('button', { name: 'Eliminar' }));
     await fireEvent.press(await screen.findByRole('button', { name: 'Eliminar movimento' }));
-    expect(await screen.findByText(eur('100,00'))).toBeOnTheScreen();
+    await expectAmount('100,00');
     expect(screen.queryByText('Almoço')).toBeNull();
   });
 

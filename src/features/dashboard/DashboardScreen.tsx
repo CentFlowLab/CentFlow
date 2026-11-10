@@ -40,6 +40,8 @@ import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
 import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
+import { MonthInsights } from './MonthInsights';
+import { UpcomingObligations } from './UpcomingObligations';
 
 const TREND_MONTHS = 6;
 const LATEST_COUNT = 5;
@@ -387,6 +389,8 @@ export function DashboardScreen() {
         ) : null}
       </HeroCard>
 
+      {month === currentMonth ? <MonthInsights today={today} currency={currency} /> : null}
+
       <View style={styles.actions}>
         {quickActions.map((action) => (
           <Pressable
@@ -428,6 +432,8 @@ export function DashboardScreen() {
       </View>
 
       <BudgetSummary reference={referenceForMonth(month, today)} />
+
+      {month === currentMonth ? <UpcomingObligations today={today} /> : null}
 
       {breakpoint === 'expanded' ? (
         <View style={styles.columns}>

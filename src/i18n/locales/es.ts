@@ -648,6 +648,49 @@ const es: Translation = {
     set: 'Definir fecha',
     clear: 'Quitar fecha',
   },
+  insights: {
+    title: 'Este mes',
+    endOfMonth: 'Previsión para final de mes',
+    notEnoughData:
+      'La previsión aparece tras una semana de movimientos registrados y mejora con dos meses.',
+    basisHistory: 'A tu ritmo habitual de {{amount}} al día, más las suscripciones.',
+    basisMonth: 'Al ritmo de este mes ({{amount}} al día). Mejora con dos meses de movimientos.',
+    available: 'Disponible ahora (bancos, efectivo y tarjetas)',
+    expectedIncome: 'Ingresos habituales por recibir',
+    upcomingSubscriptions_one: '{{count}} suscripción hasta final de mes',
+    upcomingSubscriptions_other: '{{count}} suscripciones hasta final de mes',
+    projectedSpending_one: 'Gastos previstos (queda {{count}} día)',
+    projectedSpending_other: 'Gastos previstos (quedan {{count}} días)',
+    perDay: 'Puedes gastar al día',
+    perDayHint_one:
+      'Hasta final de mes (hoy), después de las suscripciones. No cuenta el dinero que aún no ha entrado.',
+    perDayHint_other:
+      'Hasta final de mes ({{count}} días), después de las suscripciones. No cuenta el dinero que aún no ha entrado.',
+    endNegative: 'A este ritmo, terminas el mes con {{amount}}.',
+    categoryAbove:
+      '{{category}}: llevas {{spent}}, un {{percent}} más de lo habitual a estas alturas del mes.',
+    spendingBelow: 'Estás gastando un {{percent}} menos de lo habitual a estas alturas del mes.',
+  },
+  obligations: {
+    title: 'Próximos plazos',
+    empty:
+      'Nada en los próximos {{days}} días. Añade vehículos, documentos y suscripciones para ver aquí inspecciones, caducidades y cobros.',
+    inspection: 'Inspección: {{name}}',
+    insurance: 'Seguro: {{name}}',
+    document: 'Caduca: {{name}}',
+    subscription: '{{name}}: {{amount}}',
+    efatura: 'Validar facturas en e-fatura',
+    irs: 'Presentar el IRS (plazo hasta el 30 de junio)',
+    imi: {
+      may: 'Pagar el IMI (pago único o 1.º plazo)',
+      august: 'IMI: 2.º plazo (si el IMI supera 500 €)',
+      november: 'IMI: último plazo (si el IMI supera 100 €)',
+    },
+    today: 'Hoy',
+    inDays_one: 'Mañana · {{date}}',
+    inDays_other: 'Dentro de {{count}} días · {{date}}',
+    overdue: 'Atrasado · {{date}}',
+  },
   deadline: {
     overdue: 'Vencido',
     soon: 'Pronto',

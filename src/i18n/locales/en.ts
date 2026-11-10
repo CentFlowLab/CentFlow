@@ -645,6 +645,50 @@ const en: Translation = {
     set: 'Set date',
     clear: 'Clear date',
   },
+  insights: {
+    title: 'This month',
+    endOfMonth: 'End-of-month forecast',
+    notEnoughData:
+      'The forecast appears after a week of recorded entries and gets better with two months.',
+    basisHistory: 'At your usual pace of {{amount}} a day, plus subscriptions.',
+    basisMonth:
+      "At this month's pace ({{amount}} a day). It gets better with two months of entries.",
+    available: 'Available now (banks, cash and cards)',
+    expectedIncome: 'Usual income still to come',
+    upcomingSubscriptions_one: '{{count}} subscription until month end',
+    upcomingSubscriptions_other: '{{count}} subscriptions until month end',
+    projectedSpending_one: 'Expected spending ({{count}} day left)',
+    projectedSpending_other: 'Expected spending ({{count}} days left)',
+    perDay: 'You can spend per day',
+    perDayHint_one:
+      "Until month end (today), after subscriptions. It doesn't count money that hasn't come in yet.",
+    perDayHint_other:
+      "Until month end ({{count}} days), after subscriptions. It doesn't count money that hasn't come in yet.",
+    endNegative: 'At this pace, you end the month with {{amount}}.',
+    categoryAbove:
+      '{{category}}: {{spent}} so far, {{percent}} above usual for this point in the month.',
+    spendingBelow: "You're spending {{percent}} below usual for this point in the month.",
+  },
+  obligations: {
+    title: 'Upcoming deadlines',
+    empty:
+      'Nothing in the next {{days}} days. Add vehicles, documents and subscriptions to see inspections, expiry dates and charges here.',
+    inspection: 'Inspection: {{name}}',
+    insurance: 'Insurance: {{name}}',
+    document: 'Expires: {{name}}',
+    subscription: '{{name}}: {{amount}}',
+    efatura: 'Validate invoices on e-fatura',
+    irs: 'File your IRS (deadline 30 June)',
+    imi: {
+      may: 'Pay IMI (single or 1st instalment)',
+      august: 'IMI: 2nd instalment (if IMI is over €500)',
+      november: 'IMI: last instalment (if IMI is over €100)',
+    },
+    today: 'Today',
+    inDays_one: 'Tomorrow · {{date}}',
+    inDays_other: 'In {{count}} days · {{date}}',
+    overdue: 'Overdue · {{date}}',
+  },
   deadline: {
     overdue: 'Expired',
     soon: 'Soon',
