@@ -133,18 +133,21 @@ const COPY = {
 const FOOTER = {
   pt: {
     ignore: 'Se não foste tu, ignora este email. A tua conta não muda.',
-    link: 'Se o botão não funcionar, copia este endereço para o browser:',
-    sent: 'Enviado pelo Miven · O teu dinheiro, sob controlo.',
+    link: 'Se o botão não funcionar,',
+    linkLabel: 'toca neste link',
+    sent: 'Enviado pelo Miven · As tuas finanças. Finalmente claras.',
   },
   en: {
     ignore: "If this wasn't you, ignore this email. Your account doesn't change.",
-    link: "If the button doesn't work, copy this address into your browser:",
-    sent: 'Sent by Miven · Your money, under control.',
+    link: "If the button doesn't work,",
+    linkLabel: 'tap this link',
+    sent: 'Sent by Miven · Your finances. Finally clear.',
   },
   es: {
     ignore: 'Si no fuiste tú, ignora este email. Tu cuenta no cambia.',
-    link: 'Si el botón no funciona, copia esta dirección en el navegador:',
-    sent: 'Enviado por Miven · Tu dinero, bajo control.',
+    link: 'Si el botón no funciona,',
+    linkLabel: 'toca este enlace',
+    sent: 'Enviado por Miven · Tus finanzas. Por fin claras.',
   },
 };
 
@@ -172,7 +175,7 @@ function block(copy, footer, href) {
     ? `<tr><td align="center" style="padding:8px 32px 8px">
 <a href="${href}" style="display:inline-block;background:#10B981;color:#101B2D;font-weight:700;font-size:16px;text-decoration:none;padding:14px 28px;border-radius:999px">${copy.action}</a>
 </td></tr>
-<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">${footer.link}<br><a href="${href}" style="color:#047857;word-break:break-all">${href}</a></td></tr>`
+<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">${footer.link} <a href="${href}" style="color:#047857;font-weight:600">${footer.linkLabel}</a>.</td></tr>`
     : `<tr><td align="center" style="padding:8px 32px">
 <div style="display:inline-block;font-size:32px;letter-spacing:8px;font-weight:700;color:#101B2D;background:#EEF2F6;border-radius:12px;padding:12px 20px">{{ .Token }}</div>
 </td></tr>`;

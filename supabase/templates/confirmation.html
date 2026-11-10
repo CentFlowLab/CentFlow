@@ -13,24 +13,24 @@
 <tr><td align="center" style="padding:8px 32px 8px">
 <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="display:inline-block;background:#10B981;color:#101B2D;font-weight:700;font-size:16px;text-decoration:none;padding:14px 28px;border-radius:999px">Confirm email</a>
 </td></tr>
-<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">If the button doesn't work, copy this address into your browser:<br><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="color:#047857;word-break:break-all">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email</a></td></tr>
+<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">If the button doesn't work, <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="color:#047857;font-weight:600">tap this link</a>.</td></tr>
 <tr><td style="padding:24px 32px 32px;font-size:13px;line-height:1.5;color:#475569">If this wasn't you, ignore this email. Your account doesn't change.</td></tr>{{ else if eq $l "es" }}<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#F1F5F9">Falta un paso para activar tu cuenta de Miven. Confirma que este email es tuyo.</td></tr>
 <tr><td style="padding:8px 32px 0"><h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#101B2D">Confirma tu email</h1>
 <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#334155">Falta un paso para activar tu cuenta de Miven. Confirma que este email es tuyo.</p></td></tr>
 <tr><td align="center" style="padding:8px 32px 8px">
 <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="display:inline-block;background:#10B981;color:#101B2D;font-weight:700;font-size:16px;text-decoration:none;padding:14px 28px;border-radius:999px">Confirmar email</a>
 </td></tr>
-<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">Si el botón no funciona, copia esta dirección en el navegador:<br><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="color:#047857;word-break:break-all">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email</a></td></tr>
+<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">Si el botón no funciona, <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="color:#047857;font-weight:600">toca este enlace</a>.</td></tr>
 <tr><td style="padding:24px 32px 32px;font-size:13px;line-height:1.5;color:#475569">Si no fuiste tú, ignora este email. Tu cuenta no cambia.</td></tr>{{ else }}<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#F1F5F9">Falta um passo para ativares a tua conta Miven. Confirma que este email é teu.</td></tr>
 <tr><td style="padding:8px 32px 0"><h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#101B2D">Confirma o teu email</h1>
 <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#334155">Falta um passo para ativares a tua conta Miven. Confirma que este email é teu.</p></td></tr>
 <tr><td align="center" style="padding:8px 32px 8px">
 <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="display:inline-block;background:#10B981;color:#101B2D;font-weight:700;font-size:16px;text-decoration:none;padding:14px 28px;border-radius:999px">Confirmar email</a>
 </td></tr>
-<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">Se o botão não funcionar, copia este endereço para o browser:<br><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="color:#047857;word-break:break-all">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email</a></td></tr>
+<tr><td style="padding:16px 32px 0;font-size:13px;line-height:1.5;color:#475569">Se o botão não funcionar, <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="color:#047857;font-weight:600">toca neste link</a>.</td></tr>
 <tr><td style="padding:24px 32px 32px;font-size:13px;line-height:1.5;color:#475569">Se não foste tu, ignora este email. A tua conta não muda.</td></tr>{{ end }}
 </table>
-<p style="margin:16px 0 0;font-size:12px;color:#64748B">{{ if eq $l "en" }}Sent by Miven · Your money, under control.{{ else if eq $l "es" }}Enviado por Miven · Tu dinero, bajo control.{{ else }}Enviado pelo Miven · O teu dinheiro, sob controlo.{{ end }}<br><a href="https://miven.pt" style="color:#64748B">miven.pt</a></p>
+<p style="margin:16px 0 0;font-size:12px;color:#64748B">{{ if eq $l "en" }}Sent by Miven · Your finances. Finally clear.{{ else if eq $l "es" }}Enviado por Miven · Tus finanzas. Por fin claras.{{ else }}Enviado pelo Miven · As tuas finanças. Finalmente claras.{{ end }}<br><a href="https://miven.pt" style="color:#64748B">miven.pt</a></p>
 </td></tr>
 </table>
 </body>
