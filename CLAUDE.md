@@ -16,8 +16,9 @@ abre base de dados. Os links dos emails vão para `https://miven.pt/auth/...` (s
 `site/`, GitHub Pages), que reencaminha para `miven://`. Emails da autenticação com a marca e na
 língua da app (ADR-035), enviados pelo Resend (`noreply@miven.pt`). Logótipo B (ADR-036).
 A cópia de segurança fica fora do git e de pastas sincronizadas: contém o esquema `auth`.
-Antes de abrir a app ao público faltam a política de privacidade e os termos (D-4), que têm de
-mencionar o fornecedor de IA e o PostHog.
+Política de privacidade e termos da fase de testes em `site/privacidade` e `site/termos`
+(ligados no site, no registo e em Definições). Falta o nome do responsável pelo tratamento (D-4);
+qualquer novo fornecedor ou dado pessoal tem de entrar nessas páginas antes de ser usado.
 Integrações (ADR-033): Sentry com DSN no EAS; PostHog só com chave e consentimento; Superwall
 preparado atrás de `EXPO_PUBLIC_PAYWALL_ENABLED`, sem paywall.
 Plataformas (ADR-037): iOS pela fonte SideStore (workflow "iOS IPA"), Android por APK assinado
