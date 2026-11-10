@@ -7,11 +7,9 @@ describe('navigation config', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it('marks only unbuilt areas as planned', () => {
-    expect(NAV_ITEMS.filter((item) => isPlannedModule(item.key)).map((item) => item.key)).toEqual([
-      'vehicles',
-      'documents',
-    ]);
+  it('marks no area as planned once every area has its own screen', () => {
+    // Carros e documentos têm ecrãs funcionais desde a Fase 4.
+    expect(NAV_ITEMS.filter((item) => isPlannedModule(item.key))).toEqual([]);
   });
 
   it('keeps the bottom bar small enough for phones', () => {

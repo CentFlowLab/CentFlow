@@ -47,6 +47,8 @@ const IMPLEMENTED: readonly NavKey[] = [
   'wealth',
   'reports',
   'categories',
+  'vehicles',
+  'documents',
   'settings',
 ];
 
@@ -61,6 +63,8 @@ export type PlannedModule = Exclude<
   | 'goals'
   | 'wealth'
   | 'reports'
+  | 'vehicles'
+  | 'documents'
 >;
 
 export function isPlannedModule(key: NavKey): key is PlannedModule {

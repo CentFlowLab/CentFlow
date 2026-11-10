@@ -6,9 +6,9 @@ Miven é uma aplicação de gestão financeira pessoal para iOS, Android e Web. 
 movimentos, orçamentos, subscrições, objetivos, património, veículos e documentos, com o
 objetivo de automatizar ao máximo o registo de informação.
 
-> **Estado (2026-11-09):** Fases 0 a 4 concluídas e Fase 5 em curso, em fase de testes.
-> Produção e staging do Supabase têm o mesmo histórico de migrations (`20261108000100` a
-> `20261108000900`). O Miven só se usa com conta. Plataformas:
+> **Estado (2026-11-10, versão 0.1.8):** Fases 0 a 4 concluídas e Fase 5 em curso, em fase de
+> testes. Produção e staging do Supabase têm o mesmo histórico de migrations (`20261108000100` a
+> `20261111000100`). O Miven só se usa com conta. Plataformas:
 >
 > - **Web:** <https://miven.pt/app/> (site de apresentação em <https://miven.pt>).
 > - **iPhone:** fonte SideStore
@@ -61,7 +61,9 @@ objetivo de automatizar ao máximo o registo de informação.
 | 2    | Supabase: autenticação, base de dados com RLS, sincronização, migração de dados     | ✅ Concluída |
 | 3    | Orçamentos, subscrições, objetivos de poupança, relatórios                          | ✅ Concluída |
 | 4    | Património, veículos e documentos                                                   | ✅ Concluída |
-| 5    | IA (registo por texto), extratos CSV; falta OCR, Open Banking e alertas             | Em curso     |
+| 5    | Extratos CSV, previsão do mês, alertas de gastos, subidas de preço, prazos, registo | Em curso     |
+|      | rápido no iPhone. IA (registo por texto) pronta mas sem `ANTHROPIC_API_KEY` na      |              |
+|      | produção. Falta OCR e Open Banking (precisam de fornecedor, D-5 e D-6)              |              |
 
 ## Requisitos
 
