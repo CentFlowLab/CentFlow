@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,11 +25,27 @@ export function FormScreen({ title, closeLabel, onClose, children, footer, heade
   // No iOS o modal abre como folha (page sheet), já abaixo da barra de estado: somar a margem de
   // segurança do topo deixava o "×" e o título a meio da folha.
   const topInset = Platform.OS === 'ios' ? 0 : insets.top;
+  // O KeyboardAvoidingView mede-se dentro da folha, mas o teclado vem em coordenadas do ecrã:
+  // sem descontar onde a folha começa, o teclado tapava o botão do fundo.
+  const top = useRef<ComponentRef<typeof View>>(null);
+  const [sheetTop, setSheetTop] = useState(0);
 
   return (
     <KeyboardAvoidingView
       style={[styles.root, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={sheetTop}>
+      <View
+        ref={top}
+        collapsable={false}
+        style={styles.probe}
+        onLayout={() => {
+          if (Platform.OS !== 'ios') return;
+          top.current?.measureInWindow((_x: number, y: number) => {
+            if (Number.isFinite(y) && y >= 0) setSheetTop(Math.round(y));
+          });
+        }}
+      />
       <View style={[styles.header, { paddingTop: topInset + spacing.md }]}>
         <View style={styles.headerInner}>
           <IconButton
@@ -70,6 +86,9 @@ export function FormScreen({ title, closeLabel, onClose, children, footer, heade
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  probe: {
+    height: 0,
   },
   header: {
     paddingHorizontal: spacing.lg,

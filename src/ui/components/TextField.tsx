@@ -1,5 +1,6 @@
 import { useId, useState, type ReactNode, type Ref } from 'react';
 import {
+  Platform,
   StyleSheet,
   TextInput,
   View,
@@ -21,6 +22,18 @@ type Props = Omit<TextInputProps, 'style'> & {
   inputStyle?: StyleProp<TextStyle>;
   ref?: Ref<TextInputInstance>;
 };
+
+/**
+ * No iOS, `lineHeight` num `TextInput` empurra o texto para baixo da linha central do campo
+ * (o cursor e o texto ficam descentrados). Lá, a altura da linha fica a cargo do sistema.
+ */
+function withoutIosLineHeight(style: StyleProp<TextStyle>): TextStyle {
+  const flat: TextStyle = StyleSheet.flatten(style) ?? {};
+  if (Platform.OS !== 'ios') return flat;
+  const rest = { ...flat };
+  delete rest.lineHeight;
+  return rest;
+}
 
 export function TextField({
   label,
@@ -55,7 +68,7 @@ export function TextField({
         setFocused(false);
         onBlur?.(event);
       }}
-      style={[
+      style={withoutIosLineHeight([
         typography.body,
         styles.input,
         trailing ? styles.inputWithTrailing : null,
@@ -68,7 +81,7 @@ export function TextField({
               borderWidth: focused || hasError ? 1.5 : 1,
             },
         inputStyle,
-      ]}
+      ])}
       {...rest}
     />
   );
