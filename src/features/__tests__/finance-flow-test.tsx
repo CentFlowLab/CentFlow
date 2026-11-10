@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
@@ -42,6 +43,9 @@ async function expectAmount(value: string) {
 }
 
 describe('local finance flow (real SQLite)', () => {
+  // O onboarding tem testes próprios (app-navigation-test).
+  beforeEach(() => AsyncStorage.setItem('centflow:onboarding:seen', '1'));
+
   it('creates an account, records entries and shows real totals on the dashboard', async () => {
     await renderRouter('./src/app');
 

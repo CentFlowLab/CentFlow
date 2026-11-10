@@ -585,6 +585,20 @@ concreta. As referências são gerais e a app diz que não são aconselhamento f
 **Consequências:** a evolução do património fica de fora até existir histórico (constatação 9 de
 `docs/audit-2026-11.md`).
 
+## ADR-044 — Onboarding curto na primeira utilização
+
+**Contexto:** depois de criar conta, a pessoa caía num Início vazio com um cartão "Começa pela tua
+primeira conta", sem perceber o que o Miven faz por ela.
+**Decisão:** `/onboarding` (ecrã inteiro, dentro das rotas protegidas) com três passos e menos de
+um minuto: o que o Miven faz (previsão e gasto por dia, prazos e subidas de preço, privacidade),
+a conta principal (nome sugerido e saldo de hoje, em euros; cria-a logo) e o primeiro passo
+(registar a primeira despesa, adicionar uma despesa fixa ou ir para o Início; no iPhone, dica do
+registo rápido). Abre uma vez quando o Início não tem contas; concluído ou saltado, fica marcado em
+`appStorage` (`onboarding:seen`, preferência não sensível) e não volta. Quem salta continua a ter o
+cartão do Início para criar a primeira conta.
+**Consequências:** quem já tem contas nunca o vê. A marca é por dispositivo: noutro dispositivo
+sem contas sincronizadas ainda, pode aparecer uma vez.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

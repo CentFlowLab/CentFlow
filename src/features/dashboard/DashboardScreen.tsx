@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { Fragment, useCallback, useState } from 'react';
+import { router, type Href } from 'expo-router';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
@@ -40,6 +40,7 @@ import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
 import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
+import { hasSeenOnboarding } from '../onboarding/onboarding-state';
 import { FinancialHealthCard } from './FinancialHealthCard';
 import { MonthInsights } from './MonthInsights';
 import { UpcomingObligations } from './UpcomingObligations';
@@ -76,6 +77,19 @@ export function DashboardScreen() {
     useCallback((repositories: Repositories) => loadDashboard(repositories, month), [month]),
   );
   const now = new Date();
+  const noAccounts = query.data?.accounts.length === 0;
+
+  // Primeira utilização: sem contas, o onboarding abre uma vez (concluído ou saltado, não volta).
+  useEffect(() => {
+    if (!noAccounts) return;
+    let active = true;
+    void hasSeenOnboarding().then((seen) => {
+      if (active && !seen) router.push('/onboarding' as Href);
+    });
+    return () => {
+      active = false;
+    };
+  }, [noAccounts]);
 
   const header = {
     title: t(`dashboard.greeting.${getDayPart(now)}`),

@@ -23,6 +23,10 @@ function RootStack() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={granted}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="onboarding"
+          options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
+        />
         <Stack.Screen name="new-transaction" options={MODAL} />
         <Stack.Screen name="import-statement" options={MODAL} />
         <Stack.Screen name="entry/[id]" options={MODAL} />
