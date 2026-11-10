@@ -16,58 +16,76 @@
   <body class="home">
     <header class="top">
       <a class="brand" href="/"><img src="/assets/logo.png" alt="" />Miven</a>
-      <a class="button small" href="/app/">Abrir a app</a>
+      <a class="button small ghost" href="/app/">Entrar</a>
     </header>
 
     <main class="wide">
       <section class="hero">
-        <img class="hero-logo" src="/assets/logo.png" alt="" width="120" height="120" />
+        <p class="eyebrow">A mesma conta no computador e no iPhone</p>
         <h1>O teu dinheiro, sob controlo.</h1>
         <p class="lead">
-          Contas, movimentos, orçamentos, subscrições e objetivos num só sítio, sincronizados entre
-          o telemóvel e o computador.
+          Contas, movimentos, orçamentos e objetivos num só sítio. O que registas num dispositivo
+          aparece no outro.
         </p>
         <div class="cta">
           <a class="button" href="/app/">Usar no browser</a>
           <button type="button" class="button ghost" data-open="install">Instalar no iPhone</button>
         </div>
-        <p class="note">O Miven está em fase de testes.</p>
+        <p class="note">Em fase de testes.</p>
       </section>
 
-      <section class="features" aria-label="Funcionalidades">
-        <article>
-          <h2>Contas e movimentos</h2>
-          <p>Saldos por conta, despesas, rendimentos e transferências, agrupados por dia.</p>
-        </article>
-        <article>
-          <h2>Orçamentos e subscrições</h2>
-          <p>Limites por categoria e o custo real das despesas que se repetem.</p>
-        </article>
-        <article>
-          <h2>Objetivos e património</h2>
-          <p>Poupança por objetivo, bens e dívidas, e o teu património líquido.</p>
-        </article>
-        <article>
-          <h2>Extratos do banco</h2>
-          <p>Importa um CSV, revê os movimentos e os possíveis duplicados antes de guardar.</p>
-        </article>
-        <article>
-          <h2>Relatórios</h2>
-          <p>Evolução, categorias e comparação com o período anterior.</p>
-        </article>
-        <article>
-          <h2>Sincronização segura</h2>
-          <p>
-            Os dados ficam na tua conta e funcionam sem ligação; sincronizam quando voltas a ter
-            rede.
-          </p>
-        </article>
+      <section class="steps" aria-labelledby="steps-title">
+        <h2 id="steps-title">Como começar</h2>
+        <ol>
+          <li>
+            <h3>No browser</h3>
+            <p>Entras com a tua conta e consultas ou registas movimentos no computador.</p>
+          </li>
+          <li>
+            <h3>No iPhone</h3>
+            <p>Instalas pelo SideStore. O botão acima abre os quatro passos.</p>
+          </li>
+          <li>
+            <h3>A conta acompanha-te</h3>
+            <p>Sincroniza quando há rede. Sem ligação, a app continua a funcionar.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="features" aria-labelledby="features-title">
+        <h2 id="features-title">O que inclui</h2>
+        <div class="feature-grid">
+          <article>
+            <h3>Contas e movimentos</h3>
+            <p>Saldos por conta, despesas, rendimentos e transferências, agrupados por dia.</p>
+          </article>
+          <article>
+            <h3>Orçamentos e subscrições</h3>
+            <p>Limites por categoria e o custo real das despesas que se repetem.</p>
+          </article>
+          <article>
+            <h3>Objetivos e património</h3>
+            <p>Poupança por objetivo, bens e dívidas, e o teu património líquido.</p>
+          </article>
+          <article>
+            <h3>Extratos do banco</h3>
+            <p>Importa um CSV, revê os movimentos e os possíveis duplicados antes de guardar.</p>
+          </article>
+          <article>
+            <h3>Relatórios</h3>
+            <p>Evolução, categorias e comparação com o período anterior.</p>
+          </article>
+          <article>
+            <h3>Sincronização</h3>
+            <p>Os dados ficam na tua conta. Nada é partilhado sem pedires.</p>
+          </article>
+        </div>
       </section>
     </main>
 
     <footer class="bottom">
       <span>© Miven</span>
-      <a href="/app/">App web</a>
+      <span>Fase de testes</span>
     </footer>
 
     <dialog id="install" class="install-dialog" aria-labelledby="install-title">
