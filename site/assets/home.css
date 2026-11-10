@@ -3,6 +3,14 @@ body.home {
   padding: 0;
 }
 
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+
 .top,
 .bottom {
   max-width: 1040px;
@@ -86,21 +94,31 @@ body.home {
 
 .features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 1fr;
   gap: 16px;
-  margin: 24px 0 40px;
+  margin: 8px 0 24px;
 }
 
-.features article,
-.install {
+@media (min-width: 640px) {
+  .features {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .features {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.features article {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 20px;
 }
 
-.features h2,
-.install h2 {
+.features h2 {
   font-size: 18px;
   margin: 0 0 6px;
 }
@@ -109,10 +127,78 @@ body.home {
   margin: 0;
 }
 
-.install ol {
+.install-dialog {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  margin: auto;
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--text);
+}
+
+.install-dialog::backdrop {
+  background: rgba(1, 2, 6, 0.72);
+}
+
+.install-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.install-dialog h2 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.install-lead {
+  margin: 8px 0 0;
+}
+
+.install-dialog ol {
   color: var(--muted);
   padding-left: 20px;
   margin: 12px 0;
+}
+
+.icon-close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-close:focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 2px;
+}
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-row .source {
+  flex: 1;
+  min-width: 0;
+}
+
+.source-row .button {
+  flex: none;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
 }
 
 .source {

@@ -29,7 +29,7 @@
         </p>
         <div class="cta">
           <a class="button" href="/app/">Usar no browser</a>
-          <a class="button ghost" href="#instalar">Instalar no iPhone</a>
+          <button type="button" class="button ghost" data-open="install">Instalar no iPhone</button>
         </div>
         <p class="note">O Miven está em fase de testes.</p>
       </section>
@@ -63,26 +63,36 @@
           </p>
         </article>
       </section>
-
-      <section id="instalar" class="install">
-        <h2>Instalar no iPhone (SideStore)</h2>
-        <ol>
-          <li>Instala o SideStore no iPhone, se ainda não o tiveres.</li>
-          <li>No SideStore, abre <strong>Sources</strong> e acrescenta esta fonte:</li>
-        </ol>
-        <code class="source"
-          >https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json</code
-        >
-        <ol start="3">
-          <li>Instala o <strong>Miven</strong> a partir da fonte e abre a app.</li>
-          <li>Cria a tua conta e confirma o email.</li>
-        </ol>
-      </section>
     </main>
 
     <footer class="bottom">
       <span>© Miven</span>
       <a href="/app/">App web</a>
     </footer>
+
+    <dialog id="install" class="install-dialog" aria-labelledby="install-title">
+      <div class="install-head">
+        <h2 id="install-title">Instalar no iPhone</h2>
+        <form method="dialog">
+          <button class="icon-close" aria-label="Fechar">×</button>
+        </form>
+      </div>
+      <p class="install-lead">Pelo SideStore, com a mesma conta da app web.</p>
+      <ol>
+        <li>Instala o SideStore no iPhone, se ainda não o tiveres.</li>
+        <li>No SideStore, abre <strong>Sources</strong> e acrescenta esta fonte:</li>
+      </ol>
+      <div class="source-row">
+        <code class="source" id="sidestore-source"
+          >https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json</code
+        >
+        <button type="button" class="button small ghost" id="copy-source">Copiar</button>
+      </div>
+      <ol start="3">
+        <li>Instala o <strong>Miven</strong> a partir da fonte e abre a app.</li>
+        <li>Cria a tua conta e confirma o email.</li>
+      </ol>
+    </dialog>
+    <script src="/assets/home.js"></script>
   </body>
 </html>
