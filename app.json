@@ -65,7 +65,8 @@
           "organization": "miven-la",
           "disableAutoUpload": true
         }
-      ]
+      ],
+      "./plugins/quick-expense"
     ],
     "experiments": {
       "typedRoutes": true

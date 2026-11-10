@@ -4,6 +4,11 @@ name: iOS IPA
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publicar a Release e a fonte do SideStore (desligado = só compilar e verificar)
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -276,6 +281,7 @@ jobs:
         run: rm -f .env.local
 
       - name: Publicar a Release
+        if: inputs.publish
         shell: bash
         run: |
           tag="sideload-build-${BUILD_NUMBER}"
@@ -285,6 +291,7 @@ jobs:
             "$RUNNER_TEMP/centflow-unsigned.ipa#centflow-unsigned.ipa"
 
       - name: Atualizar a fonte do SideStore
+        if: inputs.publish
         shell: bash
         run: |
           node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sideload-source-cli.mjs record \

@@ -646,6 +646,17 @@ const en: Translation = {
     set: 'Set date',
     clear: 'Clear date',
   },
+  quickEntry: {
+    title: 'Quick entry',
+    description:
+      'Record an expense without opening Miven: a double tap on the back of your iPhone asks for the amount, description and category.',
+    step1: 'Open the Shortcuts app and tap +.',
+    step2: 'Choose Add Action, search for Miven and tap Registar despesa. Tap Done.',
+    step3: 'Open Settings › Accessibility › Touch › Back Tap › Double Tap.',
+    step4: 'Choose the shortcut you created (Registar despesa).',
+    note: 'The expense goes to the account you used last and shows up in Miven the next time you open it.',
+    openShortcuts: 'Open the Shortcuts app',
+  },
   insights: {
     title: 'This month',
     endOfMonth: 'End-of-month forecast',

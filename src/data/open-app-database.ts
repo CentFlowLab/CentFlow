@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { DatabaseUnavailableError, toDatabaseUnavailableError } from './db/errors';
 import { initializeDatabase } from './db/initialize';
 import { attachSpace } from './local-space';
+import { startQuickEntryBridge } from './quick-entry/quick-entry-bridge';
 import { databaseNameFor, type LocalSpace } from './spaces';
 import { createLocalStore, type LocalStore } from './sync';
 
@@ -52,6 +53,8 @@ async function assertWebEnvironment(): Promise<void> {
 }
 
 const open = new Map<string, Promise<LocalStore>>();
+/** Registo rápido (Toque posterior no iPhone) ligado à base de dados aberta de cada conta. */
+const quickEntry = new Map<string, () => void>();
 
 /**
  * Abre (uma única vez por processo/separador) a base de dados de um espaço local.
@@ -74,6 +77,7 @@ export function openLocalSpace(space: LocalSpace): Promise<LocalStore> {
           await db.close().catch(() => undefined);
           throw error;
         }
+        if (space.kind === 'user') quickEntry.set(name, startQuickEntryBridge(store.repositories));
         return store;
       } catch (error) {
         open.delete(name);
@@ -93,6 +97,8 @@ export function closeLocalSpace(space: LocalSpace): Promise<void> {
   const opening = open.get(name);
   if (!opening) return closing.get(name) ?? Promise.resolve();
   open.delete(name);
+  quickEntry.get(name)?.();
+  quickEntry.delete(name);
   const done = (async () => {
     const store = await opening.catch(() => null);
     await store?.db.close().catch(() => undefined);

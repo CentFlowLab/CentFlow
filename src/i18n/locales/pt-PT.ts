@@ -643,6 +643,17 @@ const ptPT = {
     set: 'Definir data',
     clear: 'Remover data',
   },
+  quickEntry: {
+    title: 'Registo rápido',
+    description:
+      'Regista uma despesa sem abrir o Miven: dois toques na traseira do iPhone pedem o valor, a descrição e a categoria.',
+    step1: 'Abre a app Atalhos e toca em +.',
+    step2: 'Escolhe Adicionar ação, procura Miven e toca em Registar despesa. Toca em Concluído.',
+    step3: 'Abre Definições › Acessibilidade › Toque › Toque posterior › Toque duplo.',
+    step4: 'Escolhe o atalho que criaste (Registar despesa).',
+    note: 'A despesa entra na conta que usaste por último e aparece no Miven da próxima vez que o abrires.',
+    openShortcuts: 'Abrir a app Atalhos',
+  },
   insights: {
     title: 'Este mês',
     endOfMonth: 'Previsão para o fim do mês',

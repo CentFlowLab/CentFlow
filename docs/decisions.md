@@ -552,6 +552,25 @@ subscrições, durante um ano. A lista mostra também a próxima cobrança calcu
 **Consequências:** aplicada no staging em 2026-11-10; a produção precisa de autorização
 (`CONFIRMO-PRODUCAO`) antes de publicar a app com esta versão.
 
+## ADR-042 — Registo rápido no iPhone com Toque posterior (App Intent)
+
+**Contexto:** registar uma despesa no momento obriga a abrir a app. Apps como o Tapsheet usam uma
+ação dos Atalhos ligada ao Toque posterior: o iOS pede o valor, a descrição e a categoria sem
+abrir a app.
+**Decisão:** uma App Intent "Registar despesa" (`plugins/quick-expense`, Swift no alvo principal,
+sem extensão, por isso o IPA sem assinatura do SideStore não muda), com `openAppWhenRun = false`
+e um `AppShortcutsProvider`. A ação **não abre a base de dados**: a app tem a sua própria cópia do
+SQLite (expo-sqlite) e duas cópias no mesmo processo podem corromper o ficheiro. Em vez disso a
+app escreve `Documents/miven-quick-entry.json` (conta a usar, moeda e casas decimais, categorias
+de despesa por uso) enquanto a base de dados de uma conta está aberta e apaga-o ao sair. A ação
+grava cada despesa em `Documents/miven-quick-entries/<hora>-<uuid>.json`; a app importa-as com
+`entries.create` (validações e fila de sincronização) ao abrir a conta e sempre que volta a ficar
+ativa, e só depois apaga o ficheiro. O valor segue com ponto decimal e as casas da moeda.
+**Consequências:** a despesa aparece no Miven (e sincroniza) da próxima vez que a app corre. A
+pessoa cria o atalho na app Atalhos e liga-o em Definições › Acessibilidade › Toque › Toque
+posterior (instruções em Definições › Registo rápido). Os textos da ação estão só em português.
+No Android não há Toque posterior.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

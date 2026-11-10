@@ -29,6 +29,8 @@ import {
 } from '@/ui/components';
 import { spacing } from '@/ui/theme';
 
+import { QuickEntrySection } from './QuickEntrySection';
+
 const THEME_OPTIONS: readonly ThemePreference[] = ['system', 'light', 'dark'];
 const LANGUAGE_OPTIONS: readonly LanguagePreference[] = ['system', ...SUPPORTED_LANGUAGES];
 
@@ -70,6 +72,8 @@ export function SettingsScreen() {
           </Card>
         </Section>
       ) : null}
+
+      <QuickEntrySection />
 
       <Section title={t('settings.language')}>
         <Card padding="xs" accessibilityRole="radiogroup">

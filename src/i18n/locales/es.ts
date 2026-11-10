@@ -649,6 +649,17 @@ const es: Translation = {
     set: 'Definir fecha',
     clear: 'Quitar fecha',
   },
+  quickEntry: {
+    title: 'Registro rápido',
+    description:
+      'Registra un gasto sin abrir Miven: dos toques en la parte trasera del iPhone piden el importe, la descripción y la categoría.',
+    step1: 'Abre la app Atajos y toca +.',
+    step2: 'Elige Añadir acción, busca Miven y toca Registar despesa. Toca OK.',
+    step3: 'Abre Ajustes › Accesibilidad › Tocar › Tocar atrás › Doble toque.',
+    step4: 'Elige el atajo que creaste (Registar despesa).',
+    note: 'El gasto va a la cuenta que usaste por última vez y aparece en Miven la próxima vez que lo abras.',
+    openShortcuts: 'Abrir la app Atajos',
+  },
   insights: {
     title: 'Este mes',
     endOfMonth: 'Previsión para final de mes',
