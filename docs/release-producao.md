@@ -176,3 +176,15 @@ Autorizado pelo responsável com `CONFIRMO-PRODUCAO`. Guard antes de cada comand
    `authenticated` (REST anónimo: 401); `login_email` `security definer` com `search_path`
    vazio; `anon` executa `login_email` e `username_available`; `pgcrypto` presente; trigger
    `on_auth_user_created` ativo. `username_available` por REST com a chave pública: `true`.
+
+## Execução de 2026-11-10 — preço anterior das subscrições (ADR-041)
+
+Autorizado pelo responsável ("Confirmo produção"). Guard antes de cada comando.
+
+1. Cópia: `~/Documents/Miven-backups/miven-prod-20261110-152936-{schema.sql,data.sql}` (`pg_dump`
+   17 a partir do `db dump --dry-run`; fora do git e de pastas sincronizadas).
+2. Dry-run: só `20261111000100`, alvo produção.
+3. `db push --skip-vault`: aplicada; histórico local e remoto iguais até `20261111000100`.
+4. Verificação só de leitura: `subscriptions.previous_amount` (`bigint`) e `amount_changed_on`
+   (`date`) existem; `private.sync_apply_op` com `search_path` vazio; RLS ligado em
+   `subscriptions`.
