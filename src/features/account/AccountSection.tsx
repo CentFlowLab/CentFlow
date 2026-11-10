@@ -16,7 +16,14 @@ import { isAppleSignInAvailable } from './apple-sign-in';
 import { markPendingAccountDeletion } from './pending-account-deletion';
 import { useSync } from './SyncProvider';
 
-type DialogKind = 'signOutPending' | 'delete' | 'deleteFailed' | 'cancelImport' | null;
+type DialogKind =
+  | 'signOutPending'
+  | 'delete'
+  | 'deleteFailed'
+  | 'cancelImport'
+  | 'passwordSent'
+  | 'passwordFailed'
+  | null;
 type DeleteFailure = 'deleteFailed' | 'deleteReauthFailed';
 
 const STATUS_TONE: Record<SyncStatus, 'positive' | 'neutral' | 'warning' | 'negative'> = {
@@ -113,6 +120,14 @@ function SignedInAccount({ user }: { user: AuthUser }) {
     setDialog(null);
   };
 
+  const changePassword = async () => {
+    if (!user.email || busy) return;
+    setBusy(true);
+    const result = await actions.requestPasswordReset(user.email);
+    setBusy(false);
+    setDialog(result.ok ? 'passwordSent' : 'passwordFailed');
+  };
+
   const deleteAccount = async () => {
     if (!client) return;
     setBusy(true);
@@ -150,7 +165,7 @@ function SignedInAccount({ user }: { user: AuthUser }) {
       <Card padding="xs">
         <ListItem
           icon="person-circle-outline"
-          title={user.username ?? user.email ?? t('account.signedIn')}
+          title={user.username ? `@${user.username}` : (user.email ?? t('account.signedIn'))}
           subtitle={user.username && user.email ? user.email : t('account.signedIn')}
         />
         <Divider inset={spacing.lg} />
@@ -193,7 +208,7 @@ function SignedInAccount({ user }: { user: AuthUser }) {
               showChevron={false}
             />
           </>
-        ) : importState?.state === 'declined' || importState?.state === 'none' ? (
+        ) : importState?.state === 'declined' ? (
           <>
             <Divider inset={spacing.lg} />
             <ListItem
@@ -202,6 +217,18 @@ function SignedInAccount({ user }: { user: AuthUser }) {
               subtitle={t('account.importDataHint')}
               onPress={offerImport}
               showChevron={false}
+            />
+          </>
+        ) : null}
+        {user.email ? (
+          <>
+            <Divider inset={spacing.lg} />
+            <ListItem
+              icon="key-outline"
+              title={t('account.changePassword')}
+              subtitle={t('account.changePasswordHint')}
+              showChevron={false}
+              onPress={changePassword}
             />
           </>
         ) : null}
@@ -275,6 +302,20 @@ function SignedInAccount({ user }: { user: AuthUser }) {
             ? t('account.deleteReauthFailed')
             : t('account.deleteFailed')
         }
+        onDismiss={() => setDialog(null)}
+        actions={[{ label: t('common.ok'), onPress: () => setDialog(null) }]}
+      />
+      <Dialog
+        visible={dialog === 'passwordSent'}
+        title={t('account.changePasswordSentTitle')}
+        message={t('account.changePasswordSentMessage', { email: user.email ?? '' })}
+        onDismiss={() => setDialog(null)}
+        actions={[{ label: t('common.ok'), onPress: () => setDialog(null) }]}
+      />
+      <Dialog
+        visible={dialog === 'passwordFailed'}
+        title={t('account.changePassword')}
+        message={t('account.changePasswordFailed')}
         onDismiss={() => setDialog(null)}
         actions={[{ label: t('common.ok'), onPress: () => setDialog(null) }]}
       />

@@ -158,6 +158,9 @@ const ptPT = {
     language: 'Idioma',
     languageSystem: 'Automático',
     about: 'Sobre',
+    privacy: 'Política de privacidade',
+    terms: 'Termos de utilização',
+    contact: 'Contacto',
     version: 'Versão',
   },
   entryTypes: {
@@ -799,6 +802,10 @@ const ptPT = {
     forgotPassword: 'Esqueceste-te da palavra-passe?',
     noAccount: 'Ainda não tens conta? Criar conta',
     haveAccount: 'Já tens conta? Entrar',
+    legalPrefix: 'Ao criar conta, aceitas os',
+    legalTerms: 'Termos de utilização',
+    legalAnd: 'e a',
+    legalPrivacy: 'Política de privacidade',
     signInWithApple: 'Continuar com a Apple',
     confirmEmail: {
       title: 'Confirma o teu email',
@@ -900,6 +907,12 @@ const ptPT = {
       'Tens {{count}} alterações que ainda não chegaram ao servidor. Ficam guardadas neste dispositivo e são enviadas quando voltares a entrar.',
     syncAndSignOut: 'Sincronizar e sair',
     signOutAnyway: 'Sair na mesma',
+    changePassword: 'Alterar palavra-passe',
+    changePasswordHint: 'Enviamos um link para o teu email.',
+    changePasswordSentTitle: 'Verifica o teu email',
+    changePasswordSentMessage:
+      'Enviámos um link para {{email}}. Abre-o para definires a nova palavra-passe.',
+    changePasswordFailed: 'Não foi possível enviar o link. Tenta novamente daqui a pouco.',
     deleteAccount: 'Eliminar conta',
     deleteTitle: 'Eliminar a conta definitivamente?',
     deleteMessage:

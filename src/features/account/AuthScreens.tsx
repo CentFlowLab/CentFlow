@@ -9,6 +9,7 @@ import { radius, spacing, useTheme } from '@/ui/theme';
 import { closeModal } from '../finance/navigation';
 import { useToday } from '../finance/useToday';
 import { ageOn, MIN_SIGN_UP_AGE } from './age';
+import { openExternal, PRIVACY_URL, TERMS_URL } from './legal-links';
 import {
   emailOtpType,
   isAppleSignInAvailable,
@@ -366,6 +367,25 @@ export function SignUpScreen() {
         errorText={fieldError(errors.password)}
       />
       <ErrorText code={error} />
+      <Text variant="footnote" tone="secondary">
+        {t('auth.legalPrefix')}{' '}
+        <Text
+          variant="footnote"
+          tone="accent"
+          accessibilityRole="link"
+          onPress={() => openExternal(TERMS_URL)}>
+          {t('auth.legalTerms')}
+        </Text>{' '}
+        {t('auth.legalAnd')}{' '}
+        <Text
+          variant="footnote"
+          tone="accent"
+          accessibilityRole="link"
+          onPress={() => openExternal(PRIVACY_URL)}>
+          {t('auth.legalPrivacy')}
+        </Text>
+        .
+      </Text>
       <Button
         label={t('auth.haveAccount')}
         variant="ghost"

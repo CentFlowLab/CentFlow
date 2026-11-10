@@ -160,6 +160,9 @@ const es: Translation = {
     language: 'Idioma',
     languageSystem: 'Automático',
     about: 'Acerca de',
+    privacy: 'Política de privacidad',
+    terms: 'Términos de uso',
+    contact: 'Contacto',
     version: 'Versión',
   },
   entryTypes: {
@@ -805,6 +808,10 @@ const es: Translation = {
     forgotPassword: '¿Has olvidado la contraseña?',
     noAccount: '¿No tienes cuenta? Crear cuenta',
     haveAccount: '¿Ya tienes cuenta? Iniciar sesión',
+    legalPrefix: 'Al crear una cuenta, aceptas los',
+    legalTerms: 'Términos de uso',
+    legalAnd: 'y la',
+    legalPrivacy: 'Política de privacidad',
     signInWithApple: 'Continuar con Apple',
     confirmEmail: {
       title: 'Confirma tu correo',
@@ -905,6 +912,12 @@ const es: Translation = {
       'Tienes {{count}} cambios que aún no han llegado al servidor. Se guardan en este dispositivo y se envían cuando vuelvas a iniciar sesión.',
     syncAndSignOut: 'Sincronizar y salir',
     signOutAnyway: 'Salir de todos modos',
+    changePassword: 'Cambiar contraseña',
+    changePasswordHint: 'Te enviamos un enlace al correo.',
+    changePasswordSentTitle: 'Revisa tu correo',
+    changePasswordSentMessage:
+      'Enviamos un enlace a {{email}}. Ábrelo para definir la nueva contraseña.',
+    changePasswordFailed: 'No se pudo enviar el enlace. Inténtalo de nuevo en un momento.',
     deleteAccount: 'Eliminar cuenta',
     deleteTitle: '¿Eliminar la cuenta definitivamente?',
     deleteMessage:

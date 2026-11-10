@@ -159,6 +159,9 @@ const en: Translation = {
     language: 'Language',
     languageSystem: 'Automatic',
     about: 'About',
+    privacy: 'Privacy policy',
+    terms: 'Terms of use',
+    contact: 'Contact',
     version: 'Version',
   },
   entryTypes: {
@@ -798,6 +801,10 @@ const en: Translation = {
     forgotPassword: 'Forgot your password?',
     noAccount: "Don't have an account? Create one",
     haveAccount: 'Already have an account? Sign in',
+    legalPrefix: 'By creating an account, you accept the',
+    legalTerms: 'Terms of use',
+    legalAnd: 'and the',
+    legalPrivacy: 'Privacy policy',
     signInWithApple: 'Continue with Apple',
     confirmEmail: {
       title: 'Confirm your email',
@@ -895,6 +902,11 @@ const en: Translation = {
       "You have {{count}} changes that haven't reached the server yet. They stay on this device and are sent when you sign in again.",
     syncAndSignOut: 'Sync and sign out',
     signOutAnyway: 'Sign out anyway',
+    changePassword: 'Change password',
+    changePasswordHint: 'We send a link to your email.',
+    changePasswordSentTitle: 'Check your email',
+    changePasswordSentMessage: 'We sent a link to {{email}}. Open it to set a new password.',
+    changePasswordFailed: "The link couldn't be sent. Try again in a moment.",
     deleteAccount: 'Delete account',
     deleteTitle: 'Permanently delete your account?',
     deleteMessage:

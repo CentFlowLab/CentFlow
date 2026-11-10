@@ -5,6 +5,12 @@ import { StyleSheet } from 'react-native';
 
 import { AccountSection } from '@/features/account/AccountSection';
 import {
+  CONTACT_EMAIL,
+  openExternal,
+  PRIVACY_URL,
+  TERMS_URL,
+} from '@/features/account/legal-links';
+import {
   usePreferences,
   type LanguagePreference,
   type ThemePreference,
@@ -93,6 +99,25 @@ export function SettingsScreen() {
 
       <Section title={t('settings.about')}>
         <Card padding="xs">
+          <ListItem
+            icon="shield-checkmark-outline"
+            title={t('settings.privacy')}
+            onPress={() => openExternal(PRIVACY_URL)}
+          />
+          <Divider inset={spacing.lg} />
+          <ListItem
+            icon="document-text-outline"
+            title={t('settings.terms')}
+            onPress={() => openExternal(TERMS_URL)}
+          />
+          <Divider inset={spacing.lg} />
+          <ListItem
+            icon="mail-outline"
+            title={t('settings.contact')}
+            subtitle={CONTACT_EMAIL}
+            onPress={() => openExternal(`mailto:${CONTACT_EMAIL}`)}
+          />
+          <Divider inset={spacing.lg} />
           <ListItem
             title={t('settings.version')}
             trailing={
