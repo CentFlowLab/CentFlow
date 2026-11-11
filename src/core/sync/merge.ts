@@ -62,9 +62,22 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'odometer_km',
     'inspection_due',
     'insurance_due',
+    'make',
+    'model',
+    'year',
+    'fuel_type',
+    'acquired_on',
+    'purchase_amount',
+    'currency',
+    'road_tax_due',
+    'service_due_on',
+    'service_due_km',
+    'notes',
+    'kind_label',
+    'icon',
     'deleted_at',
   ],
-  documents: ['title', 'category', 'expires_on', 'notes', 'deleted_at'],
+  documents: ['title', 'category', 'expires_on', 'notes', 'vehicle_id', 'deleted_at'],
   entries: [
     'type',
     'amount',
@@ -74,6 +87,10 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'account_id',
     'destination_account_id',
     'date',
+    'vehicle_id',
+    'vehicle_cost_type',
+    'quantity_milli',
+    'odometer_km',
     'deleted_at',
   ],
 };
@@ -88,9 +105,14 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   goal_contributions: [],
   // O histórico das avaliações acompanha o valor e a data que o substituíram.
   wealth_items: [['amount', 'valued_on', 'value_history']],
-  vehicles: [],
+  // Valor de compra e moeda mudam juntos.
+  vehicles: [['purchase_amount', 'currency']],
   documents: [],
-  entries: [['type', 'category_id', 'account_id', 'destination_account_id']],
+  // A ligação ao veículo (veículo + tipo de custo) é um todo.
+  entries: [
+    ['type', 'category_id', 'account_id', 'destination_account_id'],
+    ['vehicle_id', 'vehicle_cost_type'],
+  ],
 };
 
 export type MergeResult =

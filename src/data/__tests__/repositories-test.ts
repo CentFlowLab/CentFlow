@@ -1085,3 +1085,176 @@ describe('vehicles and documents', () => {
     expect(seen.flat()).toEqual(expect.arrayContaining(['documents']));
   });
 });
+
+describe('vehicle costs', () => {
+  const tyres = (): EntryInput => ({ ...baseExpense(), amount: 24000, description: 'Pneus' });
+
+  it('links an entry to a category, a vehicle and a card without counting it twice', async () => {
+    const card = await repos.accounts.create({
+      name: 'Cartão X',
+      type: 'card',
+      currency: 'EUR',
+      initialBalance: 0,
+    });
+    const car = await repos.vehicles.create({
+      name: 'Clio',
+      kind: 'car',
+      plate: '50-xo-29',
+      odometerKm: null,
+      inspectionDue: null,
+      insuranceDue: null,
+      currency: 'EUR',
+    });
+    expect(car.plate).toBe('50-XO-29');
+    const entry = await repos.entries.create({
+      ...tyres(),
+      accountId: card.id,
+      vehicleId: car.id,
+      vehicleCostType: 'tyres',
+    });
+    expect(entry).toMatchObject({ vehicleId: car.id, vehicleCostType: 'tyres', amount: 24000 });
+
+    // Os totais gerais contam a despesa uma vez; a ficha do veículo vê a mesma linha.
+    const aggregate = await repos.entries.aggregate({ from: '2026-11-01', to: '2026-11-30' });
+    expect(aggregate.reduce((sum, row) => sum + row.amount, 0)).toBe(24000);
+    const forCar = await repos.entries.listForVehicle(car.id);
+    expect(forCar.map((row) => [row.id, row.currency])).toEqual([[entry.id, 'EUR']]);
+    const balances = await repos.accounts.listWithBalances();
+    expect(balances.find((account) => account.id === card.id)?.balance).toBe(-24000);
+
+    // Editar sem falar do veículo (ecrãs antigos) mantém a ligação.
+    const edited = await repos.entries.update(entry.id, {
+      ...tyres(),
+      accountId: card.id,
+      amount: 25000,
+    });
+    expect(edited).toMatchObject({ vehicleId: car.id, vehicleCostType: 'tyres', amount: 25000 });
+  });
+
+  it('allows one explicit purchase and refuses odometer readings out of order', async () => {
+    const car = await repos.vehicles.create({
+      name: 'Clio',
+      kind: 'car',
+      plate: null,
+      odometerKm: null,
+      inspectionDue: null,
+      insuranceDue: null,
+    });
+    const link = { vehicleId: car.id };
+    await repos.entries.create({ ...tyres(), ...link, vehicleCostType: 'purchase', amount: 100 });
+    await expect(
+      repos.entries.create({ ...tyres(), ...link, vehicleCostType: 'purchase', amount: 200 }),
+    ).rejects.toMatchObject({ errors: { vehicleCostType: 'purchaseAlreadyLinked' } });
+
+    const fill = (date: string, odometerKm: number) =>
+      repos.entries.create({
+        ...tyres(),
+        ...link,
+        date,
+        amount: 6000,
+        vehicleCostType: 'fuel',
+        quantityMilli: 40000,
+        odometerKm,
+      });
+    await fill('2026-10-01', 50000);
+    await fill('2026-11-01', 51000);
+    await expect(fill('2026-10-15', 52000)).rejects.toMatchObject({
+      errors: { odometerKm: 'odometerOutOfOrder' },
+    });
+    await expect(fill('2026-11-05', 50500)).rejects.toMatchObject({
+      errors: { odometerKm: 'odometerOutOfOrder' },
+    });
+    await expect(
+      repos.entries.create({ ...tyres(), ...link, vehicleCostType: 'fuel', quantityMilli: 0 }),
+    ).rejects.toMatchObject({ errors: { quantityMilli: 'invalid' } });
+  });
+
+  it('links existing entries in bulk without changing them', async () => {
+    const car = await repos.vehicles.create({
+      name: 'Clio',
+      kind: 'car',
+      plate: null,
+      odometerKm: null,
+      inspectionDue: null,
+      insuranceDue: null,
+    });
+    const a = await repos.entries.create(tyres());
+    const b = await repos.entries.create({ ...tyres(), description: 'Revisão', amount: 9000 });
+    expect((await repos.entries.list({ withoutVehicle: true })).total).toBe(2);
+    await repos.entries.linkVehicle([a.id, b.id], {
+      vehicleId: car.id,
+      vehicleCostType: 'maintenance',
+    });
+    const linked = await repos.entries.list({ vehicleId: car.id });
+    expect(linked.items.map((entry) => entry.amount).sort()).toEqual([24000, 9000].sort());
+    expect(linked.items.every((entry) => entry.categoryId === food.id)).toBe(true);
+    expect((await repos.entries.list({ withoutVehicle: true })).total).toBe(0);
+    await expect(
+      repos.entries.linkVehicle([a.id, b.id], { vehicleId: car.id, vehicleCostType: 'purchase' }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('deletes a vehicle by unlinking its entries and documents, keeping their money', async () => {
+    const car = await repos.vehicles.create({
+      name: 'Clio',
+      kind: 'car',
+      plate: null,
+      odometerKm: null,
+      inspectionDue: null,
+      insuranceDue: null,
+    });
+    const entry = await repos.entries.create({
+      ...tyres(),
+      vehicleId: car.id,
+      vehicleCostType: 'fuel',
+      quantityMilli: 40000,
+      odometerKm: 1000,
+    });
+    const document = await repos.documents.create({
+      title: 'Apólice',
+      category: 'insurance',
+      expiresOn: null,
+      notes: null,
+      vehicleId: car.id,
+    });
+    expect(await repos.vehicles.countLinks(car.id)).toEqual({ entries: 1, documents: 1 });
+
+    await repos.vehicles.delete(car.id);
+    expect(await repos.vehicles.get(car.id)).toBeNull();
+    expect(await repos.entries.get(entry.id)).toMatchObject({
+      amount: 24000,
+      categoryId: food.id,
+      accountId: bank.id,
+      date: entry.date,
+      vehicleId: null,
+      vehicleCostType: null,
+      quantityMilli: null,
+      odometerKm: null,
+    });
+    expect((await repos.documents.get(document.id))?.vehicleId).toBeNull();
+  });
+
+  it('keeps the new vehicle details when an older screen saves without them', async () => {
+    const car = await repos.vehicles.create({
+      name: 'Clio',
+      kind: 'car',
+      plate: null,
+      odometerKm: null,
+      inspectionDue: null,
+      insuranceDue: null,
+      make: 'Renault',
+      purchaseAmount: 1500000,
+      currency: 'eur',
+    });
+    expect(car).toMatchObject({ make: 'Renault', currency: 'EUR' });
+    const saved = await repos.vehicles.update(car.id, {
+      name: 'Clio 4',
+      kind: 'car',
+      plate: null,
+      odometerKm: 1000,
+      inspectionDue: null,
+      insuranceDue: null,
+    });
+    expect(saved).toMatchObject({ name: 'Clio 4', make: 'Renault', purchaseAmount: 1500000 });
+  });
+});

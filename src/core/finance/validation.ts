@@ -1,5 +1,5 @@
 import { isCurrencyCode, MAX_AMOUNT_MINOR } from '../money';
-import { isValidCalendarDate } from './dates';
+import { isValidCalendarDate, type CalendarDate } from './dates';
 import {
   ACCOUNT_TYPES,
   BUDGET_PERIODS,
@@ -18,7 +18,10 @@ import {
   WEALTH_TYPES,
   type VehicleInput,
   type DocumentInput,
+  VEHICLE_COST_TYPES,
+  VEHICLE_FUEL_TYPES,
   VEHICLE_KINDS,
+  VEHICLE_LIMITS,
   DOCUMENT_CATEGORIES,
   type SubscriptionInput,
   type Category,
@@ -54,7 +57,9 @@ export type ValidationCode =
   | 'originNotBefore'
   | 'principalTooLarge'
   | 'dateBeforeValuation'
-  | 'notLiability';
+  | 'notLiability'
+  | 'odometerOutOfOrder'
+  | 'purchaseAlreadyLinked';
 
 export type ValidationErrors<Field extends string> = Partial<Record<Field, ValidationCode>>;
 
@@ -113,6 +118,8 @@ export type EntryField = keyof EntryInput;
 export type EntryValidationContext = {
   accounts: ReadonlyMap<string, Pick<Account, 'id' | 'currency' | 'archivedAt'>>;
   categories: ReadonlyMap<string, Pick<Category, 'id' | 'type'>>;
+  /** Veículos existentes; sem o mapa, a existência não é verificada (ex.: validação parcial). */
+  vehicles?: ReadonlySet<string>;
   /** Ao editar, permite manter uma conta entretanto arquivada. */
   previous?: Pick<EntryInput, 'accountId' | 'destinationAccountId'>;
 };
@@ -171,18 +178,82 @@ export function validateEntryInput(
     else if (category.type !== input.type) errors.categoryId = 'categoryTypeMismatch';
   }
 
+  validateEntryVehicle(input, context, errors);
   return errors;
 }
 
 /** Normaliza texto livre antes de guardar. */
+function isIntegerIn(value: number, min: number, max: number): boolean {
+  return Number.isSafeInteger(value) && value >= min && value <= max;
+}
+
+/**
+ * Ligação ao veículo (ADR-054): só despesas e rendimentos; tipo de custo obrigatório; litros só no
+ * combustível; quilómetros com veículo. A coerência com outras leituras precisa dos outros
+ * movimentos: ver `validateOdometerReading`.
+ */
+function validateEntryVehicle(
+  input: EntryInput,
+  context: EntryValidationContext,
+  errors: ValidationErrors<EntryField>,
+): void {
+  const vehicleId = input.vehicleId ?? null;
+  const costType = input.vehicleCostType ?? null;
+  const quantity = input.quantityMilli ?? null;
+  const odometer = input.odometerKm ?? null;
+  if (vehicleId === null) {
+    if (costType !== null) errors.vehicleCostType = 'invalid';
+    if (quantity !== null) errors.quantityMilli = 'invalid';
+    if (odometer !== null) errors.odometerKm = 'invalid';
+    return;
+  }
+  if (input.type === 'transfer') errors.vehicleId = 'invalid';
+  else if (context.vehicles && !context.vehicles.has(vehicleId)) errors.vehicleId = 'invalid';
+  if (costType === null) errors.vehicleCostType = 'required';
+  else if (!(VEHICLE_COST_TYPES as readonly string[]).includes(costType)) {
+    errors.vehicleCostType = 'invalid';
+  }
+  if (
+    quantity !== null &&
+    (costType !== 'fuel' || !isIntegerIn(quantity, 1, VEHICLE_LIMITS.maxQuantityMilli))
+  ) {
+    errors.quantityMilli = 'invalid';
+  }
+  if (odometer !== null && !isIntegerIn(odometer, 0, VEHICLE_LIMITS.maxOdometerKm)) {
+    errors.odometerKm = 'invalid';
+  }
+}
+
+/** Leitura incoerente: menor do que uma anterior ou maior do que uma posterior (mesmo veículo). */
+export function validateOdometerReading(
+  reading: { date: CalendarDate; odometerKm: number },
+  others: readonly { date: CalendarDate; odometerKm: number }[],
+): ValidationCode | null {
+  for (const other of others) {
+    if (other.date < reading.date && other.odometerKm > reading.odometerKm) {
+      return 'odometerOutOfOrder';
+    }
+    if (other.date > reading.date && other.odometerKm < reading.odometerKm) {
+      return 'odometerOutOfOrder';
+    }
+  }
+  return null;
+}
+
 export function normalizeEntryInput(input: EntryInput): EntryInput {
   const notes = input.notes?.trim() ?? '';
+  const vehicleId = input.type === 'transfer' ? null : (input.vehicleId ?? null);
+  const costType = vehicleId === null ? null : (input.vehicleCostType ?? null);
   return {
     ...input,
     description: input.description.trim(),
     notes: notes === '' ? null : notes,
     categoryId: input.type === 'transfer' ? null : input.categoryId,
     destinationAccountId: input.type === 'transfer' ? input.destinationAccountId : null,
+    vehicleId,
+    vehicleCostType: costType,
+    quantityMilli: costType === 'fuel' ? (input.quantityMilli ?? null) : null,
+    odometerKm: vehicleId === null ? null : (input.odometerKm ?? null),
   };
 }
 
@@ -335,6 +406,43 @@ export function validateVehicleInput(input: VehicleInput): ValidationErrors<Vehi
   }
   if (input.insuranceDue !== null && !isValidCalendarDate(input.insuranceDue)) {
     errors.insuranceDue = 'invalidDate';
+  }
+  for (const field of ['make', 'model'] as const) {
+    const value = input[field];
+    if (value != null && (value.trim().length === 0 || value.trim().length > 40)) {
+      errors[field] = 'invalid';
+    }
+  }
+  if (input.year != null && !isIntegerIn(input.year, 1900, 2100)) errors.year = 'invalid';
+  if (
+    input.fuelType != null &&
+    !(VEHICLE_FUEL_TYPES as readonly string[]).includes(input.fuelType)
+  ) {
+    errors.fuelType = 'invalid';
+  }
+  for (const field of ['acquiredOn', 'roadTaxDue', 'serviceDueOn'] as const) {
+    const value = input[field];
+    if (value != null && !isValidCalendarDate(value)) errors[field] = 'invalidDate';
+  }
+  if (input.purchaseAmount != null) {
+    if (!isIntegerIn(input.purchaseAmount, 1, MAX_AMOUNT_MINOR)) errors.purchaseAmount = 'invalid';
+    if (input.currency == null) errors.currency = 'required';
+  }
+  if (input.currency != null && !isCurrencyCode(input.currency)) errors.currency = 'invalid';
+  if (
+    input.serviceDueKm != null &&
+    !isIntegerIn(input.serviceDueKm, 0, VEHICLE_LIMITS.maxOdometerKm)
+  ) {
+    errors.serviceDueKm = 'invalid';
+  }
+  if (input.notes != null && input.notes.length > LIMITS.notesMaxLength) errors.notes = 'tooLong';
+  if (input.kindLabel != null) {
+    const label = input.kindLabel.trim();
+    if (label.length === 0) errors.kindLabel = 'required';
+    else if (label.length > 30) errors.kindLabel = 'tooLong';
+  }
+  if (input.icon != null && (input.icon.length === 0 || input.icon.length > 40)) {
+    errors.icon = 'invalid';
   }
   return errors;
 }

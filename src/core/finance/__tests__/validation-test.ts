@@ -140,7 +140,16 @@ describe('normalizeEntryInput', () => {
         notes: '   ',
         destinationAccountId: 'acc-eur-2',
       }),
-    ).toEqual({ ...expense, description: 'Café', notes: null, destinationAccountId: null });
+    ).toEqual({
+      ...expense,
+      description: 'Café',
+      notes: null,
+      destinationAccountId: null,
+      vehicleId: null,
+      vehicleCostType: null,
+      quantityMilli: null,
+      odometerKm: null,
+    });
     expect(normalizeEntryInput({ ...transfer, categoryId: 'cat-food' }).categoryId).toBeNull();
   });
 });

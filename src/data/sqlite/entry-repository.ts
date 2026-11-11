@@ -8,6 +8,8 @@ import {
   type EntryInput,
   type EntryValidationContext,
   type Id,
+  validateOdometerReading,
+  type VehicleCostType,
 } from '@/core/finance';
 import { normalizeSearchText } from '@/core/text/search';
 
@@ -26,12 +28,17 @@ type EntryRow = {
   destination_account_id: string | null;
   date: string;
   notes: string | null;
+  vehicle_id: string | null;
+  vehicle_cost_type: VehicleCostType | null;
+  quantity_milli: number | null;
+  odometer_km: number | null;
   created_at: string;
   updated_at: string;
 };
 
 const COLUMNS = `e.id, e.type, e.amount, e.description, e.category_id, e.account_id,
-  e.destination_account_id, e.date, e.notes, e.created_at, e.updated_at`;
+  e.destination_account_id, e.date, e.notes, e.vehicle_id, e.vehicle_cost_type, e.quantity_milli,
+  e.odometer_km, e.created_at, e.updated_at`;
 
 const MAX_PAGE_SIZE = 500;
 
@@ -46,6 +53,10 @@ function toEntry(row: EntryRow): Entry {
     destinationAccountId: row.destination_account_id,
     date: row.date,
     notes: row.notes,
+    vehicleId: row.vehicle_id,
+    vehicleCostType: row.vehicle_cost_type,
+    quantityMilli: row.quantity_milli,
+    odometerKm: row.odometer_km,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -75,6 +86,13 @@ function buildWhere(filter: EntryFilter): { sql: string; params: SqlValue[] } {
     clauses.push('e.category_id = ?');
     params.push(filter.categoryId);
   }
+  if (filter.vehicleId) {
+    clauses.push('e.vehicle_id = ?');
+    params.push(filter.vehicleId);
+  }
+  if (filter.withoutVehicle) {
+    clauses.push("e.vehicle_id IS NULL AND e.type <> 'transfer'");
+  }
   if (filter.from) {
     clauses.push('e.date >= ?');
     params.push(filter.from);
@@ -89,13 +107,14 @@ function buildWhere(filter: EntryFilter): { sql: string; params: SqlValue[] } {
 async function loadValidationContext(
   tx: SqlExecutor,
 ): Promise<Omit<EntryValidationContext, 'previous'>> {
-  const [accounts, categories] = [
+  const [accounts, categories, vehicles] = [
     await tx.all<{ id: string; currency: string; archived_at: string | null }>(
       'SELECT id, currency, archived_at FROM accounts WHERE deleted_at IS NULL',
     ),
     await tx.all<{ id: string; type: Category['type'] }>(
       'SELECT id, type FROM categories WHERE deleted_at IS NULL',
     ),
+    await tx.all<{ id: string }>('SELECT id FROM vehicles WHERE deleted_at IS NULL'),
   ];
   return {
     accounts: new Map(
@@ -105,7 +124,40 @@ async function loadValidationContext(
       ]),
     ),
     categories: new Map(categories.map((row) => [row.id, row])),
+    vehicles: new Set(vehicles.map((row) => row.id)),
   };
+}
+
+/**
+ * Regras que precisam dos outros movimentos do veículo (ADR-054): uma só compra marcada por
+ * veículo e leituras de quilómetros por ordem de data.
+ */
+async function checkVehicleRules(
+  tx: SqlExecutor,
+  input: EntryInput,
+  excludeId: Id | null,
+): Promise<void> {
+  if (!input.vehicleId) return;
+  if (input.vehicleCostType === 'purchase') {
+    const other = await tx.first<{ id: string }>(
+      `SELECT id FROM entries WHERE vehicle_id = ? AND vehicle_cost_type = 'purchase'
+         AND deleted_at IS NULL AND id IS NOT ?`,
+      [input.vehicleId, excludeId],
+    );
+    if (other) throw new ValidationError({ vehicleCostType: 'purchaseAlreadyLinked' });
+  }
+  if (input.odometerKm != null) {
+    const readings = await tx.all<{ date: string; odometer_km: number }>(
+      `SELECT date, odometer_km FROM entries WHERE vehicle_id = ? AND odometer_km IS NOT NULL
+         AND deleted_at IS NULL AND id IS NOT ?`,
+      [input.vehicleId, excludeId],
+    );
+    const code = validateOdometerReading(
+      { date: input.date, odometerKm: input.odometerKm },
+      readings.map((row) => ({ date: row.date, odometerKm: row.odometer_km })),
+    );
+    if (code) throw new ValidationError({ odometerKm: code });
+  }
 }
 
 async function findActive(tx: SqlExecutor, id: Id): Promise<EntryRow | null> {
@@ -120,11 +172,25 @@ export async function prepareEntry(
   tx: SqlExecutor,
   raw: EntryInput,
   previous?: EntryValidationContext['previous'],
+  excludeId: Id | null = null,
 ): Promise<EntryInput> {
   const input = normalizeEntryInput(raw);
   const errors = validateEntryInput(input, { ...(await loadValidationContext(tx)), previous });
   if (hasErrors(errors)) throw new ValidationError(errors);
+  await checkVehicleRules(tx, input, excludeId);
   return input;
+}
+
+/** Ao editar sem dizer nada sobre o veículo (ex.: ecrãs antigos), mantém a ligação que existia. */
+function keepVehicle(raw: EntryInput, existing: EntryRow): EntryInput {
+  if (raw.vehicleId !== undefined) return raw;
+  return {
+    ...raw,
+    vehicleId: existing.vehicle_id,
+    vehicleCostType: existing.vehicle_cost_type,
+    quantityMilli: existing.quantity_milli,
+    odometerKm: existing.odometer_km,
+  };
 }
 
 /** Grava um movimento já validado (também usado pelos pagamentos de dívidas). */
@@ -136,14 +202,19 @@ export async function insertEntry(
   const timestamp = context.now();
   const entry: Entry = {
     ...input,
+    vehicleId: input.vehicleId ?? null,
+    vehicleCostType: input.vehicleCostType ?? null,
+    quantityMilli: input.quantityMilli ?? null,
+    odometerKm: input.odometerKm ?? null,
     id: context.newId(),
     createdAt: timestamp,
     updatedAt: timestamp,
   };
   await tx.run(
     `INSERT INTO entries (id, type, amount, description, search_text, category_id, account_id,
-       destination_account_id, date, notes, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       destination_account_id, date, notes, vehicle_id, vehicle_cost_type, quantity_milli,
+       odometer_km, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id,
       entry.type,
@@ -155,6 +226,10 @@ export async function insertEntry(
       entry.destinationAccountId,
       entry.date,
       entry.notes,
+      entry.vehicleId,
+      entry.vehicleCostType,
+      entry.quantityMilli,
+      entry.odometerKm,
       timestamp,
       timestamp,
     ],
@@ -221,14 +296,20 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
         db.transaction(async (tx) => {
           const existing = await findActive(tx, id);
           if (!existing) throw new NotFoundError('entry', id);
-          const input = await prepareEntry(tx, raw, {
-            accountId: existing.account_id,
-            destinationAccountId: existing.destination_account_id,
-          });
+          const input = await prepareEntry(
+            tx,
+            keepVehicle(raw, existing),
+            {
+              accountId: existing.account_id,
+              destinationAccountId: existing.destination_account_id,
+            },
+            id,
+          );
           const timestamp = context.now();
           await tx.run(
             `UPDATE entries SET type = ?, amount = ?, description = ?, search_text = ?, category_id = ?,
-               account_id = ?, destination_account_id = ?, date = ?, notes = ?, updated_at = ?
+               account_id = ?, destination_account_id = ?, date = ?, notes = ?, vehicle_id = ?,
+               vehicle_cost_type = ?, quantity_milli = ?, odometer_km = ?, updated_at = ?
              WHERE id = ?`,
             [
               input.type,
@@ -240,13 +321,72 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
               input.destinationAccountId,
               input.date,
               input.notes,
+              input.vehicleId ?? null,
+              input.vehicleCostType ?? null,
+              input.quantityMilli ?? null,
+              input.odometerKm ?? null,
               timestamp,
               id,
             ],
           );
-          return { ...toEntry(existing), ...input, updatedAt: timestamp };
+          return {
+            ...toEntry(existing),
+            ...input,
+            vehicleId: input.vehicleId ?? null,
+            vehicleCostType: input.vehicleCostType ?? null,
+            quantityMilli: input.quantityMilli ?? null,
+            odometerKm: input.odometerKm ?? null,
+            updatedAt: timestamp,
+          };
         }),
       );
+    },
+
+    linkVehicle(ids, link) {
+      return write(context, ['entries'], () =>
+        db.transaction(async (tx) => {
+          if (link.vehicleCostType === 'purchase' && ids.length > 1) {
+            throw new ValidationError({ vehicleCostType: 'purchaseAlreadyLinked' });
+          }
+          const timestamp = context.now();
+          for (const id of ids) {
+            const existing = await findActive(tx, id);
+            if (!existing) throw new NotFoundError('entry', id);
+            // Só muda a ligação: valor, categoria, conta e data ficam como estão.
+            const input = await prepareEntry(
+              tx,
+              {
+                ...toEntry(existing),
+                vehicleId: link.vehicleId,
+                vehicleCostType: link.vehicleCostType,
+                quantityMilli: null,
+                odometerKm: null,
+              },
+              {
+                accountId: existing.account_id,
+                destinationAccountId: existing.destination_account_id,
+              },
+              id,
+            );
+            await tx.run(
+              `UPDATE entries SET vehicle_id = ?, vehicle_cost_type = ?, quantity_milli = NULL,
+                 odometer_km = NULL, updated_at = ? WHERE id = ?`,
+              [input.vehicleId ?? null, input.vehicleCostType ?? null, timestamp, id],
+            );
+          }
+        }),
+      );
+    },
+
+    async listForVehicle(vehicleId) {
+      const rows = await db.all<EntryRow & { currency: string }>(
+        `SELECT ${COLUMNS}, a.currency AS currency FROM entries e
+           JOIN accounts a ON a.id = e.account_id
+          WHERE e.vehicle_id = ? AND e.deleted_at IS NULL
+          ORDER BY e.date DESC, e.created_at DESC`,
+        [vehicleId],
+      );
+      return rows.map((row) => ({ ...toEntry(row), currency: row.currency }));
     },
 
     delete(id) {

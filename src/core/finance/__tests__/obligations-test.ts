@@ -2,6 +2,21 @@ import type { VehicleKind } from '../types';
 import { upcomingObligations, type ObligationsInput } from '../obligations';
 
 const meta = { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' };
+const vehicleDetails = {
+  make: null,
+  model: null,
+  year: null,
+  fuelType: null,
+  acquiredOn: null,
+  purchaseAmount: null,
+  currency: null,
+  roadTaxDue: null,
+  serviceDueOn: null,
+  serviceDueKm: null,
+  notes: null,
+  kindLabel: null,
+  icon: null,
+};
 
 function input(overrides: Partial<ObligationsInput> = {}): ObligationsInput {
   return {
@@ -29,6 +44,7 @@ describe('upcomingObligations', () => {
             odometerKm: null,
             inspectionDue: '2026-11-20',
             insuranceDue: '2027-06-01',
+            ...vehicleDetails,
           },
         ],
         documents: [
@@ -39,6 +55,7 @@ describe('upcomingObligations', () => {
             category: 'identity',
             expiresOn: '2026-10-01',
             notes: null,
+            vehicleId: null,
           },
         ],
         subscriptions: [
@@ -99,6 +116,7 @@ describe('upcomingObligations', () => {
       odometerKm: null,
       inspectionDue: null,
       insuranceDue: null,
+      ...vehicleDetails,
     };
     const iuc = (today: string, vehicles = [car]) =>
       upcomingObligations(input({ today, horizonDays: 100, vehicles }))

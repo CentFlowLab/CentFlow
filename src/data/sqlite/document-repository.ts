@@ -16,11 +16,12 @@ type DocumentRow = {
   category: DocumentRecord['category'];
   expires_on: string | null;
   notes: string | null;
+  vehicle_id: string | null;
   created_at: string;
   updated_at: string;
 };
 
-const COLUMNS = `id, title, category, expires_on, notes, created_at, updated_at`;
+const COLUMNS = `id, title, category, expires_on, notes, vehicle_id, created_at, updated_at`;
 
 function toDocument(row: DocumentRow): DocumentRecord {
   return {
@@ -29,18 +30,24 @@ function toDocument(row: DocumentRow): DocumentRecord {
     category: row.category,
     expiresOn: row.expires_on,
     notes: row.notes,
+    vehicleId: row.vehicle_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-function prepare(raw: DocumentInput): DocumentInput {
+/** Sem `vehicleId` no `raw` (ecrãs antigos), mantém a ligação que existia. */
+function prepare(
+  raw: DocumentInput,
+  existingVehicleId: string | null = null,
+): Omit<DocumentRecord, 'id' | 'createdAt' | 'updatedAt'> {
   const notes = raw.notes?.trim() ?? '';
-  const input: DocumentInput = {
+  const input = {
     title: raw.title.trim(),
     category: raw.category,
     expiresOn: raw.expiresOn,
     notes: notes === '' ? null : notes,
+    vehicleId: raw.vehicleId === undefined ? existingVehicleId : raw.vehicleId,
   };
   const errors = validateDocumentInput(input);
   if (hasErrors(errors)) throw new ValidationError(errors);
@@ -76,9 +83,19 @@ export function createSqliteDocumentRepository(
           const id = context.newId();
           const timestamp = context.now();
           await tx.run(
-            `INSERT INTO documents (id, title, category, expires_on, notes, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [id, input.title, input.category, input.expiresOn, input.notes, timestamp, timestamp],
+            `INSERT INTO documents (id, title, category, expires_on, notes, vehicle_id, created_at,
+               updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              id,
+              input.title,
+              input.category,
+              input.expiresOn,
+              input.notes,
+              input.vehicleId,
+              timestamp,
+              timestamp,
+            ],
           );
           return { id, ...input, createdAt: timestamp, updatedAt: timestamp };
         }),
@@ -93,13 +110,21 @@ export function createSqliteDocumentRepository(
             [id],
           );
           if (!existing) throw new NotFoundError('document', id);
-          const input = prepare(raw);
+          const input = prepare(raw, existing.vehicle_id);
           const timestamp = context.now();
           await tx.run(
             `UPDATE documents
-                SET title = ?, category = ?, expires_on = ?, notes = ?, updated_at = ?
+                SET title = ?, category = ?, expires_on = ?, notes = ?, vehicle_id = ?, updated_at = ?
               WHERE id = ?`,
-            [input.title, input.category, input.expiresOn, input.notes, timestamp, id],
+            [
+              input.title,
+              input.category,
+              input.expiresOn,
+              input.notes,
+              input.vehicleId,
+              timestamp,
+              id,
+            ],
           );
           return { ...toDocument(existing), ...input, updatedAt: timestamp };
         }),

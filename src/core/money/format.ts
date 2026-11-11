@@ -1,4 +1,5 @@
 import type { Money } from './money';
+import { currencyExponent } from './currency';
 import { toMajorUnits } from './money';
 
 export type FormatMoneyOptions = {
@@ -48,4 +49,18 @@ export function formatMoney(
     Boolean(options.compact),
     noFraction,
   ).format(major);
+}
+
+/**
+ * Preço por unidade (ex.: por litro ou por km) a partir de unidades mínimas com decimais:
+ * uma casa a mais do que a moeda (172,57 cêntimos → "1,726 €"). Arredonda só aqui.
+ */
+export function formatUnitPrice(minorPerUnit: number, currency: string, locale: string): string {
+  const digits = currencyExponent(currency) + 1;
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(toMajorUnits(minorPerUnit, currency));
 }

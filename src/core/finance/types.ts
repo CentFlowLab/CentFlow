@@ -74,7 +74,37 @@ export type Entry = SyncMetadata & {
   destinationAccountId: Id | null;
   date: CalendarDate;
   notes: string | null;
+  /** Veículo a que a despesa pertence (ADR-054). Não altera a contabilização: é a mesma linha. */
+  vehicleId: Id | null;
+  /** Tipo de custo do veículo; obrigatório com `vehicleId`. */
+  vehicleCostType: VehicleCostType | null;
+  /** Combustível: litros × 1000 (ou kWh × 1000). Só com `fuel`. */
+  quantityMilli: number | null;
+  /** Leitura do conta-quilómetros neste movimento. */
+  odometerKm: number | null;
 };
+
+/** Tipos de custo de um veículo: a segunda classificação de uma despesa, sem duplicar o valor. */
+export const VEHICLE_COST_TYPES = [
+  'fuel',
+  'insurance',
+  'road_tax',
+  'inspection',
+  'tyres',
+  'maintenance',
+  'repair',
+  'parking_tolls',
+  'purchase',
+  'other',
+] as const;
+export type VehicleCostType = (typeof VEHICLE_COST_TYPES)[number];
+
+/** Limites de valores possíveis (ADR-054). */
+export const VEHICLE_LIMITS = {
+  /** 1000 litros. */
+  maxQuantityMilli: 1_000_000,
+  maxOdometerKm: 10_000_000,
+} as const;
 
 export type AccountInput = Pick<Account, 'name' | 'type' | 'currency' | 'initialBalance'>;
 export type CategoryInput = Pick<Category, 'name' | 'type' | 'icon' | 'color'> & {
@@ -91,7 +121,8 @@ export type EntryInput = Pick<
   | 'destinationAccountId'
   | 'date'
   | 'notes'
->;
+> &
+  Partial<Pick<Entry, 'vehicleId' | 'vehicleCostType' | 'quantityMilli' | 'odometerKm'>>;
 export type BudgetInput = Pick<
   Budget,
   'categoryId' | 'amount' | 'currency' | 'period' | 'startsOn'
@@ -199,6 +230,16 @@ export const VEHICLE_KINDS = ['car', 'motorcycle', 'van', 'bicycle', 'other'] as
 export type VehicleKind = (typeof VEHICLE_KINDS)[number];
 
 /** Veículo. Datas e campos opcionais são `null` quando não preenchidos. */
+export const VEHICLE_FUEL_TYPES = [
+  'petrol',
+  'diesel',
+  'electric',
+  'hybrid',
+  'lpg',
+  'other',
+] as const;
+export type VehicleFuelType = (typeof VEHICLE_FUEL_TYPES)[number];
+
 export type Vehicle = SyncMetadata & {
   id: Id;
   name: string;
@@ -207,12 +248,47 @@ export type Vehicle = SyncMetadata & {
   odometerKm: number | null;
   inspectionDue: CalendarDate | null;
   insuranceDue: CalendarDate | null;
+  make: string | null;
+  model: string | null;
+  year: number | null;
+  fuelType: VehicleFuelType | null;
+  acquiredOn: CalendarDate | null;
+  /** Valor de compra informativo (unidades mínimas); a compra marcada num movimento tem prioridade. */
+  purchaseAmount: number | null;
+  /** Moeda do veículo (valor de compra e totais). */
+  currency: CurrencyCode | null;
+  roadTaxDue: CalendarDate | null;
+  serviceDueOn: CalendarDate | null;
+  serviceDueKm: number | null;
+  notes: string | null;
+  /** Tipo escrito pela pessoa (ex.: "Autocaravana"); sem ele, mostra-se o tipo base. */
+  kindLabel: string | null;
+  /** Ícone escolhido (catálogo de ícones); sem ele, o do tipo base. */
+  icon: string | null;
 };
 
 export type VehicleInput = Pick<
   Vehicle,
   'name' | 'kind' | 'plate' | 'odometerKm' | 'inspectionDue' | 'insuranceDue'
->;
+> &
+  Partial<
+    Pick<
+      Vehicle,
+      | 'make'
+      | 'model'
+      | 'year'
+      | 'fuelType'
+      | 'acquiredOn'
+      | 'purchaseAmount'
+      | 'currency'
+      | 'roadTaxDue'
+      | 'serviceDueOn'
+      | 'serviceDueKm'
+      | 'notes'
+      | 'kindLabel'
+      | 'icon'
+    >
+  >;
 
 export const DOCUMENT_CATEGORIES = [
   'identity',
@@ -233,6 +309,8 @@ export type DocumentRecord = SyncMetadata & {
   category: DocumentCategory;
   expiresOn: CalendarDate | null;
   notes: string | null;
+  vehicleId: Id | null;
 };
 
-export type DocumentInput = Pick<DocumentRecord, 'title' | 'category' | 'expiresOn' | 'notes'>;
+export type DocumentInput = Pick<DocumentRecord, 'title' | 'category' | 'expiresOn' | 'notes'> &
+  Partial<Pick<DocumentRecord, 'vehicleId'>>;

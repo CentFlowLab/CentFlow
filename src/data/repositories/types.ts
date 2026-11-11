@@ -25,6 +25,7 @@ import type {
   DocumentInput,
   WealthItemInput,
   WealthPaymentInput,
+  VehicleCostType,
   Subscription,
   SubscriptionInput,
   AccountMonthFlow,
@@ -87,6 +88,9 @@ export type EntryFilter = {
   /** Corresponde à conta de origem ou de destino. */
   accountId?: Id;
   categoryId?: Id;
+  vehicleId?: Id;
+  /** Só despesas e rendimentos sem veículo (para associar movimentos existentes). */
+  withoutVehicle?: boolean;
   from?: CalendarDate;
   to?: CalendarDate;
   sort?: EntrySort;
@@ -123,8 +127,19 @@ export interface EntryRepository {
    * nenhum é gravado e o erro indica a posição (`index`).
    */
   createMany(inputs: readonly EntryInput[]): Promise<Entry[]>;
+  /** Sem campos de veículo no `input`, mantém a ligação ao veículo que existia. */
   update(id: Id, input: EntryInput): Promise<Entry>;
   delete(id: Id): Promise<void>;
+  /**
+   * Liga movimentos existentes a um veículo, numa só transação, sem mudar valor, categoria, conta
+   * nem data (ADR-054).
+   */
+  linkVehicle(
+    ids: readonly Id[],
+    link: { vehicleId: Id; vehicleCostType: VehicleCostType },
+  ): Promise<void>;
+  /** Todos os movimentos do veículo (mais recentes primeiro), com a moeda da conta. */
+  listForVehicle(vehicleId: Id): Promise<(Entry & { currency: string })[]>;
   aggregate(range: { from: CalendarDate; to: CalendarDate }): Promise<EntryAggregate[]>;
   /** Igual a `aggregate`, agrupado pelo dia em vez do mês. */
   aggregateByDate(range: { from: CalendarDate; to: CalendarDate }): Promise<DailyAggregate[]>;
@@ -200,7 +215,14 @@ export interface VehicleRepository {
   list(): Promise<Vehicle[]>;
   get(id: Id): Promise<Vehicle | null>;
   create(input: VehicleInput): Promise<Vehicle>;
+  /** Campos novos ausentes no `input` mantêm o valor guardado. */
   update(id: Id, input: VehicleInput): Promise<Vehicle>;
+  /** Movimentos e documentos ligados (para a confirmação antes de eliminar). */
+  countLinks(id: Id): Promise<{ entries: number; documents: number }>;
+  /**
+   * Elimina o veículo e desliga os movimentos e documentos, numa só transação, sem alterar valores,
+   * categorias, contas nem datas (ADR-054).
+   */
   delete(id: Id): Promise<void>;
 }
 

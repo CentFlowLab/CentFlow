@@ -9,6 +9,10 @@ const entry: SyncRecord = {
   account_id: 'a-bank',
   destination_account_id: null,
   date: '2026-11-08',
+  vehicle_id: null,
+  vehicle_cost_type: null,
+  quantity_milli: null,
+  odometer_km: null,
   deleted_at: null,
 };
 

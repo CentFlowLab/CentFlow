@@ -195,6 +195,77 @@ describe('database initialization', () => {
   });
 });
 
+describe('schema v12 (vehicle costs)', () => {
+  it('keeps v11 entries, vehicles and documents and syncs the new fields', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 11),
+    );
+    await insertAccount(db, 'a1');
+    await insertCategory(db, 'c1');
+    await db.run(
+      `INSERT INTO entries (id, type, amount, description, search_text, category_id, account_id,
+         date, created_at, updated_at)
+       VALUES ('e1', 'expense', 24000, 'Pneus', 'pneus', 'c1', 'a1', '2026-11-05', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO vehicles (id, name, kind, created_at, updated_at)
+       VALUES ('v1', 'Clio', 'car', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO documents (id, title, category, created_at, updated_at)
+       VALUES ('d1', 'Seguro', 'insurance', ?, ?)`,
+      [NOW, NOW],
+    );
+    await migrate(db, MIGRATIONS);
+
+    expect(
+      await db.first('SELECT amount, vehicle_id, vehicle_cost_type FROM entries WHERE id = ?', [
+        'e1',
+      ]),
+    ).toEqual({ amount: 24000, vehicle_id: null, vehicle_cost_type: null });
+    expect(await db.first('SELECT make, currency FROM vehicles')).toEqual({
+      make: null,
+      currency: null,
+    });
+
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(
+      `UPDATE entries SET vehicle_id = 'v1', vehicle_cost_type = 'tyres', odometer_km = 51000
+        WHERE id = 'e1'`,
+    );
+    await db.run(`UPDATE vehicles SET make = 'Renault', year = 2019 WHERE id = 'v1'`);
+    await db.run(`UPDATE documents SET vehicle_id = 'v1' WHERE id = 'd1'`);
+    const last = async (entity: string) =>
+      JSON.parse(
+        (await db.first<{ data: string }>(
+          'SELECT data FROM sync_outbox WHERE entity = ? ORDER BY seq DESC LIMIT 1',
+          [entity],
+        ))!.data,
+      );
+    expect(await last('entries')).toMatchObject({
+      vehicle_id: 'v1',
+      vehicle_cost_type: 'tyres',
+      odometer_km: 51000,
+      quantity_milli: null,
+      amount: 24000,
+    });
+    expect(await last('vehicles')).toMatchObject({ make: 'Renault', year: 2019 });
+    expect(await last('documents')).toMatchObject({ vehicle_id: 'v1' });
+
+    // Valores impossíveis ficam fora mesmo sem passar pela validação da app.
+    await expect(db.run(`UPDATE entries SET quantity_milli = 0 WHERE id = 'e1'`)).rejects.toThrow();
+    await expect(
+      db.run(`UPDATE entries SET vehicle_cost_type = 'boat' WHERE id = 'e1'`),
+    ).rejects.toThrow();
+    await db.close();
+  });
+});
+
 describe('schema v11 (wealth closed date)', () => {
   it('keeps v10 items and sends the closed date through the outbox', async () => {
     const db = createSqlDatabase(createNodeSqliteDriver());

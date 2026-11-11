@@ -16,3 +16,4 @@ export * from './subscriptions';
 export * from './summary';
 export * from './types';
 export * from './validation';
+export * from './vehicles';

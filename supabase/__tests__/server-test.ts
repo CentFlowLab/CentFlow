@@ -1292,3 +1292,222 @@ describe('vehicles and documents', () => {
     expect(category).toMatchObject({ status: 'rejected' });
   });
 });
+
+describe('vehicle costs (Fase 1)', () => {
+  const CAR = '91000000-0000-4000-8000-000000000001';
+  const OTHER = '91000000-0000-4000-8000-000000000002';
+  const DOC = '91000000-0000-4000-8000-000000000003';
+  const ENTRY_2 = '30000000-0000-4000-8000-000000000002';
+
+  const carOp = (id: string, base: number, data: Record<string, unknown> = {}): Op => ({
+    op_id: opId(),
+    tx_id: null,
+    entity: 'vehicles',
+    record_id: id,
+    base_version: base,
+    data: {
+      name: 'Clio',
+      kind: 'car',
+      plate: '50-XO-29',
+      odometer_km: 51000,
+      inspection_due: null,
+      insurance_due: null,
+      make: 'Renault',
+      model: 'Clio',
+      year: 2019,
+      fuel_type: 'diesel',
+      acquired_on: '2023-05-02',
+      purchase_amount: 1500000,
+      currency: 'EUR',
+      road_tax_due: '2027-05-31',
+      service_due_on: null,
+      service_due_km: 60000,
+      notes: null,
+      kind_label: 'Citadino',
+      icon: 'car-sport-outline',
+      deleted_at: null,
+      ...data,
+    },
+  });
+  const linked = {
+    vehicle_id: CAR,
+    vehicle_cost_type: 'tyres',
+    quantity_milli: null,
+    odometer_km: 51000,
+  };
+
+  beforeEach(async () => {
+    await seedBasics(alice);
+    const [car] = await push(alice, [carOp(CAR, 0)]);
+    expect(car).toMatchObject({ status: 'applied' });
+  });
+
+  it('stores an entry with category, vehicle and account once', async () => {
+    const [created] = await push(alice, [entryOp(ENTRY, 0, { amount: 24000, ...linked })]);
+    expect(created).toMatchObject({ status: 'applied' });
+    expect(created?.row).toMatchObject({
+      vehicle_id: CAR,
+      vehicle_cost_type: 'tyres',
+      odometer_km: 51000,
+    });
+    expect(
+      await alice.query(
+        'select count(*)::int as n, sum(amount)::int as total from public.entries where deleted_at is null',
+      ),
+    ).toEqual([{ n: 1, total: 24000 }]);
+  });
+
+  it('keeps the vehicle fields when an older app edits the entry or the vehicle', async () => {
+    await push(alice, [
+      entryOp(ENTRY, 0, {
+        amount: 6000,
+        vehicle_id: CAR,
+        vehicle_cost_type: 'fuel',
+        quantity_milli: 40000,
+        odometer_km: 51200,
+      }),
+    ]);
+    // Formato da app 0.1.13: sem nenhum dos campos novos.
+    const [old] = await push(alice, [entryOp(ENTRY, 1, { amount: 6500, description: 'Gasóleo' })]);
+    expect(old).toMatchObject({ status: 'applied' });
+    expect(
+      await alice.query(
+        `select amount::int, description, vehicle_id, vehicle_cost_type, quantity_milli::int as litres,
+           odometer_km::int as km from public.entries`,
+      ),
+    ).toEqual([
+      {
+        amount: 6500,
+        description: 'Gasóleo',
+        vehicle_id: CAR,
+        vehicle_cost_type: 'fuel',
+        litres: 40000,
+        km: 51200,
+      },
+    ]);
+
+    const oldVehicle: Op = carOp(CAR, 1, { name: 'Clio 4' });
+    for (const field of [
+      'make',
+      'model',
+      'year',
+      'fuel_type',
+      'acquired_on',
+      'purchase_amount',
+      'currency',
+      'road_tax_due',
+      'service_due_on',
+      'service_due_km',
+      'notes',
+      'kind_label',
+      'icon',
+    ]) {
+      delete oldVehicle.data[field];
+    }
+    expect((await push(alice, [oldVehicle]))[0]).toMatchObject({ status: 'applied' });
+    expect(
+      await alice.query(
+        `select name, make, year, purchase_amount::int as purchase, currency, kind_label, icon
+           from public.vehicles`,
+      ),
+    ).toEqual([
+      {
+        name: 'Clio 4',
+        make: 'Renault',
+        year: 2019,
+        purchase: 1500000,
+        currency: 'EUR',
+        kind_label: 'Citadino',
+        icon: 'car-sport-outline',
+      },
+    ]);
+
+    // Uma app nova que desliga explicitamente consegue limpar os campos.
+    const [unlinked] = await push(alice, [
+      entryOp(ENTRY, 2, {
+        amount: 6500,
+        vehicle_id: null,
+        vehicle_cost_type: null,
+        quantity_milli: null,
+        odometer_km: null,
+      }),
+    ]);
+    expect(unlinked?.row).toMatchObject({ vehicle_id: null, quantity_milli: null });
+  });
+
+  it('rejects impossible combinations and values', async () => {
+    const statuses: (string | undefined)[] = [];
+    for (const op of [
+      // Transferência com veículo.
+      entryOp(ENTRY, 0, {
+        type: 'transfer',
+        category_id: null,
+        destination_account_id: ACCOUNT,
+        ...linked,
+      }),
+      // Veículo sem tipo de custo.
+      entryOp(ENTRY, 0, { vehicle_id: CAR }),
+      // Litros fora do combustível, ou impossíveis.
+      entryOp(ENTRY, 0, { ...linked, quantity_milli: 40000 }),
+      entryOp(ENTRY, 0, { ...linked, vehicle_cost_type: 'fuel', quantity_milli: 2000000 }),
+      // Quilómetros sem veículo.
+      entryOp(ENTRY, 0, { odometer_km: 100 }),
+      // Veículo de outra pessoa (ou inexistente).
+      entryOp(ENTRY, 0, { ...linked, vehicle_id: OTHER }),
+    ]) {
+      statuses.push((await push(alice, [op]))[0]?.status);
+    }
+    expect(statuses).toEqual([
+      'rejected',
+      'rejected',
+      'rejected',
+      'rejected',
+      'rejected',
+      'rejected',
+    ]);
+  });
+
+  it('allows a single explicit purchase per vehicle', async () => {
+    const purchase = { vehicle_id: CAR, vehicle_cost_type: 'purchase' };
+    expect(
+      (await push(alice, [entryOp(ENTRY, 0, { amount: 1500000, ...purchase })]))[0],
+    ).toMatchObject({ status: 'applied' });
+    const [second] = await push(alice, [entryOp(ENTRY_2, 0, { amount: 100, ...purchase })]);
+    expect(second).toMatchObject({ status: 'rejected' });
+    // Desmarcada a primeira, a outra pode ser a compra.
+    await push(alice, [
+      entryOp(ENTRY, 1, { amount: 1500000, deleted_at: '2026-11-11T10:00:00Z', ...purchase }),
+    ]);
+    expect(
+      (await push(alice, [entryOp(ENTRY_2, 0, { amount: 100, ...purchase })]))[0],
+    ).toMatchObject({
+      status: 'applied',
+    });
+  });
+
+  it('links documents to a vehicle and isolates users', async () => {
+    const [document] = await push(alice, [
+      {
+        op_id: opId(),
+        tx_id: null,
+        entity: 'documents',
+        record_id: DOC,
+        base_version: 0,
+        data: {
+          title: 'Apólice',
+          category: 'insurance',
+          expires_on: null,
+          notes: null,
+          vehicle_id: CAR,
+          deleted_at: null,
+        },
+      },
+    ]);
+    expect(document).toMatchObject({ status: 'applied' });
+    expect(await bob.query('select id from public.vehicles')).toEqual([]);
+    const [foreign] = await push(bob, [carOp(OTHER, 0)]);
+    expect(foreign).toMatchObject({ status: 'applied' });
+    const [cross] = await push(alice, [entryOp(ENTRY, 0, { ...linked, vehicle_id: OTHER })]);
+    expect(cross).toMatchObject({ status: 'rejected' });
+  });
+});

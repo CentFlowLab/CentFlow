@@ -150,6 +150,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'wealth items: sold or paid off date (closed_on)',
     sql: migrationV11(),
   },
+  {
+    version: 12,
+    description: 'vehicle costs on entries, vehicle details and documents linked to vehicles',
+    sql: migrationV12(),
+  },
 ];
 
 /**
@@ -1421,6 +1426,133 @@ function migrationV11(): string {
       VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'wealth_items', NEW.id,
         ${base('OLD')}, ${json('OLD')}, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
     END;
+  `;
+}
+
+/**
+ * v12 — veículos (ADR-054): movimentos ligados a um veículo (tipo de custo, litros, km), ficha do
+ * veículo e documentos do veículo. Os triggers de sincronização das três tabelas passam a enviar
+ * os campos novos.
+ */
+function migrationV12(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const date = (column: string) =>
+    `CHECK (${column} IS NULL OR ${column} GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]')`;
+  const synced = {
+    entries: [
+      'type',
+      'amount',
+      'description',
+      'notes',
+      'category_id',
+      'account_id',
+      'destination_account_id',
+      'date',
+      'vehicle_id',
+      'vehicle_cost_type',
+      'quantity_milli',
+      'odometer_km',
+      'created_at',
+      'deleted_at',
+    ],
+    vehicles: [
+      'name',
+      'kind',
+      'plate',
+      'odometer_km',
+      'inspection_due',
+      'insurance_due',
+      'make',
+      'model',
+      'year',
+      'fuel_type',
+      'acquired_on',
+      'purchase_amount',
+      'currency',
+      'road_tax_due',
+      'service_due_on',
+      'service_due_km',
+      'notes',
+      'kind_label',
+      'icon',
+      'created_at',
+      'deleted_at',
+    ],
+    documents: [
+      'title',
+      'category',
+      'expires_on',
+      'notes',
+      'vehicle_id',
+      'created_at',
+      'deleted_at',
+    ],
+  } as const;
+  const json = (row: 'NEW' | 'OLD', fields: readonly string[]) =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const base = (table: string, row: 'NEW' | 'OLD') => `COALESCE(
+    (SELECT base_version + 1 FROM sync_outbox
+      WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+    ${row}.version)`;
+  const triggers = Object.entries(synced)
+    .map(
+      ([table, fields]) => `
+    DROP TRIGGER IF EXISTS sync_${table}_insert;
+    DROP TRIGGER IF EXISTS sync_${table}_update;
+    CREATE TRIGGER sync_${table}_insert AFTER INSERT ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'NEW')}, NULL, ${json('NEW', fields)}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
+    CREATE TRIGGER sync_${table}_update AFTER UPDATE ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'OLD')}, ${json('OLD', fields)}, ${json('NEW', fields)},
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;`,
+    )
+    .join('\n');
+  return `
+    ALTER TABLE entries ADD COLUMN vehicle_id TEXT REFERENCES vehicles (id) ON DELETE RESTRICT;
+    ALTER TABLE entries ADD COLUMN vehicle_cost_type TEXT CHECK (vehicle_cost_type IS NULL OR
+      vehicle_cost_type IN ('fuel', 'insurance', 'road_tax', 'inspection', 'tyres', 'maintenance',
+        'repair', 'parking_tolls', 'purchase', 'other'));
+    ALTER TABLE entries ADD COLUMN quantity_milli INTEGER CHECK (quantity_milli IS NULL OR
+      (typeof(quantity_milli) = 'integer' AND quantity_milli BETWEEN 1 AND 1000000));
+    ALTER TABLE entries ADD COLUMN odometer_km INTEGER CHECK (odometer_km IS NULL OR
+      (typeof(odometer_km) = 'integer' AND odometer_km BETWEEN 0 AND 10000000));
+    CREATE INDEX entries_vehicle_idx ON entries (vehicle_id, date) WHERE vehicle_id IS NOT NULL;
+
+    ALTER TABLE vehicles ADD COLUMN make TEXT CHECK (make IS NULL OR length(trim(make)) BETWEEN 1 AND 40);
+    ALTER TABLE vehicles ADD COLUMN model TEXT CHECK (model IS NULL OR length(trim(model)) BETWEEN 1 AND 40);
+    ALTER TABLE vehicles ADD COLUMN year INTEGER CHECK (year IS NULL OR
+      (typeof(year) = 'integer' AND year BETWEEN 1900 AND 2100));
+    ALTER TABLE vehicles ADD COLUMN fuel_type TEXT CHECK (fuel_type IS NULL OR
+      fuel_type IN ('petrol', 'diesel', 'electric', 'hybrid', 'lpg', 'other'));
+    ALTER TABLE vehicles ADD COLUMN acquired_on TEXT ${date('acquired_on')};
+    ALTER TABLE vehicles ADD COLUMN purchase_amount INTEGER CHECK (purchase_amount IS NULL OR
+      (typeof(purchase_amount) = 'integer' AND purchase_amount > 0));
+    ALTER TABLE vehicles ADD COLUMN currency TEXT CHECK (currency IS NULL OR length(currency) = 3);
+    ALTER TABLE vehicles ADD COLUMN road_tax_due TEXT ${date('road_tax_due')};
+    ALTER TABLE vehicles ADD COLUMN service_due_on TEXT ${date('service_due_on')};
+    ALTER TABLE vehicles ADD COLUMN service_due_km INTEGER CHECK (service_due_km IS NULL OR
+      (typeof(service_due_km) = 'integer' AND service_due_km BETWEEN 0 AND 10000000));
+    ALTER TABLE vehicles ADD COLUMN notes TEXT CHECK (notes IS NULL OR length(notes) <= 1000);
+    ALTER TABLE vehicles ADD COLUMN kind_label TEXT CHECK (kind_label IS NULL OR
+      length(trim(kind_label)) BETWEEN 1 AND 30);
+    ALTER TABLE vehicles ADD COLUMN icon TEXT CHECK (icon IS NULL OR length(icon) BETWEEN 1 AND 40);
+
+    ALTER TABLE documents ADD COLUMN vehicle_id TEXT REFERENCES vehicles (id) ON DELETE RESTRICT;
+    CREATE INDEX documents_vehicle_idx ON documents (vehicle_id) WHERE vehicle_id IS NOT NULL;
+    ${triggers}
   `;
 }
 
