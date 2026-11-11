@@ -175,7 +175,25 @@ export type WealthValuation = { amount: number; valuedOn: CalendarDate };
 export type WealthItemInput = Pick<
   WealthItem,
   'name' | 'type' | 'amount' | 'currency' | 'valuedOn'
->;
+> & {
+  /**
+   * Dívidas: valor e data em que começou (ex.: o crédito pedido). Fica como a primeira avaliação
+   * do histórico. Sem valor: mantém o histórico como está.
+   */
+  origin?: WealthValuation;
+};
+
+/** Pagamento de uma dívida: cria a despesa na conta e baixa o valor em dívida (ADR-052). */
+export type WealthPaymentInput = {
+  /** Valor pago (despesa), em unidades mínimas. */
+  amount: number;
+  /** Quanto abate na dívida (o resto são juros e encargos). Entre 1 e `amount`. */
+  principal: number;
+  accountId: Id;
+  categoryId: Id;
+  date: CalendarDate;
+  description: string;
+};
 
 export const VEHICLE_KINDS = ['car', 'motorcycle', 'van', 'bicycle', 'other'] as const;
 export type VehicleKind = (typeof VEHICLE_KINDS)[number];

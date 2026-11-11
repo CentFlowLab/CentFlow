@@ -99,6 +99,38 @@ function normalize(input: AccountInput): AccountInput {
   return { ...input, name: input.name.trim(), currency: input.currency.toUpperCase() };
 }
 
+/** Valida e grava uma conta nova (também usado ao passar um cartão do património para Contas). */
+export async function insertAccount(
+  tx: SqlExecutor,
+  context: Pick<SqliteRepositoryContext, 'newId' | 'now'>,
+  rawInput: AccountInput,
+): Promise<Account> {
+  const input = normalize(rawInput);
+  assertValid(input);
+  const timestamp = context.now();
+  const account: Account = {
+    ...input,
+    id: context.newId(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    archivedAt: null,
+  };
+  await tx.run(
+    `INSERT INTO accounts (id, name, type, currency, initial_balance, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      account.id,
+      account.name,
+      account.type,
+      account.currency,
+      account.initialBalance,
+      timestamp,
+      timestamp,
+    ],
+  );
+  return account;
+}
+
 export function createSqliteAccountRepository(context: SqliteRepositoryContext): AccountRepository {
   const { db } = context;
 
@@ -128,32 +160,9 @@ export function createSqliteAccountRepository(context: SqliteRepositoryContext):
     },
 
     create(rawInput) {
-      return write(context, ['accounts'], async () => {
-        const input = normalize(rawInput);
-        assertValid(input);
-        const timestamp = context.now();
-        const account: Account = {
-          ...input,
-          id: context.newId(),
-          createdAt: timestamp,
-          updatedAt: timestamp,
-          archivedAt: null,
-        };
-        await db.run(
-          `INSERT INTO accounts (id, name, type, currency, initial_balance, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            account.id,
-            account.name,
-            account.type,
-            account.currency,
-            account.initialBalance,
-            timestamp,
-            timestamp,
-          ],
-        );
-        return account;
-      });
+      return write(context, ['accounts'], () =>
+        db.transaction((tx) => insertAccount(tx, context, rawInput)),
+      );
     },
 
     update(id, rawInput) {

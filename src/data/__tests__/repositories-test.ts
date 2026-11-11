@@ -1,5 +1,6 @@
 import {
   wealthTotals,
+  liabilityProgress,
   computeBalances,
   DEFAULT_CATEGORIES,
   flowsFromEntries,
@@ -931,6 +932,98 @@ describe('wealth items', () => {
     repos.subscribe((entities) => seen.push(entities));
     await repos.wealth.create(input);
     expect(seen.flat()).toContain('wealth_items');
+  });
+  it('keeps the starting amount of a loan and records payments as expenses', async () => {
+    const loan = await repos.wealth.create({
+      name: 'Crédito pessoal',
+      type: 'loan',
+      amount: 1550000,
+      currency: 'EUR',
+      valuedOn: '2026-11-01',
+      origin: { amount: 2000000, valuedOn: '2024-03-01' },
+    });
+    expect(loan.valueHistory).toEqual([{ amount: 2000000, valuedOn: '2024-03-01' }]);
+    expect(liabilityProgress(loan)).toMatchObject({ original: 2000000, paid: 450000 });
+
+    // Prestação de 300 €: 250 € de capital, o resto juros.
+    const { entry, item } = await repos.wealth.recordPayment(loan.id, {
+      amount: 30000,
+      principal: 25000,
+      accountId: bank.id,
+      categoryId: food.id,
+      date: '2026-11-08',
+      description: 'Crédito pessoal',
+    });
+    expect(entry).toMatchObject({ type: 'expense', amount: 30000, accountId: bank.id });
+    expect(item.amount).toBe(1525000);
+    expect(item.valueHistory.map((point) => point.amount)).toEqual([2000000, 1550000]);
+    const balances = await repos.accounts.listWithBalances();
+    expect(balances.find((account) => account.id === bank.id)?.balance).toBe(70000);
+
+    // Erros: abater mais do que se pagou, ou uma data anterior ao valor atual.
+    await expect(
+      repos.wealth.recordPayment(loan.id, {
+        amount: 100,
+        principal: 200,
+        accountId: bank.id,
+        categoryId: food.id,
+        date: '2026-11-09',
+        description: 'x',
+      }),
+    ).rejects.toMatchObject({ errors: { principal: 'principalTooLarge' } });
+    await expect(
+      repos.wealth.recordPayment(loan.id, {
+        amount: 100,
+        principal: 100,
+        accountId: bank.id,
+        categoryId: food.id,
+        date: '2026-11-01',
+        description: 'x',
+      }),
+    ).rejects.toMatchObject({ errors: { date: 'dateBeforeValuation' } });
+
+    // Paga por inteiro: fica paga nesse dia, com o valor inicial guardado.
+    const last = await repos.wealth.recordPayment(loan.id, {
+      amount: 1525000,
+      principal: 1525000,
+      accountId: bank.id,
+      categoryId: food.id,
+      date: '2026-11-10',
+      description: 'Crédito pessoal',
+    });
+    expect(last.item).toMatchObject({ amount: 1525000, closedOn: '2026-11-10' });
+    expect(liabilityProgress(last.item)?.ratio).toBe(1);
+  });
+
+  it('rejects a starting date that is not before the current value', async () => {
+    await expect(
+      repos.wealth.create({
+        name: 'Crédito',
+        type: 'loan',
+        amount: 1000,
+        currency: 'EUR',
+        valuedOn: '2026-11-01',
+        origin: { amount: 2000, valuedOn: '2026-11-01' },
+      }),
+    ).rejects.toMatchObject({ errors: { origin: 'originNotBefore' } });
+  });
+
+  it('moves a credit card to accounts with the amount owed as a negative balance', async () => {
+    const card = await repos.wealth.create({
+      name: 'Visa',
+      type: 'credit',
+      amount: 45000,
+      currency: 'EUR',
+      valuedOn: '2026-11-01',
+    });
+    const account = await repos.wealth.moveCardToAccounts(card.id, '2026-11-11');
+    expect(account).toMatchObject({ name: 'Visa', type: 'card', initialBalance: -45000 });
+    expect((await repos.wealth.get(card.id))?.closedOn).toBe('2026-11-11');
+    // A dívida conta uma vez: na conta, já não no património atual.
+    expect(wealthTotals(await repos.wealth.list())).toEqual([]);
+    await expect(repos.wealth.moveCardToAccounts(card.id, '2026-11-11')).rejects.toBeInstanceOf(
+      ValidationError,
+    );
   });
 });
 

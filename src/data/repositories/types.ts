@@ -24,6 +24,7 @@ import type {
   DocumentRecord,
   DocumentInput,
   WealthItemInput,
+  WealthPaymentInput,
   Subscription,
   SubscriptionInput,
   AccountMonthFlow,
@@ -183,6 +184,16 @@ export interface WealthRepository {
   reopen(id: Id): Promise<WealthItem>;
   /** Engano: sai de todo o lado, incluindo do histórico. */
   delete(id: Id): Promise<void>;
+  /**
+   * Pagamento de uma dívida, numa só transação: cria a despesa na conta e baixa o valor em dívida
+   * (com histórico). A zero, a dívida fica paga nesse dia.
+   */
+  recordPayment(id: Id, payment: WealthPaymentInput): Promise<{ entry: Entry; item: WealthItem }>;
+  /**
+   * Cartão de crédito do património passa a conta (tipo cartão) com o saldo em dívida negativo, para
+   * receber despesas; no património fica pago nesse dia (não conta duas vezes).
+   */
+  moveCardToAccounts(id: Id, today: CalendarDate): Promise<Account>;
 }
 
 export interface VehicleRepository {

@@ -1,4 +1,11 @@
-import { MAX_VALUATIONS, netWorthHistory, recordValuation, valueOn } from '../net-worth-history';
+import {
+  liabilityProgress,
+  MAX_VALUATIONS,
+  netWorthHistory,
+  recordValuation,
+  valueOn,
+  withOrigin,
+} from '../net-worth-history';
 
 const house = {
   type: 'property' as const,
@@ -125,5 +132,52 @@ describe('netWorthHistory', () => {
       ['2026-06', 40_000, 200_000],
       ['2026-07', 40_000, 0],
     ]);
+  });
+});
+
+describe('starting value of a debt', () => {
+  it('puts the origin first and drops older points', () => {
+    const history = [
+      { amount: 900, valuedOn: '2025-01-01' },
+      { amount: 800, valuedOn: '2026-01-01' },
+    ];
+    expect(withOrigin(history, { amount: 1000, valuedOn: '2025-06-01' })).toEqual([
+      { amount: 1000, valuedOn: '2025-06-01' },
+      { amount: 800, valuedOn: '2026-01-01' },
+    ]);
+    expect(withOrigin(history, undefined)).toEqual(history);
+  });
+
+  it('never trims the origin when the history is full', () => {
+    let item = {
+      amount: 100_000,
+      currency: 'EUR',
+      valuedOn: '2010-01-01',
+      valueHistory: withOrigin([], { amount: 200_000, valuedOn: '2009-01-01' }),
+    };
+    for (let month = 1; month <= MAX_VALUATIONS + 10; month += 1) {
+      const valuedOn = `${2010 + Math.floor(month / 12)}-${String((month % 12) + 1).padStart(2, '0')}-01`;
+      const next = { amount: item.amount - 100, currency: 'EUR', valuedOn };
+      item = { ...next, valueHistory: recordValuation(item, next) };
+    }
+    expect(item.valueHistory).toHaveLength(MAX_VALUATIONS);
+    expect(item.valueHistory[0]).toEqual({ amount: 200_000, valuedOn: '2009-01-01' });
+  });
+
+  it('measures what was paid, and everything once it is closed', () => {
+    const loan = {
+      type: 'loan' as const,
+      amount: 1_550_000,
+      valueHistory: [{ amount: 2_000_000, valuedOn: '2024-03-01' }],
+    };
+    expect(liabilityProgress(loan)).toEqual({
+      original: 2_000_000,
+      originalOn: '2024-03-01',
+      paid: 450_000,
+      ratio: 0.225,
+    });
+    expect(liabilityProgress({ ...loan, closedOn: '2026-11-10' })?.ratio).toBe(1);
+    expect(liabilityProgress({ ...loan, type: 'property' })).toBeNull();
+    expect(liabilityProgress({ ...loan, valueHistory: [] })).toBeNull();
   });
 });

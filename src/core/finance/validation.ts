@@ -12,7 +12,9 @@ import {
   type BudgetInput,
   type GoalContributionInput,
   type SavingsGoalInput,
+  type WealthItem,
   type WealthItemInput,
+  type WealthPaymentInput,
   WEALTH_TYPES,
   type VehicleInput,
   type DocumentInput,
@@ -23,6 +25,7 @@ import {
   type CategoryInput,
   type EntryInput,
 } from './types';
+import { isLiabilityType } from './wealth';
 
 export const LIMITS = {
   nameMaxLength: 60,
@@ -47,7 +50,11 @@ export type ValidationCode =
   | 'currencyLocked'
   | 'typeLocked'
   | 'invalidDate'
-  | 'duplicateCategory';
+  | 'duplicateCategory'
+  | 'originNotBefore'
+  | 'principalTooLarge'
+  | 'dateBeforeValuation'
+  | 'notLiability';
 
 export type ValidationErrors<Field extends string> = Partial<Record<Field, ValidationCode>>;
 
@@ -271,6 +278,37 @@ export function validateWealthItemInput(input: WealthItemInput): ValidationError
   }
   if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
   if (!isValidCalendarDate(input.valuedOn)) errors.valuedOn = 'invalidDate';
+  if (input.origin) {
+    const { amount, valuedOn } = input.origin;
+    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > MAX_AMOUNT_MINOR) {
+      errors.origin = amount > MAX_AMOUNT_MINOR ? 'amountTooLarge' : 'amountNotPositive';
+    } else if (!isValidCalendarDate(valuedOn)) {
+      errors.origin = 'invalidDate';
+    } else if (valuedOn >= input.valuedOn) {
+      errors.origin = 'originNotBefore';
+    }
+  }
+  return errors;
+}
+
+export type WealthPaymentField = keyof WealthPaymentInput;
+
+/** Valida um pagamento contra a dívida atual (as contas e categorias validam-se no movimento). */
+export function validateWealthPayment(
+  input: WealthPaymentInput,
+  item: Pick<WealthItem, 'type' | 'amount' | 'valuedOn' | 'closedOn'>,
+): ValidationErrors<WealthPaymentField> {
+  const errors: ValidationErrors<WealthPaymentField> = {};
+  if (!isLiabilityType(item.type) || item.closedOn) errors.principal = 'notLiability';
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) errors.amount = 'amountNotPositive';
+  else if (input.amount > MAX_AMOUNT_MINOR) errors.amount = 'amountTooLarge';
+  if (!Number.isSafeInteger(input.principal) || input.principal <= 0) {
+    errors.principal ??= 'amountNotPositive';
+  } else if (input.principal > input.amount || input.principal > item.amount) {
+    errors.principal ??= 'principalTooLarge';
+  }
+  if (!isValidCalendarDate(input.date)) errors.date = 'invalidDate';
+  else if (input.date < item.valuedOn) errors.date = 'dateBeforeValuation';
   return errors;
 }
 

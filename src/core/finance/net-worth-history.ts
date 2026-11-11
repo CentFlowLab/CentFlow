@@ -24,7 +24,55 @@ export function recordValuation(
     // Uma data nova anterior às guardadas também é válida: fica tudo por ordem.
     .filter((point) => point.valuedOn !== next.valuedOn)
     .sort((a, b) => (a.valuedOn < b.valuedOn ? -1 : a.valuedOn > b.valuedOn ? 1 : 0));
-  return history.slice(-MAX_VALUATIONS);
+  return keepOrigin(history);
+}
+
+/** Acima do limite, saem as mais antigas, exceto a primeira (o valor inicial de uma dívida). */
+function keepOrigin(history: WealthValuation[]): WealthValuation[] {
+  if (history.length <= MAX_VALUATIONS) return history;
+  return [history[0]!, ...history.slice(-(MAX_VALUATIONS - 1))];
+}
+
+/**
+ * Põe `origin` como primeira avaliação: as que não forem posteriores a ela saem (ADR-052).
+ * Quem chama garante que a origem é anterior à avaliação atual.
+ */
+export function withOrigin(
+  history: readonly WealthValuation[],
+  origin: WealthValuation | undefined,
+): WealthValuation[] {
+  if (!origin) return [...history];
+  return keepOrigin([
+    { amount: origin.amount, valuedOn: origin.valuedOn },
+    ...history.filter((point) => point.valuedOn > origin.valuedOn),
+  ]);
+}
+
+export type LiabilityProgress = {
+  /** Valor inicial (primeira avaliação). */
+  original: number;
+  originalOn: CalendarDate;
+  /** Já abatido: inicial − atual (nunca negativo). */
+  paid: number;
+  /** 0 a 1. */
+  ratio: number;
+};
+
+/** Quanto de uma dívida já foi pago, a partir da primeira avaliação; `null` sem histórico. */
+export function liabilityProgress(
+  item: Pick<WealthItem, 'type' | 'amount' | 'valueHistory'> & { closedOn?: CalendarDate | null },
+): LiabilityProgress | null {
+  if (!isLiabilityType(item.type)) return null;
+  const first = item.valueHistory[0];
+  if (!first || first.amount <= 0) return null;
+  // Paga: já não se deve nada, mesmo que o último valor guardado seja o anterior.
+  const paid = item.closedOn ? first.amount : Math.max(first.amount - item.amount, 0);
+  return {
+    original: first.amount,
+    originalOn: first.valuedOn,
+    paid,
+    ratio: Math.min(paid / first.amount, 1),
+  };
 }
 
 /** Valor de um bem num dia: a avaliação mais recente até esse dia; `null` antes da primeira. */

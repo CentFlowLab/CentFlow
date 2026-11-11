@@ -7,6 +7,7 @@ import {
   calendarDateToLocalDate,
   hasErrors,
   isLiabilityType,
+  liabilityProgress,
   validateWealthItemInput,
   ValidationError,
   WEALTH_ASSET_TYPES,
@@ -27,10 +28,12 @@ import { useLocaleFormat } from '@/i18n';
 import {
   Button,
   CalendarPicker,
+  Card,
   Chip,
   ChipGroup,
   Dialog,
   FormScreen,
+  ProgressBar,
   Text,
   TextField,
 } from '@/ui/components';
@@ -53,7 +56,7 @@ export function WealthForm({ item }: Props) {
   const { t } = useTranslation();
   const valueRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
-  const { formatDate, locale } = useLocaleFormat();
+  const { formatDate, formatMoney, locale } = useLocaleFormat();
   const today = useToday();
   const query = useDataQuery(useCallback((repos: Repositories) => loadCurrencies(repos), []));
   const editing = item !== undefined;
@@ -69,7 +72,27 @@ export function WealthForm({ item }: Props) {
   const [amountError, setAmountError] = useState<string>();
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingMove, setConfirmingMove] = useState(false);
+  // Valor inicial de uma dívida: a primeira avaliação do histórico (ADR-052).
+  const firstPoint = item?.valueHistory[0];
+  const [originText, setOriginText] = useState(
+    item && firstPoint
+      ? amountToInputString(firstPoint.amount, item.currency, decimalSeparatorFor(locale))
+      : '',
+  );
+  const [originDate, setOriginDate] = useState<string | null>(firstPoint?.valuedOn ?? null);
+  const [originError, setOriginError] = useState<string>();
+  const [pickingOriginDate, setPickingOriginDate] = useState(false);
 
+  const tracksOrigin = isLiabilityType(type) && type !== 'credit';
+  const progress = item && !item.closedOn ? liabilityProgress(item) : null;
+  const progressLabel =
+    item && progress
+      ? t('wealth.progress', {
+          paid: formatMoney({ amountMinor: progress.paid, currency: item.currency }),
+          original: formatMoney({ amountMinor: progress.original, currency: item.currency }),
+        })
+      : '';
   const currencies = query.data ?? [];
   const resolvedCurrency = currency || currencies[0] || DEFAULT_CURRENCY;
   const close = () => closeModal('/wealth');
@@ -88,12 +111,22 @@ export function WealthForm({ item }: Props) {
       );
       return;
     }
+    let origin: WealthItemInput['origin'];
+    if (tracksOrigin && originText.trim()) {
+      const parsedOrigin = parseAmountInput(originText, resolvedCurrency);
+      if (!parsedOrigin.ok) {
+        setOriginError(t('validation.amountInvalid'));
+        return;
+      }
+      origin = { amount: parsedOrigin.amountMinor, valuedOn: originDate ?? valuedOn };
+    }
     const input: WealthItemInput = {
       name,
       type,
       amount: parsed.amountMinor,
       currency: resolvedCurrency,
       valuedOn,
+      ...(origin ? { origin } : {}),
     };
     const fieldErrors = validateWealthItemInput(input);
     if (hasErrors(fieldErrors)) {
@@ -149,6 +182,27 @@ export function WealthForm({ item }: Props) {
         <ActivityIndicator />
       ) : (
         <View style={styles.form}>
+          {item && !item.closedOn && tracksOrigin ? (
+            <Card padding="md" style={styles.notice}>
+              {progress ? (
+                <>
+                  <Text variant="callout">{progressLabel}</Text>
+                  <ProgressBar
+                    progress={progress.ratio}
+                    tone="positive"
+                    accessibilityLabel={progressLabel}
+                  />
+                </>
+              ) : null}
+              <Button
+                label={t('wealth.pay')}
+                icon="cash-outline"
+                onPress={() =>
+                  router.push({ pathname: '/wealth/payment/[id]', params: { id: item.id } })
+                }
+              />
+            </Card>
+          ) : null}
           <ChipGroup label={t('wealth.assets')}>
             {WEALTH_ASSET_TYPES.map((code) => (
               <Chip
@@ -225,11 +279,100 @@ export function WealthForm({ item }: Props) {
               </Text>
             ) : null}
           </View>
+          {tracksOrigin ? (
+            <View style={styles.field}>
+              <TextField
+                label={t('wealth.form.origin')}
+                value={originText}
+                onChangeText={(text) => {
+                  setOriginText(text);
+                  setOriginError(undefined);
+                }}
+                placeholder={t('entryForm.amountPlaceholder')}
+                keyboardType="decimal-pad"
+                inputMode="decimal"
+                helperText={t('wealth.form.originHelper')}
+                errorText={originError ?? validationMessage(t, errors.origin)}
+              />
+              <ChipGroup label={t('wealth.form.originDate')}>
+                <Chip
+                  label={
+                    originDate
+                      ? formatDate(calendarDateToLocalDate(originDate), 'medium')
+                      : t('wealth.form.pickOriginDate')
+                  }
+                  icon="calendar-outline"
+                  selected={originDate !== null}
+                  onPress={() => setPickingOriginDate(true)}
+                />
+              </ChipGroup>
+            </View>
+          ) : null}
+          {type === 'credit' && !item?.closedOn ? (
+            <Card padding="md" style={styles.notice}>
+              <Text variant="callout">{t('wealth.cardHint')}</Text>
+              <Button
+                label={t(editing ? 'wealth.cardMove' : 'wealth.cardCreate')}
+                icon="card-outline"
+                variant="secondary"
+                onPress={() => (editing ? setConfirmingMove(true) : router.replace('/account/new'))}
+              />
+            </Card>
+          ) : null}
           <Text variant="caption" tone="tertiary">
             {t('wealth.doesNotChangeBalances')}
           </Text>
         </View>
       )}
+      <Dialog
+        visible={pickingOriginDate}
+        title={t('wealth.form.pickOriginDate')}
+        onDismiss={() => setPickingOriginDate(false)}
+        actions={[
+          {
+            label: t('common.close'),
+            variant: 'secondary',
+            onPress: () => setPickingOriginDate(false),
+          },
+        ]}>
+        <CalendarPicker
+          value={originDate ?? valuedOn}
+          today={today}
+          locale={locale}
+          labels={{
+            previousMonth: t('calendar.previousMonth'),
+            nextMonth: t('calendar.nextMonth'),
+          }}
+          onChange={(value) => {
+            setOriginDate(value);
+            setPickingOriginDate(false);
+          }}
+        />
+      </Dialog>
+      <Dialog
+        visible={confirmingMove}
+        title={t('wealth.cardMoveTitle')}
+        message={t('wealth.cardMoveMessage')}
+        onDismiss={() => setConfirmingMove(false)}
+        actions={[
+          {
+            label: t('wealth.cardMove'),
+            onPress: () => {
+              setConfirmingMove(false);
+              if (!item) return;
+              void repositories.wealth.moveCardToAccounts(item.id, today).then(
+                () => router.replace('/accounts'),
+                () => undefined,
+              );
+            },
+          },
+          {
+            label: t('common.cancel'),
+            variant: 'ghost',
+            onPress: () => setConfirmingMove(false),
+          },
+        ]}
+      />
       <Dialog
         visible={confirmingDelete}
         title={item?.closedOn ? t('wealth.deleteTitle') : t('wealth.removeTitle')}
@@ -271,4 +414,5 @@ const styles = StyleSheet.create({
   form: { gap: spacing.lg },
   field: { gap: spacing.sm },
   footer: { gap: spacing.sm },
+  notice: { gap: spacing.md },
 });
