@@ -182,6 +182,7 @@ const en: Translation = {
     transfer: 'Transfer',
   },
   entries: {
+    edit: 'Edit',
     delete: 'Delete',
     deleted: 'Transaction deleted',
     undo: 'Undo',

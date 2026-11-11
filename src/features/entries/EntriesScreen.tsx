@@ -417,6 +417,12 @@ export function EntriesScreen() {
                       <SwipeableRow
                         actions={[
                           {
+                            label: t('entries.edit'),
+                            icon: 'create-outline',
+                            onPress: () =>
+                              router.push({ pathname: '/entry/[id]', params: { id: entry.id } }),
+                          },
+                          {
                             label: t('entries.delete'),
                             icon: 'trash-outline',
                             tone: 'negative',

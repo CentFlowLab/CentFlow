@@ -183,6 +183,7 @@ const es: Translation = {
     transfer: 'Transferencia',
   },
   entries: {
+    edit: 'Editar',
     delete: 'Eliminar',
     deleted: 'Movimiento eliminado',
     undo: 'Deshacer',

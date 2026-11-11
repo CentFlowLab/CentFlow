@@ -181,6 +181,7 @@ const ptPT = {
     transfer: 'Transferência',
   },
   entries: {
+    edit: 'Editar',
     delete: 'Eliminar',
     deleted: 'Movimento eliminado',
     undo: 'Anular',

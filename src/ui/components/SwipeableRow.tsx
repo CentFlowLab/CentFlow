@@ -1,9 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 
-import { layout, spacing, useTheme } from '../theme';
+import { layout, radius, useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
-import { Text } from './Text';
 
 export type SwipeAction = {
   label: string;
@@ -16,9 +15,14 @@ type Props = {
   children: ReactNode;
   /** Ações que aparecem à direita ao arrastar para a esquerda (a mais importante por último). */
   actions: readonly SwipeAction[];
+  /** Raio do conteúdo, quando a linha é um cartão inteiro (ex.: veículos). */
+  borderRadius?: number;
 };
 
-const ACTION_WIDTH = 76;
+/** Botões arredondados e separados, ao estilo do Instagram (não um bloco colado ao bordo). */
+const ACTION_SIZE = 52;
+const ACTION_GAP = 10;
+const ACTION_WIDTH = ACTION_SIZE + ACTION_GAP;
 /** Movimento mínimo, na horizontal, antes de o gesto ser do cartão e não do scroll. */
 const START_THRESHOLD = 12;
 
@@ -57,9 +61,9 @@ function createSwipe(width: number, onOpenChange: (open: boolean) => void) {
   return { translateX, responder, settle };
 }
 
-export function SwipeableRow({ children, actions }: Props) {
+export function SwipeableRow({ children, actions, borderRadius = 0 }: Props) {
   const { colors } = useTheme();
-  const width = ACTION_WIDTH * actions.length;
+  const width = ACTION_WIDTH * actions.length + ACTION_GAP;
   const [open, setOpen] = useState(false);
   const [{ translateX, responder, settle }] = useState(() => createSwipe(width, setOpen));
 
@@ -90,23 +94,22 @@ export function SwipeableRow({ children, actions }: Props) {
               style={({ pressed }) => [
                 styles.action,
                 {
-                  backgroundColor: negative ? colors.negativeMuted : colors.surfaceMuted,
+                  backgroundColor: negative ? colors.negative : colors.surfaceMuted,
                   opacity: pressed ? 0.8 : 1,
+                  transform: [{ scale: pressed ? 0.94 : 1 }],
                 },
               ]}>
-              <Icon name={action.icon} size={22} color={negative ? 'negative' : 'textSecondary'} />
-              <Text
-                variant="caption"
-                style={{ color: negative ? colors.negative : colors.textSecondary }}>
-                {action.label}
-              </Text>
+              <Icon name={action.icon} size={24} color={negative ? 'textInverse' : 'text'} />
             </Pressable>
           );
         })}
       </View>
       <Animated.View
         {...responder.panHandlers}
-        style={[styles.content, { backgroundColor: colors.surface, transform: [{ translateX }] }]}>
+        style={[
+          styles.content,
+          { backgroundColor: colors.surface, borderRadius, transform: [{ translateX }] },
+        ]}>
         {children}
         {open ? (
           // Aberta: tocar no conteúdo fecha em vez de abrir o movimento.
@@ -132,13 +135,18 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: ACTION_GAP,
+    paddingRight: ACTION_GAP,
   },
   action: {
-    flex: 1,
+    width: ACTION_SIZE,
+    height: ACTION_SIZE,
     minHeight: layout.minTouchTarget,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
   },
   content: {
     zIndex: 1,
