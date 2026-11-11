@@ -744,6 +744,33 @@ um movimento conta uma vez; o histórico da dívida não se perde; tudo sincroni
   `miven-fuel`) com **`react-native-svg`** (nova dependência: módulo padrão do Expo, sem
   alternativa para desenhar vetores; entra na próxima compilação nativa).
 
+## ADR-054 — Veículos, Fase 1: custos ligados aos movimentos
+
+**Contexto:** desenho e decisões em `docs/fase1-veiculos.md` (aprovado a 2026-11-11). Regras do
+responsável: um movimento conta uma vez; o histórico não se perde; tudo offline e sincronizado.
+**Decisão:**
+
+- `entries` ganha `vehicle_id`, `vehicle_cost_type`, `quantity_milli` (litros × 1000) e
+  `odometer_km`. A ficha do veículo é uma vista das mesmas linhas; os relatórios gerais não mudam.
+  Categoria, veículo e conta (ex.: cartão) convivem na mesma despesa.
+- Validação: tipo de custo obrigatório com veículo; nunca em transferências; litros só no
+  combustível (1 ml a 1000 l); quilómetros por ordem de data (no aparelho); uma só compra marcada
+  por veículo (no aparelho e no servidor, recusada como dado inválido, sem índice único que
+  pudesse partir a receção).
+- `vehicles` ganha marca, modelo, ano, combustível, aquisição, valor de compra e moeda, IUC,
+  revisão (data e km) e notas; `documents` ganha `vehicle_id`.
+- Estatísticas no `core` (`vehicleStats`, `vehicleDeadlines`): mês, ano, total, custo de posse
+  (compra marcada **ou** valor indicado, nunca os dois), combustível e preço médio por litro,
+  combustível/km e total/km só com duas leituras em dias diferentes e distância positiva.
+- Eliminar um veículo pede confirmação com o número de movimentos e desliga-os numa transação, sem
+  mudar valores, categorias, contas nem datas.
+- Migração local v12; servidor `20261112000100_vehicle_costs.sql` com guardas `v_data ? 'campo'`
+  (apps anteriores não apagam os campos novos; testado em PGlite). **Ainda não aplicada em nenhum
+  ambiente:** staging só depois de rever o SQL e com autorização; produção com outra autorização.
+- Prazos passam a "Expira em X dias" / "Expirou há X dias" (veículos e documentos).
+- O lint do React Compiler passou a analisar a gravação do movimento: a conta lembrada entre
+  registos é atualizada por uma função fora do componente (sem mudar o comportamento).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { calendarDateToLocalDate, type Vehicle } from '@/core/finance';
+import { calendarDateToLocalDate, vehicleDeadlines, type Vehicle } from '@/core/finance';
 import { useDataQuery, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
@@ -13,26 +13,19 @@ import {
   IconButton,
   ListItem,
   Screen,
+  Badge,
   Text,
-  type IconName,
 } from '@/ui/components';
 import { spacing, useTheme } from '@/ui/theme';
 
-import { DeadlineBadge } from '../finance/DeadlineBadge';
+import { DEADLINE_TONES, deadlineLabel } from '../finance/DeadlineBadge';
 import { useToday } from '../finance/useToday';
-
-const ICONS: Record<Vehicle['kind'], IconName> = {
-  car: 'car-outline',
-  motorcycle: 'bicycle-outline',
-  van: 'bus-outline',
-  bicycle: 'bicycle-outline',
-  other: 'cube-outline',
-};
+import { vehicleIcon, vehicleKindLabel } from './presentation';
 
 export function VehiclesScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { formatDate, formatNumber } = useLocaleFormat();
+  const { formatNumber } = useLocaleFormat();
   const today = useToday();
   const query = useDataQuery(
     useCallback((repositories: Repositories) => repositories.vehicles.list(), []),
@@ -75,7 +68,6 @@ export function VehiclesScreen() {
     );
   }
 
-  const day = (value: string) => formatDate(calendarDateToLocalDate(value), 'medium');
   return (
     <Screen {...header}>
       <View style={styles.list}>
@@ -84,7 +76,7 @@ export function VehiclesScreen() {
             <ListItem
               title={vehicle.name}
               subtitle={[
-                t(`vehicles.kinds.${vehicle.kind}`),
+                vehicleKindLabel(t, vehicle),
                 vehicle.plate,
                 vehicle.odometerKm === null
                   ? null
@@ -92,33 +84,47 @@ export function VehiclesScreen() {
               ]
                 .filter(Boolean)
                 .join(' · ')}
-              icon={ICONS[vehicle.kind]}
+              icon={vehicleIcon(vehicle)}
               onPress={() => router.push(`/vehicles/${vehicle.id}` as Href)}
             />
-            {vehicle.inspectionDue !== null || vehicle.insuranceDue !== null ? (
-              <View style={styles.deadlines}>
-                {vehicle.inspectionDue !== null ? (
-                  <View style={styles.deadline}>
-                    <Text variant="footnote" tone="secondary" style={styles.flex}>
-                      {t('vehicles.inspectionOn', { date: day(vehicle.inspectionDue) })}
-                    </Text>
-                    <DeadlineBadge date={vehicle.inspectionDue} today={today} />
-                  </View>
-                ) : null}
-                {vehicle.insuranceDue !== null ? (
-                  <View style={styles.deadline}>
-                    <Text variant="footnote" tone="secondary" style={styles.flex}>
-                      {t('vehicles.insuranceOn', { date: day(vehicle.insuranceDue) })}
-                    </Text>
-                    <DeadlineBadge date={vehicle.insuranceDue} today={today} />
-                  </View>
-                ) : null}
-              </View>
-            ) : null}
+            <VehicleDeadlines vehicle={vehicle} today={today} />
           </Card>
         ))}
       </View>
     </Screen>
+  );
+}
+
+/** Prazos do veículo, do mais urgente: "Seguro · 1 mar 2027 — Expira em 110 dias". */
+function VehicleDeadlines({ vehicle, today }: { vehicle: Vehicle; today: string }) {
+  const { t } = useTranslation();
+  const { formatDate, formatNumber } = useLocaleFormat();
+  const deadlines = vehicleDeadlines(vehicle, today, vehicle.odometerKm);
+  if (deadlines.length === 0) return null;
+  return (
+    <View style={styles.deadlines}>
+      {deadlines.map((deadline) => {
+        const when = deadline.dueOn
+          ? formatDate(calendarDateToLocalDate(deadline.dueOn), 'medium')
+          : deadline.dueKm !== null
+            ? t('vehicles.km', { value: formatNumber(deadline.dueKm) })
+            : '';
+        const label =
+          deadline.daysLeft !== null
+            ? deadlineLabel(t, deadline.daysLeft)
+            : deadline.kmLeft !== null && deadline.kmLeft >= 0
+              ? t('vehicles.kmLeft', { value: formatNumber(deadline.kmLeft) })
+              : t('vehicles.kmOver', { value: formatNumber(-(deadline.kmLeft ?? 0)) });
+        return (
+          <View key={deadline.kind} style={styles.deadline}>
+            <Text variant="footnote" tone="secondary" style={styles.flex}>
+              {`${t(`vehicles.deadlineKinds.${deadline.kind}`)} · ${when}`}
+            </Text>
+            <Badge label={label} tone={DEADLINE_TONES[deadline.status]} />
+          </View>
+        );
+      })}
+    </View>
   );
 }
 

@@ -7,10 +7,11 @@ import {
   formatDateTime,
   formatInteger,
   formatMonthYear,
+  formatNumber as formatDecimalNumber,
   formatPercent,
   type DateStyle,
 } from '@/core/format';
-import { formatMoney, type FormatMoneyOptions, type Money } from '@/core/money';
+import { formatMoney, formatUnitPrice, type FormatMoneyOptions, type Money } from '@/core/money';
 
 import { DEFAULT_LANGUAGE, isSupportedLanguage, resolveFormatLocale } from './languages';
 
@@ -31,6 +32,12 @@ export function useLocaleFormat() {
       formatDateTime: (date: Date) => formatDateTime(date, locale),
       formatMonthYear: (date: Date) => formatMonthYear(date, locale),
       formatNumber: (value: number) => formatInteger(value, locale),
+      /** Número com decimais (ex.: litros); até `maximumFractionDigits` casas. */
+      formatDecimal: (value: number, maximumFractionDigits = 2) =>
+        formatDecimalNumber(value, locale, maximumFractionDigits),
+      /** Preço por unidade com uma casa a mais do que a moeda (ex.: "1,726 €" por litro). */
+      formatUnitPrice: (minorPerUnit: number, currency: string) =>
+        formatUnitPrice(minorPerUnit, currency, locale),
       formatPercent: (ratio: number, maximumFractionDigits?: number) =>
         formatPercent(ratio, locale, maximumFractionDigits),
     };

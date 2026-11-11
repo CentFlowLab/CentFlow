@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -24,6 +24,8 @@ function Loading() {
 /** Registo rápido: `/new-transaction`. */
 export function NewEntryScreen() {
   const { t } = useTranslation();
+  // Vindo da ficha de um veículo (`/new-transaction?vehicleId=…`).
+  const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
   const today = useToday();
   const lookups = useFinanceLookups();
 
@@ -58,7 +60,7 @@ export function NewEntryScreen() {
     );
   }
 
-  return <EntryForm lookups={lookups.data} today={today} />;
+  return <EntryForm lookups={lookups.data} today={today} initialVehicleId={vehicleId} />;
 }
 
 /** Edição: `/entry/[id]`. */

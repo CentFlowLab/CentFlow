@@ -13,7 +13,7 @@ export function NewVehicleScreen() {
   return <VehicleForm />;
 }
 
-export function VehicleDetailScreen() {
+export function EditVehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const query = useDataQuery(

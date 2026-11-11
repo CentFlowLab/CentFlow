@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, type TextInputInstance } from 'react-native';
 
@@ -14,10 +14,14 @@ import {
   type EntryField,
   type EntryInput,
   type EntryType,
+  parseQuantityMilli,
+  quantityToInputString,
   type ValidationErrors,
+  VEHICLE_COST_TYPES,
+  type VehicleCostType,
 } from '@/core/finance';
 import { amountToInputString, decimalSeparatorFor, parseAmountInput } from '@/core/money';
-import { useRepositories } from '@/data';
+import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
   Badge,
@@ -34,6 +38,7 @@ import {
 } from '@/ui/components';
 import { categorySwatch, spacing, useTheme } from '@/ui/theme';
 
+import { vehicleIcon } from '../vehicles/presentation';
 import { AiSuggestion } from './AiSuggestion';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
@@ -44,6 +49,8 @@ type Props = {
   today: string;
   /** Movimento a editar; ausente para um novo registo. */
   entry?: Entry;
+  /** Registo a partir da ficha de um veículo: já vem escolhido. */
+  initialVehicleId?: string;
 };
 
 type FieldErrors = Partial<Record<EntryField, string>>;
@@ -53,10 +60,15 @@ const ENTRY_TYPES: readonly EntryType[] = ['expense', 'income', 'transfer'];
 /** Conta escolhida no último registo (durante a sessão), para acelerar registos seguidos. */
 let lastAccountId: string | null = null;
 
-export function EntryForm({ lookups, today, entry }: Props) {
+/** Fora do componente: lembrar a conta não é um efeito do render. */
+function rememberAccount(id: string): void {
+  lastAccountId = id;
+}
+
+export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
   const { t } = useTranslation();
   const { scheme } = useTheme();
-  const { locale, formatDate } = useLocaleFormat();
+  const { locale, formatDate, formatUnitPrice } = useLocaleFormat();
   const repositories = useRepositories();
   const amountRef = useRef<TextInputInstance>(null);
   const isEditing = entry !== undefined;
@@ -100,6 +112,22 @@ export function EntryForm({ lookups, today, entry }: Props) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Veículo (ADR-054): a mesma despesa passa também a contar na ficha do veículo.
+  const vehicles = useDataQuery(useCallback((repos: Repositories) => repos.vehicles.list(), []));
+  const [vehicleId, setVehicleId] = useState<string | null>(
+    entry ? entry.vehicleId : (initialVehicleId ?? null),
+  );
+  const [costType, setCostType] = useState<VehicleCostType | null>(
+    entry?.vehicleCostType ?? (initialVehicleId ? 'fuel' : null),
+  );
+  const [litresText, setLitresText] = useState(
+    entry?.quantityMilli
+      ? quantityToInputString(entry.quantityMilli, decimalSeparatorFor(locale))
+      : '',
+  );
+  const [odometerText, setOdometerText] = useState(
+    entry?.odometerKm == null ? '' : String(entry.odometerKm),
+  );
 
   const sourceAccount: Account | undefined = lookups.accounts.get(accountId);
   const currency = sourceAccount?.currency ?? 'EUR';
@@ -133,6 +161,11 @@ export function EntryForm({ lookups, today, entry }: Props) {
             : 'validation.amountInvalid',
       );
     }
+    const litres = litresText.trim() === '' ? null : parseQuantityMilli(litresText);
+    if (vehicleId && costType === 'fuel' && litresText.trim() !== '' && litres === null) {
+      fieldErrors.quantityMilli = t('validation.invalid');
+    }
+    const km = odometerText.replace(/\D/g, '');
     const input = normalizeEntryInput({
       type,
       amount: parsed.ok ? parsed.amountMinor : 0,
@@ -142,10 +175,15 @@ export function EntryForm({ lookups, today, entry }: Props) {
       destinationAccountId: type === 'transfer' ? destinationAccountId : null,
       date,
       notes,
+      vehicleId: type === 'transfer' ? null : vehicleId,
+      vehicleCostType: vehicleId ? costType : null,
+      quantityMilli: vehicleId && costType === 'fuel' ? litres : null,
+      odometerKm: vehicleId && km !== '' ? Number(km) : null,
     });
     const domainErrors: ValidationErrors<EntryField> = validateEntryInput(input, {
       accounts: lookups.accounts,
       categories: lookups.categories,
+      ...(vehicles.data ? { vehicles: new Set(vehicles.data.map((vehicle) => vehicle.id)) } : {}),
       previous: entry,
     });
     for (const [field, code] of Object.entries(domainErrors) as [
@@ -168,11 +206,13 @@ export function EntryForm({ lookups, today, entry }: Props) {
     try {
       if (entry) await repositories.entries.update(entry.id, input);
       else await repositories.entries.create(input);
-      lastAccountId = input.accountId;
+      rememberAccount(input.accountId);
       if (addAnother) {
         setAmountText('');
         setDescription('');
         setNotes('');
+        setLitresText('');
+        setOdometerText('');
         setSavedMessage(t('entryForm.saved'));
         amountRef.current?.focus();
       } else {
@@ -207,6 +247,16 @@ export function EntryForm({ lookups, today, entry }: Props) {
       setDeleting(false);
     }
   };
+
+  const pricePerLitre = (() => {
+    if (!vehicleId || costType !== 'fuel') return null;
+    const litres = parseQuantityMilli(litresText);
+    const amount = parseAmountInput(amountText, currency);
+    if (!litres || !amount.ok || amount.amountMinor <= 0) return null;
+    return t('entryVehicle.pricePerLitre', {
+      price: formatUnitPrice((amount.amountMinor * 1000) / litres, currency),
+    });
+  })();
 
   const yesterday = addDays(today, -1);
   const isCustomDate = date !== today && date !== yesterday;
@@ -369,6 +419,72 @@ export function EntryForm({ lookups, today, entry }: Props) {
             ))
           )}
         </ChipGroup>
+      ) : null}
+
+      {type !== 'transfer' && (vehicles.data?.length ?? 0) > 0 ? (
+        <View style={styles.details}>
+          <ChipGroup label={t('entryVehicle.vehicle')} errorText={errors.vehicleId}>
+            <Chip
+              label={t('entryVehicle.none')}
+              selected={vehicleId === null}
+              onPress={() => setVehicleId(null)}
+            />
+            {vehicles.data!.map((vehicle) => (
+              <Chip
+                key={vehicle.id}
+                label={vehicle.plate ? `${vehicle.name} · ${vehicle.plate}` : vehicle.name}
+                icon={vehicleIcon(vehicle)}
+                selected={vehicle.id === vehicleId}
+                onPress={() => {
+                  setVehicleId(vehicle.id);
+                  setErrors((current) => ({ ...current, vehicleId: undefined }));
+                }}
+              />
+            ))}
+          </ChipGroup>
+          {vehicleId ? (
+            <>
+              <ChipGroup label={t('entryVehicle.costType')} errorText={errors.vehicleCostType}>
+                {VEHICLE_COST_TYPES.map((code) => (
+                  <Chip
+                    key={code}
+                    label={t(`vehicles.costTypes.${code}`)}
+                    selected={code === costType}
+                    onPress={() => {
+                      setCostType(code);
+                      setErrors((current) => ({ ...current, vehicleCostType: undefined }));
+                    }}
+                  />
+                ))}
+              </ChipGroup>
+              {costType === 'fuel' ? (
+                <TextField
+                  label={t('entryVehicle.litres')}
+                  value={litresText}
+                  onChangeText={(text) => {
+                    setLitresText(text);
+                    setErrors((current) => ({ ...current, quantityMilli: undefined }));
+                  }}
+                  keyboardType="decimal-pad"
+                  inputMode="decimal"
+                  helperText={pricePerLitre ?? undefined}
+                  errorText={errors.quantityMilli}
+                />
+              ) : null}
+              <TextField
+                label={t('entryVehicle.odometer')}
+                value={odometerText}
+                onChangeText={(text) => {
+                  setOdometerText(text);
+                  setErrors((current) => ({ ...current, odometerKm: undefined }));
+                }}
+                keyboardType="number-pad"
+                inputMode="numeric"
+                errorText={errors.odometerKm}
+              />
+            </>
+          ) : null}
+        </View>
       ) : null}
 
       <ChipGroup label={t('entryForm.date')} errorText={errors.date}>

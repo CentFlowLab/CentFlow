@@ -44,6 +44,8 @@ function RootStack() {
         <Stack.Screen name="wealth/payment/[id]" options={MODAL} />
         <Stack.Screen name="vehicles/new" options={MODAL} />
         <Stack.Screen name="vehicles/[id]" options={MODAL} />
+        <Stack.Screen name="vehicles/edit/[id]" options={MODAL} />
+        <Stack.Screen name="vehicles/link/[id]" options={MODAL} />
         <Stack.Screen name="documents/new" options={MODAL} />
         <Stack.Screen name="documents/[id]" options={MODAL} />
         <Stack.Screen name="sync/conflicts" options={MODAL} />
