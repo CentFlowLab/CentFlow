@@ -172,6 +172,7 @@ const en: Translation = {
     about: 'About',
     privacy: 'Privacy policy',
     terms: 'Terms of use',
+    support: 'Help',
     contact: 'Contact',
     version: 'Version',
   },

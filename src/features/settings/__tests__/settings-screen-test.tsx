@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import { i18n } from '@/i18n';
 import { renderWithProviders } from '@/test-utils/render';
@@ -21,6 +22,14 @@ describe('SettingsScreen', () => {
     // Aparência: escolha direta, com a opção atual marcada.
     expect(screen.getByRole('radio', { name: 'Claro' })).toBeChecked();
     expect(screen.getByText('Versão')).toBeOnTheScreen();
+  });
+
+  it('opens the help page from the help group', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Ajuda' }));
+    expect(open).toHaveBeenCalledWith('https://miven.pt/suporte/');
+    open.mockRestore();
   });
 
   it('persists the selected theme', async () => {

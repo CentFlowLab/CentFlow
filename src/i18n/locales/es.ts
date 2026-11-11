@@ -173,6 +173,7 @@ const es: Translation = {
     about: 'Acerca de',
     privacy: 'Política de privacidad',
     terms: 'Términos de uso',
+    support: 'Ayuda',
     contact: 'Contacto',
     version: 'Versión',
   },

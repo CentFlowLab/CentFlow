@@ -171,6 +171,7 @@ const ptPT = {
     about: 'Sobre',
     privacy: 'Política de privacidade',
     terms: 'Termos de utilização',
+    support: 'Ajuda',
     contact: 'Contacto',
     version: 'Versão',
   },

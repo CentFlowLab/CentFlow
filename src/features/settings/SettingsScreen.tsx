@@ -8,6 +8,7 @@ import {
   CONTACT_EMAIL,
   openExternal,
   PRIVACY_URL,
+  SUPPORT_URL,
   TERMS_URL,
 } from '@/features/account/legal-links';
 import {
@@ -80,6 +81,15 @@ export function SettingsScreen() {
 
           <Section title={t('settings.groups.help')}>
             <Card padding="xs">
+              <ListItem
+                {...NEUTRAL}
+                icon="help-circle-outline"
+                title={t('settings.support')}
+                showChevron={false}
+                trailing={<ExternalMark />}
+                onPress={() => openExternal(SUPPORT_URL)}
+              />
+              <Divider inset={DIVIDER_INSET} />
               <ListItem
                 {...NEUTRAL}
                 icon="mail-outline"
