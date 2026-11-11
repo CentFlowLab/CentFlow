@@ -770,6 +770,15 @@ const en: Translation = {
     },
   },
   vehicles: {
+    chargeSummary: '{{kwh}} kWh in {{count}} charges',
+    avgPriceKwh: 'Average price: {{price}}/kWh',
+    consumptionLitres: 'Consumption: {{value}} l/100 km',
+    consumptionKwh: 'Consumption: {{value}} kWh/100 km',
+    energyPerKm: 'Energy',
+    beforeAcquisition_one:
+      '1 transaction before the acquisition date is not counted in the totals.',
+    beforeAcquisition_other:
+      '{{count}} transactions before the acquisition date are not counted in the totals.',
     add: 'New vehicle',
     emptyTitle: 'No vehicles yet',
     emptyDescription:
@@ -1101,6 +1110,9 @@ const en: Translation = {
     notes: 'Notes (optional)',
   },
   entryVehicle: {
+    kwh: 'kWh (optional)',
+    pricePerKwh: '{{price}} per kWh',
+    chargeCostType: 'Charging',
     vehicle: 'Vehicle',
     none: 'None',
     costType: 'Vehicle cost type',
@@ -1205,6 +1217,7 @@ const en: Translation = {
     notLiability: 'Payments can only be recorded on unpaid debts.',
     odometerOutOfOrder:
       'The mileage does not match other readings for this vehicle (an earlier date with more km, or a later one with fewer).',
+    purchaseNotExpense: 'The vehicle purchase must be an expense.',
     purchaseAlreadyLinked: 'This vehicle already has a purchase linked. Remove it first.',
   },
   calendar: {

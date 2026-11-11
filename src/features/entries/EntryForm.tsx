@@ -39,7 +39,7 @@ import {
 } from '@/ui/components';
 import { categorySwatch, spacing, useTheme } from '@/ui/theme';
 
-import { vehicleIcon } from '../vehicles/presentation';
+import { energyUnit, vehicleIcon } from '../vehicles/presentation';
 import { AiSuggestion } from './AiSuggestion';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
@@ -257,12 +257,14 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
     }
   };
 
+  // Elétricos: kWh e preço por kWh; os restantes, litros (ADR-054).
+  const unit = energyUnit(vehicles.data?.find((vehicle) => vehicle.id === vehicleId));
   const pricePerLitre = (() => {
     if (!vehicleId || costType !== 'fuel') return null;
     const litres = parseQuantityMilli(litresText);
     const amount = parseAmountInput(amountText, currency);
     if (!litres || !amount.ok || amount.amountMinor <= 0) return null;
-    return t('entryVehicle.pricePerLitre', {
+    return t(unit === 'kwh' ? 'entryVehicle.pricePerKwh' : 'entryVehicle.pricePerLitre', {
       price: formatUnitPrice((amount.amountMinor * 1000) / litres, currency),
     });
   })();
@@ -487,7 +489,11 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
                 {VEHICLE_COST_TYPES.map((code) => (
                   <Chip
                     key={code}
-                    label={t(`vehicles.costTypes.${code}`)}
+                    label={
+                      code === 'fuel' && unit === 'kwh'
+                        ? t('entryVehicle.chargeCostType')
+                        : t(`vehicles.costTypes.${code}`)
+                    }
                     selected={code === costType}
                     onPress={() => {
                       setCostType(code);
@@ -498,7 +504,7 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
               </ChipGroup>
               {costType === 'fuel' ? (
                 <TextField
-                  label={t('entryVehicle.litres')}
+                  label={t(unit === 'kwh' ? 'entryVehicle.kwh' : 'entryVehicle.litres')}
                   value={litresText}
                   onChangeText={(text) => {
                     setLitresText(text);

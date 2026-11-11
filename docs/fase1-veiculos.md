@@ -177,6 +177,21 @@ Todos a partir dos movimentos não eliminados com `vehicle_id`, na moeda do veí
    antiga edita um movimento com veículo e os campos novos ficam intactos; e o mesmo no aparelho
    antigo a receber linhas novas. É condição para o staging.
 
+## 9b. Correções da revisão de 2026-11-11
+
+- **Elétricos**: com `fuel_type = electric`, a quantidade é kWh (mesma coluna, × 1000), o
+  movimento mostra "kWh" e o preço por kWh, e o tipo de custo aparece como "Carregamento". A ficha
+  mostra kWh, carregamentos, preço médio por kWh e consumo em kWh/100 km (l/100 km nos restantes).
+- **Fusão**: `amount` + `quantity_milli` + `odometer_km` são um grupo acoplado (com
+  `vehicle_id` + `vehicle_cost_type`), como previsto no §5; teste de conflito próprio.
+- **Compra só como despesa**: validação local (`purchaseNotExpense`), cálculos que ignoram uma
+  compra que não seja despesa, e restrição no servidor
+  (`20261114000100_vehicle_purchase_expense.sql`, `not valid`, por aplicar).
+- **Total desde a aquisição**: com `acquired_on` definido, os movimentos anteriores (exceto a
+  compra marcada) ficam fora dos totais, do combustível e do custo por km; a ficha diz quantos são.
+- **Moedas**: os totais continuam numa moeda (a do veículo); totais separados por moeda ficam para
+  depois, sem conversões cambiais.
+
 ## 10. Plano de execução (depois de aprovado)
 
 1. `core`: tipos, validação, cálculos e testes.

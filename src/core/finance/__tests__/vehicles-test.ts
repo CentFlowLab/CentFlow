@@ -50,6 +50,32 @@ describe('vehicle stats', () => {
     expect(stats.ownershipCost).toBe(1_849_000);
   });
 
+  it('counts only what happened since the acquisition date', () => {
+    const stats = vehicleStats(
+      { purchaseAmount: null, acquiredOn: '2026-06-01' },
+      [
+        entry({ amount: 5_000, vehicleCostType: 'repair', date: '2026-05-20' }),
+        entry({ amount: 1_000_000, vehicleCostType: 'purchase', date: '2026-05-28' }),
+        entry({ amount: 3_000, vehicleCostType: 'tyres', date: '2026-07-01' }),
+      ],
+      '2026-11-11',
+    );
+    expect(stats.spent).toBe(3_000);
+    expect(stats.beforeAcquisition).toBe(1);
+    expect(stats.purchase).toMatchObject({ amount: 1_000_000, source: 'entry' });
+    expect(stats.ownershipCost).toBe(1_003_000);
+  });
+
+  it('never takes an income marked as purchase off the ownership cost', () => {
+    const stats = vehicleStats(
+      { purchaseAmount: 1_500_000 },
+      [entry({ type: 'income', amount: 900_000, vehicleCostType: 'purchase' })],
+      '2026-11-11',
+    );
+    expect(stats.purchase).toMatchObject({ amount: 1_500_000, source: 'vehicle' });
+    expect(stats.ownershipCost).toBe(1_500_000);
+  });
+
   it('uses the informative purchase amount only without a purchase entry', () => {
     const stats = vehicleStats({ purchaseAmount: 1_500_000 }, [], '2026-11-11');
     expect(stats.purchase).toEqual({ amount: 1_500_000, source: 'vehicle', entryId: null });
@@ -70,6 +96,8 @@ describe('vehicle stats', () => {
     expect(stats.costPerKm).toMatchObject({ km: 1_200, fromKm: 50_000, toKm: 51_200 });
     expect(stats.costPerKm?.fuelPerKm).toBeCloseTo(12_500 / 1_200);
     expect(stats.costPerKm?.totalPerKm).toBeCloseTo(16_500 / 1_200);
+    // Consumo: 35 + 38 litros depois da primeira leitura, em 1200 km.
+    expect(stats.costPerKm?.quantityPer100Km).toBeCloseTo((73_000 / 1_200) * 100);
 
     // Uma só leitura, leituras no mesmo dia ou distância nula: sem custo por km.
     const single = vehicleStats({ purchaseAmount: null }, entries.slice(0, 1), '2026-11-11');
@@ -164,6 +192,13 @@ describe('vehicle validation', () => {
     expect(validateEntryInput({ ...base, odometerKm: 100 }, context)).toEqual({
       odometerKm: 'invalid',
     });
+    // A compra é sempre uma despesa.
+    expect(
+      validateEntryInput(
+        { ...base, type: 'income', categoryId: 'c', vehicleId: 'v', vehicleCostType: 'purchase' },
+        context,
+      ),
+    ).toMatchObject({ vehicleCostType: 'purchaseNotExpense' });
     // Transferências nunca ficam ligadas a um veículo.
     expect(normalizeEntryInput({ ...base, type: 'transfer', vehicleId: 'v' }).vehicleId).toBeNull();
   });

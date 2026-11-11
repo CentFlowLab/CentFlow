@@ -62,6 +62,7 @@ export type ValidationCode =
   | 'dateBeforeValuation'
   | 'notLiability'
   | 'odometerOutOfOrder'
+  | 'purchaseNotExpense'
   | 'purchaseAlreadyLinked';
 
 export type ValidationErrors<Field extends string> = Partial<Record<Field, ValidationCode>>;
@@ -215,6 +216,9 @@ function validateEntryVehicle(
   if (costType === null) errors.vehicleCostType = 'required';
   else if (!(VEHICLE_COST_TYPES as readonly string[]).includes(costType)) {
     errors.vehicleCostType = 'invalid';
+  } else if (costType === 'purchase' && input.type !== 'expense') {
+    // Um rendimento marcado como compra baixaria o custo de posse (ADR-054).
+    errors.vehicleCostType = 'purchaseNotExpense';
   }
   if (
     quantity !== null &&

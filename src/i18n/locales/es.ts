@@ -772,6 +772,14 @@ const es: Translation = {
     },
   },
   vehicles: {
+    chargeSummary: '{{kwh}} kWh en {{count}} recargas',
+    avgPriceKwh: 'Precio medio: {{price}}/kWh',
+    consumptionLitres: 'Consumo: {{value}} l/100 km',
+    consumptionKwh: 'Consumo: {{value}} kWh/100 km',
+    energyPerKm: 'Energía',
+    beforeAcquisition_one: '1 movimiento anterior a la adquisición no cuenta en los totales.',
+    beforeAcquisition_other:
+      '{{count}} movimientos anteriores a la adquisición no cuentan en los totales.',
     add: 'Nuevo vehículo',
     emptyTitle: 'Aún no hay vehículos',
     emptyDescription:
@@ -1106,6 +1114,9 @@ const es: Translation = {
     notes: 'Notas (opcional)',
   },
   entryVehicle: {
+    kwh: 'kWh (opcional)',
+    pricePerKwh: '{{price}} por kWh',
+    chargeCostType: 'Recarga',
     vehicle: 'Vehículo',
     none: 'Ninguno',
     costType: 'Tipo de coste del vehículo',
@@ -1211,6 +1222,7 @@ const es: Translation = {
     notLiability: 'Solo se registran pagos en deudas pendientes.',
     odometerOutOfOrder:
       'Los kilómetros no cuadran con otras lecturas de este vehículo (una fecha anterior con más km, o posterior con menos).',
+    purchaseNotExpense: 'La compra del vehículo tiene que ser un gasto.',
     purchaseAlreadyLinked: 'Este vehículo ya tiene una compra asociada. Quítala primero.',
   },
   calendar: {

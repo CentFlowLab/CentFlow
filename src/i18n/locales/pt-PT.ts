@@ -767,6 +767,13 @@ const ptPT = {
     },
   },
   vehicles: {
+    chargeSummary: '{{kwh}} kWh em {{count}} carregamentos',
+    avgPriceKwh: 'Preço médio: {{price}}/kWh',
+    consumptionLitres: 'Consumo: {{value}} l/100 km',
+    consumptionKwh: 'Consumo: {{value}} kWh/100 km',
+    energyPerKm: 'Energia',
+    beforeAcquisition_one: '1 movimento anterior à aquisição não conta nos totais.',
+    beforeAcquisition_other: '{{count}} movimentos anteriores à aquisição não contam nos totais.',
     add: 'Novo veículo',
     emptyTitle: 'Ainda não há veículos',
     emptyDescription:
@@ -1099,6 +1106,9 @@ const ptPT = {
     notes: 'Notas (opcional)',
   },
   entryVehicle: {
+    kwh: 'kWh (opcional)',
+    pricePerKwh: '{{price}} por kWh',
+    chargeCostType: 'Carregamento',
     vehicle: 'Veículo',
     none: 'Nenhum',
     costType: 'Tipo de custo do veículo',
@@ -1203,6 +1213,7 @@ const ptPT = {
     notLiability: 'Só se registam pagamentos em dívidas por pagar.',
     odometerOutOfOrder:
       'Os quilómetros não batem certo com outras leituras deste veículo (data anterior com mais km, ou posterior com menos).',
+    purchaseNotExpense: 'A compra do veículo tem de ser uma despesa.',
     purchaseAlreadyLinked: 'Este veículo já tem uma compra associada. Retira-a primeiro.',
   },
   calendar: {

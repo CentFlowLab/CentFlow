@@ -1468,6 +1468,22 @@ describe('vehicle costs (Fase 1)', () => {
     ]);
   });
 
+  it('refuses an income marked as the vehicle purchase, but accepts a refund', async () => {
+    const [salary] = await push(alice, [
+      categoryOp(SALARY, 0, { name: 'Salário', type: 'income', system_key: 'salary' }),
+    ]);
+    expect(salary).toMatchObject({ status: 'applied' });
+    const income = { type: 'income', category_id: SALARY, amount: 1000, vehicle_id: CAR };
+    const [purchase] = await push(alice, [
+      entryOp(ENTRY, 0, { ...income, vehicle_cost_type: 'purchase' }),
+    ]);
+    expect(purchase).toMatchObject({ status: 'rejected' });
+    const [refund] = await push(alice, [
+      entryOp(ENTRY, 0, { ...income, vehicle_cost_type: 'insurance' }),
+    ]);
+    expect(refund).toMatchObject({ status: 'applied' });
+  });
+
   it('allows a single explicit purchase per vehicle', async () => {
     const purchase = { vehicle_id: CAR, vehicle_cost_type: 'purchase' };
     expect(

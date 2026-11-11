@@ -48,3 +48,10 @@ export function deriveVehicleKind(
   if (icon === 'car-outline' || icon === 'car-sport-outline') return 'car';
   return 'other';
 }
+
+/** Unidade da energia: kWh nos elétricos, litros nos restantes. */
+export type EnergyUnit = 'litre' | 'kwh';
+
+export function energyUnit(vehicle: Pick<Vehicle, 'fuelType'> | null | undefined): EnergyUnit {
+  return vehicle?.fuelType === 'electric' ? 'kwh' : 'litre';
+}

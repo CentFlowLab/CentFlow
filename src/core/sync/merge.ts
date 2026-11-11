@@ -120,10 +120,13 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   vehicles: [['purchase_amount', 'currency']],
   // Valor de compra e moeda mudam juntos.
   documents: [['amount', 'currency']],
-  // A ligação ao veículo (veículo + tipo de custo) é um todo.
+  // A ligação ao veículo (veículo + tipo de custo) é um todo; um abastecimento também (valor,
+  // quantidade e km): combinar partes de versões diferentes daria um preço por litro que ninguém
+  // registou (docs/fase1-veiculos.md §5).
   entries: [
     ['type', 'category_id', 'account_id', 'destination_account_id'],
     ['vehicle_id', 'vehicle_cost_type'],
+    ['amount', 'quantity_milli', 'odometer_km'],
   ],
 };
 

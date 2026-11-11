@@ -34,7 +34,7 @@ import { EntryListItem } from '../finance/EntryListItem';
 import { closeModal } from '../finance/navigation';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
-import { vehicleKindLabel } from './presentation';
+import { energyUnit, vehicleKindLabel } from './presentation';
 
 async function loadVehicle(repositories: Repositories, id: string) {
   const [vehicle, entries, documents] = [
@@ -112,6 +112,11 @@ function VehicleSheet({
   const odometer = currentOdometer(vehicle, entries);
   const deadlines = vehicleDeadlines(vehicle, today, odometer);
   const money = (amountMinor: number) => ({ amountMinor, currency });
+  const unit = energyUnit(vehicle);
+  const costTypeLabel = (type: (typeof VEHICLE_COST_TYPES)[number]) =>
+    type === 'fuel' && unit === 'kwh'
+      ? t('entryVehicle.chargeCostType')
+      : t(`vehicles.costTypes.${type}`);
   const day = (value: string) => formatDate(calendarDateToLocalDate(value), 'medium');
 
   const subtitle = [
@@ -243,6 +248,11 @@ function VehicleSheet({
                 )
               : t('vehicles.noPurchase')}
           </Text>
+          {stats.beforeAcquisition > 0 ? (
+            <Text variant="footnote" tone="tertiary">
+              {t('vehicles.beforeAcquisition', { count: stats.beforeAcquisition })}
+            </Text>
+          ) : null}
           {inCurrency.length !== entries.length ? (
             <Text variant="footnote" tone="tertiary">
               {t('vehicles.otherCurrency')}
@@ -258,7 +268,7 @@ function VehicleSheet({
               <Fragment key={type}>
                 {index > 0 ? <Divider /> : null}
                 <ListItem
-                  title={t(`vehicles.costTypes.${type}`)}
+                  title={costTypeLabel(type)}
                   showChevron={false}
                   trailing={<Amount value={money(stats.byType[type] ?? 0)} variant="label" />}
                 />
@@ -272,12 +282,17 @@ function VehicleSheet({
         <Card padding="md" style={styles.gap}>
           {stats.fuel.fills > 0 ? (
             <Text variant="callout">
-              {t('vehicles.fuelSummary', {
-                litres: formatDecimal(stats.fuel.quantityMilli / 1000, 1),
-                count: stats.fuel.fills,
-              })}
+              {unit === 'kwh'
+                ? t('vehicles.chargeSummary', {
+                    kwh: formatDecimal(stats.fuel.quantityMilli / 1000, 1),
+                    count: stats.fuel.fills,
+                  })
+                : t('vehicles.fuelSummary', {
+                    litres: formatDecimal(stats.fuel.quantityMilli / 1000, 1),
+                    count: stats.fuel.fills,
+                  })}
               {stats.fuel.pricePerLitre !== null
-                ? ` · ${t('vehicles.avgPrice', {
+                ? ` · ${t(unit === 'kwh' ? 'vehicles.avgPriceKwh' : 'vehicles.avgPrice', {
                     price: formatUnitPrice(stats.fuel.pricePerLitre, currency),
                   })}`
                 : ''}
@@ -287,7 +302,7 @@ function VehicleSheet({
             <>
               <View style={styles.row}>
                 {stats.costPerKm.fuelPerKm !== null ? (
-                  <Figure label={t('vehicles.fuelPerKm')}>
+                  <Figure label={t(unit === 'kwh' ? 'vehicles.energyPerKm' : 'vehicles.fuelPerKm')}>
                     <Text variant="bodyStrong" tabular>
                       {t('vehicles.perKm', {
                         value: formatUnitPrice(stats.costPerKm.fuelPerKm, currency),
@@ -303,6 +318,13 @@ function VehicleSheet({
                   </Text>
                 </Figure>
               </View>
+              {stats.costPerKm.quantityPer100Km !== null ? (
+                <Text variant="callout">
+                  {t(unit === 'kwh' ? 'vehicles.consumptionKwh' : 'vehicles.consumptionLitres', {
+                    value: formatDecimal(stats.costPerKm.quantityPer100Km / 1000, 1),
+                  })}
+                </Text>
+              ) : null}
               <Text variant="footnote" tone="tertiary">
                 {t('vehicles.kmRange', {
                   from: formatNumber(stats.costPerKm.fromKm),

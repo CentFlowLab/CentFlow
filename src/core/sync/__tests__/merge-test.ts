@@ -36,7 +36,7 @@ describe('mergeRecords', () => {
     const server = { ...entry, amount: 1400 };
     expect(mergeRecords('entries', entry, local, server)).toEqual({
       kind: 'conflict',
-      fields: ['amount'],
+      fields: ['amount', 'quantity_milli', 'odometer_km'],
     });
   });
 
@@ -109,6 +109,28 @@ describe('mergeRecords', () => {
     expect(mergeRecords('entries', null, entry, { ...entry, amount: 1 })).toEqual({
       kind: 'conflict',
       fields: ['amount'],
+    });
+  });
+
+  it('never combines parts of a fill-up changed on different devices', () => {
+    const fill = {
+      ...entry,
+      vehicle_id: 'v1',
+      vehicle_cost_type: 'fuel',
+      quantity_milli: 40000,
+      amount: 7000,
+    };
+    const local = { ...fill, amount: 7200 };
+    const server = { ...fill, quantity_milli: 42000 };
+    expect(mergeRecords('entries', fill, local, server)).toEqual({
+      kind: 'conflict',
+      fields: ['amount', 'quantity_milli', 'odometer_km'],
+    });
+    // Mudar a descrição num lado e o abastecimento no outro continua a combinar-se.
+    const described = { ...fill, description: 'Galp A1' };
+    expect(mergeRecords('entries', fill, described, server)).toEqual({
+      kind: 'merged',
+      data: { ...server, description: 'Galp A1' },
     });
   });
 });

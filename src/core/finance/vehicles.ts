@@ -88,6 +88,8 @@ export type VehicleCostPerKm = {
   fuelPerKm: number | null;
   /** Todas as despesas do veículo por km, exceto a compra. */
   totalPerKm: number;
+  /** Consumo: litros (ou kWh) × 1000 por 100 km, nos abastecimentos com quantidade. */
+  quantityPer100Km: number | null;
 };
 
 export type VehicleStats = {
@@ -103,6 +105,8 @@ export type VehicleStats = {
   fuel: { quantityMilli: number; amount: number; fills: number; pricePerLitre: number | null };
   /** Só com duas leituras em datas diferentes e distância positiva (ADR-054). */
   costPerKm: VehicleCostPerKm | null;
+  /** Movimentos anteriores à data de aquisição: ficam fora dos totais (contam-se para avisar). */
+  beforeAcquisition: number;
 };
 
 function signed(entry: Pick<VehicleEntry, 'type' | 'amount'>): number {
@@ -114,10 +118,17 @@ function signed(entry: Pick<VehicleEntry, 'type' | 'amount'>): number {
  * gerais não usam isto: somam os movimentos uma vez, como sempre.
  */
 export function vehicleStats(
-  vehicle: Pick<Vehicle, 'purchaseAmount'>,
-  entries: readonly VehicleEntry[],
+  vehicle: Pick<Vehicle, 'purchaseAmount'> & { acquiredOn?: CalendarDate | null },
+  allEntries: readonly VehicleEntry[],
   today: CalendarDate,
 ): VehicleStats {
+  // "Desde a aquisição": com a data definida, o que for anterior não entra nos totais (a compra
+  // marcada conta sempre, seja qual for a data).
+  const acquiredOn = vehicle.acquiredOn ?? null;
+  const counted = (entry: VehicleEntry) =>
+    acquiredOn === null || entry.vehicleCostType === 'purchase' || entry.date >= acquiredOn;
+  const entries = allEntries.filter(counted);
+  const beforeAcquisition = allEntries.length - entries.length;
   const month = monthOf(today);
   const year = today.slice(0, 4);
   const byType: Partial<Record<VehicleCostType, number>> = {};
@@ -130,7 +141,8 @@ export function vehicleStats(
   for (const entry of entries) {
     if (entry.type === 'transfer') continue;
     if (entry.vehicleCostType === 'purchase') {
-      purchaseEntry = entry;
+      // Só uma despesa é compra (a validação já o garante; dados antigos não contam).
+      if (entry.type === 'expense') purchaseEntry = entry;
       continue;
     }
     const value = signed(entry);
@@ -172,6 +184,7 @@ export function vehicleStats(
       pricePerLitre: pricedQuantity > 0 ? (pricedAmount * 1000) / pricedQuantity : null,
     },
     costPerKm: costPerKm(entries),
+    beforeAcquisition,
   };
 }
 
@@ -191,6 +204,7 @@ function costPerKm(entries: readonly VehicleEntry[]): VehicleCostPerKm | null {
   let total = 0;
   let fuel = 0;
   let fuelEntries = 0;
+  let quantity = 0;
   for (const entry of entries) {
     if (entry.date <= first.date || entry.date > last.date) continue;
     if (entry.type === 'transfer' || entry.vehicleCostType === 'purchase') continue;
@@ -198,6 +212,7 @@ function costPerKm(entries: readonly VehicleEntry[]): VehicleCostPerKm | null {
     if (entry.vehicleCostType === 'fuel' && entry.type === 'expense') {
       fuel += entry.amount;
       fuelEntries += 1;
+      quantity += entry.quantityMilli ?? 0;
     }
   }
   return {
@@ -208,6 +223,7 @@ function costPerKm(entries: readonly VehicleEntry[]): VehicleCostPerKm | null {
     toDate: last.date,
     fuelPerKm: fuelEntries > 0 ? fuel / km : null,
     totalPerKm: total / km,
+    quantityPer100Km: quantity > 0 ? (quantity / km) * 100 : null,
   };
 }
 
