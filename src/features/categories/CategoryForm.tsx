@@ -18,6 +18,7 @@ import {
   Dialog,
   FormScreen,
   Icon,
+  type IconName,
   SegmentedControl,
   Text,
   TextField,
@@ -25,7 +26,13 @@ import {
 import { CATEGORY_COLOR_KEYS, categorySwatch, radius, spacing, useTheme } from '@/ui/theme';
 
 import { closeModal } from '../finance/navigation';
-import { CATEGORY_ICON_CHOICES, validationMessage } from '../finance/presentation';
+import {
+  CATEGORY_ICON_CHOICES,
+  CATEGORY_ICON_GROUPS,
+  categoryIconKeywordKey,
+  validationMessage,
+} from '../finance/presentation';
+import { normalizeSearchText } from '@/core/text/search';
 
 type FieldErrors = Partial<Record<CategoryField, string>>;
 
@@ -55,6 +62,25 @@ export function CategoryForm({ category, others, initialType = 'expense' }: Prop
   const [busy, setBusy] = useState(false);
   const [dialog, setDialog] = useState<'none' | 'confirmDelete' | 'reassign'>('none');
   const [reassignTo, setReassignTo] = useState<string | null>(null);
+  const [iconQuery, setIconQuery] = useState('');
+  const iconKeywords = t('categoryIcons.keywords', { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const iconLabel = (choice: IconName) =>
+    iconKeywords[categoryIconKeywordKey(choice)]?.split(',')[0]?.trim() ?? choice;
+  // Cerca de 100 ícones: filtrar a cada render é barato.
+  const iconGroups = (() => {
+    const query = normalizeSearchText(iconQuery.trim());
+    return CATEGORY_ICON_GROUPS.map((group) => ({
+      id: group.id,
+      icons: (group.icons as readonly IconName[]).filter(
+        (choice) =>
+          !query ||
+          normalizeSearchText(iconKeywords[categoryIconKeywordKey(choice)] ?? '').includes(query),
+      ),
+    })).filter((group) => group.icons.length > 0);
+  })();
 
   const close = () => closeModal('/categories');
   const dismiss = () => setDialog('none');
@@ -241,35 +267,56 @@ export function CategoryForm({ category, others, initialType = 'expense' }: Prop
         <Text variant="label" tone="secondary">
           {t('categoryForm.icon')}
         </Text>
-        <View
-          accessibilityRole="radiogroup"
-          accessibilityLabel={t('categoryForm.icon')}
-          style={styles.grid}>
-          {CATEGORY_ICON_CHOICES.map((choice, index) => {
-            const selected = choice === icon;
-            return (
-              <Pressable
-                key={choice}
-                accessibilityRole="radio"
-                accessibilityLabel={t('categoryForm.iconOption', { index: index + 1 })}
-                accessibilityState={{ checked: selected }}
-                onPress={() => setIcon(choice)}
-                style={[
-                  styles.iconOption,
-                  {
-                    backgroundColor: selected ? swatch.background : colors.surface,
-                    borderColor: selected ? swatch.foreground : colors.border,
-                  },
-                ]}>
-                <Icon
-                  name={choice}
-                  size={20}
-                  colorValue={selected ? swatch.foreground : colors.textSecondary}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
+        <TextField
+          label={t('categoryForm.iconSearch')}
+          value={iconQuery}
+          onChangeText={setIconQuery}
+          placeholder={t('categoryForm.iconSearchPlaceholder')}
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+        {iconGroups.length === 0 ? (
+          <Text variant="footnote" tone="secondary">
+            {t('categoryForm.iconNoResults')}
+          </Text>
+        ) : null}
+        {iconGroups.map((group) => (
+          <View key={group.id} style={styles.iconGroup}>
+            <Text variant="footnote" tone="tertiary" accessibilityRole="header">
+              {t(`categoryIcons.groups.${group.id}`)}
+            </Text>
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel={t(`categoryIcons.groups.${group.id}`)}
+              style={styles.grid}>
+              {group.icons.map((choice) => {
+                const selected = choice === icon;
+                return (
+                  <Pressable
+                    key={choice}
+                    accessibilityRole="radio"
+                    accessibilityLabel={iconLabel(choice)}
+                    accessibilityState={{ checked: selected }}
+                    aria-checked={selected}
+                    onPress={() => setIcon(choice)}
+                    style={[
+                      styles.iconOption,
+                      {
+                        backgroundColor: selected ? swatch.background : colors.surface,
+                        borderColor: selected ? swatch.foreground : colors.border,
+                      },
+                    ]}>
+                    <Icon
+                      name={choice}
+                      size={20}
+                      colorValue={selected ? swatch.foreground : colors.textSecondary}
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ))}
       </View>
 
       {category ? (
@@ -353,6 +400,9 @@ const styles = StyleSheet.create({
   },
   field: {
     gap: spacing.sm,
+  },
+  iconGroup: {
+    gap: spacing.xs,
   },
   grid: {
     flexDirection: 'row',

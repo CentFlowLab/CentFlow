@@ -709,6 +709,41 @@ Node) têm, por isso os testes passavam.
 falhar. Teste que apaga `formatToParts` para simular o Hermes. Não usar `formatToParts` (nem
 outras APIs `Intl` fora de `DateTimeFormat`/`NumberFormat.format`) sem verificar no Hermes.
 
+## ADR-052 — Cartões em Contas e créditos com valor inicial e pagamentos
+
+**Contexto:** os cartões de crédito estavam no Património, que não recebe despesas; os créditos
+só tinham o valor atual, sem forma de abater nem de ver quanto já foi pago. Regras do responsável:
+um movimento conta uma vez; o histórico da dívida não se perde; tudo sincroniza e funciona offline.
+**Decisão:**
+
+- Cartão de crédito = conta do tipo "Cartão" (as compras são despesas nela; o saldo negativo é o
+  que se deve; pagar o cartão é uma transferência do banco, não uma nova despesa). No Património,
+  um cartão mostra "Passar para Contas": cria a conta com o valor em dívida negativo e marca o
+  item como pago nesse dia, numa só transação (`wealth.moveCardToAccounts`), para não contar
+  duas vezes. Novo cartão no Património: aviso e atalho para criar em Contas.
+- Créditos: valor inicial e data de início opcionais, guardados como a primeira avaliação do
+  histórico (`value_history`), sem migração. O limite de 120 avaliações nunca corta a primeira.
+- "Registar pagamento" (`wealth.recordPayment`, `/wealth/payment/[id]`): valor pago (despesa na
+  conta, na mesma moeda) e quanto abate na dívida (por omissão, tudo; menos quando parte são
+  juros ou encargos). Uma transação: movimento + novo valor com histórico. Pago por inteiro: a
+  dívida fica paga nesse dia (a tabela não aceita valor 0). Progresso "Pago X de Y".
+- Fica para a fase de créditos: separar juros, comissões e seguros, taxa de juro e plano.
+
+## ADR-053 — Eliminar com gesto e ícones de categorias por grupo
+
+**Contexto:** apagar um movimento obrigava a abri-lo; faltavam ícones (ex.: tabaco).
+**Decisão:**
+
+- `SwipeableRow` (React Native `PanResponder` + `Animated`, sem módulos nativos novos): arrastar
+  para a esquerda revela "Eliminar" (cores `negativeMuted`/`negative`). A linha sai logo e aparece
+  "Movimento eliminado · Anular" (`Snackbar`); a eliminação só é gravada 5 s depois ou ao sair do
+  ecrã, por isso anular não desfaz nada já sincronizado. Leitores de ecrã: a mesma ação nas ações
+  do elemento.
+- Ícones das categorias: 107 em 7 grupos, com pesquisa por palavras em pt-PT, en e es
+  (`categoryIcons.*`). Ícones desenhados no estilo Ionicons outline (`miven-cigarette`,
+  `miven-fuel`) com **`react-native-svg`** (nova dependência: módulo padrão do Expo, sem
+  alternativa para desenhar vetores; entra na próxima compilação nativa).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

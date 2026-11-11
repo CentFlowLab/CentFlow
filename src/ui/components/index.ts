@@ -22,5 +22,7 @@ export { ProgressBar } from './ProgressBar';
 export { Screen } from './Screen';
 export { Section } from './Section';
 export { SegmentedControl, type SegmentedOption } from './SegmentedControl';
+export { Snackbar } from './Snackbar';
+export { SwipeableRow, type SwipeAction } from './SwipeableRow';
 export { Text, type TextProps, type TextTone } from './Text';
 export { TextField } from './TextField';
