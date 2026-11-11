@@ -127,6 +127,19 @@ describe('local finance flow (real SQLite)', () => {
     await expectAmount('100,00');
   });
 
+  it('explains that a credit card in net worth must move to accounts to take purchases', async () => {
+    await renderRouter('./src/app', { initialUrl: '/account/new' });
+    await createAccount('Banco', '100');
+    await act(() => router.push('/wealth/new'));
+    await fireEvent.press(await screen.findByRole('radio', { name: 'Cartão de crédito' }));
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Visa');
+    await fireEvent.changeText(screen.getByLabelText('Valor em dívida'), '450');
+    await fireEvent.press(screen.getByRole('button', { name: 'Guardar item' }));
+    await act(() => router.push('/new-transaction'));
+    expect(await screen.findByText(/O teu cartão de crédito está no Património/)).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Passar cartões para Contas' })).toBeOnTheScreen();
+  });
+
   it('shows field errors instead of saving invalid entries', async () => {
     await renderRouter('./src/app', { initialUrl: '/account/new' });
     await createAccount('Banco', '0');

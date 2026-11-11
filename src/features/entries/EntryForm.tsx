@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, type TextInputInstance } from 'react-native';
@@ -114,6 +115,14 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
   const [deleting, setDeleting] = useState(false);
   // Veículo (ADR-054): a mesma despesa passa também a contar na ficha do veículo.
   const vehicles = useDataQuery(useCallback((repos: Repositories) => repos.vehicles.list(), []));
+  // Cartões de crédito ainda no Património: não recebem compras até passarem a contas (ADR-052).
+  const cardsInWealth = useDataQuery(
+    useCallback(
+      async (repos: Repositories) =>
+        (await repos.wealth.list()).filter((item) => item.type === 'credit' && !item.closedOn),
+      [],
+    ),
+  );
   const [vehicleId, setVehicleId] = useState<string | null>(
     entry ? entry.vehicleId : (initialVehicleId ?? null),
   );
@@ -393,11 +402,33 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
           <Chip
             key={account.id}
             label={account.name}
+            icon={account.type === 'card' ? 'card-outline' : undefined}
             selected={account.id === accountId}
             onPress={() => changeAccount(account.id)}
           />
         ))}
       </ChipGroup>
+      {(cardsInWealth.data?.length ?? 0) > 0 ? (
+        <View style={styles.cardHint}>
+          <Text variant="footnote" tone="secondary">
+            {t('entryForm.cardsInWealth', { count: cardsInWealth.data!.length })}
+          </Text>
+          <Button
+            label={t('entryForm.moveCards')}
+            icon="card-outline"
+            variant="secondary"
+            size="sm"
+            onPress={() =>
+              cardsInWealth.data!.length === 1
+                ? router.push({
+                    pathname: '/wealth/[id]',
+                    params: { id: cardsInWealth.data![0]!.id },
+                  })
+                : router.push('/wealth')
+            }
+          />
+        </View>
+      ) : null}
 
       {type === 'transfer' ? (
         <ChipGroup label={t('entryForm.toAccount')} errorText={errors.destinationAccountId}>
@@ -410,6 +441,7 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
               <Chip
                 key={account.id}
                 label={account.name}
+                icon={account.type === 'card' ? 'card-outline' : undefined}
                 selected={account.id === destinationAccountId}
                 onPress={() => {
                   setDestinationAccountId(account.id);
@@ -419,6 +451,13 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
             ))
           )}
         </ChipGroup>
+      ) : null}
+      {type === 'transfer' &&
+      destinationAccountId &&
+      lookups.accounts.get(destinationAccountId)?.type === 'card' ? (
+        <Text variant="footnote" tone="secondary">
+          {t('entryForm.cardPayment')}
+        </Text>
       ) : null}
 
       {type !== 'transfer' && (vehicles.data?.length ?? 0) > 0 ? (
@@ -600,6 +639,10 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  cardHint: {
+    gap: spacing.sm,
+    alignItems: 'flex-start',
   },
   details: {
     gap: spacing.lg,
