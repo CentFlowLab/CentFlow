@@ -196,6 +196,50 @@ describe('database initialization', () => {
   });
 });
 
+describe('schema v15 (goals redesign)', () => {
+  it('keeps v14 goals and contributions and syncs the new fields', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 14),
+    );
+    await db.run(
+      `INSERT INTO goals (id, name, target_amount, currency, created_at, updated_at)
+       VALUES ('g1', 'Férias', 100000, 'EUR', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO goal_contributions (id, goal_id, amount, date, created_at, updated_at)
+       VALUES ('c1', 'g1', 2500, '2026-11-08', ?, ?)`,
+      [NOW, NOW],
+    );
+    await migrate(db, MIGRATIONS);
+    expect(await db.first('SELECT name, icon, color, description, account_id FROM goals')).toEqual({
+      name: 'Férias',
+      icon: null,
+      color: null,
+      description: null,
+      account_id: null,
+    });
+    expect(await db.first('SELECT amount, entry_id FROM goal_contributions')).toEqual({
+      amount: 2500,
+      entry_id: null,
+    });
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(`UPDATE goals SET icon = 'airplane-outline', color = 'blue' WHERE id = 'g1'`);
+    const ops = await db.all<{ entity: string; data: string }>(
+      'SELECT entity, data FROM sync_outbox ORDER BY seq',
+    );
+    expect(ops.map((op) => op.entity)).toEqual(['goals']);
+    expect(JSON.parse(ops[0]!.data)).toMatchObject({ icon: 'airplane-outline', color: 'blue' });
+    await expect(
+      db.run(`UPDATE goal_contributions SET entry_id = 'missing' WHERE id = 'c1'`),
+    ).rejects.toThrow();
+    await db.close();
+  });
+});
+
 describe('schema v13 (document attachments)', () => {
   it('keeps v12 documents and syncs attachments without the local upload queue', async () => {
     const db = createSqlDatabase(createNodeSqliteDriver());

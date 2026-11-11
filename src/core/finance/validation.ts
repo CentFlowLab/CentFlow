@@ -68,7 +68,9 @@ export type ValidationCode =
   | 'purchaseNotExpense'
   | 'splitMismatch'
   | 'cardOnly'
-  | 'purchaseAlreadyLinked';
+  | 'purchaseAlreadyLinked'
+  | 'transferOnly'
+  | 'entryAlreadyLinked';
 
 export type ValidationErrors<Field extends string> = Partial<Record<Field, ValidationCode>>;
 
@@ -403,6 +405,11 @@ export function validateSavingsGoalInput(
   if (input.targetOn !== null && !isValidCalendarDate(input.targetOn)) {
     errors.targetOn = 'invalidDate';
   }
+  if (input.icon != null && !isTextBetween(input.icon, 1, 60)) errors.icon = 'invalid';
+  if (input.color != null && !isTextBetween(input.color, 1, 20)) errors.color = 'invalid';
+  if (input.description != null && !isTextBetween(input.description, 1, 280)) {
+    errors.description = 'invalid';
+  }
   return errors;
 }
 
@@ -419,6 +426,7 @@ export function validateGoalContributionInput(
     errors.amount = 'amountTooLarge';
   }
   if (!isValidCalendarDate(input.date)) errors.date = 'invalidDate';
+  if (input.entryId != null && input.entryId.trim() === '') errors.entryId = 'invalid';
   return errors;
 }
 

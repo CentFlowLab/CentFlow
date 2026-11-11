@@ -165,6 +165,12 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'credit card accounts, loans with linked payments (ADR-057)',
     sql: migrationV14(),
   },
+  {
+    version: 15,
+    description:
+      'goals with icon, colour, description and account; contributions linked to entries',
+    sql: migrationV15(),
+  },
 ];
 
 /**
@@ -1771,6 +1777,72 @@ function migrationV14(): string {
     ALTER TABLE entries ADD COLUMN fees_amount INTEGER ${nonNegative('fees_amount')};
     CREATE INDEX entries_loan_idx ON entries (loan_id, date) WHERE loan_id IS NOT NULL;
     ${triggers}
+  `;
+}
+
+/** Gatilhos da fila de sincronização com a lista completa de campos de cada tabela. */
+function syncTriggers(synced: Record<string, readonly string[]>): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const json = (row: 'NEW' | 'OLD', fields: readonly string[]) =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const base = (table: string, row: 'NEW' | 'OLD') => `COALESCE(
+    (SELECT base_version + 1 FROM sync_outbox
+      WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+    ${row}.version)`;
+  return Object.entries(synced)
+    .map(
+      ([table, fields]) => `
+    DROP TRIGGER IF EXISTS sync_${table}_insert;
+    DROP TRIGGER IF EXISTS sync_${table}_update;
+    CREATE TRIGGER sync_${table}_insert AFTER INSERT ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'NEW')}, NULL, ${json('NEW', fields)}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
+    CREATE TRIGGER sync_${table}_update AFTER UPDATE ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'OLD')}, ${json('OLD', fields)}, ${json('NEW', fields)},
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;`,
+    )
+    .join('\n');
+}
+
+/** Objetivos com ícone, cor, descrição e conta; contribuição ligada a um movimento existente. */
+function migrationV15(): string {
+  return `
+    ALTER TABLE goals ADD COLUMN icon TEXT CHECK (icon IS NULL OR length(icon) BETWEEN 1 AND 60);
+    ALTER TABLE goals ADD COLUMN color TEXT CHECK (color IS NULL OR length(color) BETWEEN 1 AND 20);
+    ALTER TABLE goals ADD COLUMN description TEXT CHECK (description IS NULL OR
+      length(trim(description)) BETWEEN 1 AND 280);
+    ALTER TABLE goals ADD COLUMN account_id TEXT REFERENCES accounts (id) ON DELETE RESTRICT;
+    ALTER TABLE goal_contributions ADD COLUMN entry_id TEXT REFERENCES entries (id) ON DELETE RESTRICT;
+    CREATE INDEX goal_contributions_entry_idx ON goal_contributions (entry_id)
+      WHERE entry_id IS NOT NULL;
+    ${syncTriggers({
+      goals: [
+        'name',
+        'target_amount',
+        'currency',
+        'target_on',
+        'icon',
+        'color',
+        'description',
+        'account_id',
+        'created_at',
+        'deleted_at',
+      ],
+      goal_contributions: ['goal_id', 'amount', 'date', 'entry_id', 'created_at', 'deleted_at'],
+    })}
   `;
 }
 

@@ -30,15 +30,21 @@ import {
 } from '@/ui/components';
 import { spacing } from '@/ui/theme';
 
+import { IconColorPicker } from '../finance/IconColorPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
+import { DEFAULT_GOAL_COLOR, DEFAULT_GOAL_ICON, GoalIcon } from './GoalIcon';
 
 type FieldErrors = ValidationErrors<keyof SavingsGoalInput>;
 
-async function loadCurrencies(repositories: Repositories) {
+async function loadAccounts(repositories: Repositories) {
   const accounts = await repositories.accounts.list();
-  return [...new Set(accounts.map((account) => account.currency))];
+  return {
+    currencies: [...new Set(accounts.map((account) => account.currency))],
+    // Contas onde se guarda dinheiro (os cartões de crédito não contam).
+    accounts: accounts.filter((account) => account.type !== 'card' && account.archivedAt === null),
+  };
 }
 
 type Props = {
@@ -53,7 +59,7 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
   const repositories = useRepositories();
   const { formatDate, locale } = useLocaleFormat();
   const today = useToday();
-  const query = useDataQuery(useCallback((repos: Repositories) => loadCurrencies(repos), []));
+  const query = useDataQuery(useCallback((repos: Repositories) => loadAccounts(repos), []));
   const editing = goal !== undefined;
 
   const [name, setName] = useState(goal?.name ?? '');
@@ -62,12 +68,23 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
   const [amountText, setAmountText] = useState(
     goal ? amountToInputString(goal.targetAmount, goal.currency, decimalSeparatorFor(locale)) : '',
   );
+  const [icon, setIcon] = useState(goal?.icon ?? DEFAULT_GOAL_ICON);
+  const [color, setColor] = useState(goal?.color ?? DEFAULT_GOAL_COLOR);
+  const [description, setDescription] = useState(goal?.description ?? '');
+  const [accountId, setAccountId] = useState<string | null>(goal?.accountId ?? null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [amountError, setAmountError] = useState<string>();
   const [saving, setSaving] = useState(false);
 
-  const currencies = query.data ?? [];
+  const currencies = query.data?.currencies ?? [];
   const resolvedCurrency = currency || currencies[0] || DEFAULT_CURRENCY;
+  const accountChoices = (query.data?.accounts ?? []).filter(
+    (account) => account.currency === resolvedCurrency,
+  );
+  // Mudar de moeda larga uma conta de outra moeda.
+  const resolvedAccountId = accountChoices.some((account) => account.id === accountId)
+    ? accountId
+    : null;
   const close = onClose ?? (() => closeModal('/goals'));
 
   async function save() {
@@ -89,6 +106,10 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
       targetAmount: parsed.amountMinor,
       currency: resolvedCurrency,
       targetOn,
+      icon,
+      color,
+      description,
+      accountId: resolvedAccountId,
     };
     const fieldErrors = validateSavingsGoalInput(input);
     if (hasErrors(fieldErrors)) {
@@ -137,6 +158,14 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
             value={name}
             onChangeText={setName}
             errorText={validationMessage(t, errors.name)}
+          />
+          <TextField
+            label={t('goals.form.description')}
+            value={description}
+            onChangeText={setDescription}
+            maxLength={280}
+            multiline
+            errorText={validationMessage(t, errors.description)}
           />
           <TextField
             ref={targetRef}
@@ -200,8 +229,39 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
               </Text>
             ) : null}
           </View>
+          {accountChoices.length > 0 ? (
+            <ChipGroup
+              label={t('goals.form.account')}
+              errorText={validationMessage(t, errors.accountId)}>
+              <Chip
+                label={t('goals.form.noAccount')}
+                selected={resolvedAccountId === null}
+                onPress={() => setAccountId(null)}
+              />
+              {accountChoices.map((account) => (
+                <Chip
+                  key={account.id}
+                  label={account.name}
+                  selected={account.id === resolvedAccountId}
+                  onPress={() => setAccountId(account.id)}
+                />
+              ))}
+            </ChipGroup>
+          ) : null}
+          <Text variant="label" tone="secondary" accessibilityRole="header">
+            {t('goals.form.appearance')}
+          </Text>
+          <View style={styles.preview}>
+            <GoalIcon icon={icon} color={color} size={56} />
+          </View>
+          <IconColorPicker
+            icon={icon}
+            color={color}
+            onIconChange={setIcon}
+            onColorChange={setColor}
+          />
           <Text variant="caption" tone="tertiary">
-            {t('goals.doesNotChangeBalances')}
+            {t('goals.howItWorks')}
           </Text>
         </View>
       )}
@@ -212,4 +272,5 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
 const styles = StyleSheet.create({
   form: { gap: spacing.lg },
   field: { gap: spacing.sm },
+  preview: { alignItems: 'center' },
 });

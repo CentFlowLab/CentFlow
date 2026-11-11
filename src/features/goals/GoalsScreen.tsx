@@ -3,23 +3,14 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { calendarDateToLocalDate, remainingAmountMinor, savedAmountMinor } from '@/core/finance';
+import { goalStatus } from '@/core/finance';
 import { useDataQuery, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import {
-  Amount,
-  Button,
-  Card,
-  EmptyState,
-  HeroCard,
-  Icon,
-  IconButton,
-  ProgressBar,
-  Screen,
-  Text,
-} from '@/ui/components';
+import { Button, Card, EmptyState, HeroCard, IconButton, Screen, Text } from '@/ui/components';
 import { useBreakpoint } from '@/ui/layout/useBreakpoint';
 import { radius, spacing, useTheme } from '@/ui/theme';
+
+import { GoalCard } from './GoalCard';
 
 const NEW_HREF = '/goal/new' as Href;
 
@@ -28,10 +19,23 @@ async function load(repositories: Repositories) {
   const contributions = await Promise.all(
     goals.map((goal) => repositories.goals.listContributions(goal.id)),
   );
-  return goals.map((goal, index) => ({
-    goal,
-    savedMinor: savedAmountMinor((contributions[index] ?? []).map((item) => item.amount)),
-  }));
+  return goals.map((goal, index) => {
+    const status = goalStatus(goal.targetAmount, contributions[index] ?? []);
+    return { goal, status, savedMinor: status.saved };
+  });
+}
+
+type Loaded = Awaited<ReturnType<typeof load>>[number];
+
+/** Em curso: mais perto do fim primeiro. Concluídos: os mais recentes primeiro. */
+function sections(items: readonly Loaded[]) {
+  const inProgress = items
+    .filter((item) => !item.status.reached)
+    .sort((a, b) => b.status.ratio - a.status.ratio || a.goal.name.localeCompare(b.goal.name));
+  const completed = items
+    .filter((item) => item.status.reached)
+    .sort((a, b) => (b.status.achievedOn ?? '').localeCompare(a.status.achievedOn ?? ''));
+  return { inProgress, completed };
 }
 
 type Totals = { saved: number; target: number; reached: number; count: number };
@@ -56,7 +60,7 @@ export function GoalsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const breakpoint = useBreakpoint();
-  const { formatDate, formatMoney, formatPercent } = useLocaleFormat();
+  const { formatMoney, formatPercent } = useLocaleFormat();
   const query = useDataQuery(useCallback((repositories: Repositories) => load(repositories), []));
 
   const add = () => router.push(NEW_HREF);
@@ -105,6 +109,7 @@ export function GoalsScreen() {
   }
 
   const isWide = breakpoint !== 'compact';
+  const groups = sections(query.data);
   const money = (amountMinor: number, currency: string) => formatMoney({ amountMinor, currency });
 
   return (
@@ -144,69 +149,29 @@ export function GoalsScreen() {
         })}
       </View>
 
-      <View style={styles.row}>
-        {query.data.map(({ goal, savedMinor }) => {
-          const reached = savedMinor >= goal.targetAmount;
-          const target = money(goal.targetAmount, goal.currency);
-          const remaining = money(
-            remainingAmountMinor(goal.targetAmount, savedMinor),
-            goal.currency,
-          );
-          const status = reached ? t('goals.reached') : `${t('goals.remaining')}: ${remaining}`;
-          return (
-            <Card
-              key={goal.id}
-              onPress={() => router.push(`/goal/${goal.id}` as Href)}
-              accessibilityLabel={`${goal.name}, ${money(savedMinor, goal.currency)} ${t(
-                'goals.ofTarget',
-                { amount: target },
-              )}, ${status}`}
-              style={[styles.goal, { flexBasis: isWide ? 300 : '100%' }]}>
-              <View style={styles.goalHeader}>
-                <View
-                  style={[
-                    styles.goalIcon,
-                    { backgroundColor: reached ? colors.positiveMuted : colors.primaryMuted },
-                  ]}>
-                  <Icon
-                    name={reached ? 'checkmark' : 'flag-outline'}
-                    size={18}
-                    color={reached ? 'positive' : 'primaryText'}
+      {[
+        { key: 'inProgress', title: t('goals.inProgress'), items: groups.inProgress },
+        { key: 'completed', title: t('goals.completed'), items: groups.completed },
+      ]
+        .filter((section) => section.items.length > 0)
+        .map((section) => (
+          <View key={section.key} style={styles.section}>
+            <Text variant="title3" accessibilityRole="header">
+              {`${section.title} · ${section.items.length}`}
+            </Text>
+            <View style={styles.row}>
+              {section.items.map(({ goal, status }) => (
+                <View key={goal.id} style={{ flexGrow: 1, flexBasis: isWide ? 340 : '100%' }}>
+                  <GoalCard
+                    goal={goal}
+                    status={status}
+                    onPress={() => router.push(`/goal/${goal.id}` as Href)}
                   />
                 </View>
-                <View style={styles.flex}>
-                  <Text variant="bodyStrong" numberOfLines={1}>
-                    {goal.name}
-                  </Text>
-                  <Text variant="footnote" tone="secondary">
-                    {goal.targetOn
-                      ? formatDate(calendarDateToLocalDate(goal.targetOn), 'medium')
-                      : t('goals.noDate')}
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={18} color="textTertiary" />
-              </View>
-              <View style={styles.amounts}>
-                <Amount
-                  value={{ amountMinor: savedMinor, currency: goal.currency }}
-                  variant="amount"
-                />
-                <Text variant="footnote" tone="secondary" tabular>
-                  {t('goals.ofTarget', { amount: target })}
-                </Text>
-              </View>
-              <ProgressBar
-                progress={goal.targetAmount === 0 ? 0 : savedMinor / goal.targetAmount}
-                tone={reached ? 'positive' : 'accent'}
-                accessibilityLabel={status}
-              />
-              <Text variant="caption" tone={reached ? 'positive' : 'secondary'}>
-                {status}
-              </Text>
-            </Card>
-          );
-        })}
-      </View>
+              ))}
+            </View>
+          </View>
+        ))}
       <Text variant="caption" tone="tertiary">
         {t('goals.doesNotChangeBalances')}
       </Text>
@@ -216,20 +181,10 @@ export function GoalsScreen() {
 
 const styles = StyleSheet.create({
   loading: { marginTop: spacing.xl },
-  flex: { flex: 1 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   hero: { flexGrow: 1, flexBasis: 260, gap: spacing.sm },
   heroTrack: { height: 6, borderRadius: radius.full, overflow: 'hidden', marginTop: spacing.xs },
   heroFill: { height: '100%', borderRadius: radius.full },
   heroFooter: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
-  goal: { flexGrow: 1, gap: spacing.md },
-  goalHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  goalIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  amounts: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: spacing.sm },
+  section: { gap: spacing.sm },
 });

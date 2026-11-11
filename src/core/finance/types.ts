@@ -199,9 +199,19 @@ export type SavingsGoal = SyncMetadata & {
   currency: CurrencyCode;
   /** Data opcional para atingir o alvo. */
   targetOn: CalendarDate | null;
+  /** Ícone do catálogo da app e cor da paleta (como as categorias). */
+  icon: string | null;
+  color: string | null;
+  description: string | null;
+  /** Conta onde a pessoa guarda o dinheiro, se a quiser associar. Não muda saldos. */
+  accountId: Id | null;
 };
 
-export type SavingsGoalInput = Pick<SavingsGoal, 'name' | 'targetAmount' | 'currency' | 'targetOn'>;
+export type SavingsGoalInput = Pick<
+  SavingsGoal,
+  'name' | 'targetAmount' | 'currency' | 'targetOn'
+> &
+  Partial<Pick<SavingsGoal, 'icon' | 'color' | 'description' | 'accountId'>>;
 
 /** Linha própria. Corrigir um engano é apagá-la, não editar o valor. */
 export type GoalContribution = SyncMetadata & {
@@ -210,9 +220,12 @@ export type GoalContribution = SyncMetadata & {
   /** Unidades mínimas. Sempre positivo. A moeda é a do objetivo. */
   amount: number;
   date: CalendarDate;
+  /** Transferência real (já registada) que corresponde a esta contribuição. Opcional. */
+  entryId: Id | null;
 };
 
-export type GoalContributionInput = Pick<GoalContribution, 'goalId' | 'amount' | 'date'>;
+export type GoalContributionInput = Pick<GoalContribution, 'goalId' | 'amount' | 'date'> &
+  Partial<Pick<GoalContribution, 'entryId'>>;
 
 export const WEALTH_ASSET_TYPES = [
   'property',

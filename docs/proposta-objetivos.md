@@ -1,7 +1,8 @@
 # Objetivos — auditoria e proposta de redesign
 
-Estado: **proposta (2026-11-11). Nada implementado.** Falta a imagem de referência citada no
-pedido: não chegou com a mensagem.
+Estado: **implementada localmente (ADR-058, 2026-11-11).** Migração do servidor
+`20261116000100_goals_redesign.sql` escrita e testada em PGlite, por aplicar. A imagem de
+referência citada no pedido não chegou; o desenho segue a descrição do pedido.
 
 ## 1. Auditoria
 

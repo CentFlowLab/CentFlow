@@ -826,6 +826,24 @@ entrada com Google.
 - Fusão: decomposição acoplada ao valor; ligação ao empréstimo acoplada. Migração local v14;
   servidor `20261115000100_cards_and_loans.sql` (por aplicar), com guardas para apps antigas.
 
+## ADR-058 — Objetivos com aparência, conta e contribuições ligadas a transferências
+
+**Contexto:** proposta em `docs/proposta-objetivos.md`; escolhas do responsável: ícone + cor e
+ligação opcional a transferências reais (2026-11-11).
+**Decisão:**
+
+- `goals` ganha `icon` e `color` (as mesmas chaves das categorias, sem dados pessoais novos),
+  `description` (≤ 280) e `account_id` (conta onde a pessoa guarda o dinheiro, mesma moeda).
+- `goal_contributions` ganha `entry_id`: aponta para uma transferência já registada, ativa, na
+  moeda do objetivo e ainda não ligada a outra contribuição. A contribuição continua a não criar
+  movimentos nem mudar saldos; o mesmo dinheiro nunca conta duas vezes.
+- Concluído, data de conclusão, em falta e excedente são calculados (`goalStatus`), nunca
+  guardados: mudar a meta ou apagar uma contribuição recalcula tudo. Por isso a coluna
+  `achieved_on` da proposta não foi criada.
+- As contribuições passam a poder ser editadas (valor, data e ligação), além de eliminadas.
+- Migração local v15; servidor `20261116000100_goals_redesign.sql` (por aplicar), com guardas
+  para apps antigas.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

@@ -1700,3 +1700,99 @@ describe('credit cards and loans (ADR-057)', () => {
     expect(cross).toMatchObject({ status: 'rejected' });
   });
 });
+
+describe('goals redesign', () => {
+  const GOAL = '94000000-0000-4000-8000-000000000001';
+  const CONTRIBUTION = '94000000-0000-4000-8000-000000000002';
+  const SAVINGS = '94000000-0000-4000-8000-000000000003';
+  const TRANSFER = '94000000-0000-4000-8000-000000000004';
+
+  const goalOp = (base: number, data: Record<string, unknown> = {}): Op => ({
+    op_id: opId(),
+    tx_id: null,
+    entity: 'goals',
+    record_id: GOAL,
+    base_version: base,
+    data: {
+      name: 'Carro',
+      target_amount: 2000000,
+      currency: 'EUR',
+      target_on: null,
+      deleted_at: null,
+      ...data,
+    },
+  });
+  const contributionOp = (base: number, data: Record<string, unknown> = {}): Op => ({
+    op_id: opId(),
+    tx_id: null,
+    entity: 'goal_contributions',
+    record_id: CONTRIBUTION,
+    base_version: base,
+    data: { goal_id: GOAL, amount: 50000, date: '2026-11-08', deleted_at: null, ...data },
+  });
+
+  beforeEach(() => seedBasics(alice));
+
+  it('stores icon, colour, description, account and linked transfer; older apps keep them', async () => {
+    const results = await push(alice, [
+      accountOp(SAVINGS, 0, { name: 'Poupança', type: 'savings', initial_balance: 0 }),
+      entryOp(TRANSFER, 0, {
+        type: 'transfer',
+        amount: 50000,
+        category_id: null,
+        destination_account_id: SAVINGS,
+      }),
+      goalOp(0, {
+        icon: 'car-outline',
+        color: 'teal',
+        description: 'Entrada do carro novo',
+        account_id: SAVINGS,
+      }),
+      contributionOp(0, { entry_id: TRANSFER }),
+    ]);
+    expect(results.map((r) => r.status)).toEqual(['applied', 'applied', 'applied', 'applied']);
+    // Formato da app 0.1.15: sem os campos novos.
+    const older = await push(alice, [goalOp(1, { name: 'Carro novo' }), contributionOp(1)]);
+    expect(older.map((r) => r.status)).toEqual(['applied', 'applied']);
+    expect(
+      await alice.query(
+        `select g.name, g.icon, g.color, g.description, g.account_id, c.entry_id
+           from public.goals g join public.goal_contributions c on c.goal_id = g.id
+          where g.id = '${GOAL}'`,
+      ),
+    ).toEqual([
+      {
+        name: 'Carro novo',
+        icon: 'car-outline',
+        color: 'teal',
+        description: 'Entrada do carro novo',
+        account_id: SAVINGS,
+        entry_id: TRANSFER,
+      },
+    ]);
+    // A contribuição não cria movimentos: só a transferência original existe.
+    expect(await alice.query('select count(*)::int as n from public.entries')).toEqual([{ n: 1 }]);
+  });
+
+  it("refuses links to another person's account or entry", async () => {
+    const own = await push(alice, [
+      accountOp(SAVINGS, 0, { name: 'Poupança', type: 'savings', initial_balance: 0 }),
+      entryOp(TRANSFER, 0, {
+        type: 'transfer',
+        amount: 50000,
+        category_id: null,
+        destination_account_id: SAVINGS,
+      }),
+    ]);
+    expect(own.map((r) => r.status)).toEqual(['applied', 'applied']);
+    await seedBasics(bob);
+    // A chave estrangeira inclui o utilizador: a conta e a transferência da Alice não servem.
+    expect((await push(bob, [goalOp(0, { account_id: SAVINGS })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
+    expect((await push(bob, [goalOp(0)]))[0]).toMatchObject({ status: 'applied' });
+    expect((await push(bob, [contributionOp(0, { entry_id: TRANSFER })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
+  });
+});

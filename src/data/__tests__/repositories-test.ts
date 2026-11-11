@@ -1508,3 +1508,137 @@ describe('credit cards and loans (ADR-057)', () => {
     expect((await repos.wealth.get(legacy.id))?.closedOn).toBe('2026-11-09');
   });
 });
+
+describe('goals redesign', () => {
+  it('stores appearance, description and account, and keeps them when a screen omits them', async () => {
+    const goal = await repos.goals.create({
+      name: 'Carro',
+      targetAmount: 2000000,
+      currency: 'EUR',
+      targetOn: null,
+      icon: 'car-outline',
+      color: 'teal',
+      description: ' Entrada do carro ',
+      accountId: bank.id,
+    });
+    expect(goal).toMatchObject({
+      icon: 'car-outline',
+      color: 'teal',
+      description: 'Entrada do carro',
+      accountId: bank.id,
+    });
+    // Formato antigo (sem os campos novos): nada se perde.
+    await repos.goals.update(goal.id, {
+      name: 'Carro novo',
+      targetAmount: 2500000,
+      currency: 'EUR',
+      targetOn: null,
+    });
+    expect(await repos.goals.get(goal.id)).toMatchObject({
+      name: 'Carro novo',
+      icon: 'car-outline',
+      accountId: bank.id,
+    });
+    await expect(
+      repos.goals.update(goal.id, { ...goal, accountId: 'missing' }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    const dollars = await repos.accounts.create({
+      name: 'USD',
+      type: 'bank',
+      currency: 'USD',
+      initialBalance: 0,
+    });
+    await expect(
+      repos.goals.update(goal.id, { ...goal, accountId: dollars.id }),
+    ).rejects.toMatchObject({ errors: { accountId: 'currencyMismatch' } });
+  });
+
+  it('links a contribution to a real transfer without creating entries or changing balances', async () => {
+    const savings = await repos.accounts.create({
+      name: 'Poupança',
+      type: 'savings',
+      currency: 'EUR',
+      initialBalance: 0,
+    });
+    const transfer = await repos.entries.create({
+      ...baseExpense(),
+      type: 'transfer',
+      categoryId: null,
+      accountId: bank.id,
+      destinationAccountId: savings.id,
+      amount: 50000,
+    });
+    const goal = await repos.goals.create({
+      name: 'Férias',
+      targetAmount: 100000,
+      currency: 'EUR',
+      targetOn: null,
+      accountId: savings.id,
+    });
+    const expense = await repos.entries.create({ ...baseExpense(), amount: 1000 });
+    const balancesBefore = await repos.accounts.listWithBalances();
+    const entriesBefore = await db.first<{ n: number }>('SELECT count(*) AS n FROM entries');
+
+    expect((await repos.goals.linkableTransfers(goal.id)).map((item) => item.id)).toEqual([
+      transfer.id,
+    ]);
+    const contribution = await repos.goals.addContribution({
+      goalId: goal.id,
+      amount: 50000,
+      date: transfer.date,
+      entryId: transfer.id,
+    });
+    expect(contribution.entryId).toBe(transfer.id);
+    expect(await repos.goals.linkableTransfers(goal.id)).toEqual([]);
+    // O mesmo dinheiro não conta duas vezes.
+    await expect(
+      repos.goals.addContribution({
+        goalId: goal.id,
+        amount: 100,
+        date: transfer.date,
+        entryId: transfer.id,
+      }),
+    ).rejects.toMatchObject({ errors: { entryId: 'entryAlreadyLinked' } });
+    // Só transferências.
+    await expect(
+      repos.goals.addContribution({
+        goalId: goal.id,
+        amount: 100,
+        date: transfer.date,
+        entryId: expense.id,
+      }),
+    ).rejects.toMatchObject({ errors: { entryId: 'transferOnly' } });
+
+    // As contribuições não criam movimentos.
+    expect(await db.first<{ n: number }>('SELECT count(*) AS n FROM entries')).toEqual(
+      entriesBefore,
+    );
+    const after = await repos.accounts.listWithBalances();
+    for (const account of balancesBefore) {
+      expect(after.find((item) => item.id === account.id)?.balance).toBe(account.balance);
+    }
+
+    // Editar: valor, data e ligação; a soma acompanha.
+    const edited = await repos.goals.updateContribution(contribution.id, {
+      amount: 60000,
+      date: '2026-11-09',
+      entryId: null,
+    });
+    expect(edited).toMatchObject({ amount: 60000, date: '2026-11-09', entryId: null });
+    expect(
+      savedAmountMinor((await repos.goals.listContributions(goal.id)).map((item) => item.amount)),
+    ).toBe(60000);
+    // Eliminar a transferência deixa a contribuição, sem ligação.
+    await repos.goals.updateContribution(contribution.id, {
+      amount: 60000,
+      date: '2026-11-09',
+      entryId: transfer.id,
+    });
+    await repos.entries.delete(transfer.id);
+    const [stillThere] = await repos.goals.listContributions(goal.id);
+    expect(stillThere).toMatchObject({ amount: 60000, entryId: null });
+    // Eliminar o objetivo não toca nos movimentos.
+    await repos.goals.delete(goal.id);
+    expect((await repos.entries.get(expense.id))?.id).toBe(expense.id);
+  });
+});

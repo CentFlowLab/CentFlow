@@ -172,6 +172,16 @@ export type GoalProgress = {
   contributedInPeriod: number;
 };
 
+/** Transferência que se pode ligar a uma contribuição (ainda sem ligação). */
+export type LinkableTransfer = {
+  id: Id;
+  date: CalendarDate;
+  amount: number;
+  description: string;
+  accountId: Id;
+  destinationAccountId: Id | null;
+};
+
 export interface SavingsGoalRepository {
   list(): Promise<SavingsGoal[]>;
   /** Progresso calculado na consulta. O objetivo continua sem total guardado. */
@@ -184,8 +194,14 @@ export interface SavingsGoalRepository {
   listContributions(goalId: Id): Promise<GoalContribution[]>;
   /** Não cria movimentos. A moeda é a do objetivo. */
   addContribution(input: GoalContributionInput): Promise<GoalContribution>;
-  /** Corrigir um engano é apagar a linha, não alterar o valor. */
+  /** Corrige valor, data ou ligação. O objetivo da contribuição não muda. */
+  updateContribution(
+    id: Id,
+    input: Omit<GoalContributionInput, 'goalId'>,
+  ): Promise<GoalContribution>;
   deleteContribution(id: Id): Promise<void>;
+  /** Transferências na moeda do objetivo ainda não ligadas (no máximo 20). */
+  linkableTransfers(goalId: Id): Promise<LinkableTransfer[]>;
 }
 
 export interface WealthRepository {
