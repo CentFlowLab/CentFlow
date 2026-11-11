@@ -12,7 +12,7 @@ compra de veículo, cartões e empréstimos ADR-057 e objetivos ADR-058, todas n
 2026-11-11; ver
 [docs/release-producao.md](docs/release-producao.md)). Os anexos ficam no balde privado `documents`
 do Storage; a função `delete-account` apaga-os antes de eliminar o utilizador.
-App publicada: **0.1.15** (2026-11-11; migração local v13). Estado verificado e pendentes em
+App publicada: **0.1.16** (2026-11-11; migração local v15). Estado verificado e pendentes em
 [docs/audit-2026-11.md](docs/audit-2026-11.md) (secção "Estado atual"); testes em aparelhos reais
 ainda por fazer.
 Funções `delete-account` e
