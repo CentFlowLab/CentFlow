@@ -1,7 +1,7 @@
 # Lançamento das Fases 3 a 5 em produção
 
-> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 16
-> migrações (`20261108000100` a `20261112000100`); 14 tabelas com RLS, sem leitura nem escrita
+> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 17
+> migrações (`20261108000100` a `20261113000100`); 14 tabelas com RLS, sem leitura nem escrita
 > para `anon` e sem escrita direta para `authenticated`; esquema `private` não exposto; funções
 > com `search_path` vazio; Edge Functions `delete-account` e `suggest-entry` ativas nos dois
 > (validam a sessão com `auth.getUser()`); sem segredos próprios (falta `ANTHROPIC_API_KEY`).
@@ -238,3 +238,21 @@ Autorizado pelo responsável ("autorizo produção"). Desenho em
    um veículo não apaga os campos novos. O ensaio real contra o staging (`live-sync-test`) não
    correu: precisa das chaves na shell, que não estavam definidas.
 6. Depois da migração: app 0.1.14 publicada (iPhone, Android e web).
+
+## Execução de 2026-11-11 (manhã) — documentos com anexos (`20261113000100`)
+
+Autorizado pelo responsável (staging e produção). Desenho em
+[fase4-documentos.md](fase4-documentos.md), ADR-056. Guard antes de cada comando na produção.
+
+1. Staging: dry-run só com `20261113000100`; aplicada; `delete-account` publicada. Verificação só
+   de leitura: balde `documents` privado, 10 MB, JPEG/PNG/WebP/PDF; quatro políticas em
+   `storage.objects` (ler, enviar, substituir e apagar só na pasta da própria pessoa); colunas
+   `attachments`, `acquired_on`, `amount`, `currency`; `search_path` vazio em `sync_apply_op`.
+2. Produção: contagem antes (`auth.users` = 1, `entries` = 1, `documents` = 0) em
+   `~/Documents/Miven-backups/miven-prod-20261111-contagem-antes-anexos.txt`; `db dump`
+   indisponível (sem Docker). Dry-run só com `20261113000100`, alvo produção; aplicada;
+   `delete-account` publicada.
+3. Verificação só de leitura igual à do staging; dados intactos (1 utilizador, 1 movimento);
+   histórico local e remoto iguais até `20261113000100`.
+4. Compatibilidade testada em PGlite: uma app 0.1.14 que edita um documento não apaga os anexos
+   nem o valor de compra.
