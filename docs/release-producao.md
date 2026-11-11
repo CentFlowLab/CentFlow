@@ -1,11 +1,11 @@
 # Lançamento das Fases 3 a 5 em produção
 
-> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 15
-> migrações (`20261108000100` a `20261111000400`); 14 tabelas com RLS, sem leitura nem escrita
+> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 16
+> migrações (`20261108000100` a `20261112000100`); 14 tabelas com RLS, sem leitura nem escrita
 > para `anon` e sem escrita direta para `authenticated`; esquema `private` não exposto; funções
 > com `search_path` vazio; Edge Functions `delete-account` e `suggest-entry` ativas nos dois
 > (validam a sessão com `auth.getUser()`); sem segredos próprios (falta `ANTHROPIC_API_KEY`).
-> App publicada: **0.1.10** (iPhone SideStore compilação 16, Android compilação 8, web). As
+> App publicada: **0.1.14** (veículos; ver o registo de 2026-11-11 abaixo). As
 > secções seguintes são o registo histórico de cada execução.
 
 Plano. Não executar nenhum passo sem uma autorização nova, nessa altura, com a frase
@@ -215,3 +215,26 @@ Autorizado pelo responsável ("Confirmo produção"). Guard antes de cada comand
    `sync_apply_op`, `throttle`, `request_client`, `login_email` e `username_available`.
 6. Ensaio anónimo pela API: `email_registered` 404; `username_available` 200.
 7. App 0.1.9 **não publicada**: falta a ronda de testes físicos (secção 5 do plano).
+
+## Execução de 2026-11-11 (madrugada) — veículos, Fase 1 (`20261112000100`)
+
+Autorizado pelo responsável ("autorizo produção"). Desenho em
+[fase1-veiculos.md](fase1-veiculos.md), ADR-054. Guard antes de cada comando.
+
+1. Staging: dry-run com só `20261112000100`; aplicada; histórico local e remoto iguais; verificação
+   só de leitura das colunas novas, de `entries_vehicle_rules` e do `search_path` vazio de
+   `sync_apply_op`.
+2. Cópia da produção: `db dump` indisponível (o CLI precisa do Docker, que não estava instalado) e
+   sem cópias automáticas no plano. Contagem só de leitura antes da migração: `auth.users` = 0 e
+   todas as tabelas de dados vazias (exceto `lookup_attempts` = 2). Registo em
+   `~/Documents/Miven-backups/miven-prod-20261111-contagem-antes.txt`. O esquema reconstrói-se das
+   migrações do repositório.
+3. Produção: dry-run com só `20261112000100`, alvo produção; `db push --skip-vault` aplicada;
+   histórico local e remoto iguais até `20261112000100`.
+4. Verificação só de leitura: `entries.vehicle_id/vehicle_cost_type/quantity_milli/odometer_km`,
+   `vehicles.make/kind_label/icon`, `documents.vehicle_id`, restrições `entries_vehicle_rules` e
+   `vehicles_purchase_currency`, `search_path` vazio em `sync_apply_op`.
+5. Compatibilidade testada em PGlite (`server-test.ts`): uma app 0.1.13 que edita um movimento ou
+   um veículo não apaga os campos novos. O ensaio real contra o staging (`live-sync-test`) não
+   correu: precisa das chaves na shell, que não estavam definidas.
+6. Depois da migração: app 0.1.14 publicada (iPhone, Android e web).
