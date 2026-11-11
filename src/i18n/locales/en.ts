@@ -1252,6 +1252,7 @@ const en: Translation = {
     legalAnd: 'and the',
     legalPrivacy: 'Privacy policy',
     signInWithApple: 'Continue with Apple',
+    signInWithGoogle: 'Continue with Google',
     confirmEmail: {
       title: 'Confirm your email',
       lead: 'We sent a confirmation link to',
@@ -1374,6 +1375,10 @@ const en: Translation = {
     deleteAppleHint: 'Enter your password, or leave it blank to confirm with Apple.',
     deleteFailed: 'Could not delete the account. Check your connection and try again.',
     deleteReauthFailed: 'Confirmation failed. The account was not deleted.',
+    deleteGoogleHint:
+      'You signed in with Google: leave this blank. For your security, you can only delete the account within 10 minutes of signing in.',
+    deleteGoogleStale:
+      'More than 10 minutes have passed since you signed in. Sign out, sign in again with Google and delete the account right away. The account was not deleted.',
   },
   importData: {
     title: "Add this device's data to your account?",

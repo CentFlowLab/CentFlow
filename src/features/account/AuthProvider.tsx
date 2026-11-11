@@ -15,6 +15,7 @@ import { getSupabase } from '@/lib/supabase';
 
 import { AppleSignInCancelledError, performAppleSignIn } from './apple-sign-in';
 import { authRedirectUrl } from './auth-redirect';
+import { performGoogleSignIn } from './google-sign-in';
 
 export { authRedirectUrl } from './auth-redirect';
 
@@ -206,6 +207,7 @@ const fail = (error: AuthError | Error | null | undefined): AuthResult<never> =>
 };
 
 export { isAppleSignInAvailable } from './apple-sign-in';
+export { isGoogleSignInAvailable } from './google-sign-in';
 
 export type AuthActions = {
   /** `identifier`: email ou nome de utilizador. */
@@ -232,6 +234,8 @@ export type AuthActions = {
   verifyEmail(tokenHash: string, type: EmailOtpType): Promise<AuthResult>;
   updatePassword(password: string): Promise<AuthResult>;
   signInWithApple(): Promise<AuthResult>;
+  /** Entrar com a Google (OAuth); a sessão chega por `/auth/callback` (ADR-055). */
+  signInWithGoogle(): Promise<AuthResult>;
   /**
    * Volta a autenticar com a Apple antes de eliminar a conta.
    * Cancelar não conta como sucesso.
@@ -278,6 +282,7 @@ function createActions(client: SupabaseClient | null, pending: PendingStore): Au
       verifyEmail: unavailable,
       updatePassword: unavailable,
       signInWithApple: unavailable,
+      signInWithGoogle: unavailable,
       reauthenticateWithApple: unavailable,
       updateEmailLocale: unavailable,
       accessToken: async () => null,
@@ -413,6 +418,15 @@ function createActions(client: SupabaseClient | null, pending: PendingStore): Au
       guard(async () => {
         const { error } = await auth.updateUser({ password });
         return error ? fail(error) : ok(undefined);
+      }),
+    signInWithGoogle: () =>
+      guard(async () => {
+        try {
+          await performGoogleSignIn(client);
+          return ok(undefined);
+        } catch (error) {
+          return fail(error as Error);
+        }
       }),
     signInWithApple: () =>
       guard(async () => {

@@ -20,6 +20,7 @@ import { openExternal, PRIVACY_URL, TERMS_URL } from './legal-links';
 import {
   emailOtpType,
   isAppleSignInAvailable,
+  isGoogleSignInAvailable,
   normalizeUsername,
   useAuth,
   USERNAME_PATTERN,
@@ -223,6 +224,17 @@ export function SignInScreen() {
           variant="ghost"
           onPress={() => router.replace('/auth/sign-up' as Href)}
         />
+        {isGoogleSignInAvailable() ? (
+          <Button
+            label={t('auth.signInWithGoogle')}
+            icon="logo-google"
+            variant="secondary"
+            onPress={async () => {
+              const result = await actions.signInWithGoogle();
+              if (!result.ok) setError(result.error);
+            }}
+          />
+        ) : null}
         {appleAvailable ? (
           <Button
             label={t('auth.signInWithApple')}

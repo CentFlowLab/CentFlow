@@ -1261,6 +1261,7 @@ const es: Translation = {
     legalAnd: 'y la',
     legalPrivacy: 'Política de privacidad',
     signInWithApple: 'Continuar con Apple',
+    signInWithGoogle: 'Continuar con Google',
     confirmEmail: {
       title: 'Confirma tu correo',
       lead: 'Enviamos un enlace de confirmación a',
@@ -1389,6 +1390,10 @@ const es: Translation = {
     deleteFailed:
       'No se ha podido eliminar la cuenta. Comprueba la conexión y vuelve a intentarlo.',
     deleteReauthFailed: 'La confirmación ha fallado. La cuenta no se ha eliminado.',
+    deleteGoogleHint:
+      'Entraste con Google: déjalo en blanco. Por seguridad, solo puedes eliminar la cuenta hasta 10 minutos después de entrar.',
+    deleteGoogleStale:
+      'Han pasado más de 10 minutos desde que entraste. Cierra sesión, vuelve a entrar con Google y elimina la cuenta justo después. La cuenta no se ha eliminado.',
   },
   importData: {
     title: '¿Añadir los datos de este dispositivo a la cuenta?',

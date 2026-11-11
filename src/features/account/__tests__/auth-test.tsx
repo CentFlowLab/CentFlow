@@ -16,6 +16,7 @@ import {
 } from '../AuthProvider';
 import { shouldWaitForIsolation, SignInScreen, SignUpScreen } from '../AuthScreens';
 import { ConfirmEmailScreen } from '../ConfirmEmailScreen';
+import { isGoogleOnly, signedInRecently } from '../google-sign-in';
 
 jest.mock('@/features/finance/navigation', () => ({
   closeModal: jest.fn(),
@@ -211,6 +212,59 @@ describe('AuthProvider', () => {
 });
 
 describe('auth screens', () => {
+  it('shows Google only when the provider is enabled, and starts its OAuth flow', async () => {
+    const previous = process.env.EXPO_PUBLIC_AUTH_GOOGLE_ENABLED;
+    try {
+      delete process.env.EXPO_PUBLIC_AUTH_GOOGLE_ENABLED;
+      const { client } = fakeClient();
+      const view = await renderWithProviders(
+        <AuthProvider client={client}>
+          <SignInScreen />
+        </AuthProvider>,
+      );
+      await screen.findByLabelText('Email ou nome de utilizador');
+      expect(screen.queryByRole('button', { name: 'Continuar com a Google' })).toBeNull();
+      await view.unmount();
+
+      process.env.EXPO_PUBLIC_AUTH_GOOGLE_ENABLED = 'true';
+      const enabled = fakeClient({
+        signInWithOAuth: jest.fn(async () => ({
+          data: { url: 'https://g.example/x' },
+          error: null,
+        })),
+      });
+      await renderWithProviders(
+        <AuthProvider client={enabled.client}>
+          <SignInScreen />
+        </AuthProvider>,
+      );
+      await fireEvent.press(await screen.findByRole('button', { name: 'Continuar com a Google' }));
+      await waitFor(() =>
+        expect(enabled.auth.signInWithOAuth).toHaveBeenCalledWith(
+          expect.objectContaining({
+            provider: 'google',
+            options: expect.objectContaining({ redirectTo: 'https://miven.pt/auth/callback' }),
+          }),
+        ),
+      );
+    } finally {
+      if (previous === undefined) delete process.env.EXPO_PUBLIC_AUTH_GOOGLE_ENABLED;
+      else process.env.EXPO_PUBLIC_AUTH_GOOGLE_ENABLED = previous;
+    }
+  });
+
+  it('accepts a recent Google sign-in as confirmation to delete the account', () => {
+    const now = Date.parse('2026-11-11T10:00:00Z');
+    expect(isGoogleOnly({ app_metadata: { provider: 'google', providers: ['google'] } })).toBe(
+      true,
+    );
+    expect(
+      isGoogleOnly({ app_metadata: { provider: 'email', providers: ['email', 'google'] } }),
+    ).toBe(false);
+    expect(signedInRecently({ last_sign_in_at: '2026-11-11T09:55:00Z' }, now)).toBe(true);
+    expect(signedInRecently({ last_sign_in_at: '2026-11-11T09:40:00Z' }, now)).toBe(false);
+  });
+
   it('signs in with email and password', async () => {
     const { client, auth } = fakeClient();
     await renderWithProviders(

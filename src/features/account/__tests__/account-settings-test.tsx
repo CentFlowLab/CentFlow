@@ -36,6 +36,7 @@ function signedInClient() {
   const session = { user } as Session;
   const auth = {
     getSession: jest.fn(async () => ({ data: { session } })),
+    getUser: jest.fn(async () => ({ data: { user } })),
     onAuthStateChange: jest.fn((listener: (event: string, value: Session | null) => void) => {
       listener('INITIAL_SESSION', session);
       return { data: { subscription: { unsubscribe: () => undefined } } };

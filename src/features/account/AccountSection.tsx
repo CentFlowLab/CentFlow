@@ -23,6 +23,7 @@ import { useActiveSpace } from '../app-shell/DataGate';
 import { useAuth, type AuthUser } from './AuthProvider';
 import { PasswordField } from './PasswordField';
 import { isAppleSignInAvailable } from './apple-sign-in';
+import { isGoogleOnly, signedInRecently } from './google-sign-in';
 import { markPendingAccountDeletion } from './pending-account-deletion';
 import { useSync } from './SyncProvider';
 
@@ -34,7 +35,7 @@ type DialogKind =
   | 'passwordSent'
   | 'passwordFailed'
   | null;
-type DeleteFailure = 'deleteFailed' | 'deleteReauthFailed';
+type DeleteFailure = 'deleteFailed' | 'deleteReauthFailed' | 'deleteGoogleStale';
 
 const STATUS_TONE: Record<SyncStatus, 'positive' | 'neutral' | 'warning' | 'negative'> = {
   idle: 'positive',
@@ -106,7 +107,19 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
   const [importState, setImportState] = useState<ImportState | null>(null);
   const [password, setPassword] = useState('');
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const [googleOnly, setGoogleOnly] = useState(false);
   const [failure, setFailure] = useState<DeleteFailure>('deleteFailed');
+
+  useEffect(() => {
+    if (!client) return;
+    let active = true;
+    void client.auth.getUser().then(({ data }) => {
+      if (active && data.user) setGoogleOnly(isGoogleOnly(data.user));
+    });
+    return () => {
+      active = false;
+    };
+  }, [client]);
 
   useEffect(() => {
     let active = true;
@@ -154,11 +167,23 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
   const deleteAccount = async () => {
     if (!client) return;
     setBusy(true);
+    // Só Google, sem palavra-passe: a confirmação é ter entrado há pouco (ADR-055).
+    if (!password && googleOnly) {
+      const { data } = await client.auth.getUser();
+      if (!data.user || !signedInRecently(data.user)) {
+        setBusy(false);
+        setFailure('deleteGoogleStale');
+        setDialog('deleteFailed');
+        return;
+      }
+    }
     const reauth = password
       ? await actions.signIn(user.email ?? '', password)
-      : appleAvailable
-        ? await actions.reauthenticateWithApple()
-        : ({ ok: false, error: 'invalidCredentials' } as const);
+      : googleOnly
+        ? ({ ok: true, value: undefined } as const)
+        : appleAvailable
+          ? await actions.reauthenticateWithApple()
+          : ({ ok: false, error: 'invalidCredentials' } as const);
     if (!reauth.ok) {
       setBusy(false);
       if (reauth.error === 'cancelled') return;
@@ -349,7 +374,11 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
         <PasswordField
           label={t('account.deletePassword')}
           helperText={
-            appleAvailable ? t('account.deleteAppleHint') : t('account.deletePasswordHint')
+            googleOnly
+              ? t('account.deleteGoogleHint')
+              : appleAvailable
+                ? t('account.deleteAppleHint')
+                : t('account.deletePasswordHint')
           }
           value={password}
           onChangeText={setPassword}
@@ -362,7 +391,9 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
         message={
           failure === 'deleteReauthFailed'
             ? t('account.deleteReauthFailed')
-            : t('account.deleteFailed')
+            : failure === 'deleteGoogleStale'
+              ? t('account.deleteGoogleStale')
+              : t('account.deleteFailed')
         }
         onDismiss={() => setDialog(null)}
         actions={[{ label: t('common.ok'), onPress: () => setDialog(null) }]}

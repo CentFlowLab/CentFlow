@@ -1253,6 +1253,7 @@ const ptPT = {
     legalAnd: 'e a',
     legalPrivacy: 'Política de privacidade',
     signInWithApple: 'Continuar com a Apple',
+    signInWithGoogle: 'Continuar com a Google',
     confirmEmail: {
       title: 'Confirma o teu email',
       lead: 'Enviámos um link de confirmação para',
@@ -1381,6 +1382,10 @@ const ptPT = {
     deleteAppleHint: 'Escreve a palavra-passe ou deixa em branco para confirmar com a Apple.',
     deleteFailed: 'Não foi possível eliminar a conta. Verifica a ligação e tenta novamente.',
     deleteReauthFailed: 'A confirmação falhou. A conta não foi eliminada.',
+    deleteGoogleHint:
+      'Entraste com a Google: deixa em branco. Por segurança, só podes eliminar a conta até 10 minutos depois de entrares.',
+    deleteGoogleStale:
+      'Passaram mais de 10 minutos desde que entraste. Termina sessão, volta a entrar com a Google e elimina a conta logo a seguir. A conta não foi eliminada.',
   },
   importData: {
     title: 'Juntar os dados deste dispositivo à conta?',
