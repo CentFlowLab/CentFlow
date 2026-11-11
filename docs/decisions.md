@@ -683,6 +683,21 @@ tutorial: o onboarding cria uma conta e não deve repetir-se. `ListItem` ganhou 
 e `expanded`; `ListItem`, `SegmentedControl` e `Chip` passam `aria-checked`/`aria-expanded`
 (na web, `accessibilityState` não chegava ao HTML).
 
+## ADR-050 — Preparação para a App Store: IA atrás de uma flag, números de compilação no EAS e página de suporte
+
+**Contexto:** auditoria para a App Store (2026-11-11, `app-store-readiness.md`). O registo por
+texto com IA aparecia a qualquer pessoa com sessão, mas o servidor não tem `ANTHROPIC_API_KEY`:
+o revisor veria uma função que falha (diretriz 2.1). O perfil `production` do EAS usava o número
+de compilação do `app.json`, que só os workflows do SideStore e do APK aumentam. Não havia página
+de suporte para o campo obrigatório "Support URL".
+**Decisão:** o registo por texto só aparece com `EXPO_PUBLIC_AI_ENTRY_ENABLED=true` (definir no
+EAS depois da chave e dos limites no servidor, e com a Anthropic já na política). O EAS passa a
+guardar a versão de compilação (`appVersionSource: "remote"`, `autoIncrement` no perfil
+`production`); o IPA sem assinatura do SideStore continua com o seu próprio número. Página
+`miven.pt/suporte/` só com o que a app faz (confirmação de email, palavra-passe, sincronização,
+eliminação de conta, contacto), ligada no rodapé do site, no `sitemap.xml` e em Definições ›
+Ajuda e informação › Ajuda.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
