@@ -151,6 +151,15 @@ jobs:
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
 
+      # Pacote para a Play Store (ADR-055): o mesmo código e o mesmo versionCode, assinado com a
+      # mesma chave (na Play Console, chave de carregamento ou chave da app exportada).
+      - name: Compilar o AAB da Play Store
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
+
       - name: Confirmar a assinatura e empacotar
         shell: bash
         run: |
@@ -175,14 +184,26 @@ jobs:
           rm -f .env.local
           cp "$apk" "$RUNNER_TEMP/miven-${VERSION_NAME}-${VERSION_CODE}.apk"
           cp "$apk" "$RUNNER_TEMP/miven.apk"
+          aab="android/app/build/outputs/bundle/release/app-release.aab"
+          if [ ! -f "$aab" ]; then
+            echo "O Gradle não produziu o AAB de lançamento."
+            exit 1
+          fi
+          if ! jarsigner -verify "$aab" > "$RUNNER_TEMP/jarsigner.txt" 2>&1; then
+            cat "$RUNNER_TEMP/jarsigner.txt"
+            echo "O AAB não passou a verificação de assinatura."
+            exit 1
+          fi
+          cp "$aab" "$RUNNER_TEMP/miven-${VERSION_NAME}-${VERSION_CODE}.aab"
 
       - name: Publicar
         shell: bash
         run: |
           tag="android-build-${VERSION_CODE}"
           gh release create "$tag" "$RUNNER_TEMP/miven-${VERSION_NAME}-${VERSION_CODE}.apk" \
+            "$RUNNER_TEMP/miven-${VERSION_NAME}-${VERSION_CODE}.aab" \
             --title "Android ${VERSION_NAME} (${VERSION_CODE})" \
-            --notes "APK assinado da versão ${VERSION_NAME}, compilação ${VERSION_CODE}." \
+            --notes "APK assinado e AAB para a Play Store da versão ${VERSION_NAME}, compilação ${VERSION_CODE}." \
             --target "$GITHUB_SHA"
           if ! gh release view android-latest >/dev/null 2>&1; then
             gh release create android-latest --title "Android: versão mais recente" \

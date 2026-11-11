@@ -771,6 +771,22 @@ responsável: um movimento conta uma vez; o histórico não se perde; tudo offli
 - O lint do React Compiler passou a analisar a gravação do movimento: a conta lembrada entre
   registos é atualizada por uma função fora do componente (sem mudar o comportamento).
 
+## ADR-055 — Play Store e entrar com Google
+
+**Contexto:** o Android só se instalava pelo APK do GitHub; o responsável quer a Play Store e a
+entrada com Google.
+**Decisão:**
+
+- O workflow "Android APK" gera também o AAB assinado com a mesma chave e anexa-o à release
+  (`jarsigner -verify`). Recomenda-se exportar essa chave para a Play (assinatura única entre o APK
+  do site e a Play). Passos da consola em `docs/play-store.md`.
+- "Continuar com a Google": OAuth com PKCE do Supabase, regresso por `miven.pt/auth/callback`
+  (mesmo caminho dos emails), sem módulos nativos novos. Escondido até
+  `EXPO_PUBLIC_AUTH_GOOGLE_ENABLED=true`, depois de o fornecedor estar ligado no Supabase.
+- Eliminar uma conta só Google: confirma-se com uma entrada nos últimos 10 minutos (na web, uma
+  nova autenticação OAuth sairia da página a meio da eliminação).
+- Política de privacidade atualizada antes do uso. Na App Store, a 4.8 exige Apple junto com Google.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
