@@ -25,13 +25,22 @@ type Status = 'idle' | 'loading' | 'applied' | 'notConfigured' | 'notUnderstood'
  * Registo por linguagem natural. Só preenche o formulário; o utilizador revê e confirma com
  * "Guardar". Só aparece com sessão iniciada, porque a chamada passa pela Edge Function.
  */
+/**
+ * O registo por texto só aparece com `EXPO_PUBLIC_AI_ENTRY_ENABLED=true`, depois de configurar
+ * `ANTHROPIC_API_KEY` (e limites) no servidor. Sem isso, a área ficaria visível sem funcionar
+ * (App Store, diretriz 2.1).
+ */
+export function aiEntryEnabled(): boolean {
+  return process.env.EXPO_PUBLIC_AI_ENTRY_ENABLED === 'true';
+}
+
 export function AiSuggestion({ today, categories, onApply }: Props) {
   const { t } = useTranslation();
   const { state, client } = useAuth();
   const [text, setText] = useState('');
   const [status, setStatus] = useState<Status>('idle');
 
-  if (state.status !== 'signedIn' || !client) return null;
+  if (!aiEntryEnabled() || state.status !== 'signedIn' || !client) return null;
 
   async function suggest() {
     const normalized = normalizeSuggestionText(text);

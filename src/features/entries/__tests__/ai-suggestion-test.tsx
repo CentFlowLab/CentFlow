@@ -24,10 +24,26 @@ const categories = [
   { id: 'c2', name: 'Transferência', type: 'transfer' },
 ] as never;
 
+const originalFlag = process.env.EXPO_PUBLIC_AI_ENTRY_ENABLED;
+
+afterAll(() => {
+  if (originalFlag === undefined) delete process.env.EXPO_PUBLIC_AI_ENTRY_ENABLED;
+  else process.env.EXPO_PUBLIC_AI_ENTRY_ENABLED = originalFlag;
+});
+
 describe('AiSuggestion', () => {
   beforeEach(() => {
+    process.env.EXPO_PUBLIC_AI_ENTRY_ENABLED = 'true';
     mockInvoke.mockReset();
     mockAuthState = { status: 'signedIn', user: { id: 'u' } };
+  });
+
+  it('is hidden until the AI service is configured', async () => {
+    delete process.env.EXPO_PUBLIC_AI_ENTRY_ENABLED;
+    await renderWithProviders(
+      <AiSuggestion today="2026-11-09" categories={categories} onApply={jest.fn()} />,
+    );
+    expect(screen.queryByLabelText('Descreve o movimento (opcional)')).toBeNull();
   });
 
   it('is hidden without a session', async () => {
