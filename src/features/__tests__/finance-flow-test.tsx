@@ -90,6 +90,40 @@ describe('local finance flow (real SQLite)', () => {
     expect(screen.queryByText('Almoço')).toBeNull();
   });
 
+  it('deletes from the swipe action with undo, then for real', async () => {
+    await renderRouter('./src/app', { initialUrl: '/account/new' });
+    await createAccount('Carteira', '100');
+    await addEntry({ amount: '10', category: 'Restaurantes', description: 'Almoço' });
+    await act(() => router.navigate('/transactions'));
+
+    // O gesto de deslizar expõe a mesma ação aos leitores de ecrã.
+    const swipe = async () => {
+      const row = await screen.findByRole('button', { name: /^Almoço/ });
+      let node = row.parent;
+      while (node && !node.props.accessibilityActions) node = node.parent;
+      await fireEvent(node!, 'accessibilityAction', { nativeEvent: { actionName: 'action-0' } });
+    };
+    await swipe();
+    expect(await screen.findByText('Movimento eliminado')).toBeOnTheScreen();
+    expect(screen.queryByText('Almoço')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Anular' }));
+    expect(await screen.findByText('Almoço')).toBeOnTheScreen();
+
+    jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
+    try {
+      await swipe();
+      await act(async () => {
+        jest.advanceTimersByTime(5000);
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+    await waitFor(() => expect(screen.queryByText('Movimento eliminado')).toBeNull());
+    await act(() => router.navigate('/'));
+    await expectAmount('100,00');
+  });
+
   it('shows field errors instead of saving invalid entries', async () => {
     await renderRouter('./src/app', { initialUrl: '/account/new' });
     await createAccount('Banco', '0');
