@@ -78,4 +78,16 @@ describe('amountToInputString', () => {
     expect(decimalSeparatorFor('en')).toBe('.');
     expect(decimalSeparatorFor('es')).toBe(',');
   });
+
+  it('works without formatToParts, as on Hermes for iOS', () => {
+    const original = Intl.NumberFormat.prototype.formatToParts;
+    // @ts-expect-error simula o Hermes do iPhone, que não tem este método.
+    delete Intl.NumberFormat.prototype.formatToParts;
+    try {
+      expect(decimalSeparatorFor('pt-PT')).toBe(',');
+      expect(decimalSeparatorFor('en')).toBe('.');
+    } finally {
+      Intl.NumberFormat.prototype.formatToParts = original;
+    }
+  });
 });

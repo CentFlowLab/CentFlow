@@ -82,9 +82,15 @@ export function amountToInputString(
   return `${sign}${integer}${decimalSeparator}${fraction}`;
 }
 
+/**
+ * Separador decimal do idioma. Usa só `format`: o Hermes do iPhone não tem
+ * `NumberFormat.prototype.formatToParts`, e chamá-lo partia a edição de valores (ADR-051).
+ */
 export function decimalSeparatorFor(locale: string): ',' | '.' {
-  const part = new Intl.NumberFormat(locale)
-    .formatToParts(1.5)
-    .find((candidate) => candidate.type === 'decimal');
-  return part?.value === ',' ? ',' : '.';
+  try {
+    const sample = new Intl.NumberFormat(locale, { useGrouping: false }).format(1.5);
+    return sample.includes(',') ? ',' : '.';
+  } catch {
+    return '.';
+  }
 }

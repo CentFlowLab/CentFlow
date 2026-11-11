@@ -698,6 +698,17 @@ guardar a versão de compilação (`appVersionSource: "remote"`, `autoIncrement`
 eliminação de conta, contacto), ligada no rodapé do site, no `sitemap.xml` e em Definições ›
 Ajuda e informação › Ajuda.
 
+## ADR-051 — Sem `formatToParts` (Hermes do iPhone)
+
+**Contexto:** no iPhone (0.1.11), abrir para editar um movimento, uma conta, um orçamento, um
+objetivo, uma subscrição ou um bem bloqueava o ecrã a carregar e acabava em "Algo correu mal"
+(Sentry MIVEN-4: `TypeError: undefined is not a function` em `decimalSeparatorFor`). O Hermes do
+iOS não tem `Intl.NumberFormat.prototype.formatToParts`; a web e o Jest (motores do browser e do
+Node) têm, por isso os testes passavam.
+**Decisão:** `decimalSeparatorFor` usa só `format(1.5)` sem agrupamento, com `.` se o `Intl`
+falhar. Teste que apaga `formatToParts` para simular o Hermes. Não usar `formatToParts` (nem
+outras APIs `Intl` fora de `DateTimeFormat`/`NumberFormat.format`) sem verificar no Hermes.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
