@@ -7,7 +7,8 @@ import {
   calendarDateToLocalDate,
   hasErrors,
   isLiabilityType,
-  liabilityProgress,
+  LOAN_KINDS,
+  type LoanKind,
   validateWealthItemInput,
   ValidationError,
   WEALTH_ASSET_TYPES,
@@ -33,7 +34,6 @@ import {
   ChipGroup,
   Dialog,
   FormScreen,
-  ProgressBar,
   Text,
   TextField,
 } from '@/ui/components';
@@ -42,6 +42,7 @@ import { spacing } from '@/ui/theme';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
+import { LoanSummary } from './LoanSummary';
 
 type FieldErrors = ValidationErrors<keyof WealthItemInput>;
 
@@ -56,7 +57,7 @@ export function WealthForm({ item }: Props) {
   const { t } = useTranslation();
   const valueRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
-  const { formatDate, formatMoney, locale } = useLocaleFormat();
+  const { formatDate, locale } = useLocaleFormat();
   const today = useToday();
   const query = useDataQuery(useCallback((repos: Repositories) => loadCurrencies(repos), []));
   const editing = item !== undefined;
@@ -83,16 +84,22 @@ export function WealthForm({ item }: Props) {
   const [originDate, setOriginDate] = useState<string | null>(firstPoint?.valuedOn ?? null);
   const [originError, setOriginError] = useState<string>();
   const [pickingOriginDate, setPickingOriginDate] = useState(false);
+  // Empréstimo (ADR-057).
+  const [loanKind, setLoanKind] = useState<LoanKind | null>(item?.loanKind ?? null);
+  const [institution, setInstitution] = useState(item?.institution ?? '');
+  const [rateText, setRateText] = useState(
+    item?.interestRateBp != null
+      ? String(item.interestRateBp / 100).replace('.', decimalSeparatorFor(locale))
+      : '',
+  );
+  const [installmentText, setInstallmentText] = useState(
+    item?.installmentAmount != null
+      ? amountToInputString(item.installmentAmount, item.currency, decimalSeparatorFor(locale))
+      : '',
+  );
+  const [dueDayText, setDueDayText] = useState(item?.dueDay != null ? String(item.dueDay) : '');
 
   const tracksOrigin = isLiabilityType(type) && type !== 'credit';
-  const progress = item && !item.closedOn ? liabilityProgress(item) : null;
-  const progressLabel =
-    item && progress
-      ? t('wealth.progress', {
-          paid: formatMoney({ amountMinor: progress.paid, currency: item.currency }),
-          original: formatMoney({ amountMinor: progress.original, currency: item.currency }),
-        })
-      : '';
   const currencies = query.data ?? [];
   const resolvedCurrency = currency || currencies[0] || DEFAULT_CURRENCY;
   const close = () => closeModal('/wealth');
@@ -120,6 +127,36 @@ export function WealthForm({ item }: Props) {
       }
       origin = { amount: parsedOrigin.amountMinor, valuedOn: originDate ?? valuedOn };
     }
+    let interestRateBp: number | null = null;
+    if (tracksOrigin && rateText.trim() !== '') {
+      // Percentagem com até 2 casas, em pontos-base, sem vírgula flutuante (6,5 → 650).
+      const match = /^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec(rateText.trim());
+      if (!match) {
+        setErrors({ interestRateBp: 'invalid' });
+        return;
+      }
+      interestRateBp = Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+    }
+    let installmentAmount: number | null = null;
+    if (tracksOrigin && installmentText.trim() !== '') {
+      const parsedInstallment = parseAmountInput(installmentText, resolvedCurrency);
+      if (!parsedInstallment.ok) {
+        setErrors({ installmentAmount: 'invalid' });
+        return;
+      }
+      installmentAmount = parsedInstallment.amountMinor;
+    }
+    const loan = tracksOrigin
+      ? {
+          loanKind,
+          institution: institution.trim() === '' ? null : institution,
+          interestRateBp,
+          installmentAmount,
+          dueDay: dueDayText.trim() === '' ? null : Number(dueDayText.replace(/\D/g, '')),
+          // O valor inicial do formulário é o capital emprestado (e a data, o início).
+          ...(origin ? { principalAmount: origin.amount, startedOn: origin.valuedOn } : {}),
+        }
+      : {};
     const input: WealthItemInput = {
       name,
       type,
@@ -127,6 +164,7 @@ export function WealthForm({ item }: Props) {
       currency: resolvedCurrency,
       valuedOn,
       ...(origin ? { origin } : {}),
+      ...loan,
     };
     const fieldErrors = validateWealthItemInput(input);
     if (hasErrors(fieldErrors)) {
@@ -182,27 +220,7 @@ export function WealthForm({ item }: Props) {
         <ActivityIndicator />
       ) : (
         <View style={styles.form}>
-          {item && !item.closedOn && tracksOrigin ? (
-            <Card padding="md" style={styles.notice}>
-              {progress ? (
-                <>
-                  <Text variant="callout">{progressLabel}</Text>
-                  <ProgressBar
-                    progress={progress.ratio}
-                    tone="positive"
-                    accessibilityLabel={progressLabel}
-                  />
-                </>
-              ) : null}
-              <Button
-                label={t('wealth.pay')}
-                icon="cash-outline"
-                onPress={() =>
-                  router.push({ pathname: '/wealth/payment/[id]', params: { id: item.id } })
-                }
-              />
-            </Card>
-          ) : null}
+          {item && tracksOrigin ? <LoanSummary item={item} /> : null}
           <ChipGroup label={t('wealth.assets')}>
             {WEALTH_ASSET_TYPES.map((code) => (
               <Chip
@@ -214,7 +232,10 @@ export function WealthForm({ item }: Props) {
             ))}
           </ChipGroup>
           <ChipGroup label={t('wealth.liabilities')}>
-            {WEALTH_LIABILITY_TYPES.map((code) => (
+            {WEALTH_LIABILITY_TYPES.filter(
+              // Cartões novos vão para Contas (ADR-057); aqui só aparecem os antigos.
+              (code) => code !== 'credit' || item?.type === 'credit',
+            ).map((code) => (
               <Chip
                 key={code}
                 label={t(`wealth.types.${code}`)}
@@ -306,6 +327,53 @@ export function WealthForm({ item }: Props) {
                   onPress={() => setPickingOriginDate(true)}
                 />
               </ChipGroup>
+            </View>
+          ) : null}
+          {tracksOrigin ? (
+            <View style={styles.field}>
+              <ChipGroup label={t('wealth.loan.kind')}>
+                {LOAN_KINDS.map((code) => (
+                  <Chip
+                    key={code}
+                    label={t(`wealth.loan.kinds.${code}`)}
+                    selected={code === loanKind}
+                    onPress={() => setLoanKind(code === loanKind ? null : code)}
+                  />
+                ))}
+              </ChipGroup>
+              <TextField
+                label={t('wealth.loan.institution')}
+                value={institution}
+                onChangeText={setInstitution}
+                maxLength={60}
+                errorText={validationMessage(t, errors.institution)}
+              />
+              <TextField
+                label={t('wealth.loan.rateInput')}
+                value={rateText}
+                onChangeText={setRateText}
+                keyboardType="decimal-pad"
+                inputMode="decimal"
+                errorText={validationMessage(t, errors.interestRateBp)}
+              />
+              <TextField
+                label={t('wealth.loan.installmentInput')}
+                value={installmentText}
+                onChangeText={setInstallmentText}
+                placeholder={t('entryForm.amountPlaceholder')}
+                keyboardType="decimal-pad"
+                inputMode="decimal"
+                errorText={validationMessage(t, errors.installmentAmount)}
+              />
+              <TextField
+                label={t('wealth.loan.dueDay')}
+                value={dueDayText}
+                onChangeText={setDueDayText}
+                keyboardType="number-pad"
+                inputMode="numeric"
+                maxLength={2}
+                errorText={validationMessage(t, errors.dueDay)}
+              />
             </View>
           ) : null}
           {type === 'credit' && !item?.closedOn ? (

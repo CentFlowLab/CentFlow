@@ -27,7 +27,20 @@ export type SyncRecord = Readonly<Record<string, SyncValue>>;
 
 /** Campos sincronizados e editáveis de cada entidade (`created_at` é imutável). */
 export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
-  accounts: ['name', 'type', 'currency', 'initial_balance', 'archived_at', 'deleted_at'],
+  accounts: [
+    'name',
+    'type',
+    'currency',
+    'initial_balance',
+    'archived_at',
+    'credit_limit',
+    'institution',
+    'statement_day',
+    'due_day',
+    'payment_account_id',
+    'color',
+    'deleted_at',
+  ],
   categories: ['name', 'type', 'icon', 'color', 'system_key', 'essential', 'deleted_at'],
   budgets: ['category_id', 'amount', 'currency', 'period', 'starts_on', 'deleted_at'],
   subscriptions: [
@@ -53,6 +66,16 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'valued_on',
     'value_history',
     'closed_on',
+    'loan_kind',
+    'institution',
+    'principal_amount',
+    'started_on',
+    'opening_debt',
+    'opening_on',
+    'interest_rate_bp',
+    'installment_amount',
+    'due_day',
+    'ends_on',
     'deleted_at',
   ],
   vehicles: [
@@ -102,6 +125,11 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'vehicle_cost_type',
     'quantity_milli',
     'odometer_km',
+    'loan_id',
+    'loan_role',
+    'principal_amount',
+    'interest_amount',
+    'fees_amount',
     'deleted_at',
   ],
 };
@@ -126,7 +154,16 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   entries: [
     ['type', 'category_id', 'account_id', 'destination_account_id'],
     ['vehicle_id', 'vehicle_cost_type'],
-    ['amount', 'quantity_milli', 'odometer_km'],
+    [
+      'amount',
+      'quantity_milli',
+      'odometer_km',
+      'principal_amount',
+      'interest_amount',
+      'fees_amount',
+    ],
+    // A ligação ao empréstimo é um todo (ADR-057).
+    ['loan_id', 'loan_role'],
   ],
 };
 

@@ -160,6 +160,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'document attachments, purchase date and amount; local upload queue',
     sql: migrationV13(),
   },
+  {
+    version: 14,
+    description: 'credit card accounts, loans with linked payments (ADR-057)',
+    sql: migrationV14(),
+  },
 ];
 
 /**
@@ -1626,6 +1631,146 @@ function migrationV13(): string {
       VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'documents', NEW.id,
         ${base('OLD')}, ${json('OLD')}, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
     END;
+  `;
+}
+
+/**
+ * v14 — cartões de crédito como contas especiais e empréstimos com prestações ligadas (ADR-057):
+ * campos do cartão em `accounts`, do empréstimo em `wealth_items` e a ligação/decomposição das
+ * prestações em `entries`. Triggers das três tabelas recriados com os campos novos.
+ */
+function migrationV14(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const synced = {
+    accounts: [
+      'name',
+      'type',
+      'currency',
+      'initial_balance',
+      'archived_at',
+      'credit_limit',
+      'institution',
+      'statement_day',
+      'due_day',
+      'payment_account_id',
+      'color',
+      'created_at',
+      'deleted_at',
+    ],
+    wealth_items: [
+      'name',
+      'type',
+      'amount',
+      'currency',
+      'valued_on',
+      'value_history',
+      'closed_on',
+      'loan_kind',
+      'institution',
+      'principal_amount',
+      'started_on',
+      'opening_debt',
+      'opening_on',
+      'interest_rate_bp',
+      'installment_amount',
+      'due_day',
+      'ends_on',
+      'created_at',
+      'deleted_at',
+    ],
+    entries: [
+      'type',
+      'amount',
+      'description',
+      'notes',
+      'category_id',
+      'account_id',
+      'destination_account_id',
+      'date',
+      'vehicle_id',
+      'vehicle_cost_type',
+      'quantity_milli',
+      'odometer_km',
+      'loan_id',
+      'loan_role',
+      'principal_amount',
+      'interest_amount',
+      'fees_amount',
+      'created_at',
+      'deleted_at',
+    ],
+  } as const;
+  const json = (row: 'NEW' | 'OLD', fields: readonly string[]) =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const base = (table: string, row: 'NEW' | 'OLD') => `COALESCE(
+    (SELECT base_version + 1 FROM sync_outbox
+      WHERE entity = '${table}' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+    ${row}.version)`;
+  const triggers = Object.entries(synced)
+    .map(
+      ([table, fields]) => `
+    DROP TRIGGER IF EXISTS sync_${table}_insert;
+    DROP TRIGGER IF EXISTS sync_${table}_update;
+    CREATE TRIGGER sync_${table}_insert AFTER INSERT ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'NEW')}, NULL, ${json('NEW', fields)}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
+    CREATE TRIGGER sync_${table}_update AFTER UPDATE ON ${table}
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), '${table}', NEW.id,
+        ${base(table, 'OLD')}, ${json('OLD', fields)}, ${json('NEW', fields)},
+        strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;`,
+    )
+    .join('\n');
+  const positive = (column: string) =>
+    `CHECK (${column} IS NULL OR (typeof(${column}) = 'integer' AND ${column} > 0))`;
+  const day = (column: string) =>
+    `CHECK (${column} IS NULL OR (typeof(${column}) = 'integer' AND ${column} BETWEEN 1 AND 31))`;
+  const nonNegative = (column: string) =>
+    `CHECK (${column} IS NULL OR (typeof(${column}) = 'integer' AND ${column} >= 0))`;
+  const date = (column: string) =>
+    `CHECK (${column} IS NULL OR ${column} GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]')`;
+  return `
+    ALTER TABLE accounts ADD COLUMN credit_limit INTEGER ${positive('credit_limit')};
+    ALTER TABLE accounts ADD COLUMN institution TEXT CHECK (institution IS NULL OR
+      length(trim(institution)) BETWEEN 1 AND 60);
+    ALTER TABLE accounts ADD COLUMN statement_day INTEGER ${day('statement_day')};
+    ALTER TABLE accounts ADD COLUMN due_day INTEGER ${day('due_day')};
+    ALTER TABLE accounts ADD COLUMN payment_account_id TEXT REFERENCES accounts (id) ON DELETE RESTRICT;
+    ALTER TABLE accounts ADD COLUMN color TEXT CHECK (color IS NULL OR length(color) BETWEEN 1 AND 20);
+
+    ALTER TABLE wealth_items ADD COLUMN loan_kind TEXT CHECK (loan_kind IS NULL OR
+      loan_kind IN ('car', 'mortgage', 'personal', 'other'));
+    ALTER TABLE wealth_items ADD COLUMN institution TEXT CHECK (institution IS NULL OR
+      length(trim(institution)) BETWEEN 1 AND 60);
+    ALTER TABLE wealth_items ADD COLUMN principal_amount INTEGER ${positive('principal_amount')};
+    ALTER TABLE wealth_items ADD COLUMN started_on TEXT ${date('started_on')};
+    ALTER TABLE wealth_items ADD COLUMN opening_debt INTEGER ${positive('opening_debt')};
+    ALTER TABLE wealth_items ADD COLUMN opening_on TEXT ${date('opening_on')};
+    ALTER TABLE wealth_items ADD COLUMN interest_rate_bp INTEGER CHECK (interest_rate_bp IS NULL OR
+      (typeof(interest_rate_bp) = 'integer' AND interest_rate_bp BETWEEN 0 AND 100000));
+    ALTER TABLE wealth_items ADD COLUMN installment_amount INTEGER ${positive('installment_amount')};
+    ALTER TABLE wealth_items ADD COLUMN due_day INTEGER ${day('due_day')};
+    ALTER TABLE wealth_items ADD COLUMN ends_on TEXT ${date('ends_on')};
+
+    ALTER TABLE entries ADD COLUMN loan_id TEXT REFERENCES wealth_items (id) ON DELETE RESTRICT;
+    ALTER TABLE entries ADD COLUMN loan_role TEXT CHECK (loan_role IS NULL OR
+      loan_role IN ('payment', 'disbursement'));
+    ALTER TABLE entries ADD COLUMN principal_amount INTEGER ${nonNegative('principal_amount')};
+    ALTER TABLE entries ADD COLUMN interest_amount INTEGER ${nonNegative('interest_amount')};
+    ALTER TABLE entries ADD COLUMN fees_amount INTEGER ${nonNegative('fees_amount')};
+    CREATE INDEX entries_loan_idx ON entries (loan_id, date) WHERE loan_id IS NOT NULL;
+    ${triggers}
   `;
 }
 

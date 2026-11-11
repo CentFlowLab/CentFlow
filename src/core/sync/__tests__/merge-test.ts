@@ -13,6 +13,11 @@ const entry: SyncRecord = {
   vehicle_cost_type: null,
   quantity_milli: null,
   odometer_km: null,
+  loan_id: null,
+  loan_role: null,
+  principal_amount: null,
+  interest_amount: null,
+  fees_amount: null,
   deleted_at: null,
 };
 
@@ -36,7 +41,14 @@ describe('mergeRecords', () => {
     const server = { ...entry, amount: 1400 };
     expect(mergeRecords('entries', entry, local, server)).toEqual({
       kind: 'conflict',
-      fields: ['amount', 'quantity_milli', 'odometer_km'],
+      fields: [
+        'amount',
+        'quantity_milli',
+        'odometer_km',
+        'principal_amount',
+        'interest_amount',
+        'fees_amount',
+      ],
     });
   });
 
@@ -124,7 +136,14 @@ describe('mergeRecords', () => {
     const server = { ...fill, quantity_milli: 42000 };
     expect(mergeRecords('entries', fill, local, server)).toEqual({
       kind: 'conflict',
-      fields: ['amount', 'quantity_milli', 'odometer_km'],
+      fields: [
+        'amount',
+        'quantity_milli',
+        'odometer_km',
+        'principal_amount',
+        'interest_amount',
+        'fees_amount',
+      ],
     });
     // Mudar a descrição num lado e o abastecimento no outro continua a combinar-se.
     const described = { ...fill, description: 'Galp A1' };

@@ -25,6 +25,7 @@ import type {
   DocumentInput,
   WealthItemInput,
   WealthPaymentInput,
+  LoanLedgerEntry,
   VehicleCostType,
   Subscription,
   SubscriptionInput,
@@ -204,6 +205,8 @@ export interface WealthRepository {
    * (com histórico). A zero, a dívida fica paga nesse dia.
    */
   recordPayment(id: Id, payment: WealthPaymentInput): Promise<{ entry: Entry; item: WealthItem }>;
+  /** Movimentos ativos ligados a um empréstimo (prestações e desembolsos), para o histórico. */
+  loanLedger(id: Id): Promise<LoanLedgerEntry[]>;
   /**
    * Cartão de crédito do património passa a conta (tipo cartão) com o saldo em dívida negativo, para
    * receber despesas; no património fica pago nesse dia (não conta duas vezes).

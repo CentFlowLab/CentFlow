@@ -79,6 +79,9 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
   const [amountText, setAmountText] = useState('');
   // Acompanha o valor pago até ser alterado à mão.
   const [principalText, setPrincipalText] = useState<string | null>(null);
+  // Juros e encargos opcionais; o que sobrar do total fica "por discriminar" (ADR-057).
+  const [interestText, setInterestText] = useState('');
+  const [feesText, setFeesText] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [date, setDate] = useState(today < item.valuedOn ? item.valuedOn : today);
@@ -87,6 +90,19 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
   const [amountError, setAmountError] = useState<string>();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  // Total − capital − juros − encargos indicados: o que fica como "juros e encargos por discriminar".
+  const undistributed = (() => {
+    const total = parseAmountInput(amountText, item.currency);
+    const principal = parseAmountInput(principalText ?? amountText, item.currency);
+    if (!total.ok || !principal.ok) return null;
+    const known = [interestText, feesText].map((text) => {
+      if (text.trim() === '') return 0;
+      const parsed = parseAmountInput(text, item.currency);
+      return parsed.ok ? parsed.amountMinor : 0;
+    });
+    return total.amountMinor - principal.amountMinor - known[0]! - known[1]!;
+  })();
 
   const yesterday = addDays(today, -1);
   const isCustomDate = date !== today && date !== yesterday;
@@ -124,9 +140,16 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
     setSaving(true);
     setFailed(false);
     try {
+      const optional = (text: string) => {
+        if (text.trim() === '') return undefined;
+        const parsed = parseAmountInput(text, item.currency);
+        return parsed.ok ? parsed.amountMinor : Number.NaN;
+      };
       await repositories.wealth.recordPayment(item.id, {
         amount: amount.amountMinor,
         principal: principal.amountMinor,
+        interest: optional(interestText),
+        fees: optional(feesText),
         accountId,
         categoryId,
         date,
@@ -197,6 +220,35 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
         helperText={t('wealth.payment.principalHelper')}
         errorText={validationMessage(t, errors.principal)}
       />
+      <View style={styles.split}>
+        <View style={styles.splitField}>
+          <TextField
+            label={t('wealth.payment.interest')}
+            value={interestText}
+            onChangeText={setInterestText}
+            placeholder={t('entryForm.amountPlaceholder')}
+            keyboardType="decimal-pad"
+            inputMode="decimal"
+          />
+        </View>
+        <View style={styles.splitField}>
+          <TextField
+            label={t('wealth.payment.fees')}
+            value={feesText}
+            onChangeText={setFeesText}
+            placeholder={t('entryForm.amountPlaceholder')}
+            keyboardType="decimal-pad"
+            inputMode="decimal"
+          />
+        </View>
+      </View>
+      {undistributed !== null && undistributed > 0 ? (
+        <Text variant="footnote" tone="secondary">
+          {t('wealth.payment.undistributed', {
+            amount: formatMoney({ amountMinor: undistributed, currency: item.currency }),
+          })}
+        </Text>
+      ) : null}
       <ChipGroup
         label={t('wealth.payment.account')}
         errorText={validationMessage(t, errors.accountId)}>
@@ -270,6 +322,8 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
 }
 
 const styles = StyleSheet.create({
+  split: { flexDirection: 'row', gap: spacing.md },
+  splitField: { flex: 1 },
   header: { gap: spacing.xs },
   footer: { gap: spacing.sm },
 });

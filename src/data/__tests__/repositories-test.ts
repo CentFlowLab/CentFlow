@@ -1,6 +1,7 @@
 import {
   wealthTotals,
   liabilityProgress,
+  cardStatus,
   computeBalances,
   DEFAULT_CATEGORIES,
   flowsFromEntries,
@@ -1323,5 +1324,187 @@ describe('document attachments', () => {
     ]);
     await repos.attachmentUploads.markSent('a1');
     expect(await repos.attachmentUploads.pending()).toEqual([]);
+  });
+});
+
+describe('credit cards and loans (ADR-057)', () => {
+  it('keeps a card as an account: opening debt, purchases, payments and available credit', async () => {
+    const card = await repos.accounts.create({
+      name: 'Visa',
+      type: 'card',
+      currency: 'EUR',
+      initialBalance: -65000,
+      creditLimit: 200000,
+      institution: ' Banco X ',
+      dueDay: 5,
+      paymentAccountId: bank.id,
+    });
+    expect(card).toMatchObject({ creditLimit: 200000, institution: 'Banco X', dueDay: 5 });
+    await repos.entries.create({ ...baseExpense(), accountId: card.id, amount: 24000 });
+    await repos.entries.create({
+      ...baseExpense(),
+      type: 'transfer',
+      categoryId: null,
+      accountId: bank.id,
+      destinationAccountId: card.id,
+      amount: 30000,
+    });
+    const balances = await repos.accounts.listWithBalances();
+    const cardBalance = balances.find((account) => account.id === card.id)!.balance;
+    expect(cardBalance).toBe(-65000 - 24000 + 30000);
+    expect(cardStatus(card, cardBalance)).toMatchObject({ debt: 59000, available: 141000 });
+    // A dívida inicial não é despesa do mês; o pagamento do cartão também não.
+    const aggregate = await repos.entries.aggregate({ from: '2026-11-01', to: '2026-11-30' });
+    expect(aggregate.reduce((sum, row) => sum + row.amount, 0)).toBe(24000);
+
+    // Numa conta que não é cartão, os campos do cartão não têm significado: ficam vazios.
+    const debit = await repos.accounts.create({
+      name: 'Débito',
+      type: 'bank',
+      currency: 'EUR',
+      initialBalance: 0,
+      creditLimit: 1000,
+    });
+    expect(debit.creditLimit).toBeNull();
+    await expect(
+      repos.accounts.update(card.id, {
+        name: 'Visa',
+        type: 'card',
+        currency: 'EUR',
+        initialBalance: -65000,
+        paymentAccountId: card.id,
+      }),
+    ).rejects.toMatchObject({ errors: { paymentAccountId: 'invalid' } });
+  });
+
+  async function newLoan() {
+    return repos.wealth.create({
+      name: 'Crédito auto',
+      type: 'loan',
+      amount: 1550000,
+      currency: 'EUR',
+      valuedOn: '2026-11-01',
+      loanKind: 'car',
+      principalAmount: 2000000,
+      startedOn: '2024-03-01',
+      interestRateBp: 650,
+      installmentAmount: 30000,
+    });
+  }
+
+  const pay = (
+    loanId: string,
+    amount: number,
+    principal: number,
+    interest?: number,
+    date = '2026-11-08',
+  ) =>
+    repos.wealth.recordPayment(loanId, {
+      amount,
+      principal,
+      interest,
+      accountId: bank.id,
+      categoryId: food.id,
+      date,
+      description: 'Prestação',
+    });
+
+  it('computes the debt from the opening balance and linked payments, editing and deleting', async () => {
+    const loan = await newLoan();
+    expect(loan).toMatchObject({
+      openingDebt: 1550000,
+      openingOn: '2026-11-01',
+      principalAmount: 2000000,
+    });
+    const { entry } = await pay(loan.id, 30000, 25000, 4000);
+    expect(entry).toMatchObject({
+      loanId: loan.id,
+      loanRole: 'payment',
+      principalAmount: 25000,
+      interestAmount: 4000,
+      feesAmount: 1000,
+    });
+    expect((await repos.wealth.get(loan.id))?.amount).toBe(1525000);
+    // Despesa contada uma vez (o total pago).
+    const aggregate = await repos.entries.aggregate({ from: '2026-11-01', to: '2026-11-30' });
+    expect(aggregate.reduce((sum, row) => sum + row.amount, 0)).toBe(30000);
+
+    // Editar o valor (ecrã sem campos do empréstimo): capital e juros mantêm-se, o resto é encargo.
+    const edited = await repos.entries.update(entry.id, {
+      ...baseExpense(),
+      amount: 32000,
+      description: 'Prestação',
+    });
+    expect(edited).toMatchObject({
+      loanId: loan.id,
+      principalAmount: 25000,
+      interestAmount: 4000,
+      feesAmount: 3000,
+    });
+    // Editar o capital recalcula a dívida.
+    await repos.entries.update(entry.id, {
+      ...baseExpense(),
+      amount: 32000,
+      loanId: loan.id,
+      loanRole: 'payment',
+      principalAmount: 28000,
+      interestAmount: 4000,
+      feesAmount: 0,
+    });
+    expect((await repos.wealth.get(loan.id))?.amount).toBe(1522000);
+    // Eliminar a prestação devolve a dívida; o valor inicial nunca muda.
+    await repos.entries.delete(entry.id);
+    const after = await repos.wealth.get(loan.id);
+    expect(after).toMatchObject({
+      amount: 1550000,
+      principalAmount: 2000000,
+      openingDebt: 1550000,
+    });
+    expect(await repos.wealth.loanLedger(loan.id)).toEqual([]);
+  });
+
+  it('refuses paying more principal than owed and keeps disbursements out of income', async () => {
+    const loan = await newLoan();
+    await expect(pay(loan.id, 2000000, 1600000)).rejects.toMatchObject({
+      errors: { principal: 'principalTooLarge' },
+    });
+    await expect(pay(loan.id, 30000, 25000, 9000)).rejects.toMatchObject({
+      errors: { principal: 'splitMismatch' },
+    });
+    await repos.entries.create({
+      ...baseExpense(),
+      type: 'income',
+      categoryId: salary.id,
+      amount: 500000,
+      loanId: loan.id,
+      loanRole: 'disbursement',
+    });
+    expect((await repos.wealth.get(loan.id))?.amount).toBe(2050000);
+    const aggregate = await repos.entries.aggregate({ from: '2026-11-01', to: '2026-11-30' });
+    expect(aggregate.filter((row) => row.type === 'income')).toEqual([]);
+    const balances = await repos.accounts.listWithBalances();
+    expect(balances.find((account) => account.id === bank.id)?.balance).toBe(600000);
+  });
+
+  it('opens an older debt at its current value on the first linked payment', async () => {
+    const legacy = await repos.wealth.create({
+      name: 'Dívida antiga',
+      type: 'other_debt',
+      amount: 100000,
+      currency: 'EUR',
+      valuedOn: '2026-10-01',
+    });
+    // Como uma dívida criada antes da v14: sem abertura.
+    await db.run('UPDATE wealth_items SET opening_debt = NULL, opening_on = NULL WHERE id = ?', [
+      legacy.id,
+    ]);
+    await pay(legacy.id, 20000, 20000);
+    expect(await repos.wealth.get(legacy.id)).toMatchObject({
+      openingDebt: 100000,
+      openingOn: '2026-10-01',
+      amount: 80000,
+    });
+    await pay(legacy.id, 80000, 80000, undefined, '2026-11-09');
+    expect((await repos.wealth.get(legacy.id))?.closedOn).toBe('2026-11-09');
   });
 });

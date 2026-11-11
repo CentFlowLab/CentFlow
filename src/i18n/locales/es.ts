@@ -253,6 +253,8 @@ const es: Translation = {
     noAccounts: 'Crea primero una cuenta para recibir los movimientos.',
   },
   entryForm: {
+    disbursement: 'Dinero de un préstamo (opcional)',
+    disbursementHint: 'No cuenta como ingreso: entra en la cuenta y suma a la deuda del préstamo.',
     cardsInWealth_one:
       'Tu tarjeta de crédito está en Patrimonio y aún no admite compras. Pásala a Cuentas para elegirla aquí.',
     cardsInWealth_other:
@@ -304,6 +306,13 @@ const es: Translation = {
     notFoundDescription: 'Puede que se haya eliminado.',
   },
   accounts: {
+    cardDebt: '{{amount}} adeudado',
+    cardAvailable: 'Disponible: {{amount}}',
+    cardOverLimit: 'Por encima del límite en {{amount}}',
+    cardLimit: 'Límite: {{amount}}',
+    cardUsage: 'Uso: {{percent}}',
+    cardNextDue: 'Pagar antes del {{date}}',
+    cardNotMoney: 'El disponible es crédito, no dinero tuyo: no cuenta en el patrimonio.',
     title: 'Cuentas',
     add: 'Nueva cuenta',
     totalLabel: 'Total en {{currency}}',
@@ -323,6 +332,17 @@ const es: Translation = {
     },
   },
   accountForm: {
+    cardUsed: 'Importe ya utilizado (opcional)',
+    cardUsedHelper:
+      'Lo que ya debías al empezar a usar Miven. Queda como saldo de apertura, no como gasto.',
+    cardSection: 'Tarjeta de crédito',
+    creditLimit: 'Límite (opcional)',
+    institution: 'Banco o entidad (opcional)',
+    statementDay: 'Día de cierre (opcional)',
+    dueDay: 'Día de pago (opcional)',
+    dayHelper: 'Día del mes, del 1 al 31.',
+    paymentAccount: 'Cuenta que paga la tarjeta',
+    noPaymentAccount: 'Ninguna',
     newTitle: 'Nueva cuenta',
     editTitle: 'Editar cuenta',
     name: 'Nombre',
@@ -687,6 +707,25 @@ const es: Translation = {
     },
   },
   wealth: {
+    loan: {
+      original: 'Capital inicial',
+      debt: 'Deuda actual',
+      amortized: 'Capital amortizado',
+      interestPaid: 'Intereses pagados: {{amount}}',
+      feesPaid: 'Comisiones pagadas: {{amount}}',
+      rate: 'Tipo: {{rate}}',
+      installment: 'Cuota: {{amount}}',
+      history: 'Pagos',
+      noPayments: 'Aún no hay pagos registrados en Miven.',
+      split: 'Capital {{principal}} · intereses {{interest}} · comisiones {{fees}}',
+      debtLine: 'Deuda: {{before}} → {{after}}',
+      kind: 'Tipo de crédito',
+      institution: 'Banco o entidad (opcional)',
+      rateInput: 'Tipo de interés anual en % (opcional)',
+      installmentInput: 'Cuota mensual (opcional)',
+      dueDay: 'Día de pago (opcional)',
+      kinds: { car: 'Coche', mortgage: 'Hipoteca', personal: 'Personal', other: 'Otro' },
+    },
     history: {
       title: 'Evolución del patrimonio total',
       notEnough: 'La evolución aparece cuando haya datos en al menos dos meses.',
@@ -757,6 +796,9 @@ const es: Translation = {
     cardMoveMessage:
       'La tarjeta pasa a ser una cuenta con el importe adeudado como saldo negativo, donde registras los gastos. Aquí queda como pagada hoy, para no contarla dos veces.',
     payment: {
+      interest: 'Intereses (opcional)',
+      fees: 'Comisiones y gastos (opcional)',
+      undistributed: 'Intereses y gastos sin desglosar: {{amount}}',
       title: 'Registrar pago',
       owed: 'Adeudado: {{amount}}',
       amount: 'Importe pagado',
@@ -1222,6 +1264,8 @@ const es: Translation = {
     notLiability: 'Solo se registran pagos en deudas pendientes.',
     odometerOutOfOrder:
       'Los kilómetros no cuadran con otras lecturas de este vehículo (una fecha anterior con más km, o posterior con menos).',
+    splitMismatch: 'Capital, intereses y comisiones tienen que sumar el importe pagado.',
+    cardOnly: 'Solo se aplica a tarjetas de crédito.',
     purchaseNotExpense: 'La compra del vehículo tiene que ser un gasto.',
     purchaseAlreadyLinked: 'Este vehículo ya tiene una compra asociada. Quítala primero.',
   },

@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { totalsByCurrency } from '@/core/finance';
+import { useToday } from '../finance/useToday';
+import { CardSummary } from './CardSummary';
 import { useDataQuery, type AccountWithBalance, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
@@ -32,6 +34,7 @@ const loadAccounts = (repositories: Repositories) =>
 
 function AccountRows({ accounts }: { accounts: readonly AccountWithBalance[] }) {
   const { t } = useTranslation();
+  const today = useToday();
   return (
     <Card padding="xs">
       {accounts.map((account, index) => (
@@ -54,6 +57,11 @@ function AccountRows({ accounts }: { accounts: readonly AccountWithBalance[] }) 
             }
             onPress={() => router.push({ pathname: '/account/[id]', params: { id: account.id } })}
           />
+          {account.type === 'card' && (account.creditLimit !== null || account.balance < 0) ? (
+            <View style={styles.cardRow}>
+              <CardSummary account={account} balance={account.balance} today={today} compact />
+            </View>
+          ) : null}
         </Fragment>
       ))}
     </Card>
@@ -148,6 +156,7 @@ export function AccountsScreen() {
 }
 
 const styles = StyleSheet.create({
+  cardRow: { paddingLeft: 68, paddingRight: spacing.lg, paddingBottom: spacing.md },
   totals: {
     flexDirection: 'row',
     flexWrap: 'wrap',

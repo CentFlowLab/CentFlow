@@ -17,6 +17,7 @@ import type { SqlExecutor, SqlValue } from '../db/sql-database';
 import { NotFoundError } from '../errors';
 import type { EntryAggregate, EntryFilter, EntryRepository } from '../repositories/types';
 import { write, type SqliteRepositoryContext } from './context';
+import { recomputeLoan } from './loan-ledger';
 
 type EntryRow = {
   id: string;
@@ -32,13 +33,19 @@ type EntryRow = {
   vehicle_cost_type: VehicleCostType | null;
   quantity_milli: number | null;
   odometer_km: number | null;
+  loan_id: string | null;
+  loan_role: Entry['loanRole'];
+  principal_amount: number | null;
+  interest_amount: number | null;
+  fees_amount: number | null;
   created_at: string;
   updated_at: string;
 };
 
 const COLUMNS = `e.id, e.type, e.amount, e.description, e.category_id, e.account_id,
   e.destination_account_id, e.date, e.notes, e.vehicle_id, e.vehicle_cost_type, e.quantity_milli,
-  e.odometer_km, e.created_at, e.updated_at`;
+  e.odometer_km, e.loan_id, e.loan_role, e.principal_amount, e.interest_amount, e.fees_amount,
+  e.created_at, e.updated_at`;
 
 const MAX_PAGE_SIZE = 500;
 
@@ -57,6 +64,11 @@ function toEntry(row: EntryRow): Entry {
     vehicleCostType: row.vehicle_cost_type,
     quantityMilli: row.quantity_milli,
     odometerKm: row.odometer_km,
+    loanId: row.loan_id,
+    loanRole: row.loan_role,
+    principalAmount: row.principal_amount,
+    interestAmount: row.interest_amount,
+    feesAmount: row.fees_amount,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -107,7 +119,7 @@ function buildWhere(filter: EntryFilter): { sql: string; params: SqlValue[] } {
 async function loadValidationContext(
   tx: SqlExecutor,
 ): Promise<Omit<EntryValidationContext, 'previous'>> {
-  const [accounts, categories, vehicles] = [
+  const [accounts, categories, vehicles, loans] = [
     await tx.all<{ id: string; currency: string; archived_at: string | null }>(
       'SELECT id, currency, archived_at FROM accounts WHERE deleted_at IS NULL',
     ),
@@ -115,6 +127,10 @@ async function loadValidationContext(
       'SELECT id, type FROM categories WHERE deleted_at IS NULL',
     ),
     await tx.all<{ id: string }>('SELECT id FROM vehicles WHERE deleted_at IS NULL'),
+    await tx.all<{ id: string }>(
+      `SELECT id FROM wealth_items WHERE deleted_at IS NULL
+         AND type IN ('mortgage', 'loan', 'other_debt')`,
+    ),
   ];
   return {
     accounts: new Map(
@@ -125,6 +141,7 @@ async function loadValidationContext(
     ),
     categories: new Map(categories.map((row) => [row.id, row])),
     vehicles: new Set(vehicles.map((row) => row.id)),
+    loans: new Set(loans.map((row) => row.id)),
   };
 }
 
@@ -193,6 +210,27 @@ function keepVehicle(raw: EntryInput, existing: EntryRow): EntryInput {
   };
 }
 
+/**
+ * Ao editar sem dizer nada sobre o empréstimo, mantém a ligação (ADR-057). Se o valor de uma
+ * prestação mudou, o capital e os juros mantêm-se até caberem e o resto fica em encargos.
+ */
+function keepLoan(raw: EntryInput, existing: EntryRow): EntryInput {
+  if (raw.loanId !== undefined || existing.loan_id === null) return raw;
+  if (existing.loan_role !== 'payment') {
+    return { ...raw, loanId: existing.loan_id, loanRole: existing.loan_role };
+  }
+  const principal = Math.min(existing.principal_amount ?? 0, raw.amount);
+  const interest = Math.min(existing.interest_amount ?? 0, raw.amount - principal);
+  return {
+    ...raw,
+    loanId: existing.loan_id,
+    loanRole: existing.loan_role,
+    principalAmount: principal,
+    interestAmount: interest,
+    feesAmount: raw.amount - principal - interest,
+  };
+}
+
 /** Grava um movimento já validado (também usado pelos pagamentos de dívidas). */
 export async function insertEntry(
   tx: SqlExecutor,
@@ -206,6 +244,11 @@ export async function insertEntry(
     vehicleCostType: input.vehicleCostType ?? null,
     quantityMilli: input.quantityMilli ?? null,
     odometerKm: input.odometerKm ?? null,
+    loanId: input.loanId ?? null,
+    loanRole: input.loanRole ?? null,
+    principalAmount: input.principalAmount ?? null,
+    interestAmount: input.interestAmount ?? null,
+    feesAmount: input.feesAmount ?? null,
     id: context.newId(),
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -213,8 +256,9 @@ export async function insertEntry(
   await tx.run(
     `INSERT INTO entries (id, type, amount, description, search_text, category_id, account_id,
        destination_account_id, date, notes, vehicle_id, vehicle_cost_type, quantity_milli,
-       odometer_km, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       odometer_km, loan_id, loan_role, principal_amount, interest_amount, fees_amount, created_at,
+       updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id,
       entry.type,
@@ -230,6 +274,11 @@ export async function insertEntry(
       entry.vehicleCostType,
       entry.quantityMilli,
       entry.odometerKm,
+      entry.loanId,
+      entry.loanRole,
+      entry.principalAmount,
+      entry.interestAmount,
+      entry.feesAmount,
       timestamp,
       timestamp,
     ],
@@ -266,10 +315,17 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
       return row ? toEntry(row) : null;
     },
 
-    create(raw) {
-      return write(context, ['entries'], () =>
-        db.transaction(async (tx) => insertEntry(tx, context, await prepareEntry(tx, raw))),
+    async create(raw) {
+      const created = await write(context, ['entries'], () =>
+        db.transaction(async (tx) => {
+          const entry = await insertEntry(tx, context, await prepareEntry(tx, raw));
+          // Prestação ou desembolso de um empréstimo: a dívida recalcula-se (ADR-057).
+          await recomputeLoan(tx, context, entry.loanId);
+          return entry;
+        }),
       );
+      if (created.loanId) context.notify(['wealth_items']);
+      return created;
     },
 
     createMany(raws) {
@@ -291,14 +347,15 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
       );
     },
 
-    update(id, raw) {
-      return write(context, ['entries'], () =>
+    async update(id, raw) {
+      let loanChanged = false;
+      const updated = await write(context, ['entries'], () =>
         db.transaction(async (tx) => {
           const existing = await findActive(tx, id);
           if (!existing) throw new NotFoundError('entry', id);
           const input = await prepareEntry(
             tx,
-            keepVehicle(raw, existing),
+            keepLoan(keepVehicle(raw, existing), existing),
             {
               accountId: existing.account_id,
               destinationAccountId: existing.destination_account_id,
@@ -309,7 +366,8 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
           await tx.run(
             `UPDATE entries SET type = ?, amount = ?, description = ?, search_text = ?, category_id = ?,
                account_id = ?, destination_account_id = ?, date = ?, notes = ?, vehicle_id = ?,
-               vehicle_cost_type = ?, quantity_milli = ?, odometer_km = ?, updated_at = ?
+               vehicle_cost_type = ?, quantity_milli = ?, odometer_km = ?, loan_id = ?, loan_role = ?,
+               principal_amount = ?, interest_amount = ?, fees_amount = ?, updated_at = ?
              WHERE id = ?`,
             [
               input.type,
@@ -325,10 +383,21 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
               input.vehicleCostType ?? null,
               input.quantityMilli ?? null,
               input.odometerKm ?? null,
+              input.loanId ?? null,
+              input.loanRole ?? null,
+              input.principalAmount ?? null,
+              input.interestAmount ?? null,
+              input.feesAmount ?? null,
               timestamp,
               id,
             ],
           );
+          // Prestação editada (ou movida de empréstimo): a dívida recalcula-se (ADR-057).
+          await recomputeLoan(tx, context, existing.loan_id);
+          if (input.loanId && input.loanId !== existing.loan_id) {
+            await recomputeLoan(tx, context, input.loanId);
+          }
+          loanChanged = existing.loan_id !== null || Boolean(input.loanId);
           return {
             ...toEntry(existing),
             ...input,
@@ -336,10 +405,17 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
             vehicleCostType: input.vehicleCostType ?? null,
             quantityMilli: input.quantityMilli ?? null,
             odometerKm: input.odometerKm ?? null,
+            loanId: input.loanId ?? null,
+            loanRole: input.loanRole ?? null,
+            principalAmount: input.principalAmount ?? null,
+            interestAmount: input.interestAmount ?? null,
+            feesAmount: input.feesAmount ?? null,
             updatedAt: timestamp,
           };
         }),
       );
+      if (loanChanged) context.notify(['wealth_items']);
+      return updated;
     },
 
     linkVehicle(ids, link) {
@@ -389,15 +465,23 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
       return rows.map((row) => ({ ...toEntry(row), currency: row.currency }));
     },
 
-    delete(id) {
-      return write(context, ['entries'], async () => {
-        const timestamp = context.now();
-        const { changes } = await db.run(
-          'UPDATE entries SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
-          [timestamp, timestamp, id],
-        );
-        if (changes === 0) throw new NotFoundError('entry', id);
-      });
+    async delete(id) {
+      let loanChanged = false;
+      await write(context, ['entries'], () =>
+        db.transaction(async (tx) => {
+          const existing = await findActive(tx, id);
+          if (!existing) throw new NotFoundError('entry', id);
+          const timestamp = context.now();
+          await tx.run(
+            'UPDATE entries SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
+            [timestamp, timestamp, id],
+          );
+          // Prestação eliminada: a dívida volta a subir (ADR-057).
+          await recomputeLoan(tx, context, existing.loan_id);
+          loanChanged = existing.loan_id !== null;
+        }),
+      );
+      if (loanChanged) context.notify(['wealth_items']);
     },
 
     async aggregate({ from, to }) {
@@ -413,6 +497,7 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
          FROM entries e
          JOIN accounts a ON a.id = e.account_id
          WHERE e.deleted_at IS NULL AND e.type IN ('income', 'expense')
+           AND (e.loan_role IS NULL OR e.loan_role <> 'disbursement')
            AND e.date >= ? AND e.date <= ?
          GROUP BY month, a.currency, e.type, e.category_id
          ORDER BY month`,
@@ -440,6 +525,7 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
          FROM entries e
          JOIN accounts a ON a.id = e.account_id
          WHERE e.deleted_at IS NULL AND e.type IN ('income', 'expense')
+           AND (e.loan_role IS NULL OR e.loan_role <> 'disbursement')
            AND e.date >= ? AND e.date <= ?
          GROUP BY e.date, a.currency, e.type, e.category_id
          ORDER BY e.date`,

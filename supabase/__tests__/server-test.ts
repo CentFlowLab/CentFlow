@@ -1586,3 +1586,117 @@ describe('document attachments (Fase 4)', () => {
     });
   });
 });
+
+describe('credit cards and loans (ADR-057)', () => {
+  const CARD = '93000000-0000-4000-8000-000000000001';
+  const LOAN = '93000000-0000-4000-8000-000000000002';
+  const PAYMENT = '93000000-0000-4000-8000-000000000003';
+
+  const loanOp = (base: number, data: Record<string, unknown> = {}): Op => ({
+    op_id: opId(),
+    tx_id: null,
+    entity: 'wealth_items',
+    record_id: LOAN,
+    base_version: base,
+    data: {
+      name: 'Crédito auto',
+      type: 'loan',
+      amount: 1550000,
+      currency: 'EUR',
+      valued_on: '2026-11-01',
+      value_history: null,
+      closed_on: null,
+      loan_kind: 'car',
+      principal_amount: 2000000,
+      opening_debt: 1550000,
+      opening_on: '2026-11-01',
+      interest_rate_bp: 650,
+      deleted_at: null,
+      ...data,
+    },
+  });
+
+  beforeEach(() => seedBasics(alice));
+
+  it('stores card fields and keeps them when an older app edits the account', async () => {
+    const [card] = await push(alice, [
+      accountOp(CARD, 0, {
+        name: 'Visa',
+        type: 'card',
+        initial_balance: -65000,
+        credit_limit: 200000,
+        due_day: 5,
+        payment_account_id: ACCOUNT,
+      }),
+    ]);
+    expect(card).toMatchObject({ status: 'applied' });
+    // Formato da app 0.1.15: sem os campos do cartão.
+    expect(
+      (
+        await push(alice, [
+          accountOp(CARD, 1, { name: 'Visa Gold', type: 'card', initial_balance: -65000 }),
+        ])
+      )[0],
+    ).toMatchObject({
+      status: 'applied',
+    });
+    expect(
+      await alice.query(
+        `select name, credit_limit::int as credit_limit, due_day, payment_account_id
+           from public.accounts where id = '${CARD}'`,
+      ),
+    ).toEqual([
+      { name: 'Visa Gold', credit_limit: 200000, due_day: 5, payment_account_id: ACCOUNT },
+    ]);
+    // Limite numa conta que não é cartão: recusado.
+    expect((await push(alice, [accountOp(ACCOUNT, 1, { credit_limit: 1000 })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
+  });
+
+  it('links loan payments with a consistent split and refuses inconsistent ones', async () => {
+    expect((await push(alice, [loanOp(0)]))[0]).toMatchObject({ status: 'applied' });
+    const payment = (data: Record<string, unknown>) =>
+      entryOp(PAYMENT, 0, {
+        amount: 30000,
+        loan_id: LOAN,
+        loan_role: 'payment',
+        principal_amount: 25000,
+        interest_amount: 4000,
+        fees_amount: 1000,
+        ...data,
+      });
+    expect((await push(alice, [payment({ fees_amount: 500 })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
+    expect((await push(alice, [payment({ loan_role: null })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
+    expect((await push(alice, [payment({})]))[0]).toMatchObject({ status: 'applied' });
+    // App antiga a editar a descrição: a ligação e a decomposição ficam.
+    expect(
+      (await push(alice, [entryOp(PAYMENT, 1, { amount: 30000, description: 'Prestação 11' })]))[0],
+    ).toMatchObject({
+      status: 'applied',
+    });
+    expect(
+      await alice.query(
+        `select loan_role, principal_amount::int as p, fees_amount::int as f from public.entries
+          where id = '${PAYMENT}'`,
+      ),
+    ).toEqual([{ loan_role: 'payment', p: 25000, f: 1000 }]);
+    // Empréstimo de outra pessoa: recusado (a chave estrangeira inclui o utilizador).
+    await seedBasics(bob);
+    const [cross] = await push(bob, [
+      entryOp('93000000-0000-4000-8000-000000000009', 0, {
+        amount: 30000,
+        loan_id: LOAN,
+        loan_role: 'payment',
+        principal_amount: 30000,
+        interest_amount: 0,
+        fees_amount: 0,
+      }),
+    ]);
+    expect(cross).toMatchObject({ status: 'rejected' });
+  });
+});

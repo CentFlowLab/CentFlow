@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, type TextInputInstance } from 'react-native';
 
@@ -17,7 +17,13 @@ import {
   DEFAULT_CURRENCY,
   parseAmountInput,
 } from '@/core/money';
-import { AccountInUseError, useRepositories, type AccountWithBalance } from '@/data';
+import {
+  AccountInUseError,
+  useDataQuery,
+  useRepositories,
+  type AccountWithBalance,
+  type Repositories,
+} from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
   Button,
@@ -26,6 +32,7 @@ import {
   ChipGroup,
   Dialog,
   FormScreen,
+  Section,
   Text,
   TextField,
 } from '@/ui/components';
@@ -33,6 +40,8 @@ import { spacing } from '@/ui/theme';
 
 import { closeModal } from '../finance/navigation';
 import { ACCOUNT_TYPE_ICONS, validationMessage } from '../finance/presentation';
+import { useToday } from '../finance/useToday';
+import { CardSummary } from './CardSummary';
 
 type FieldErrors = Partial<Record<AccountField, string>>;
 
@@ -58,6 +67,31 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
       ? amountToInputString(account.initialBalance, account.currency, decimalSeparatorFor(locale))
       : '',
   );
+  // Cartão (ADR-057): o valor já usado é positivo e fica como saldo de abertura negativo.
+  const [usedText, setUsedText] = useState(() =>
+    account && account.type === 'card' && account.initialBalance < 0
+      ? amountToInputString(-account.initialBalance, account.currency, decimalSeparatorFor(locale))
+      : '',
+  );
+  const [creditLimitText, setCreditLimitText] = useState(() =>
+    account?.creditLimit != null
+      ? amountToInputString(account.creditLimit, account.currency, decimalSeparatorFor(locale))
+      : '',
+  );
+  const [institution, setInstitution] = useState(account?.institution ?? '');
+  const [statementDayText, setStatementDayText] = useState(
+    account?.statementDay != null ? String(account.statementDay) : '',
+  );
+  const [dueDayText, setDueDayText] = useState(
+    account?.dueDay != null ? String(account.dueDay) : '',
+  );
+  const [paymentAccountId, setPaymentAccountId] = useState<string | null>(
+    account?.paymentAccountId ?? null,
+  );
+  const otherAccounts = useDataQuery(
+    useCallback((repos: Repositories) => repos.accounts.list(), []),
+  );
+  const today = useToday();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -90,8 +124,23 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
   const save = () => {
     const normalizedCurrency = currency.trim().toUpperCase();
     const fieldErrors: FieldErrors = {};
+    const moneyCurrency = normalizedCurrency.length === 3 ? normalizedCurrency : DEFAULT_CURRENCY;
+    const isCard = type === 'card';
+    const day = (text: string) => (text.trim() === '' ? null : Number(text.replace(/\D/g, '')));
+    let creditLimit: number | null = null;
+    if (isCard && creditLimitText.trim() !== '') {
+      const parsed = parseAmountInput(creditLimitText, moneyCurrency);
+      if (parsed.ok) creditLimit = parsed.amountMinor;
+      else fieldErrors.creditLimit = t('validation.amountInvalid');
+    }
     let initialBalance = 0;
-    if (initialBalanceText.trim() !== '') {
+    if (isCard) {
+      if (usedText.trim() !== '') {
+        const parsed = parseAmountInput(usedText, moneyCurrency);
+        if (parsed.ok) initialBalance = -parsed.amountMinor;
+        else fieldErrors.initialBalance = t('validation.amountInvalid');
+      }
+    } else if (initialBalanceText.trim() !== '') {
       const parsed = parseAmountInput(
         initialBalanceText,
         normalizedCurrency.length === 3 ? normalizedCurrency : DEFAULT_CURRENCY,
@@ -110,6 +159,11 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
       type,
       currency: normalizedCurrency,
       initialBalance,
+      creditLimit: isCard ? creditLimit : null,
+      institution: institution.trim() === '' ? null : institution,
+      statementDay: isCard ? day(statementDayText) : null,
+      dueDay: isCard ? day(dueDayText) : null,
+      paymentAccountId: isCard ? paymentAccountId : null,
     };
     for (const [field, code] of Object.entries(validateAccountInput(input))) {
       fieldErrors[field as AccountField] ??= validationMessage(t, code);
@@ -178,6 +232,12 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
         </Card>
       ) : null}
 
+      {account && account.type === 'card' ? (
+        <Card padding="md">
+          <CardSummary account={account} balance={account.balance} today={today} />
+        </Card>
+      ) : null}
+
       <TextField
         label={t('accountForm.name')}
         value={name}
@@ -220,19 +280,107 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
           />
         </View>
         <View style={styles.flex}>
-          <TextField
-            ref={balanceRef}
-            label={t('accountForm.initialBalance')}
-            value={initialBalanceText}
-            onChangeText={setInitialBalanceText}
-            placeholder={t('entryForm.amountPlaceholder')}
-            keyboardType="numbers-and-punctuation"
-            inputMode="decimal"
-            errorText={errors.initialBalance}
-            helperText={t('accountForm.initialBalanceHelper')}
-          />
+          {type === 'card' ? (
+            <TextField
+              ref={balanceRef}
+              label={t('accountForm.cardUsed')}
+              value={usedText}
+              onChangeText={setUsedText}
+              placeholder={t('entryForm.amountPlaceholder')}
+              keyboardType="decimal-pad"
+              inputMode="decimal"
+              errorText={errors.initialBalance}
+            />
+          ) : (
+            <TextField
+              ref={balanceRef}
+              label={t('accountForm.initialBalance')}
+              value={initialBalanceText}
+              onChangeText={setInitialBalanceText}
+              placeholder={t('entryForm.amountPlaceholder')}
+              keyboardType="numbers-and-punctuation"
+              inputMode="decimal"
+              errorText={errors.initialBalance}
+              helperText={t('accountForm.initialBalanceHelper')}
+            />
+          )}
         </View>
       </View>
+
+      {type === 'card' ? (
+        <Section title={t('accountForm.cardSection')}>
+          <View style={styles.cardFields}>
+            <Text variant="footnote" tone="tertiary">
+              {t('accountForm.cardUsedHelper')}
+            </Text>
+            <TextField
+              label={t('accountForm.creditLimit')}
+              value={creditLimitText}
+              onChangeText={setCreditLimitText}
+              placeholder={t('entryForm.amountPlaceholder')}
+              keyboardType="decimal-pad"
+              inputMode="decimal"
+              errorText={errors.creditLimit}
+            />
+            <TextField
+              label={t('accountForm.institution')}
+              value={institution}
+              onChangeText={setInstitution}
+              maxLength={60}
+              errorText={errors.institution}
+            />
+            <View style={styles.row}>
+              <View style={styles.flex}>
+                <TextField
+                  label={t('accountForm.statementDay')}
+                  value={statementDayText}
+                  onChangeText={setStatementDayText}
+                  keyboardType="number-pad"
+                  inputMode="numeric"
+                  maxLength={2}
+                  helperText={t('accountForm.dayHelper')}
+                  errorText={errors.statementDay}
+                />
+              </View>
+              <View style={styles.flex}>
+                <TextField
+                  label={t('accountForm.dueDay')}
+                  value={dueDayText}
+                  onChangeText={setDueDayText}
+                  keyboardType="number-pad"
+                  inputMode="numeric"
+                  maxLength={2}
+                  helperText={t('accountForm.dayHelper')}
+                  errorText={errors.dueDay}
+                />
+              </View>
+            </View>
+            {(otherAccounts.data ?? []).some(
+              (other) => other.type !== 'card' && other.id !== account?.id,
+            ) ? (
+              <ChipGroup
+                label={t('accountForm.paymentAccount')}
+                errorText={errors.paymentAccountId}>
+                <Chip
+                  label={t('accountForm.noPaymentAccount')}
+                  selected={paymentAccountId === null}
+                  onPress={() => setPaymentAccountId(null)}
+                />
+                {(otherAccounts.data ?? [])
+                  .filter((other) => other.type !== 'card' && other.id !== account?.id)
+                  .map((other) => (
+                    <Chip
+                      key={other.id}
+                      label={other.name}
+                      selected={other.id === paymentAccountId}
+                      onPress={() => setPaymentAccountId(other.id)}
+                    />
+                  ))}
+              </ChipGroup>
+            ) : null}
+          </View>
+        </Section>
+      ) : null}
 
       {account ? (
         <View style={styles.actions}>
@@ -338,6 +486,9 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
 }
 
 const styles = StyleSheet.create({
+  cardFields: {
+    gap: spacing.lg,
+  },
   balance: {
     gap: spacing.xs,
   },

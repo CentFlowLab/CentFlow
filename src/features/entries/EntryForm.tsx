@@ -115,6 +115,19 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
   const [deleting, setDeleting] = useState(false);
   // Veículo (ADR-054): a mesma despesa passa também a contar na ficha do veículo.
   const vehicles = useDataQuery(useCallback((repos: Repositories) => repos.vehicles.list(), []));
+  // Empréstimos abertos: uma entrada de dinheiro pode ser um desembolso (ADR-057).
+  const loans = useDataQuery(
+    useCallback(
+      async (repos: Repositories) =>
+        (await repos.wealth.list()).filter(
+          (item) => !item.closedOn && ['mortgage', 'loan', 'other_debt'].includes(item.type),
+        ),
+      [],
+    ),
+  );
+  const [disbursementLoanId, setDisbursementLoanId] = useState<string | null>(
+    entry?.loanRole === 'disbursement' ? entry.loanId : null,
+  );
   // Cartões de crédito ainda no Património: não recebem compras até passarem a contas (ADR-052).
   const cardsInWealth = useDataQuery(
     useCallback(
@@ -188,6 +201,16 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
       vehicleCostType: vehicleId ? costType : null,
       quantityMilli: vehicleId && costType === 'fuel' ? litres : null,
       odometerKm: vehicleId && km !== '' ? Number(km) : null,
+      // Desembolso: entrada ligada ao empréstimo. As prestações mantêm a ligação que já tinham.
+      ...(type === 'income'
+        ? {
+            loanId: disbursementLoanId,
+            loanRole: disbursementLoanId ? ('disbursement' as const) : null,
+            principalAmount: null,
+            interestAmount: null,
+            feesAmount: null,
+          }
+        : {}),
     });
     const domainErrors: ValidationErrors<EntryField> = validateEntryInput(input, {
       accounts: lookups.accounts,
@@ -459,6 +482,30 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
       lookups.accounts.get(destinationAccountId)?.type === 'card' ? (
         <Text variant="footnote" tone="secondary">
           {t('entryForm.cardPayment')}
+        </Text>
+      ) : null}
+
+      {type === 'income' && (loans.data?.length ?? 0) > 0 ? (
+        <ChipGroup label={t('entryForm.disbursement')}>
+          <Chip
+            label={t('entryVehicle.none')}
+            selected={disbursementLoanId === null}
+            onPress={() => setDisbursementLoanId(null)}
+          />
+          {loans.data!.map((loan) => (
+            <Chip
+              key={loan.id}
+              label={loan.name}
+              icon="cash-outline"
+              selected={loan.id === disbursementLoanId}
+              onPress={() => setDisbursementLoanId(loan.id)}
+            />
+          ))}
+        </ChipGroup>
+      ) : null}
+      {type === 'income' && disbursementLoanId ? (
+        <Text variant="footnote" tone="secondary">
+          {t('entryForm.disbursementHint')}
         </Text>
       ) : null}
 

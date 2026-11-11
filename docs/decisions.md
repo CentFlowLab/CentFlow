@@ -808,6 +808,24 @@ entrada com Google.
 - Política de privacidade atualizada antes de ativar. Migração local v13; servidor
   `20261113000100_document_attachments.sql`, com guardas para apps antigas (testado em PGlite).
 
+## ADR-057 — Cartões de crédito como contas especiais e empréstimos com prestações ligadas
+
+**Contexto:** proposta em `docs/proposta-cartoes-emprestimos.md`, aprovada a 2026-11-11.
+**Decisão:**
+
+- Cartão = conta `card` com limite, entidade, dias de fecho e pagamento, conta que paga e cor. A
+  dívida inicial é o saldo de abertura (nunca despesa); compras são despesas na conta do cartão;
+  pagar o cartão é uma transferência (uma linha). Disponível = limite − dívida; o limite não é
+  património. Cartões novos já não se criam no Património (os antigos passam para Contas).
+- Empréstimo = dívida no Património com campos próprios e abertura (`opening_debt`, `opening_on`).
+  Prestações e desembolsos são movimentos ligados (`loan_id`, `loan_role`) com capital + juros +
+  encargos = valor. A dívida é calculada (`loanState`) e guardada no item na mesma transação de
+  cada criação, edição ou eliminação de um movimento ligado; nunca abaixo de zero.
+- Desembolso (dinheiro recebido do empréstimo): entra na conta, soma à dívida e fica fora dos
+  relatórios de rendimentos. Eliminar um empréstimo desliga os movimentos sem os apagar.
+- Fusão: decomposição acoplada ao valor; ligação ao empréstimo acoplada. Migração local v14;
+  servidor `20261115000100_cards_and_loans.sql` (por aplicar), com guardas para apps antigas.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

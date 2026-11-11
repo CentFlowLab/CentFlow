@@ -19,6 +19,8 @@ import {
   type VehicleInput,
   type DocumentInput,
   VEHICLE_COST_TYPES,
+  LOAN_KINDS,
+  LOAN_ROLES,
   VEHICLE_FUEL_TYPES,
   VEHICLE_KINDS,
   VEHICLE_LIMITS,
@@ -31,6 +33,7 @@ import {
   type CategoryInput,
   type EntryInput,
 } from './types';
+import { splitPayment } from './credit';
 import { isLiabilityType } from './wealth';
 
 export const LIMITS = {
@@ -63,6 +66,8 @@ export type ValidationCode =
   | 'notLiability'
   | 'odometerOutOfOrder'
   | 'purchaseNotExpense'
+  | 'splitMismatch'
+  | 'cardOnly'
   | 'purchaseAlreadyLinked';
 
 export type ValidationErrors<Field extends string> = Partial<Record<Field, ValidationCode>>;
@@ -102,7 +107,35 @@ export function validateAccountInput(input: AccountInput): ValidationErrors<Acco
   if (!(ACCOUNT_TYPES as readonly string[]).includes(input.type)) errors.type = 'invalid';
   if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
   if (!isSafeMinor(input.initialBalance)) errors.initialBalance = 'amountTooLarge';
+  // Campos de cartão (ADR-057): só em contas do tipo cartão.
+  const card = input.type === 'card';
+  if (input.creditLimit != null) {
+    if (!card) errors.creditLimit = 'cardOnly';
+    else if (!isIntegerBetween(input.creditLimit, 1, MAX_AMOUNT_MINOR)) {
+      errors.creditLimit = 'amountNotPositive';
+    }
+  }
+  for (const field of ['statementDay', 'dueDay'] as const) {
+    const value = input[field];
+    if (value == null) continue;
+    if (!card) errors[field] = 'cardOnly';
+    else if (!isIntegerBetween(value, 1, 31)) errors[field] = 'invalid';
+  }
+  if (input.paymentAccountId != null && !card) errors.paymentAccountId = 'cardOnly';
+  if (input.institution != null && !isTextBetween(input.institution, 1, 60)) {
+    errors.institution = 'invalid';
+  }
+  if (input.color != null && !isTextBetween(input.color, 1, 20)) errors.color = 'invalid';
   return errors;
+}
+
+function isIntegerBetween(value: number, min: number, max: number): boolean {
+  return Number.isSafeInteger(value) && value >= min && value <= max;
+}
+
+function isTextBetween(value: string, min: number, max: number): boolean {
+  const length = value.trim().length;
+  return length >= min && length <= max;
 }
 
 export type CategoryField = keyof CategoryInput;
@@ -124,6 +157,8 @@ export type EntryValidationContext = {
   categories: ReadonlyMap<string, Pick<Category, 'id' | 'type'>>;
   /** Veículos existentes; sem o mapa, a existência não é verificada (ex.: validação parcial). */
   vehicles?: ReadonlySet<string>;
+  /** Empréstimos (dívidas) existentes; idem. */
+  loans?: ReadonlySet<string>;
   /** Ao editar, permite manter uma conta entretanto arquivada. */
   previous?: Pick<EntryInput, 'accountId' | 'destinationAccountId'>;
 };
@@ -183,6 +218,7 @@ export function validateEntryInput(
   }
 
   validateEntryVehicle(input, context, errors);
+  validateEntryLoan(input, context, errors);
   return errors;
 }
 
@@ -231,6 +267,42 @@ function validateEntryVehicle(
   }
 }
 
+/**
+ * Ligação a um empréstimo (ADR-057): prestação = despesa com capital + juros + encargos = valor;
+ * desembolso = entrada sem decomposição (não é rendimento nos relatórios).
+ */
+function validateEntryLoan(
+  input: EntryInput,
+  context: EntryValidationContext,
+  errors: ValidationErrors<EntryField>,
+): void {
+  const loanId = input.loanId ?? null;
+  const role = input.loanRole ?? null;
+  const parts = [input.principalAmount, input.interestAmount, input.feesAmount];
+  if (loanId === null) {
+    if (role !== null) errors.loanRole = 'invalid';
+    if (parts.some((part) => part != null)) errors.principalAmount = 'invalid';
+    return;
+  }
+  if (context.loans && !context.loans.has(loanId)) errors.loanId = 'invalid';
+  if (role === null || !(LOAN_ROLES as readonly string[]).includes(role)) {
+    errors.loanRole = 'required';
+    return;
+  }
+  if (role === 'disbursement') {
+    if (input.type !== 'income') errors.loanRole = 'invalid';
+    if (parts.some((part) => part != null)) errors.principalAmount = 'invalid';
+    return;
+  }
+  if (input.type !== 'expense') errors.loanRole = 'invalid';
+  const values = parts.map((part) => part ?? 0);
+  if (!values.every((value) => Number.isSafeInteger(value) && value >= 0)) {
+    errors.principalAmount = 'invalid';
+  } else if (values.reduce((sum, value) => sum + value, 0) !== input.amount) {
+    errors.principalAmount = 'splitMismatch';
+  }
+}
+
 /** Leitura incoerente: menor do que uma anterior ou maior do que uma posterior (mesmo veículo). */
 export function validateOdometerReading(
   reading: { date: CalendarDate; odometerKm: number },
@@ -250,6 +322,9 @@ export function validateOdometerReading(
 export function normalizeEntryInput(input: EntryInput): EntryInput {
   const notes = input.notes?.trim() ?? '';
   const vehicleId = input.type === 'transfer' ? null : (input.vehicleId ?? null);
+  const loanId = input.type === 'transfer' ? null : (input.loanId ?? null);
+  const loanRole = loanId === null ? null : (input.loanRole ?? null);
+  const payment = loanRole === 'payment';
   const costType = vehicleId === null ? null : (input.vehicleCostType ?? null);
   return {
     ...input,
@@ -261,6 +336,11 @@ export function normalizeEntryInput(input: EntryInput): EntryInput {
     vehicleCostType: costType,
     quantityMilli: costType === 'fuel' ? (input.quantityMilli ?? null) : null,
     odometerKm: vehicleId === null ? null : (input.odometerKm ?? null),
+    loanId,
+    loanRole,
+    principalAmount: payment ? (input.principalAmount ?? null) : null,
+    interestAmount: payment ? (input.interestAmount ?? null) : null,
+    feesAmount: payment ? (input.feesAmount ?? null) : null,
   };
 }
 
@@ -356,6 +436,29 @@ export function validateWealthItemInput(input: WealthItemInput): ValidationError
   }
   if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
   if (!isValidCalendarDate(input.valuedOn)) errors.valuedOn = 'invalidDate';
+  if (input.loanKind != null && !(LOAN_KINDS as readonly string[]).includes(input.loanKind)) {
+    errors.loanKind = 'invalid';
+  }
+  for (const field of ['principalAmount', 'openingDebt', 'installmentAmount'] as const) {
+    const value = input[field];
+    if (value != null && !isIntegerBetween(value, 1, MAX_AMOUNT_MINOR)) {
+      errors[field] = 'amountNotPositive';
+    }
+  }
+  for (const field of ['startedOn', 'openingOn', 'endsOn'] as const) {
+    const value = input[field];
+    if (value != null && !isValidCalendarDate(value)) errors[field] = 'invalidDate';
+  }
+  if (input.interestRateBp != null && !isIntegerBetween(input.interestRateBp, 0, 100_000)) {
+    errors.interestRateBp = 'invalid';
+  }
+  if (input.dueDay != null && !isIntegerBetween(input.dueDay, 1, 31)) errors.dueDay = 'invalid';
+  if (input.institution != null && !isTextBetween(input.institution, 1, 60)) {
+    errors.institution = 'invalid';
+  }
+  if ((input.openingDebt == null) !== (input.openingOn == null)) {
+    errors.openingDebt = 'required';
+  }
   if (input.origin) {
     const { amount, valuedOn } = input.origin;
     if (!Number.isSafeInteger(amount) || amount <= 0 || amount > MAX_AMOUNT_MINOR) {
@@ -380,10 +483,16 @@ export function validateWealthPayment(
   if (!isLiabilityType(item.type) || item.closedOn) errors.principal = 'notLiability';
   if (!Number.isSafeInteger(input.amount) || input.amount <= 0) errors.amount = 'amountNotPositive';
   else if (input.amount > MAX_AMOUNT_MINOR) errors.amount = 'amountTooLarge';
-  if (!Number.isSafeInteger(input.principal) || input.principal <= 0) {
-    errors.principal ??= 'amountNotPositive';
+  if (!Number.isSafeInteger(input.principal) || input.principal < 0) {
+    errors.principal ??= 'invalid';
   } else if (input.principal > input.amount || input.principal > item.amount) {
     errors.principal ??= 'principalTooLarge';
+  } else if (
+    Number.isSafeInteger(input.amount) &&
+    input.amount > 0 &&
+    !splitPayment(input.amount, input.principal, input.interest, input.fees)
+  ) {
+    errors.principal ??= 'splitMismatch';
   }
   if (!isValidCalendarDate(input.date)) errors.date = 'invalidDate';
   else if (input.date < item.valuedOn) errors.date = 'dateBeforeValuation';

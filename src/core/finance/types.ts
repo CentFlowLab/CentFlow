@@ -36,9 +36,17 @@ export type Account = SyncMetadata & {
   name: string;
   type: AccountType;
   currency: CurrencyCode;
-  /** Unidades mínimas; pode ser negativo (ex.: dívida de cartão). */
+  /** Unidades mínimas; pode ser negativo (ex.: dívida de cartão). É o saldo de abertura. */
   initialBalance: number;
   archivedAt: Timestamp | null;
+  /** Cartão de crédito (ADR-057): limite, entidade, dias de fecho e pagamento, conta que paga. */
+  creditLimit: number | null;
+  institution: string | null;
+  statementDay: number | null;
+  dueDay: number | null;
+  paymentAccountId: Id | null;
+  /** Chave da paleta (identificação visual). */
+  color: string | null;
 };
 
 export type Category = SyncMetadata & {
@@ -82,7 +90,20 @@ export type Entry = SyncMetadata & {
   quantityMilli: number | null;
   /** Leitura do conta-quilómetros neste movimento. */
   odometerKm: number | null;
+  /** Empréstimo a que pertence (ADR-057): prestação (despesa) ou desembolso (entrada). */
+  loanId: Id | null;
+  loanRole: LoanRole | null;
+  /** Prestação: capital + juros + encargos = valor pago. */
+  principalAmount: number | null;
+  interestAmount: number | null;
+  feesAmount: number | null;
 };
+
+export const LOAN_ROLES = ['payment', 'disbursement'] as const;
+export type LoanRole = (typeof LOAN_ROLES)[number];
+
+export const LOAN_KINDS = ['car', 'mortgage', 'personal', 'other'] as const;
+export type LoanKind = (typeof LOAN_KINDS)[number];
 
 /** Tipos de custo de um veículo: a segunda classificação de uma despesa, sem duplicar o valor. */
 export const VEHICLE_COST_TYPES = [
@@ -106,7 +127,13 @@ export const VEHICLE_LIMITS = {
   maxOdometerKm: 10_000_000,
 } as const;
 
-export type AccountInput = Pick<Account, 'name' | 'type' | 'currency' | 'initialBalance'>;
+export type AccountInput = Pick<Account, 'name' | 'type' | 'currency' | 'initialBalance'> &
+  Partial<
+    Pick<
+      Account,
+      'creditLimit' | 'institution' | 'statementDay' | 'dueDay' | 'paymentAccountId' | 'color'
+    >
+  >;
 export type CategoryInput = Pick<Category, 'name' | 'type' | 'icon' | 'color'> & {
   /** Sem valor: mantém o que estava (falso numa categoria nova). Só nas despesas. */
   essential?: boolean;
@@ -122,7 +149,20 @@ export type EntryInput = Pick<
   | 'date'
   | 'notes'
 > &
-  Partial<Pick<Entry, 'vehicleId' | 'vehicleCostType' | 'quantityMilli' | 'odometerKm'>>;
+  Partial<
+    Pick<
+      Entry,
+      | 'vehicleId'
+      | 'vehicleCostType'
+      | 'quantityMilli'
+      | 'odometerKm'
+      | 'loanId'
+      | 'loanRole'
+      | 'principalAmount'
+      | 'interestAmount'
+      | 'feesAmount'
+    >
+  >;
 export type BudgetInput = Pick<
   Budget,
   'categoryId' | 'amount' | 'currency' | 'period' | 'startsOn'
@@ -199,27 +239,60 @@ export type WealthItem = SyncMetadata & {
   valueHistory: WealthValuation[];
   /** Dia em que foi vendido (bem) ou pago (dívida); conta no histórico até lá. */
   closedOn: CalendarDate | null;
+  /** Empréstimos (ADR-057). Com `openingDebt`, a dívida é calculada pelas prestações ligadas. */
+  loanKind: LoanKind | null;
+  institution: string | null;
+  /** Capital emprestado no início. */
+  principalAmount: number | null;
+  startedOn: CalendarDate | null;
+  /** Dívida na data de entrada na Miven (saldo de abertura do empréstimo). */
+  openingDebt: number | null;
+  openingOn: CalendarDate | null;
+  /** Taxa anual em pontos-base (3,25 % = 325); informativa. */
+  interestRateBp: number | null;
+  installmentAmount: number | null;
+  dueDay: number | null;
+  endsOn: CalendarDate | null;
 };
+
+export const LOAN_FIELDS = [
+  'loanKind',
+  'institution',
+  'principalAmount',
+  'startedOn',
+  'openingDebt',
+  'openingOn',
+  'interestRateBp',
+  'installmentAmount',
+  'dueDay',
+  'endsOn',
+] as const;
+export type LoanFields = Pick<WealthItem, (typeof LOAN_FIELDS)[number]>;
 
 export type WealthValuation = { amount: number; valuedOn: CalendarDate };
 
 export type WealthItemInput = Pick<
   WealthItem,
   'name' | 'type' | 'amount' | 'currency' | 'valuedOn'
-> & {
-  /**
-   * Dívidas: valor e data em que começou (ex.: o crédito pedido). Fica como a primeira avaliação
-   * do histórico. Sem valor: mantém o histórico como está.
-   */
-  origin?: WealthValuation;
-};
+> &
+  Partial<LoanFields> & {
+    /**
+     * Dívidas: valor e data em que começou (ex.: o crédito pedido). Fica como a primeira avaliação
+     * do histórico. Sem valor: mantém o histórico como está.
+     */
+    origin?: WealthValuation;
+  };
 
 /** Pagamento de uma dívida: cria a despesa na conta e baixa o valor em dívida (ADR-052). */
 export type WealthPaymentInput = {
   /** Valor pago (despesa), em unidades mínimas. */
   amount: number;
-  /** Quanto abate na dívida (o resto são juros e encargos). Entre 1 e `amount`. */
+  /** Quanto abate na dívida. Entre 0 e `amount`. */
   principal: number;
+  /** Juros (opcional). Sem valor, o que sobra do total fica em encargos. */
+  interest?: number;
+  /** Comissões, seguros e outros encargos (opcional). */
+  fees?: number;
   accountId: Id;
   categoryId: Id;
   date: CalendarDate;

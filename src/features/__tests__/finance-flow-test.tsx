@@ -127,17 +127,16 @@ describe('local finance flow (real SQLite)', () => {
     await expectAmount('100,00');
   });
 
-  it('explains that a credit card in net worth must move to accounts to take purchases', async () => {
+  it('keeps new credit cards in accounts, not in net worth', async () => {
     await renderRouter('./src/app', { initialUrl: '/account/new' });
     await createAccount('Banco', '100');
     await act(() => router.push('/wealth/new'));
-    await fireEvent.press(await screen.findByRole('radio', { name: 'Cartão de crédito' }));
-    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Visa');
-    await fireEvent.changeText(screen.getByLabelText('Valor em dívida'), '450');
-    await fireEvent.press(screen.getByRole('button', { name: 'Guardar item' }));
+    expect(await screen.findByRole('radio', { name: 'Empréstimo' })).toBeOnTheScreen();
+    // Cartões novos criam-se em Contas (ADR-057); o tipo só aparece em cartões antigos.
+    expect(screen.queryByRole('radio', { name: 'Cartão de crédito' })).toBeNull();
     await act(() => router.push('/new-transaction'));
-    expect(await screen.findByText(/O teu cartão de crédito está no Património/)).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Passar cartões para Contas' })).toBeOnTheScreen();
+    await screen.findByLabelText('Valor');
+    expect(screen.queryByText(/está no Património/)).toBeNull();
   });
 
   it('shows field errors instead of saving invalid entries', async () => {

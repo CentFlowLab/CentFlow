@@ -149,6 +149,11 @@ describe('normalizeEntryInput', () => {
       vehicleCostType: null,
       quantityMilli: null,
       odometerKm: null,
+      loanId: null,
+      loanRole: null,
+      principalAmount: null,
+      interestAmount: null,
+      feesAmount: null,
     });
     expect(normalizeEntryInput({ ...transfer, categoryId: 'cat-food' }).categoryId).toBeNull();
   });

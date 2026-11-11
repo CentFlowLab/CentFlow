@@ -252,6 +252,8 @@ const en: Translation = {
     noAccounts: 'Create an account first to receive the movements.',
   },
   entryForm: {
+    disbursement: 'Money from a loan (optional)',
+    disbursementHint: 'Not counted as income: it goes into the account and adds to the loan debt.',
     cardsInWealth_one:
       "Your credit card is in Net worth and can't take purchases yet. Move it to Accounts to pick it here.",
     cardsInWealth_other:
@@ -303,6 +305,13 @@ const en: Translation = {
     notFoundDescription: 'It may have been deleted.',
   },
   accounts: {
+    cardDebt: '{{amount}} owed',
+    cardAvailable: 'Available: {{amount}}',
+    cardOverLimit: 'Over the limit by {{amount}}',
+    cardLimit: 'Limit: {{amount}}',
+    cardUsage: 'Usage: {{percent}}',
+    cardNextDue: 'Pay by {{date}}',
+    cardNotMoney: 'Available credit is not your money: it does not count in net worth.',
     title: 'Accounts',
     add: 'New account',
     totalLabel: 'Total in {{currency}}',
@@ -322,6 +331,17 @@ const en: Translation = {
     },
   },
   accountForm: {
+    cardUsed: 'Amount already used (optional)',
+    cardUsedHelper:
+      'What you already owed when you started using Miven. It is an opening balance, not an expense.',
+    cardSection: 'Credit card',
+    creditLimit: 'Limit (optional)',
+    institution: 'Bank or issuer (optional)',
+    statementDay: 'Statement day (optional)',
+    dueDay: 'Payment day (optional)',
+    dayHelper: 'Day of the month, 1 to 31.',
+    paymentAccount: 'Account that pays the card',
+    noPaymentAccount: 'None',
     newTitle: 'New account',
     editTitle: 'Edit account',
     name: 'Name',
@@ -687,6 +707,25 @@ const en: Translation = {
     },
   },
   wealth: {
+    loan: {
+      original: 'Amount borrowed',
+      debt: 'Current debt',
+      amortized: 'Principal repaid',
+      interestPaid: 'Interest paid: {{amount}}',
+      feesPaid: 'Fees paid: {{amount}}',
+      rate: 'Rate: {{rate}}',
+      installment: 'Instalment: {{amount}}',
+      history: 'Payments',
+      noPayments: 'No payments recorded in Miven yet.',
+      split: 'Principal {{principal}} · interest {{interest}} · fees {{fees}}',
+      debtLine: 'Debt: {{before}} → {{after}}',
+      kind: 'Loan type',
+      institution: 'Bank or lender (optional)',
+      rateInput: 'Annual interest rate in % (optional)',
+      installmentInput: 'Monthly instalment (optional)',
+      dueDay: 'Payment day (optional)',
+      kinds: { car: 'Car', mortgage: 'Mortgage', personal: 'Personal', other: 'Other' },
+    },
     history: {
       title: 'Total net worth over time',
       notEnough: 'The trend appears once there is data in at least two months.',
@@ -755,6 +794,9 @@ const en: Translation = {
     cardMoveMessage:
       'The card becomes an account with the amount owed as a negative balance, where you record expenses. Here it is marked as paid today, so it is not counted twice.',
     payment: {
+      interest: 'Interest (optional)',
+      fees: 'Fees and charges (optional)',
+      undistributed: 'Interest and fees not split: {{amount}}',
       title: 'Record payment',
       owed: 'Owed: {{amount}}',
       amount: 'Amount paid',
@@ -1217,6 +1259,8 @@ const en: Translation = {
     notLiability: 'Payments can only be recorded on unpaid debts.',
     odometerOutOfOrder:
       'The mileage does not match other readings for this vehicle (an earlier date with more km, or a later one with fewer).',
+    splitMismatch: 'Principal, interest and fees must add up to the amount paid.',
+    cardOnly: 'Only applies to credit cards.',
     purchaseNotExpense: 'The vehicle purchase must be an expense.',
     purchaseAlreadyLinked: 'This vehicle already has a purchase linked. Remove it first.',
   },

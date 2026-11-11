@@ -246,7 +246,7 @@ describe('sync engine', () => {
       entity: 'entries',
       recordId: entry.id,
       reason: 'version',
-      detail: 'amount,quantity_milli,odometer_km',
+      detail: 'amount,quantity_milli,odometer_km,principal_amount,interest_amount,fees_amount',
       local: { amount: 1300 },
       server: { amount: 1100 },
       base: { amount: 1000 },

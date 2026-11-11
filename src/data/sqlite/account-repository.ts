@@ -24,6 +24,12 @@ type AccountRow = {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  credit_limit: number | null;
+  institution: string | null;
+  statement_day: number | null;
+  due_day: number | null;
+  payment_account_id: string | null;
+  color: string | null;
 };
 
 type AccountFlowRow = AccountRow & {
@@ -34,8 +40,9 @@ type AccountFlowRow = AccountRow & {
   entry_count: number;
 };
 
-const COLUMNS =
-  'a.id, a.name, a.type, a.currency, a.initial_balance, a.created_at, a.updated_at, a.archived_at';
+const COLUMNS = `a.id, a.name, a.type, a.currency, a.initial_balance, a.created_at, a.updated_at,
+  a.archived_at, a.credit_limit, a.institution, a.statement_day, a.due_day, a.payment_account_id,
+  a.color`;
 
 function toAccount(row: AccountRow): Account {
   return {
@@ -47,7 +54,64 @@ function toAccount(row: AccountRow): Account {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,
+    creditLimit: row.credit_limit,
+    institution: row.institution,
+    statementDay: row.statement_day,
+    dueDay: row.due_day,
+    paymentAccountId: row.payment_account_id,
+    color: row.color,
   };
+}
+
+type CardFields = Pick<
+  Account,
+  'creditLimit' | 'institution' | 'statementDay' | 'dueDay' | 'paymentAccountId' | 'color'
+>;
+const CARD_KEYS = [
+  'creditLimit',
+  'institution',
+  'statementDay',
+  'dueDay',
+  'paymentAccountId',
+  'color',
+] as const;
+
+/**
+ * Campos do cartão: ausentes no `raw` (ecrãs antigos) mantêm o valor guardado; numa conta que
+ * deixa de ser cartão, ficam vazios.
+ */
+function cardFields(raw: AccountInput, existing?: Account): CardFields {
+  const fields = {} as Record<keyof CardFields, unknown>;
+  for (const key of CARD_KEYS) {
+    const value = raw[key];
+    fields[key] = value === undefined ? (existing?.[key] ?? null) : value;
+  }
+  const institution = typeof fields.institution === 'string' ? fields.institution.trim() : null;
+  fields.institution = institution === '' ? null : institution;
+  if (raw.type !== 'card') {
+    for (const key of ['creditLimit', 'statementDay', 'dueDay', 'paymentAccountId'] as const) {
+      fields[key] = null;
+    }
+  }
+  return fields as CardFields;
+}
+
+/** A conta que paga o cartão: outra conta ativa, que não seja cartão, na mesma moeda. */
+async function checkPaymentAccount(
+  tx: SqlExecutor,
+  input: AccountInput & CardFields,
+  selfId: string | null,
+): Promise<void> {
+  if (!input.paymentAccountId) return;
+  const target = await findActive(tx, input.paymentAccountId);
+  if (
+    !target ||
+    target.id === selfId ||
+    target.type === 'card' ||
+    target.currency !== input.currency.toUpperCase()
+  ) {
+    throw new ValidationError({ paymentAccountId: 'invalid' });
+  }
 }
 
 function toFlows(row: AccountFlowRow): AccountFlows {
@@ -105,8 +169,9 @@ export async function insertAccount(
   context: Pick<SqliteRepositoryContext, 'newId' | 'now'>,
   rawInput: AccountInput,
 ): Promise<Account> {
-  const input = normalize(rawInput);
+  const input = { ...normalize(rawInput), ...cardFields(rawInput) };
   assertValid(input);
+  await checkPaymentAccount(tx, input, null);
   const timestamp = context.now();
   const account: Account = {
     ...input,
@@ -116,14 +181,21 @@ export async function insertAccount(
     archivedAt: null,
   };
   await tx.run(
-    `INSERT INTO accounts (id, name, type, currency, initial_balance, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO accounts (id, name, type, currency, initial_balance, credit_limit, institution,
+       statement_day, due_day, payment_account_id, color, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       account.id,
       account.name,
       account.type,
       account.currency,
       account.initialBalance,
+      account.creditLimit,
+      account.institution,
+      account.statementDay,
+      account.dueDay,
+      account.paymentAccountId,
+      account.color,
       timestamp,
       timestamp,
     ],
@@ -170,16 +242,32 @@ export function createSqliteAccountRepository(context: SqliteRepositoryContext):
         db.transaction(async (tx) => {
           const existing = await findActive(tx, id);
           if (!existing) throw new NotFoundError('account', id);
-          const input = normalize(rawInput);
+          const input = { ...normalize(rawInput), ...cardFields(rawInput, toAccount(existing)) };
           assertValid(input);
+          await checkPaymentAccount(tx, input, id);
           if (input.currency !== existing.currency && (await countEntries(tx, id)) > 0) {
             throw new ValidationError({ currency: 'currencyLocked' });
           }
           const timestamp = context.now();
           await tx.run(
-            `UPDATE accounts SET name = ?, type = ?, currency = ?, initial_balance = ?, updated_at = ?
+            `UPDATE accounts SET name = ?, type = ?, currency = ?, initial_balance = ?,
+               credit_limit = ?, institution = ?, statement_day = ?, due_day = ?,
+               payment_account_id = ?, color = ?, updated_at = ?
              WHERE id = ?`,
-            [input.name, input.type, input.currency, input.initialBalance, timestamp, id],
+            [
+              input.name,
+              input.type,
+              input.currency,
+              input.initialBalance,
+              input.creditLimit,
+              input.institution,
+              input.statementDay,
+              input.dueDay,
+              input.paymentAccountId,
+              input.color,
+              timestamp,
+              id,
+            ],
           );
           return { ...toAccount(existing), ...input, updatedAt: timestamp };
         }),
