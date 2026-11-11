@@ -11,10 +11,15 @@ export class AppleSignInCancelledError extends Error {
   }
 }
 
-/** iOS nativo quando disponível; na web só se o projeto tiver o fornecedor Apple configurado. */
+/**
+ * Só com o fornecedor Apple ligado no Supabase (`EXPO_PUBLIC_AUTH_APPLE_ENABLED=true`). Sem ele,
+ * o botão falharia no iPhone (o sistema diz que está disponível) e na web. No iOS, também é
+ * preciso que o sistema o suporte (e a capacidade Sign in with Apple na assinatura).
+ */
 export async function isAppleSignInAvailable(): Promise<boolean> {
+  if (process.env.EXPO_PUBLIC_AUTH_APPLE_ENABLED !== 'true') return false;
   if (Platform.OS === 'ios') return AppleAuthentication.isAvailableAsync();
-  return Platform.OS === 'web' && process.env.EXPO_PUBLIC_AUTH_APPLE_ENABLED === 'true';
+  return Platform.OS === 'web';
 }
 
 export async function performAppleSignIn(client: SupabaseClient): Promise<void> {

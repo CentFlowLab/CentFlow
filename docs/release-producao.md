@@ -1,5 +1,13 @@
 # Lançamento das Fases 3 a 5 em produção
 
+> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 15
+> migrações (`20261108000100` a `20261111000400`); 14 tabelas com RLS, sem leitura nem escrita
+> para `anon` e sem escrita direta para `authenticated`; esquema `private` não exposto; funções
+> com `search_path` vazio; Edge Functions `delete-account` e `suggest-entry` ativas nos dois
+> (validam a sessão com `auth.getUser()`); sem segredos próprios (falta `ANTHROPIC_API_KEY`).
+> App publicada: **0.1.10** (iPhone SideStore compilação 16, Android compilação 8, web). As
+> secções seguintes são o registo histórico de cada execução.
+
 Plano. Não executar nenhum passo sem uma autorização nova, nessa altura, com a frase
 `CONFIRMO-PRODUCAO` no comando. Este documento não autoriza o lançamento.
 

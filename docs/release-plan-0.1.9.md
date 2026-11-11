@@ -1,10 +1,8 @@
 # Plano da versão 0.1.9 (release candidate)
 
-Estado em 2026-11-10 (noite): **migrações aplicadas na produção** (ver release-producao.md); a app
-0.1.9 continua em commits locais, por publicar. Staging com `20261111000200`,
-`20261111000300` e `20261111000400`; produção até `20261111000100`. **Nada deste plano corre sem a
-autorização explícita do responsável** (`CONFIRMO-PRODUCAO` para a produção, autorização de push
-para publicar).
+**Concluído.** Migrações `000200` a `000400` na produção a 2026-11-10; app 0.1.9 publicada a
+2026-11-10 e 0.1.10 (Definições, ADR-049) a 2026-11-11. **Continua por fazer: a secção 5 (testes
+físicos) e a secção 7 (testes com pessoas).** O resto deste documento é o registo do plano.
 
 ## 1. O que entra
 
