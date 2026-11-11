@@ -1258,3 +1258,70 @@ describe('vehicle costs', () => {
     expect(saved).toMatchObject({ name: 'Clio 4', make: 'Renault', purchaseAmount: 1500000 });
   });
 });
+
+describe('document attachments', () => {
+  const attachment = (id: string) => ({
+    id,
+    name: `${id}.pdf`,
+    mime: 'application/pdf' as const,
+    size: 2048,
+    createdAt: '2026-11-11T10:00:00.000Z',
+  });
+
+  it('stores attachments and purchase data, and keeps them for screens that omit them', async () => {
+    const created = await repos.documents.create({
+      title: 'Garantia TV',
+      category: 'home',
+      expiresOn: '2028-11-01',
+      notes: null,
+      attachments: [attachment('a1')],
+      acquiredOn: '2026-11-01',
+      amount: 49900,
+      currency: 'eur',
+    });
+    expect(created).toMatchObject({ amount: 49900, currency: 'EUR', acquiredOn: '2026-11-01' });
+    const edited = await repos.documents.update(created.id, {
+      title: 'Garantia televisão',
+      category: 'home',
+      expiresOn: '2028-11-01',
+      notes: null,
+    });
+    expect(edited.attachments).toEqual([attachment('a1')]);
+    expect(edited.amount).toBe(49900);
+    expect((await repos.documents.get(created.id))?.attachments).toEqual([attachment('a1')]);
+
+    await expect(
+      repos.documents.update(created.id, {
+        title: 'x',
+        category: 'home',
+        expiresOn: null,
+        notes: null,
+        attachments: Array.from({ length: 11 }, (_, index) => attachment(`a${index}`)),
+      }),
+    ).rejects.toMatchObject({ errors: { attachments: 'tooLong' } });
+    await expect(
+      repos.documents.update(created.id, {
+        title: 'x',
+        category: 'home',
+        expiresOn: null,
+        notes: null,
+        attachments: [{ ...attachment('big'), size: 11 * 1024 * 1024 }],
+      }),
+    ).rejects.toMatchObject({ errors: { attachments: 'invalid' } });
+  });
+
+  it('keeps a local queue of files to upload', async () => {
+    await repos.attachmentUploads.enqueue({
+      attachmentId: 'a1',
+      documentId: 'd1',
+      localUri: 'file:///attachments/a1.pdf',
+      mime: 'application/pdf',
+    });
+    await repos.attachmentUploads.markFailed('a1');
+    expect(await repos.attachmentUploads.pending()).toMatchObject([
+      { attachmentId: 'a1', documentId: 'd1', attempts: 1 },
+    ]);
+    await repos.attachmentUploads.markSent('a1');
+    expect(await repos.attachmentUploads.pending()).toEqual([]);
+  });
+});

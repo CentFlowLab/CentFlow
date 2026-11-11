@@ -201,6 +201,7 @@ describe('schema', () => {
     expect(rows).toEqual([
       { table_name: 'accounts', column_name: 'initial_balance', data_type: 'bigint' },
       { table_name: 'budgets', column_name: 'amount', data_type: 'bigint' },
+      { table_name: 'documents', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'entries', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'goal_contributions', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'goals', column_name: 'target_amount', data_type: 'bigint' },
@@ -1509,5 +1510,63 @@ describe('vehicle costs (Fase 1)', () => {
     expect(foreign).toMatchObject({ status: 'applied' });
     const [cross] = await push(alice, [entryOp(ENTRY, 0, { ...linked, vehicle_id: OTHER })]);
     expect(cross).toMatchObject({ status: 'rejected' });
+  });
+});
+
+describe('document attachments (Fase 4)', () => {
+  const DOC = '92000000-0000-4000-8000-000000000001';
+  const attachment = (n: number) => ({
+    id: `a${n}`,
+    name: `fatura-${n}.pdf`,
+    mime: 'application/pdf',
+    size: 1000,
+    created_at: '2026-11-11T10:00:00Z',
+  });
+  const docOp = (base: number, data: Record<string, unknown> = {}): Op => ({
+    op_id: opId(),
+    tx_id: null,
+    entity: 'documents',
+    record_id: DOC,
+    base_version: base,
+    data: {
+      title: 'Garantia TV',
+      category: 'home',
+      expires_on: '2028-11-01',
+      notes: null,
+      deleted_at: null,
+      ...data,
+    },
+  });
+
+  it('keeps attachments and purchase data when an older app edits the document', async () => {
+    const [created] = await push(alice, [
+      docOp(0, {
+        attachments: JSON.stringify([attachment(1)]),
+        acquired_on: '2026-11-01',
+        amount: 49900,
+        currency: 'EUR',
+      }),
+    ]);
+    expect(created).toMatchObject({ status: 'applied' });
+    // Formato da app 0.1.14: sem os campos novos.
+    const [old] = await push(alice, [docOp(1, { title: 'Garantia televisão' })]);
+    expect(old).toMatchObject({ status: 'applied' });
+    const [row] = await alice.query<{ title: string; attachments: string; amount: number }>(
+      'select title, attachments, amount::int as amount from public.documents',
+    );
+    expect(row?.title).toBe('Garantia televisão');
+    expect(JSON.parse(row!.attachments)).toEqual([attachment(1)]);
+    expect(row?.amount).toBe(49900);
+    expect(await bob.query('select id from public.documents')).toEqual([]);
+  });
+
+  it('rejects more than ten attachments and an amount without currency', async () => {
+    const eleven = JSON.stringify(Array.from({ length: 11 }, (_, n) => attachment(n)));
+    expect((await push(alice, [docOp(0, { attachments: eleven })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
+    expect((await push(alice, [docOp(0, { amount: 100 })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
   });
 });

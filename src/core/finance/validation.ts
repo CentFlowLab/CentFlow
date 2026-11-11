@@ -23,6 +23,9 @@ import {
   VEHICLE_KINDS,
   VEHICLE_LIMITS,
   DOCUMENT_CATEGORIES,
+  ATTACHMENT_LIMITS,
+  ATTACHMENT_MIMES,
+  type DocumentAttachment,
   type SubscriptionInput,
   type Category,
   type CategoryInput,
@@ -461,5 +464,33 @@ export function validateDocumentInput(input: DocumentInput): ValidationErrors<Do
     errors.expiresOn = 'invalidDate';
   }
   if (input.notes !== null && input.notes.length > 500) errors.notes = 'tooLong';
+  if (input.attachments) {
+    if (input.attachments.length > ATTACHMENT_LIMITS.perDocument) errors.attachments = 'tooLong';
+    else if (!input.attachments.every(isValidAttachment)) errors.attachments = 'invalid';
+  }
+  if (input.acquiredOn != null && !isValidCalendarDate(input.acquiredOn)) {
+    errors.acquiredOn = 'invalidDate';
+  }
+  if (input.amount != null) {
+    if (!Number.isSafeInteger(input.amount) || input.amount <= 0)
+      errors.amount = 'amountNotPositive';
+    else if (input.amount > MAX_AMOUNT_MINOR) errors.amount = 'amountTooLarge';
+    if (input.currency == null) errors.currency = 'required';
+  }
+  if (input.currency != null && !isCurrencyCode(input.currency)) errors.currency = 'invalid';
   return errors;
+}
+
+/** Anexo aceitável: tipo permitido, tamanho entre 1 byte e 10 MB, nome curto. */
+export function isValidAttachment(attachment: DocumentAttachment): boolean {
+  return (
+    typeof attachment.id === 'string' &&
+    attachment.id.length > 0 &&
+    (ATTACHMENT_MIMES as readonly string[]).includes(attachment.mime) &&
+    Number.isSafeInteger(attachment.size) &&
+    attachment.size > 0 &&
+    attachment.size <= ATTACHMENT_LIMITS.maxBytes &&
+    attachment.name.trim().length > 0 &&
+    attachment.name.length <= ATTACHMENT_LIMITS.nameMaxLength
+  );
 }

@@ -114,6 +114,7 @@ Nenhum dado é usado para rastreio (tracking).
 | Dados de falhas                | Não             | Funcionalidade | Sentry                                                           |
 | Dados de desempenho            | Não             | Funcionalidade | Sentry (20 % das sessões)                                        |
 | Outros dados de diagnóstico    | Não             | Funcionalidade | Sentry: gravação de 10 % das sessões, texto e imagens mascarados |
+| Fotografias ou vídeos          | Sim             | Funcionalidade | Anexos dos documentos (fotografias), no Storage da UE            |
 | Interação com o produto        | Não             | Estatísticas   | PostHog, só com consentimento, só nomes de ecrãs                 |
 
 O endereço IP é guardado até um dia para os limites contra abuso (na política). O Superwall está

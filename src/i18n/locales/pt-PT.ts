@@ -250,6 +250,13 @@ const ptPT = {
     noAccounts: 'Cria primeiro uma conta para receber os movimentos.',
   },
   entryForm: {
+    cardsInWealth_one:
+      'O teu cartão de crédito está no Património e ainda não aceita compras. Passa-o para Contas para o escolheres aqui.',
+    cardsInWealth_other:
+      'Tens {{count}} cartões de crédito no Património que ainda não aceitam compras. Passa-os para Contas para os escolheres aqui.',
+    moveCards: 'Passar cartões para Contas',
+    cardPayment:
+      'Pagar o cartão: esta transferência abate o que deves e não conta como despesa (as compras já contaram).',
     ai: {
       label: 'Descreve o movimento (opcional)',
       placeholder: 'Ex.: ontem Pingo Doce 23,50',
@@ -866,6 +873,8 @@ const ptPT = {
     },
   },
   documents: {
+    attachmentCount_one: '1 anexo',
+    attachmentCount_other: '{{count}} anexos',
     subtitle: 'Lista dos teus documentos e das datas de validade. Não guarda ficheiros.',
     add: 'Novo documento',
     emptyTitle: 'Ainda não há documentos',
@@ -896,6 +905,28 @@ const ptPT = {
       expires: 'Validade',
       notes: 'Notas (opcional)',
       save: 'Guardar documento',
+      attachments: 'Anexos',
+      attachmentsHint: 'Fotografias ou PDF até 10 MB, até 10 por documento.',
+      camera: 'Fotografia',
+      library: 'Galeria',
+      files: 'Ficheiro',
+      remove: 'Retirar anexo',
+      removeTitle: 'Retirar este anexo?',
+      removeMessage: 'O ficheiro é apagado deste documento em todos os aparelhos.',
+      open: 'Abrir {{name}}',
+      pending: 'Por enviar',
+      close: 'Fechar',
+      errorType: 'Só fotografias (JPEG, PNG, WebP) e PDF.',
+      errorSize: 'O ficheiro tem mais de 10 MB.',
+      errorLimit: 'Já tem 10 anexos. Retira um para juntar outro.',
+      errorOffline: 'Sem ligação: tenta outra vez quando houver rede.',
+      errorFailed: 'Não foi possível anexar o ficheiro.',
+      errorDenied: 'Sem acesso à câmara. Podes dar acesso nas definições do telemóvel.',
+      errorOpen: 'Não foi possível abrir o anexo. Verifica a ligação.',
+      vehicle: 'Veículo (opcional)',
+      noVehicle: 'Nenhum',
+      acquiredOn: 'Data de compra',
+      amount: 'Valor de compra (opcional)',
     },
   },
   optionalDate: {

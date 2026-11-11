@@ -77,7 +77,18 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'icon',
     'deleted_at',
   ],
-  documents: ['title', 'category', 'expires_on', 'notes', 'vehicle_id', 'deleted_at'],
+  documents: [
+    'title',
+    'category',
+    'expires_on',
+    'notes',
+    'vehicle_id',
+    'attachments',
+    'acquired_on',
+    'amount',
+    'currency',
+    'deleted_at',
+  ],
   entries: [
     'type',
     'amount',
@@ -107,7 +118,8 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   wealth_items: [['amount', 'valued_on', 'value_history']],
   // Valor de compra e moeda mudam juntos.
   vehicles: [['purchase_amount', 'currency']],
-  documents: [],
+  // Valor de compra e moeda mudam juntos.
+  documents: [['amount', 'currency']],
   // A ligação ao veículo (veículo + tipo de custo) é um todo.
   entries: [
     ['type', 'category_id', 'account_id', 'destination_account_id'],

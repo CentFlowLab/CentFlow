@@ -1,10 +1,10 @@
 import { router, type Href } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
 import { calendarDateToLocalDate, type DocumentRecord } from '@/core/finance';
-import { useDataQuery, type Repositories } from '@/data';
+import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
   Button,
@@ -19,6 +19,7 @@ import { spacing, useTheme } from '@/ui/theme';
 
 import { DeadlineBadge } from '../finance/DeadlineBadge';
 import { useToday } from '../finance/useToday';
+import { processUploads } from './attachments';
 
 const ICONS: Record<DocumentRecord['category'], IconName> = {
   identity: 'id-card-outline',
@@ -32,6 +33,11 @@ const ICONS: Record<DocumentRecord['category'], IconName> = {
 };
 
 export function DocumentsScreen() {
+  const repositories = useRepositories();
+  // Ficheiros anexados sem rede: tenta enviá-los ao abrir a lista.
+  useEffect(() => {
+    void processUploads(repositories);
+  }, [repositories]);
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { formatDate } = useLocaleFormat();
@@ -91,7 +97,12 @@ export function DocumentsScreen() {
                 : t('documents.expiresOn', {
                     date: formatDate(calendarDateToLocalDate(record.expiresOn), 'medium'),
                   }),
-            ].join(' · ')}
+              record.attachments.length > 0
+                ? t('documents.attachmentCount', { count: record.attachments.length })
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
             icon={ICONS[record.category]}
             onPress={() => router.push(`/documents/${record.id}` as Href)}
             trailing={<DeadlineBadge date={record.expiresOn} today={today} />}

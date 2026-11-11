@@ -253,6 +253,13 @@ const es: Translation = {
     noAccounts: 'Crea primero una cuenta para recibir los movimientos.',
   },
   entryForm: {
+    cardsInWealth_one:
+      'Tu tarjeta de crédito está en Patrimonio y aún no admite compras. Pásala a Cuentas para elegirla aquí.',
+    cardsInWealth_other:
+      'Tienes {{count}} tarjetas de crédito en Patrimonio que aún no admiten compras. Pásalas a Cuentas para elegirlas aquí.',
+    moveCards: 'Pasar tarjetas a Cuentas',
+    cardPayment:
+      'Pagar la tarjeta: esta transferencia reduce lo que debes y no cuenta como gasto (las compras ya contaron).',
     ai: {
       label: 'Describe el movimiento (opcional)',
       placeholder: 'Ej.: ayer Mercadona 23,50',
@@ -871,6 +878,8 @@ const es: Translation = {
     },
   },
   documents: {
+    attachmentCount_one: '1 adjunto',
+    attachmentCount_other: '{{count}} adjuntos',
     subtitle: 'Lista de tus documentos y sus fechas de validez. No guarda archivos.',
     add: 'Nuevo documento',
     emptyTitle: 'Aún no hay documentos',
@@ -902,6 +911,28 @@ const es: Translation = {
       expires: 'Validez',
       notes: 'Notas (opcional)',
       save: 'Guardar documento',
+      attachments: 'Adjuntos',
+      attachmentsHint: 'Fotos o PDF de hasta 10 MB, hasta 10 por documento.',
+      camera: 'Foto',
+      library: 'Galería',
+      files: 'Archivo',
+      remove: 'Quitar adjunto',
+      removeTitle: '¿Quitar este adjunto?',
+      removeMessage: 'El archivo se elimina de este documento en todos los dispositivos.',
+      open: 'Abrir {{name}}',
+      pending: 'Pendiente de subir',
+      close: 'Cerrar',
+      errorType: 'Solo fotos (JPEG, PNG, WebP) y PDF.',
+      errorSize: 'El archivo pesa más de 10 MB.',
+      errorLimit: 'Ya tiene 10 adjuntos. Quita uno para añadir otro.',
+      errorOffline: 'Sin conexión: inténtalo de nuevo cuando haya red.',
+      errorFailed: 'No se ha podido adjuntar el archivo.',
+      errorDenied: 'Sin acceso a la cámara. Puedes permitirlo en los ajustes del móvil.',
+      errorOpen: 'No se ha podido abrir el adjunto. Comprueba la conexión.',
+      vehicle: 'Vehículo (opcional)',
+      noVehicle: 'Ninguno',
+      acquiredOn: 'Fecha de compra',
+      amount: 'Precio de compra (opcional)',
     },
   },
   optionalDate: {

@@ -155,6 +155,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'vehicle costs on entries, vehicle details and documents linked to vehicles',
     sql: migrationV12(),
   },
+  {
+    version: 13,
+    description: 'document attachments, purchase date and amount; local upload queue',
+    sql: migrationV13(),
+  },
 ];
 
 /**
@@ -1553,6 +1558,74 @@ function migrationV12(): string {
     ALTER TABLE documents ADD COLUMN vehicle_id TEXT REFERENCES vehicles (id) ON DELETE RESTRICT;
     CREATE INDEX documents_vehicle_idx ON documents (vehicle_id) WHERE vehicle_id IS NOT NULL;
     ${triggers}
+  `;
+}
+
+/**
+ * v13 — anexos dos documentos (ADR-056): metadados em `documents.attachments` (JSON), data e valor
+ * de compra; fila local `attachment_uploads` (só neste aparelho, não sincroniza) com os ficheiros
+ * por enviar para o Storage.
+ */
+function migrationV13(): string {
+  const uuid = `lower(
+    hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'
+    || substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-'
+    || hex(randomblob(6)))`;
+  const tracking = `(SELECT tracking = 1 AND applying_remote = 0 FROM sync_state WHERE id = 1)`;
+  const fields = [
+    'title',
+    'category',
+    'expires_on',
+    'notes',
+    'vehicle_id',
+    'attachments',
+    'acquired_on',
+    'amount',
+    'currency',
+    'created_at',
+    'deleted_at',
+  ];
+  const json = (row: 'NEW' | 'OLD') =>
+    `json_object(${fields.map((column) => `'${column}', ${row}.${column}`).join(', ')})`;
+  const base = (row: 'NEW' | 'OLD') => `COALESCE(
+    (SELECT base_version + 1 FROM sync_outbox
+      WHERE entity = 'documents' AND record_id = NEW.id ORDER BY seq DESC LIMIT 1),
+    ${row}.version)`;
+  return `
+    ALTER TABLE documents ADD COLUMN attachments TEXT CHECK (attachments IS NULL OR
+      (json_valid(attachments) AND json_type(attachments) = 'array'
+        AND json_array_length(attachments) <= 10));
+    ALTER TABLE documents ADD COLUMN acquired_on TEXT CHECK (acquired_on IS NULL OR
+      acquired_on GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]');
+    ALTER TABLE documents ADD COLUMN amount INTEGER CHECK (amount IS NULL OR
+      (typeof(amount) = 'integer' AND amount > 0));
+    ALTER TABLE documents ADD COLUMN currency TEXT CHECK (currency IS NULL OR length(currency) = 3);
+
+    CREATE TABLE attachment_uploads (
+      attachment_id TEXT PRIMARY KEY NOT NULL,
+      document_id TEXT NOT NULL,
+      local_uri TEXT NOT NULL,
+      mime TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0
+    );
+
+    DROP TRIGGER IF EXISTS sync_documents_insert;
+    DROP TRIGGER IF EXISTS sync_documents_update;
+    CREATE TRIGGER sync_documents_insert AFTER INSERT ON documents
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'documents', NEW.id,
+        ${base('NEW')}, NULL, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
+    CREATE TRIGGER sync_documents_update AFTER UPDATE ON documents
+    WHEN ${tracking}
+    BEGIN
+      INSERT INTO sync_outbox (op_id, tx_id, entity, record_id, base_version, base, data, created_at)
+      VALUES (${uuid}, (SELECT current_tx FROM sync_state WHERE id = 1), 'documents', NEW.id,
+        ${base('OLD')}, ${json('OLD')}, ${json('NEW')}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+    END;
   `;
 }
 

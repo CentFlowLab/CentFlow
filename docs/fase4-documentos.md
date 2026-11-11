@@ -1,6 +1,6 @@
 # Fase 4 — Documentos com anexos: arquitetura (proposta)
 
-Estado: **proposta para aprovação, nada implementado nem aplicado** (2026-11-11). Hoje um documento
+Estado: **aprovada e implementada (ADR-056, 2026-11-11).** Hoje um documento
 só tem categoria, título, validade e notas; não guarda ficheiros.
 
 ## 1. Objetivo

@@ -252,6 +252,13 @@ const en: Translation = {
     noAccounts: 'Create an account first to receive the movements.',
   },
   entryForm: {
+    cardsInWealth_one:
+      "Your credit card is in Net worth and can't take purchases yet. Move it to Accounts to pick it here.",
+    cardsInWealth_other:
+      "You have {{count}} credit cards in Net worth that can't take purchases yet. Move them to Accounts to pick them here.",
+    moveCards: 'Move cards to Accounts',
+    cardPayment:
+      "Paying the card: this transfer reduces what you owe and doesn't count as an expense (the purchases already did).",
     ai: {
       label: 'Describe the entry (optional)',
       placeholder: 'E.g. yesterday Tesco 23.50',
@@ -868,6 +875,8 @@ const en: Translation = {
     },
   },
   documents: {
+    attachmentCount_one: '1 attachment',
+    attachmentCount_other: '{{count}} attachments',
     subtitle: 'A list of your documents and their expiry dates. It does not store files.',
     add: 'New document',
     emptyTitle: 'No documents yet',
@@ -898,6 +907,28 @@ const en: Translation = {
       expires: 'Expiry date',
       notes: 'Notes (optional)',
       save: 'Save document',
+      attachments: 'Attachments',
+      attachmentsHint: 'Photos or PDFs up to 10 MB, up to 10 per document.',
+      camera: 'Photo',
+      library: 'Gallery',
+      files: 'File',
+      remove: 'Remove attachment',
+      removeTitle: 'Remove this attachment?',
+      removeMessage: 'The file is deleted from this document on all devices.',
+      open: 'Open {{name}}',
+      pending: 'Not uploaded yet',
+      close: 'Close',
+      errorType: 'Only photos (JPEG, PNG, WebP) and PDFs.',
+      errorSize: 'The file is larger than 10 MB.',
+      errorLimit: 'It already has 10 attachments. Remove one to add another.',
+      errorOffline: 'No connection: try again when you are online.',
+      errorFailed: 'The file could not be attached.',
+      errorDenied: 'No access to the camera. You can allow it in your phone settings.',
+      errorOpen: 'The attachment could not be opened. Check your connection.',
+      vehicle: 'Vehicle (optional)',
+      noVehicle: 'None',
+      acquiredOn: 'Purchase date',
+      amount: 'Purchase price (optional)',
     },
   },
   optionalDate: {

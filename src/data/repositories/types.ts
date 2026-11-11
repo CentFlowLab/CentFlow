@@ -234,6 +234,26 @@ export interface DocumentRepository {
   delete(id: Id): Promise<void>;
 }
 
+/** Ficheiro de um anexo por enviar para o Storage (fila só deste aparelho, ADR-056). */
+export type AttachmentUpload = {
+  attachmentId: Id;
+  documentId: Id;
+  /** Cópia do ficheiro na pasta da app. */
+  localUri: string;
+  mime: string;
+  createdAt: string;
+  attempts: number;
+};
+
+export interface AttachmentUploadRepository {
+  enqueue(
+    upload: Pick<AttachmentUpload, 'attachmentId' | 'documentId' | 'localUri' | 'mime'>,
+  ): Promise<void>;
+  pending(): Promise<AttachmentUpload[]>;
+  markSent(attachmentId: Id): Promise<void>;
+  markFailed(attachmentId: Id): Promise<void>;
+}
+
 export interface BudgetRepository {
   list(): Promise<Budget[]>;
   get(id: Id): Promise<Budget | null>;
@@ -265,6 +285,7 @@ export interface Repositories {
   wealth: WealthRepository;
   vehicles: VehicleRepository;
   documents: DocumentRepository;
+  attachmentUploads: AttachmentUploadRepository;
   /** Notifica após cada escrita confirmada. Devolve a função para cancelar. */
   subscribe(listener: (entities: readonly DataEntity[]) => void): () => void;
 }

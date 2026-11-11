@@ -79,6 +79,7 @@ describe('database initialization', () => {
     );
     expect(tables.map((table) => table.name)).toEqual([
       'accounts',
+      'attachment_uploads',
       'budgets',
       'categories',
       'documents',
@@ -191,6 +192,46 @@ describe('database initialization', () => {
           WHERE type = 'trigger' AND name = 'sync_budgets_insert'`,
       ),
     ).toEqual({ n: 1 });
+    await db.close();
+  });
+});
+
+describe('schema v13 (document attachments)', () => {
+  it('keeps v12 documents and syncs attachments without the local upload queue', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 12),
+    );
+    await db.run(
+      `INSERT INTO documents (id, title, category, created_at, updated_at)
+       VALUES ('d1', 'Garantia', 'home', ?, ?)`,
+      [NOW, NOW],
+    );
+    await migrate(db, MIGRATIONS);
+    expect(await db.first('SELECT title, attachments FROM documents')).toEqual({
+      title: 'Garantia',
+      attachments: null,
+    });
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(
+      `UPDATE documents SET attachments = '[{"id":"a1","name":"f.pdf","mime":"application/pdf","size":10}]',
+         amount = 100, currency = 'EUR' WHERE id = 'd1'`,
+    );
+    await db.run(
+      `INSERT INTO attachment_uploads (attachment_id, document_id, local_uri, mime, created_at)
+       VALUES ('a1', 'd1', 'file:///a1.pdf', 'application/pdf', ?)`,
+      [NOW],
+    );
+    const ops = await db.all<{ entity: string; data: string }>(
+      'SELECT entity, data FROM sync_outbox ORDER BY seq',
+    );
+    expect(ops.map((op) => op.entity)).toEqual(['documents']);
+    expect(JSON.parse(ops[0]!.data)).toMatchObject({ amount: 100, currency: 'EUR' });
+    await expect(
+      db.run(`UPDATE documents SET attachments = '{"not":"a list"}' WHERE id = 'd1'`),
+    ).rejects.toThrow();
     await db.close();
   });
 });

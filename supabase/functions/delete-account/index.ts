@@ -61,6 +61,11 @@ Deno.serve(async (req) => {
   const admin = createClient(url, secret, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  // Ficheiros dos documentos primeiro (ADR-056): sem eles, ficariam órfãos no Storage.
+  if (!(await removeUserFiles(admin, user.id))) {
+    console.error('[delete-account] files_failed');
+    return json({ error: 'delete_failed' }, 500);
+  }
   // Só o id do JWT. Um user_id no corpo é ignorado.
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
@@ -69,3 +74,27 @@ Deno.serve(async (req) => {
   }
   return json({ ok: true });
 });
+
+/**
+ * Apaga `documents/<userId>/<documento>/<ficheiro>`. Sem o balde (ambiente sem a migração), não há
+ * nada a apagar. Devolve `false` se não conseguir listar ou apagar.
+ */
+async function removeUserFiles(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<boolean> {
+  const bucket = admin.storage.from('documents');
+  const folders = await bucket.list(userId, { limit: 1000 });
+  if (folders.error) return /not found/i.test(folders.error.message);
+  const paths: string[] = [];
+  for (const folder of folders.data ?? []) {
+    const files = await bucket.list(`${userId}/${folder.name}`, { limit: 1000 });
+    if (files.error) return false;
+    for (const file of files.data ?? []) paths.push(`${userId}/${folder.name}/${file.name}`);
+  }
+  for (let index = 0; index < paths.length; index += 100) {
+    const { error } = await bucket.remove(paths.slice(index, index + 100));
+    if (error) return false;
+  }
+  return true;
+}

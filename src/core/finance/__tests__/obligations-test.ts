@@ -56,6 +56,10 @@ describe('upcomingObligations', () => {
             expiresOn: '2026-10-01',
             notes: null,
             vehicleId: null,
+            attachments: [],
+            acquiredOn: null,
+            amount: null,
+            currency: null,
           },
         ],
         subscriptions: [

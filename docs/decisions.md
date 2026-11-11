@@ -787,6 +787,27 @@ entrada com Google.
   nova autenticação OAuth sairia da página a meio da eliminação).
 - Política de privacidade atualizada antes do uso. Na App Store, a 4.8 exige Apple junto com Google.
 
+## ADR-056 — Documentos com anexos (Fase 4)
+
+**Contexto:** os documentos só tinham categoria, título, validade e notas. Desenho em
+`docs/fase4-documentos.md`, aprovado a 2026-11-11 (Storage na UE, fotografias e PDF até 10 MB e
+10 por documento, câmara e galeria, migração autorizada no staging e na produção).
+**Decisão:**
+
+- Ficheiros no balde privado `documents` do Supabase Storage (`<user>/<documento>/<anexo>.<ext>`),
+  com políticas por utilizador; metadados em `documents.attachments` (JSON), sincronizados pela fila
+  atual; `acquired_on`, `amount` e `currency` para compras e garantias.
+- Telemóvel: o ficheiro é copiado para a pasta da app e enviado por uma fila local
+  (`attachment_uploads`, só no aparelho), também ao abrir a lista; abrir usa a cópia local ou
+  descarrega e guarda. Web: anexar e abrir precisam de rede.
+- Retirar um anexo, eliminar o documento ou eliminar a conta apagam os ficheiros (a função
+  `delete-account` apaga a pasta da pessoa antes de eliminar o utilizador).
+- `expo-image-picker` (nova dependência: câmara e galeria, módulo padrão do Expo). No Android,
+  `READ/WRITE_EXTERNAL_STORAGE` e `RECORD_AUDIO` ficam bloqueadas (o seletor do sistema não precisa);
+  no iPhone, descrições de uso da câmara e das fotografias e o tipo "Fotografias" no manifesto.
+- Política de privacidade atualizada antes de ativar. Migração local v13; servidor
+  `20261113000100_document_attachments.sql`, com guardas para apps antigas (testado em PGlite).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

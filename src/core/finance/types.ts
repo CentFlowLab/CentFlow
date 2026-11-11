@@ -310,7 +310,39 @@ export type DocumentRecord = SyncMetadata & {
   expiresOn: CalendarDate | null;
   notes: string | null;
   vehicleId: Id | null;
+  /** Fotografias e PDFs (metadados; o ficheiro fica no Storage, ADR-056). */
+  attachments: DocumentAttachment[];
+  /** Data de compra (ex.: para a garantia). */
+  acquiredOn: CalendarDate | null;
+  /** Valor de compra, em unidades mínimas. */
+  amount: number | null;
+  currency: CurrencyCode | null;
 };
 
+/** Anexo de um documento: o ficheiro vive em `documents/<user>/<documento>/<id>.<ext>`. */
+export type DocumentAttachment = {
+  id: Id;
+  name: string;
+  mime: AttachmentMime;
+  /** Bytes. */
+  size: number;
+  createdAt: string;
+};
+
+export const ATTACHMENT_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+] as const;
+export type AttachmentMime = (typeof ATTACHMENT_MIMES)[number];
+
+export const ATTACHMENT_LIMITS = {
+  /** 10 MB por ficheiro. */
+  maxBytes: 10 * 1024 * 1024,
+  perDocument: 10,
+  nameMaxLength: 120,
+} as const;
+
 export type DocumentInput = Pick<DocumentRecord, 'title' | 'category' | 'expiresOn' | 'notes'> &
-  Partial<Pick<DocumentRecord, 'vehicleId'>>;
+  Partial<Pick<DocumentRecord, 'vehicleId' | 'attachments' | 'acquiredOn' | 'amount' | 'currency'>>;

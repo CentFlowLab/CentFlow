@@ -10,6 +10,7 @@ import { createSqliteSubscriptionRepository } from './subscription-repository';
 import { createSqliteWealthRepository } from './wealth-repository';
 import { createSqliteVehicleRepository } from './vehicle-repository';
 import { createSqliteDocumentRepository } from './document-repository';
+import { createSqliteAttachmentUploadRepository } from './attachment-upload-repository';
 
 export { createChangeHub, type ChangeHub } from './context';
 
@@ -39,6 +40,7 @@ export function createSqliteRepositories(
     wealth: createSqliteWealthRepository(context),
     vehicles: createSqliteVehicleRepository(context),
     documents: createSqliteDocumentRepository(context),
+    attachmentUploads: createSqliteAttachmentUploadRepository(context),
     categories: createSqliteCategoryRepository(context),
     entries: createSqliteEntryRepository(context),
     subscribe: changes.subscribe,
