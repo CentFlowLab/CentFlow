@@ -1,7 +1,7 @@
 # Lançamento das Fases 3 a 5 em produção
 
-> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 17
-> migrações (`20261108000100` a `20261113000100`); 14 tabelas com RLS, sem leitura nem escrita
+> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 20
+> migrações (`20261108000100` a `20261116000100`); 14 tabelas com RLS, sem leitura nem escrita
 > para `anon` e sem escrita direta para `authenticated`; esquema `private` não exposto; funções
 > com `search_path` vazio; Edge Functions `delete-account` e `suggest-entry` ativas nos dois
 > (validam a sessão com `auth.getUser()`); sem segredos próprios (falta `ANTHROPIC_API_KEY`).
@@ -256,3 +256,24 @@ Autorizado pelo responsável (staging e produção). Desenho em
    histórico local e remoto iguais até `20261113000100`.
 4. Compatibilidade testada em PGlite: uma app 0.1.14 que edita um documento não apaga os anexos
    nem o valor de compra.
+
+## Execução de 2026-11-11 (noite) — compra de veículo, cartões e empréstimos, objetivos
+
+Autorizado pelo responsável ("Produção", em resposta ao pedido para aplicar no staging).
+Migrações `20261114000100` (compra de veículo só como despesa), `20261115000100` (ADR-057) e
+`20261116000100` (ADR-058). Guard antes de cada comando na produção.
+
+1. Staging: dry-run só com as três, por ordem; aplicadas; histórico local e remoto iguais até
+   `20261116000100`. Verificação só de leitura: 26 colunas novas; restrições
+   `accounts_card_fields`, `wealth_items_opening`, `entries_loan_rules` e
+   `entries_vehicle_purchase_expense`; `search_path` vazio em `sync_apply_op`; 14 tabelas com RLS.
+2. Produção: cópia com `pg_dump` 17 (credenciais do `db dump --dry-run`) em
+   `~/Documents/Miven-backups/miven-prod-20261111-201137-{public-auth.dump,schema.sql}`. Contagem
+   antes em `miven-prod-20261111-contagem-antes-objetivos.txt`: 1 utilizador, 3 contas (2 cartões),
+   2 movimentos (nenhuma compra de veículo como rendimento), 3 itens de património, 0 objetivos.
+3. Dry-run só com as três, alvo produção; aplicadas sem erros; histórico local e remoto iguais até
+   `20261116000100`.
+4. Verificação só de leitura igual à do staging; dados intactos (1 utilizador, 2 movimentos).
+5. Compatibilidade testada em PGlite: uma app 0.1.15 que edita contas, empréstimos, movimentos,
+   objetivos ou contribuições não apaga os campos novos.
+6. App com estas alterações **não publicada**; os testes em aparelhos ainda não foram feitos.

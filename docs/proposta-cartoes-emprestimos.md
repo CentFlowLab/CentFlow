@@ -1,7 +1,7 @@
 # Cartões de crédito, empréstimos e dívidas — auditoria e proposta
 
 Estado: **aprovada e implementada localmente (ADR-057, 2026-11-11). Migração do servidor
-`20261115000100_cards_and_loans.sql` escrita e testada em PGlite, por aplicar.**
+`20261115000100_cards_and_loans.sql` aplicada no staging e na produção a 2026-11-11.**
 
 ## A. Auditoria do modelo atual
 

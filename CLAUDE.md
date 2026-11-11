@@ -7,8 +7,9 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 ## Estado
 
 Fases 0 a 4 e a parte da Fase 5 sem fornecedor externo estão no cliente. **Produção e staging
-têm o mesmo histórico, `20261108000100` a `20261113000100`** (as duas últimas, veículos ADR-054
-e anexos dos documentos ADR-056, na produção desde 2026-11-11; ver
+têm o mesmo histórico, `20261108000100` a `20261116000100`** (as últimas: veículos ADR-054, anexos ADR-056,
+compra de veículo, cartões e empréstimos ADR-057 e objetivos ADR-058, todas na produção desde
+2026-11-11; ver
 [docs/release-producao.md](docs/release-producao.md)). Os anexos ficam no balde privado `documents`
 do Storage; a função `delete-account` apaga-os antes de eliminar o utilizador.
 App publicada: **0.1.15** (2026-11-11; migração local v13). Estado verificado e pendentes em

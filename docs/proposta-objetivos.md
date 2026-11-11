@@ -1,7 +1,7 @@
 # Objetivos — auditoria e proposta de redesign
 
 Estado: **implementada localmente (ADR-058, 2026-11-11).** Migração do servidor
-`20261116000100_goals_redesign.sql` escrita e testada em PGlite, por aplicar. A imagem de
+`20261116000100_goals_redesign.sql` aplicada no staging e na produção a 2026-11-11. A imagem de
 referência citada no pedido não chegou; o desenho segue a descrição do pedido.
 
 ## 1. Auditoria

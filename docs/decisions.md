@@ -824,7 +824,7 @@ entrada com Google.
 - Desembolso (dinheiro recebido do empréstimo): entra na conta, soma à dívida e fica fora dos
   relatórios de rendimentos. Eliminar um empréstimo desliga os movimentos sem os apagar.
 - Fusão: decomposição acoplada ao valor; ligação ao empréstimo acoplada. Migração local v14;
-  servidor `20261115000100_cards_and_loans.sql` (por aplicar), com guardas para apps antigas.
+  servidor `20261115000100_cards_and_loans.sql` (aplicada a 2026-11-11), com guardas para apps antigas.
 
 ## ADR-058 — Objetivos com aparência, conta e contribuições ligadas a transferências
 
@@ -841,7 +841,7 @@ ligação opcional a transferências reais (2026-11-11).
   guardados: mudar a meta ou apagar uma contribuição recalcula tudo. Por isso a coluna
   `achieved_on` da proposta não foi criada.
 - As contribuições passam a poder ser editadas (valor, data e ligação), além de eliminadas.
-- Migração local v15; servidor `20261116000100_goals_redesign.sql` (por aplicar), com guardas
+- Migração local v15; servidor `20261116000100_goals_redesign.sql` (aplicada a 2026-11-11), com guardas
   para apps antigas.
 
 ## Decisões pendentes
