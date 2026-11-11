@@ -101,7 +101,10 @@ describe('local finance flow (real SQLite)', () => {
       const row = await screen.findByRole('button', { name: /^Almoço/ });
       let node = row.parent;
       while (node && !node.props.accessibilityActions) node = node.parent;
-      await fireEvent(node!, 'accessibilityAction', { nativeEvent: { actionName: 'action-0' } });
+      // Ações do gesto: "Editar" e "Eliminar"; escolhe-se pelo rótulo, não pela posição.
+      const actions = node!.props.accessibilityActions as { name: string; label: string }[];
+      const remove = actions.find((action) => action.label === 'Eliminar')!;
+      await fireEvent(node!, 'accessibilityAction', { nativeEvent: { actionName: remove.name } });
     };
     await swipe();
     expect(await screen.findByText('Movimento eliminado')).toBeOnTheScreen();
