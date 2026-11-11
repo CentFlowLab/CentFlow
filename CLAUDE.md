@@ -9,7 +9,7 @@ Documento de referência para quem desenvolve no projeto (pessoas e agentes de I
 Fases 0 a 4 e a parte da Fase 5 sem fornecedor externo estão no cliente. **Produção e staging
 têm o mesmo histórico, `20261108000100` a `20261111000400`** (as três últimas, ADR-045, ADR-046 e
 ADR-048, na produção desde 2026-11-10; ver [docs/release-producao.md](docs/release-producao.md)).
-App publicada: **0.1.12** (2026-11-11; migração local v11). Estado verificado e pendentes em
+App publicada: **0.1.13** (2026-11-11; migração local v11). Estado verificado e pendentes em
 [docs/audit-2026-11.md](docs/audit-2026-11.md) (secção "Estado atual"); testes em aparelhos reais
 ainda por fazer.
 Funções `delete-account` e
