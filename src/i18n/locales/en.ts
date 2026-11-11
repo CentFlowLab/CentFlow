@@ -372,7 +372,21 @@ const en: Translation = {
       'The {{count}} transactions of this account (including transfers) will be deleted and the balances of other accounts involved will be recalculated. This cannot be undone.',
     notFoundTitle: 'Account not found',
   },
+  categoryPicker: {
+    placeholder: 'Choose a category',
+    hint: 'Opens the category list with search',
+    search: 'Search',
+    searchPlaceholder: 'Category name',
+    noResults: 'No category with that name.',
+  },
   categories: {
+    order: 'Reorder',
+    orderDone: 'Done',
+    orderHint:
+      'Use the arrows to change the position. This order is used wherever you pick a category.',
+    orderByName: 'By name',
+    moveUp: 'Move {{name}} up',
+    moveDown: 'Move {{name}} down',
     title: 'Categories',
     add: 'New category',
     expenseSection: 'Expenses',

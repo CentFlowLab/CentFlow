@@ -29,7 +29,11 @@ async function addEntry({
   expect(screen).toHavePathname('/new-transaction');
   if (type) await fireEvent.press(await screen.findByRole('radio', { name: type }));
   await fireEvent.changeText(await screen.findByLabelText('Valor'), amount);
-  if (category) await fireEvent.press(screen.getByRole('radio', { name: category }));
+  if (category) {
+    // Campo com pesquisa: abre a lista e escolhe.
+    await fireEvent.press(screen.getByRole('button', { name: /^Categoria:/ }));
+    await fireEvent.press(await screen.findByRole('radio', { name: category }));
+  }
   if (description) {
     await fireEvent.press(screen.getByRole('button', { name: 'Descrição e notas' }));
     await fireEvent.changeText(screen.getByLabelText(/^Descrição/), description);

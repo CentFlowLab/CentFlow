@@ -77,6 +77,11 @@ export interface CategoryRepository {
    * e os movimentos passam para essa categoria na mesma transação.
    */
   delete(id: Id, options?: { reassignTo?: Id }): Promise<void>;
+  /**
+   * Grava a ordem manual das categorias de um tipo. `ids` são todas as ativas desse tipo, pela
+   * ordem nova. Só a posição muda; nenhum movimento é tocado.
+   */
+  reorder(type: CategoryType, ids: readonly Id[]): Promise<void>;
   /** Cria as categorias predefinidas uma única vez (idempotente). */
   seedDefaults(categories: readonly (DefaultCategory & { name: string })[]): Promise<boolean>;
 }

@@ -196,6 +196,33 @@ describe('database initialization', () => {
   });
 });
 
+describe('schema v16 (category order)', () => {
+  it('keeps v15 categories without a position and syncs the new order', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 15),
+    );
+    await db.run(
+      `INSERT INTO categories (id, name, type, icon, color, created_at, updated_at)
+       VALUES ('c1', 'Casa', 'expense', 'home-outline', 'blue', ?, ?)`,
+      [NOW, NOW],
+    );
+    await migrate(db, MIGRATIONS);
+    expect(await db.first('SELECT name, sort_order FROM categories')).toEqual({
+      name: 'Casa',
+      sort_order: null,
+    });
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(`UPDATE categories SET sort_order = 2 WHERE id = 'c1'`);
+    const ops = await db.all<{ data: string }>('SELECT data FROM sync_outbox ORDER BY seq');
+    expect(JSON.parse(ops[0]!.data)).toMatchObject({ sort_order: 2, name: 'Casa' });
+    await expect(db.run(`UPDATE categories SET sort_order = -1 WHERE id = 'c1'`)).rejects.toThrow();
+    await db.close();
+  });
+});
+
 describe('schema v15 (goals redesign)', () => {
   it('keeps v14 goals and contributions and syncs the new fields', async () => {
     const db = createSqlDatabase(createNodeSqliteDriver());

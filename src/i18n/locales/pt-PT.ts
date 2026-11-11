@@ -370,7 +370,21 @@ const ptPT = {
       'Os {{count}} movimentos desta conta (incluindo transferências) serão eliminados e os saldos de outras contas envolvidas serão recalculados. Esta ação não pode ser anulada.',
     notFoundTitle: 'Conta não encontrada',
   },
+  categoryPicker: {
+    placeholder: 'Escolher categoria',
+    hint: 'Abre a lista de categorias com pesquisa',
+    search: 'Procurar',
+    searchPlaceholder: 'Nome da categoria',
+    noResults: 'Nenhuma categoria com esse nome.',
+  },
   categories: {
+    order: 'Ordenar',
+    orderDone: 'Concluído',
+    orderHint:
+      'Usa as setas para mudar a posição. A ordem aparece em todo o lado onde escolhes uma categoria.',
+    orderByName: 'Por nome',
+    moveUp: 'Subir {{name}}',
+    moveDown: 'Descer {{name}}',
     title: 'Categorias',
     add: 'Nova categoria',
     expenseSection: 'Despesas',

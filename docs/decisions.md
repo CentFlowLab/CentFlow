@@ -844,6 +844,22 @@ ligação opcional a transferências reais (2026-11-11).
 - Migração local v15; servidor `20261116000100_goals_redesign.sql` (aplicada a 2026-11-11), com guardas
   para apps antigas.
 
+## ADR-059 — Ordem manual das categorias e escolha de categoria com pesquisa
+
+**Contexto:** pedido do responsável (2026-11-11): ordenar as categorias à mão e não ter de
+percorrer dezenas de botões para escolher uma.
+**Decisão:**
+
+- `categories.sort_order` (inteiro ≥ 0, opcional) guarda a posição dentro do tipo. Sem posição,
+  a categoria segue a ordem de criação, depois das ordenadas; uma nova entra no fim. O ecrã de
+  Categorias tem o modo "Ordenar" (setas, acessível em todas as plataformas) e "Por nome".
+- A posição sincroniza, mas é só de apresentação: alterada em dois aparelhos fica a do servidor,
+  sem conflito, e nunca conta como edição contra uma eliminação (`SERVER_WINS` em `merge.ts`).
+- Movimentos, subscrições, orçamentos e pagamentos de dívidas escolhem a categoria num campo que
+  abre uma lista com pesquisa (sem acentos), pela ordem escolhida.
+- Migração local v16; servidor `20261117000100_category_order.sql` (por aplicar), com guarda
+  para apps antigas.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

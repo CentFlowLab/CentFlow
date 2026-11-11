@@ -1796,3 +1796,22 @@ describe('goals redesign', () => {
     });
   });
 });
+
+describe('category order', () => {
+  it('stores the position and keeps it when an older app edits the category', async () => {
+    await seedBasics(alice);
+    expect((await push(alice, [categoryOp(GROCERIES, 1, { sort_order: 4 })]))[0]).toMatchObject({
+      status: 'applied',
+    });
+    // Formato da app 0.1.16: sem a posição.
+    expect((await push(alice, [categoryOp(GROCERIES, 2, { name: 'Mercearia' })]))[0]).toMatchObject(
+      { status: 'applied' },
+    );
+    expect(
+      await alice.query(`select name, sort_order from public.categories where id = '${GROCERIES}'`),
+    ).toEqual([{ name: 'Mercearia', sort_order: 4 }]);
+    expect((await push(alice, [categoryOp(GROCERIES, 3, { sort_order: -1 })]))[0]).toMatchObject({
+      status: 'rejected',
+    });
+  });
+});

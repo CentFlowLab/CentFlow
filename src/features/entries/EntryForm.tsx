@@ -32,15 +32,15 @@ import {
   ChipGroup,
   Dialog,
   FormScreen,
-  type IconName,
   SegmentedControl,
   Text,
   TextField,
 } from '@/ui/components';
-import { categorySwatch, spacing, useTheme } from '@/ui/theme';
+import { spacing } from '@/ui/theme';
 
 import { energyUnit, vehicleIcon } from '../vehicles/presentation';
 import { AiSuggestion } from './AiSuggestion';
+import { CategoryPicker } from '../finance/CategoryPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import type { FinanceLookups } from '../finance/useFinanceLookups';
@@ -68,7 +68,6 @@ function rememberAccount(id: string): void {
 
 export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
   const { t } = useTranslation();
-  const { scheme } = useTheme();
   const { locale, formatDate, formatUnitPrice } = useLocaleFormat();
   const repositories = useRepositories();
   const amountRef = useRef<TextInputInstance>(null);
@@ -397,27 +396,17 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
       />
 
       {type !== 'transfer' ? (
-        <ChipGroup label={t('entryForm.category')} errorText={errors.categoryId}>
-          {categories.length === 0 ? (
-            <Text variant="footnote" tone="secondary">
-              {t('entryForm.noCategories')}
-            </Text>
-          ) : (
-            categories.map((category) => (
-              <Chip
-                key={category.id}
-                label={category.name}
-                icon={category.icon as IconName}
-                iconColorValue={categorySwatch(category.color, scheme).foreground}
-                selected={category.id === categoryId}
-                onPress={() => {
-                  setCategoryId(category.id);
-                  setErrors((current) => ({ ...current, categoryId: undefined }));
-                }}
-              />
-            ))
-          )}
-        </ChipGroup>
+        <CategoryPicker
+          label={t('entryForm.category')}
+          categories={categories}
+          value={categoryId}
+          emptyText={t('entryForm.noCategories')}
+          errorText={errors.categoryId}
+          onChange={(id) => {
+            setCategoryId(id);
+            setErrors((current) => ({ ...current, categoryId: undefined }));
+          }}
+        />
       ) : null}
 
       <ChipGroup

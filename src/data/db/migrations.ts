@@ -171,6 +171,11 @@ export const MIGRATIONS: readonly Migration[] = [
       'goals with icon, colour, description and account; contributions linked to entries',
     sql: migrationV15(),
   },
+  {
+    version: 16,
+    description: 'manual order of categories',
+    sql: migrationV16(),
+  },
 ];
 
 /**
@@ -1842,6 +1847,27 @@ function migrationV15(): string {
         'deleted_at',
       ],
       goal_contributions: ['goal_id', 'amount', 'date', 'entry_id', 'created_at', 'deleted_at'],
+    })}
+  `;
+}
+
+/** Ordem manual das categorias: `NULL` mantém a ordem de criação, depois das ordenadas. */
+function migrationV16(): string {
+  return `
+    ALTER TABLE categories ADD COLUMN sort_order INTEGER CHECK (sort_order IS NULL OR
+      (typeof(sort_order) = 'integer' AND sort_order >= 0));
+    ${syncTriggers({
+      categories: [
+        'name',
+        'type',
+        'icon',
+        'color',
+        'system_key',
+        'essential',
+        'sort_order',
+        'created_at',
+        'deleted_at',
+      ],
     })}
   `;
 }

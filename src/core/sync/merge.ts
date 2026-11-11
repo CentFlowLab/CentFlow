@@ -41,7 +41,16 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'color',
     'deleted_at',
   ],
-  categories: ['name', 'type', 'icon', 'color', 'system_key', 'essential', 'deleted_at'],
+  categories: [
+    'name',
+    'type',
+    'icon',
+    'color',
+    'system_key',
+    'essential',
+    'sort_order',
+    'deleted_at',
+  ],
   budgets: ['category_id', 'amount', 'currency', 'period', 'starts_on', 'deleted_at'],
   subscriptions: [
     'name',
@@ -177,6 +186,14 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
   ],
 };
 
+/**
+ * Campos só de apresentação (ex.: a posição de uma categoria na lista). Alterados dos dois lados,
+ * fica o valor do servidor em vez de um conflito, e nunca contam como edição contra uma eliminação.
+ */
+export const SERVER_WINS: Readonly<Partial<Record<SyncEntity, readonly string[]>>> = {
+  categories: ['sort_order'],
+};
+
 export type MergeResult =
   /** Os dois lados já coincidem: nada a enviar. */
   | { kind: 'same' }
@@ -224,7 +241,8 @@ export function mergeRecords(
   }
 
   const deletion = ['deleted_at'];
-  const others = fields.filter((field) => field !== 'deleted_at');
+  const soft = SERVER_WINS[entity] ?? [];
+  const others = fields.filter((field) => field !== 'deleted_at' && !soft.includes(field));
   const localDeleted = differs(base, local, deletion);
   const serverDeleted = differs(base, server, deletion);
   const localEdited = differs(base, local, others);
@@ -238,7 +256,16 @@ export function mergeRecords(
   for (const unit of units(entity)) {
     const localChanged = differs(base, local, unit);
     const serverChanged = differs(base, server, unit);
+    // Num registo eliminado no servidor, um campo de apresentação não justifica um envio.
+    if (serverDeleted && unit.every((field) => soft.includes(field))) {
+      for (const field of unit) merged[field] = value(server, field);
+      continue;
+    }
     if (localChanged && serverChanged && differs(local, server, unit)) {
+      if (unit.every((field) => soft.includes(field))) {
+        for (const field of unit) merged[field] = value(server, field);
+        continue;
+      }
       conflicts.push(...unit);
       continue;
     }

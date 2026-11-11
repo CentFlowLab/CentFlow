@@ -32,10 +32,10 @@ import {
   SegmentedControl,
   Text,
   TextField,
-  type IconName,
 } from '@/ui/components';
-import { categorySwatch, spacing, useTheme } from '@/ui/theme';
+import { spacing } from '@/ui/theme';
 
+import { CategoryPicker } from '../finance/CategoryPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
@@ -59,7 +59,6 @@ type Props = {
 export function SubscriptionForm({ subscription, onClose, onSaved }: Props) {
   const { t } = useTranslation();
   const amountRef = useRef<TextInputInstance>(null);
-  const { scheme } = useTheme();
   const repositories = useRepositories();
   const { formatDate, locale } = useLocaleFormat();
   const today = useToday();
@@ -254,25 +253,14 @@ export function SubscriptionForm({ subscription, onClose, onSaved }: Props) {
               </Text>
             ) : null}
           </View>
-          <ChipGroup
+          <CategoryPicker
             label={t('subscriptions.form.category')}
-            errorText={validationMessage(t, errors.categoryId)}>
-            <Chip
-              label={t('subscriptions.noneCategory')}
-              selected={categoryId === ''}
-              onPress={() => setCategoryId('')}
-            />
-            {query.data.categories.map((category) => (
-              <Chip
-                key={category.id}
-                label={category.name}
-                icon={category.icon as IconName}
-                iconColorValue={categorySwatch(category.color, scheme).foreground}
-                selected={category.id === categoryId}
-                onPress={() => setCategoryId(category.id)}
-              />
-            ))}
-          </ChipGroup>
+            categories={query.data.categories}
+            value={categoryId === '' ? null : categoryId}
+            noneLabel={t('subscriptions.noneCategory')}
+            errorText={validationMessage(t, errors.categoryId)}
+            onChange={(id) => setCategoryId(id ?? '')}
+          />
           <Text variant="caption" tone="tertiary">
             {t('subscriptions.doesNotChangeBalances')}
           </Text>

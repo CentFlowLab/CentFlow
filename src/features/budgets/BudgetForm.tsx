@@ -31,10 +31,10 @@ import {
   SegmentedControl,
   Text,
   TextField,
-  type IconName,
 } from '@/ui/components';
-import { categorySwatch, spacing, useTheme } from '@/ui/theme';
+import { spacing } from '@/ui/theme';
 
+import { CategoryPicker } from '../finance/CategoryPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
@@ -58,7 +58,6 @@ type Props = {
 
 export function BudgetForm({ budget, onClose, onSaved }: Props) {
   const { t } = useTranslation();
-  const { scheme } = useTheme();
   const repositories = useRepositories();
   const { formatDate, locale } = useLocaleFormat();
   const today = useToday();
@@ -158,33 +157,21 @@ export function BudgetForm({ budget, onClose, onSaved }: Props) {
         )
       ) : (
         <View style={styles.form}>
-          <ChipGroup
+          <CategoryPicker
             label={t('budgets.form.category')}
-            errorText={validationMessage(t, errors.categoryId)}>
-            {data.categories.length === 0 ? (
-              <Text variant="footnote" tone="secondary">
-                {t('budgets.form.noCategory')}
-              </Text>
-            ) : choices.length === 0 ? (
-              <Text variant="footnote" tone="secondary">
-                {t('budgets.form.allUsed')}
-              </Text>
-            ) : (
-              choices.map((category) => (
-                <Chip
-                  key={category.id}
-                  label={category.name}
-                  icon={category.icon as IconName}
-                  iconColorValue={categorySwatch(category.color, scheme).foreground}
-                  selected={category.id === selectedCategory}
-                  onPress={() => {
-                    setCategoryId(category.id);
-                    setErrors((current) => ({ ...current, categoryId: undefined }));
-                  }}
-                />
-              ))
-            )}
-          </ChipGroup>
+            categories={choices}
+            value={selectedCategory}
+            emptyText={
+              data.categories.length === 0
+                ? t('budgets.form.noCategory')
+                : t('budgets.form.allUsed')
+            }
+            errorText={validationMessage(t, errors.categoryId)}
+            onChange={(id) => {
+              setCategoryId(id ?? '');
+              setErrors((current) => ({ ...current, categoryId: undefined }));
+            }}
+          />
 
           <TextField
             label={t('budgets.form.amount')}

@@ -153,3 +153,49 @@ describe('mergeRecords', () => {
     });
   });
 });
+
+describe('presentational fields (category order)', () => {
+  const category: SyncRecord = {
+    name: 'Casa',
+    type: 'expense',
+    icon: 'home-outline',
+    color: 'blue',
+    system_key: null,
+    essential: 1,
+    sort_order: 0,
+    deleted_at: null,
+  };
+
+  it('keeps the server order instead of raising a conflict', () => {
+    expect(
+      mergeRecords(
+        'categories',
+        category,
+        { ...category, sort_order: 3 },
+        {
+          ...category,
+          sort_order: 5,
+        },
+      ),
+    ).toEqual({ kind: 'same' });
+    expect(
+      mergeRecords(
+        'categories',
+        category,
+        { ...category, sort_order: 3, name: 'Habitação' },
+        { ...category, sort_order: 5 },
+      ),
+    ).toEqual({ kind: 'merged', data: { ...category, name: 'Habitação', sort_order: 5 } });
+  });
+
+  it('lets a deletion win over a reorder on another device', () => {
+    expect(
+      mergeRecords(
+        'categories',
+        category,
+        { ...category, sort_order: 4 },
+        { ...category, deleted_at: '2026-11-11T10:00:00.000Z' },
+      ),
+    ).toEqual({ kind: 'same' });
+  });
+});

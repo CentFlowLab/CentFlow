@@ -24,7 +24,8 @@ type CategoryRow = {
 };
 
 const COLUMNS = 'c.id, c.name, c.type, c.icon, c.color, c.essential, c.created_at, c.updated_at';
-const ORDER = 'ORDER BY c.type, c.created_at, c.rowid';
+// Primeiro a ordem escolhida pela pessoa; as categorias sem posição seguem a ordem de criação.
+const ORDER = 'ORDER BY c.type, c.sort_order IS NULL, c.sort_order, c.created_at, c.rowid';
 const SEED_KEY = 'seed.defaultCategories';
 
 function toCategory(row: CategoryRow): Category {
@@ -78,8 +79,12 @@ export function createSqliteCategoryRepository(
       updatedAt: timestamp,
     };
     await tx.run(
-      `INSERT INTO categories (id, name, type, icon, color, essential, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      // Depois das categorias já ordenadas (sem ordem manual, fica sem posição, no fim).
+      `INSERT INTO categories (id, name, type, icon, color, essential, sort_order, created_at,
+         updated_at)
+       VALUES (?, ?, ?, ?, ?, ?,
+         (SELECT MAX(sort_order) + 1 FROM categories WHERE type = ? AND deleted_at IS NULL),
+         ?, ?)`,
       [
         category.id,
         category.name,
@@ -87,6 +92,7 @@ export function createSqliteCategoryRepository(
         category.icon,
         category.color,
         category.essential ? 1 : 0,
+        category.type,
         timestamp,
         timestamp,
       ],
@@ -191,6 +197,33 @@ export function createSqliteCategoryRepository(
             timestamp,
             id,
           ]);
+        }),
+      );
+    },
+
+    reorder(type, ids) {
+      return write(context, ['categories'], () =>
+        db.transaction(async (tx) => {
+          const rows = await tx.all<{ id: string; sort_order: number | null }>(
+            'SELECT id, sort_order FROM categories WHERE type = ? AND deleted_at IS NULL',
+            [type],
+          );
+          // A lista tem de ser exatamente as categorias ativas deste tipo, cada uma uma vez.
+          const known = new Map(rows.map((row) => [row.id, row.sort_order]));
+          if (ids.length !== known.size || new Set(ids).size !== ids.length) {
+            throw new ValidationError({ order: 'invalid' });
+          }
+          if (ids.some((id) => !known.has(id))) throw new ValidationError({ order: 'invalid' });
+          const timestamp = context.now();
+          // Só as que mudam de posição geram alteração (e envio para o servidor).
+          for (const [index, id] of ids.entries()) {
+            if (known.get(id) === index) continue;
+            await tx.run('UPDATE categories SET sort_order = ?, updated_at = ? WHERE id = ?', [
+              index,
+              timestamp,
+              id,
+            ]);
+          }
         }),
       );
     },

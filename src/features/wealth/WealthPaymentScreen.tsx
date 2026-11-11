@@ -22,12 +22,12 @@ import {
   Dialog,
   EmptyState,
   FormScreen,
-  type IconName,
   Text,
   TextField,
 } from '@/ui/components';
-import { categorySwatch, spacing, useTheme } from '@/ui/theme';
+import { spacing } from '@/ui/theme';
 
+import { CategoryPicker } from '../finance/CategoryPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useFinanceLookups, type FinanceLookups } from '../finance/useFinanceLookups';
@@ -67,7 +67,6 @@ export function WealthPaymentScreen() {
 
 function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLookups }) {
   const { t } = useTranslation();
-  const { scheme } = useTheme();
   const { formatDate, formatMoney, locale } = useLocaleFormat();
   const repositories = useRepositories();
   const today = useToday();
@@ -261,23 +260,16 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
           />
         ))}
       </ChipGroup>
-      <ChipGroup
+      <CategoryPicker
         label={t('wealth.payment.category')}
-        errorText={validationMessage(t, errors.categoryId)}>
-        {categories.map((category) => (
-          <Chip
-            key={category.id}
-            label={category.name}
-            icon={category.icon as IconName}
-            iconColorValue={categorySwatch(category.color, scheme).foreground}
-            selected={category.id === categoryId}
-            onPress={() => {
-              setCategoryId(category.id);
-              setErrors((current) => ({ ...current, categoryId: undefined }));
-            }}
-          />
-        ))}
-      </ChipGroup>
+        categories={categories}
+        value={categoryId}
+        errorText={validationMessage(t, errors.categoryId)}
+        onChange={(id) => {
+          setCategoryId(id);
+          setErrors((current) => ({ ...current, categoryId: undefined }));
+        }}
+      />
       <ChipGroup label={t('wealth.payment.date')} errorText={validationMessage(t, errors.date)}>
         <Chip label={t('common.today')} selected={date === today} onPress={() => setDate(today)} />
         <Chip

@@ -86,6 +86,7 @@ const COLUMNS: Record<SyncEntity, readonly string[]> = {
     'color',
     'system_key',
     'essential',
+    'sort_order',
     'created_at',
     'updated_at',
     'deleted_at',

@@ -1642,3 +1642,40 @@ describe('goals redesign', () => {
     expect((await repos.entries.get(expense.id))?.id).toBe(expense.id);
   });
 });
+
+describe('category order', () => {
+  it('saves a manual order per type, keeps it for new categories and touches no entries', async () => {
+    for (const name of ['Casa', 'Saúde']) {
+      await repos.categories.create({ name, type: 'expense', icon: 'home-outline', color: 'blue' });
+    }
+    const before = (await repos.categories.list('expense')).map((category) => category.id);
+    expect(before.length).toBeGreaterThan(2);
+    const reversed = [...before].reverse();
+    await repos.categories.reorder('expense', reversed);
+    expect((await repos.categories.list('expense')).map((category) => category.id)).toEqual(
+      reversed,
+    );
+    // Rendimentos continuam na ordem anterior.
+    const incomes = await repos.categories.list('income');
+    expect(incomes.every((category) => category.type === 'income')).toBe(true);
+    // Uma categoria nova fica no fim.
+    const added = await repos.categories.create({
+      name: 'Animais',
+      type: 'expense',
+      icon: 'paw-outline',
+      color: 'amber',
+    });
+    expect((await repos.categories.list('expense')).at(-1)?.id).toBe(added.id);
+    // A lista tem de ter todas as categorias do tipo, uma vez.
+    await expect(repos.categories.reorder('expense', reversed)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await expect(
+      repos.categories.reorder('expense', [...reversed, added.id, added.id]),
+    ).rejects.toBeInstanceOf(ValidationError);
+    const entries = await db.first<{ n: number }>('SELECT count(*) AS n FROM entries');
+    await repos.categories.reorder('expense', [added.id, ...reversed]);
+    expect((await repos.categories.list('expense'))[0]?.id).toBe(added.id);
+    expect(await db.first('SELECT count(*) AS n FROM entries')).toEqual(entries);
+  });
+});

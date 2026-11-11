@@ -374,7 +374,21 @@ const es: Translation = {
       'Los {{count}} movimientos de esta cuenta (incluidas transferencias) se eliminarán y se recalcularán los saldos de las demás cuentas implicadas. Esta acción no se puede deshacer.',
     notFoundTitle: 'Cuenta no encontrada',
   },
+  categoryPicker: {
+    placeholder: 'Elegir categoría',
+    hint: 'Abre la lista de categorías con búsqueda',
+    search: 'Buscar',
+    searchPlaceholder: 'Nombre de la categoría',
+    noResults: 'Ninguna categoría con ese nombre.',
+  },
   categories: {
+    order: 'Ordenar',
+    orderDone: 'Listo',
+    orderHint:
+      'Usa las flechas para cambiar la posición. Este orden se usa en todos los sitios donde eliges una categoría.',
+    orderByName: 'Por nombre',
+    moveUp: 'Subir {{name}}',
+    moveDown: 'Bajar {{name}}',
     title: 'Categorías',
     add: 'Nueva categoría',
     expenseSection: 'Gastos',
