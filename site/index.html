@@ -108,50 +108,27 @@
           <p class="fine">Grátis durante a fase de testes · Web, iPhone e Android</p>
         </div>
 
-        <figure class="stage" aria-label="Ilustração da aplicação">
-          <div class="device device-main" aria-hidden="true">
-            <div class="screen">
-              <div class="s-status"><span>9:41</span><i></i></div>
-              <p class="s-greeting">Boa tarde</p>
-              <div class="s-hero">
-                <span class="s-label">Saldo total</span>
-                <span class="s-amount"></span>
-                <div class="s-split">
-                  <span><small>Rendimentos</small><b></b></span>
-                  <span><small>Despesas</small><b></b></span>
-                </div>
-              </div>
-              <p class="s-section">Despesas por categoria</p>
-              <div class="s-bars">
-                <i style="--h: 72%"></i><i style="--h: 48%"></i><i style="--h: 88%"></i
-                ><i style="--h: 36%"></i><i style="--h: 60%"></i><i style="--h: 42%"></i>
-              </div>
-              <p class="s-section">Últimos movimentos</p>
-              <ul class="s-rows">
-                <li><i class="dot a"></i><span></span><b></b></li>
-                <li><i class="dot b"></i><span></span><b></b></li>
-                <li><i class="dot c"></i><span></span><b></b></li>
-              </ul>
-              <div class="s-tabs">
-                <span class="on">Início</span><span>Movimentos</span><em>+</em
-                ><span>Orçamentos</span><span>Mais</span>
-              </div>
+        <figure class="stage" aria-label="Capturas da app Miven">
+          <div class="device device-main">
+            <div class="screen screen-shot">
+              <img
+                src="/assets/screens/inicio.jpg"
+                width="390"
+                height="844"
+                alt="Início do Miven: saldo total, taxa de poupança e previsão para o fim do mês"
+                fetchpriority="high" />
             </div>
           </div>
-          <div class="device device-side" aria-hidden="true">
-            <div class="screen">
-              <div class="s-status"><span>9:41</span><i></i></div>
-              <p class="s-title">Orçamentos</p>
-              <div class="s-ring"><span>Disponível</span></div>
-              <ul class="s-budgets">
-                <li><span></span><i style="--p: 64%"></i></li>
-                <li><span></span><i style="--p: 38%"></i></li>
-                <li><span></span><i style="--p: 82%"></i></li>
-                <li><span></span><i style="--p: 21%"></i></li>
-              </ul>
+          <div class="device device-side">
+            <div class="screen screen-shot">
+              <img
+                src="/assets/screens/orcamentos.jpg"
+                width="390"
+                height="844"
+                alt="Orçamentos do Miven: total, já gasto, disponível e gastos ao longo do mês"
+                loading="lazy" />
             </div>
           </div>
-          <figcaption>Ilustração da interface, sem dados reais.</figcaption>
         </figure>
       </section>
 
@@ -216,6 +193,35 @@
               <h3>Sempre em sintonia</h3>
               <p>No iPhone funciona sem rede. Quando volta, tudo sincroniza com a tua conta.</p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3b. Veículos -->
+      <section class="feature" id="veiculos" aria-labelledby="vehicles-title">
+        <div class="wrap feature-grid">
+          <div class="feature-text reveal">
+            <p class="pillar-tag">Veículos</p>
+            <h2 id="vehicles-title" class="section-title">O carro, por inteiro.</h2>
+            <p>
+              Cada veículo tem a sua ficha: combustível, seguro, IUC, inspeção, pneus e revisões,
+              com o aviso de quantos dias faltam para cada prazo.
+            </p>
+            <p>
+              Registas a despesa uma vez, com a categoria e o cartão de sempre, e ela conta também
+              no carro. Vês quanto gastaste este mês, este ano e desde a compra, o preço médio do
+              combustível e, com os quilómetros, o custo por quilómetro.
+            </p>
+          </div>
+          <div class="device feature-device reveal">
+            <div class="screen screen-shot">
+              <img
+                src="/assets/screens/veiculo.jpg"
+                width="390"
+                height="844"
+                alt="Ficha de um carro no Miven: prazos do seguro, inspeção, IUC e revisão, e gastos"
+                loading="lazy" />
+            </div>
           </div>
         </div>
       </section>

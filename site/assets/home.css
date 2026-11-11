@@ -454,7 +454,7 @@ body.home .brand img {
   color: var(--ink-3);
 }
 
-/* Palco: duas peças da interface, desenhadas em CSS e sem números. */
+/* Palco: capturas reais da app (dados ilustrativos). */
 .stage {
   position: relative;
   max-width: 920px;
@@ -809,6 +809,68 @@ body.home .brand img {
 
   .screen {
     height: 540px;
+  }
+}
+
+/* Capturas da app dentro das molduras. */
+.screen-shot {
+  padding: 0;
+  gap: 0;
+}
+
+.screen-shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* Funcionalidade com captura ao lado (ex.: veículos). */
+.feature {
+  padding: clamp(72px, 10vw, 128px) 0;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(32px, 6vw, 80px);
+  align-items: center;
+}
+
+.feature-text {
+  display: grid;
+  gap: 18px;
+  max-width: 52ch;
+}
+
+.feature-text p:not(.pillar-tag) {
+  color: var(--ink-2);
+  font-size: clamp(17px, 1.6vw, 19px);
+  line-height: 1.55;
+}
+
+.feature-device {
+  position: relative;
+  width: 300px;
+}
+
+.feature-device .screen {
+  height: 620px;
+}
+
+@media (max-width: 760px) {
+  .feature-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .feature-device {
+    width: 268px;
+  }
+
+  .feature-device .screen {
+    height: 560px;
   }
 }
 
