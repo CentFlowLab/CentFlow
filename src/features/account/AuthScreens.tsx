@@ -469,7 +469,8 @@ function webMustWaitForIsolation(): boolean {
     web: true,
     isolated: globalThis.crossOriginIsolated === true,
     workerScript: document.querySelector('script[src*="coi-serviceworker"]') !== null,
-    serviceWorkers: typeof navigator !== 'undefined' && 'serviceWorker' in navigator,
+    // Só um service worker antigo ainda ativo recarrega a página (para se desinstalar, ADR-060).
+    serviceWorkers: typeof navigator !== 'undefined' && navigator.serviceWorker?.controller != null,
     secure: globalThis.isSecureContext !== false,
   });
 }

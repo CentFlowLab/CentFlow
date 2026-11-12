@@ -1,9 +1,9 @@
 import { randomUUID } from 'expo-crypto';
-import { deleteDatabaseAsync, openDatabaseAsync } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
 import { DatabaseUnavailableError, toDatabaseUnavailableError } from './db/errors';
 import { initializeDatabase } from './db/initialize';
+import { deletePlatformDatabase, openPlatformDatabase } from './db/platform-database';
 import { attachSpace } from './local-space';
 import { startQuickEntryBridge } from './quick-entry/quick-entry-bridge';
 import { databaseNameFor, type LocalSpace } from './spaces';
@@ -20,9 +20,9 @@ type LockManagerLike = {
 let tabLock: Promise<boolean> | null = null;
 
 /**
- * Web: o VFS OPFS do expo-sqlite só permite uma ligação por origem. Um Web Lock
- * mantido durante a vida do separador deteta outro separador aberto antes de abrir
- * a base de dados, com uma mensagem clara em vez de um erro do VFS.
+ * Web: a base de dados vive na memória da página e é gravada inteira no IndexedDB (ADR-060).
+ * Dois separadores a gravar o mesmo ficheiro apagariam as escritas um do outro, por isso um Web
+ * Lock mantido durante a vida do separador deteta outro separador aberto antes de abrir.
  */
 function acquireTabLock(): Promise<boolean> {
   const locks = (globalThis.navigator as { locks?: LockManagerLike } | undefined)?.locks;
@@ -46,9 +46,7 @@ function acquireTabLock(): Promise<boolean> {
 }
 
 async function assertWebEnvironment(): Promise<void> {
-  if (globalThis.crossOriginIsolated !== true || typeof SharedArrayBuffer === 'undefined') {
-    throw new DatabaseUnavailableError('notIsolated');
-  }
+  // Sem exigência de isolamento cross-origin: o sql.js não usa SharedArrayBuffer.
   if (!(await acquireTabLock())) throw new DatabaseUnavailableError('otherTab');
 }
 
@@ -68,7 +66,7 @@ export function openLocalSpace(space: LocalSpace): Promise<LocalStore> {
       try {
         const isWeb = Platform.OS === 'web';
         if (isWeb) await assertWebEnvironment();
-        const driver = await openDatabaseAsync(name);
+        const driver = await openPlatformDatabase(name);
         const db = await initializeDatabase(driver, { useWriteAheadLog: !isWeb });
         const store = createLocalStore(db, { newId: randomUUID });
         try {
@@ -110,5 +108,5 @@ export function closeLocalSpace(space: LocalSpace): Promise<void> {
 /** Apaga definitivamente a cópia local de um espaço (ex.: depois de eliminar a conta). */
 export async function deleteLocalSpace(space: LocalSpace): Promise<void> {
   await closeLocalSpace(space);
-  await deleteDatabaseAsync(databaseNameFor(space));
+  await deletePlatformDatabase(databaseNameFor(space));
 }

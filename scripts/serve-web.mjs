@@ -26,9 +26,6 @@ if (!existsSync(join(root, 'index.html'))) {
 }
 
 createServer((req, res) => {
-  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-
   const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
   let file = normalize(join(root, pathname));
   if (!file.startsWith(root)) {

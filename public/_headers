@@ -1,5 +1,2 @@
-# Cabeçalhos exigidos pelo expo-sqlite na web (SharedArrayBuffer / OPFS).
-# Formato suportado por Netlify e Cloudflare Pages; noutros alojamentos configurar o equivalente.
-/*
-  Cross-Origin-Embedder-Policy: credentialless
-  Cross-Origin-Opener-Policy: same-origin
+# A app web não precisa de cabeçalhos especiais: a base de dados (sql.js, ADR-060) funciona
+# sem isolamento cross-origin.

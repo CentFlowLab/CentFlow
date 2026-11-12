@@ -106,14 +106,13 @@ tipo+data, contas ativas e tipo de categoria.
 
 ### Web
 
-- `expo-sqlite` usa wa-sqlite (WebAssembly) num worker, com o VFS `AccessHandlePoolVFS` sobre o
-  Origin Private File System. Exige `SharedArrayBuffer`, logo **isolamento cross-origin**
-  (`Cross-Origin-Embedder-Policy: credentialless`, `Cross-Origin-Opener-Policy: same-origin`).
-- Em desenvolvimento, `metro.config.js` acrescenta os cabeçalhos a todas as respostas do servidor
-  (o HTML é servido por um middleware da Expo CLI anterior ao do Metro, por isso
-  `enhanceMiddleware` sozinho não chega). Em produção: `public/_headers` (Netlify/Cloudflare) ou
-  configuração equivalente do alojamento; `npm run serve:web` para testar localmente.
-- O OPFS com `AccessHandlePoolVFS` é exclusivo por origem. `openLocalSpace` pede um Web Lock
+- O SQLite da web é o **sql.js** (ADR-060): WebAssembly na própria página, sem worker nem
+  `SharedArrayBuffer`, por isso **não precisa de isolamento cross-origin** e funciona em qualquer
+  browser (Safari, Brave, Chrome no iPhone, browsers dentro de outras apps). O ficheiro inteiro é
+  gravado no IndexedDB após cada escrita confirmada e quando o separador é escondido; sem
+  IndexedDB, a sessão fica em memória e os dados vêm do servidor
+  (`src/data/db/platform-database.web.ts`, `sqljs-driver.ts`). iOS e Android usam o expo-sqlite.
+- Dois separadores a gravar o mesmo ficheiro apagariam as escritas um do outro. `openLocalSpace` pede um Web Lock
   (`navigator.locks`, `ifAvailable`) antes de abrir; um segundo separador recebe o motivo
   `otherTab` em vez de corromper ou bloquear os dados.
 
@@ -189,7 +188,8 @@ flowchart LR
 - **Android:** workflow "Android APK" (prebuild + Gradle, assinatura PKCS#12 dos segredos
   `ANDROID_*`), Releases `android-build-N` e `android-latest` (ADR-037).
 - **Web/PWA:** `web.output = "single"`, exportada com `baseUrl = /app` e publicada em
-  `https://miven.pt/app/` com o `coi-serviceworker` para COOP/COEP. `public/index.html` e
+  `https://miven.pt/app/` (sem cabeçalhos especiais; o `coi-serviceworker` só é carregado para
+  desinstalar o de versões anteriores). `public/index.html` e
   `public/manifest.json` tornam a app instalável em Windows, macOS e Linux.
 - **Site:** `site/` (apresentação, `auth/callback`, `auth/reset-password`, 404 para links
   profundos da app). DNS de `miven.pt` no dominios.pt.

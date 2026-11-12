@@ -80,8 +80,9 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
   `src/core/finance/dates.ts`); nunca usar `Date` UTC para decidir o dia ou o mês.
 - Erros: `ValidationError` (códigos traduzíveis), `NotFoundError`, `AccountInUseError`,
   `CategoryInUseError`, `DatabaseError` (com `kind`). Nunca mostrar `error.message` ao utilizador.
-- Web: precisa de isolamento cross-origin (COOP/COEP) e de exclusividade entre separadores (Web
-  Locks). Ver `src/data/open-app-database.ts`, `metro.config.js` e `public/_headers`.
+- Web: SQLite com o sql.js na página, gravado no IndexedDB após cada escrita (ADR-060); não
+  precisa de isolamento cross-origin e funciona em qualquer browser. Exclusividade entre
+  separadores por Web Locks. Ver `src/data/db/platform-database.web.ts` e `sqljs-driver.ts`.
 - Testes de dados correm em SQLite real (`node:sqlite` do Node 24, ver
   `src/test-utils/node-sqlite-driver.ts`). Nos testes de ecrãs, `jest.setup.ts` substitui
   `@/data/open-app-database` por uma base de dados nova em memória em cada montagem.

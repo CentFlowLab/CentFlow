@@ -860,6 +860,30 @@ percorrer dezenas de botões para escolher uma.
 - Migração local v16; servidor `20261117000100_category_order.sql` (aplicada a 2026-11-12), com guarda
   para apps antigas.
 
+## ADR-060 — Base de dados web com sql.js, sem isolamento cross-origin
+
+**Contexto:** a app web (miven.pt/app) dizia "Este browser não guarda os dados" no Brave, no
+Chrome do iPhone, em browsers dentro de outras apps e depois de recarregar a página. O
+expo-sqlite na web precisa de `SharedArrayBuffer`, que só existe com isolamento cross-origin
+(COOP/COEP). O GitHub Pages não envia esses cabeçalhos; o `coi-serviceworker` simulava-os, mas
+um service worker não existe ou não atua em todos estes casos.
+**Decisão:**
+
+- Na web, o SQLite corre com o **sql.js** (SQLite oficial compilado para WebAssembly, MIT; nova
+  dependência, ~0,7 MB de `.wasm`) na própria página, sem worker nem `SharedArrayBuffer`.
+  iOS e Android continuam com o expo-sqlite nativo (`platform-database.ts` / `.web.ts`).
+- O ficheiro da base de dados é gravado inteiro no IndexedDB depois de cada escrita confirmada
+  (nunca a meio de uma transação) e quando o separador é escondido ou fechado. Sem IndexedDB, a
+  sessão fica em memória e os dados vêm do servidor. Um Web Lock continua a impedir dois
+  separadores ao mesmo tempo.
+- `Database.export()` reabre a ligação: `foreign_keys` é reposto logo a seguir (testado).
+- O `coi-serviceworker` deixa de se registar; a página só o carrega para desinstalar o de quem já
+  o tinha. Os cabeçalhos COOP/COEP saem do servidor de desenvolvimento.
+- A cópia local antiga (OPFS do expo-sqlite) não é migrada: a app só se usa com conta e, no
+  primeiro arranque, descarrega tudo do servidor, como num browser novo. Escritas feitas na web
+  e ainda não enviadas antes desta versão perdem-se (na produção há um só utilizador).
+- Sem novos fornecedores nem dados pessoais: a política de privacidade não muda.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

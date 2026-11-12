@@ -1,7 +1,8 @@
 // Ajusta a exportação web (dist/) para viver em miven.pt/app no GitHub Pages (ADR-037).
 // Uso (no CI, depois de `expo export --platform web` com experiments.baseUrl = "/app"):
 //   node scripts/prepare-web-app.mjs dist /app
-// - liga o coi-serviceworker (o GitHub Pages não envia COOP/COEP; o expo-sqlite precisa deles);
+// - desinstala o coi-serviceworker de versões anteriores: a base de dados web já não precisa de
+//   isolamento cross-origin (ADR-060) e o service worker obrigava a recarregar a página;
 // - aponta o manifesto e os ícones para o prefixo;
 // - restaura o caminho guardado pelo 404.html do site (links profundos numa SPA no Pages).
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -12,7 +13,8 @@ const indexPath = join(dir, 'index.html');
 let html = readFileSync(indexPath, 'utf8');
 
 const restore = `<script>(function(){try{var p=sessionStorage.getItem('miven:spa-path');if(p){sessionStorage.removeItem('miven:spa-path');history.replaceState(null,'',p);}}catch(e){}})();</script>`;
-const coi = `<script src="${base}/coi-serviceworker.min.js"></script>`;
+// Só para remover o service worker antigo de quem já o tem; não regista nada novo.
+const coi = `<script>window.coi={shouldRegister:function(){return false},shouldDeregister:function(){return true},quiet:true};</script><script src="${base}/coi-serviceworker.min.js"></script>`;
 
 if (html.includes('coi-serviceworker')) throw new Error('index.html já foi preparado.');
 html = html
