@@ -286,6 +286,14 @@ export async function insertEntry(
   return entry;
 }
 
+/**
+ * Valor que conta nos relatórios de despesas e rendimentos. Numa prestação de empréstimo só o
+ * custo financeiro (juros + encargos) é despesa: o capital amortizado reduz a dívida e não é
+ * consumo. O saldo da conta continua a descontar o pagamento inteiro (saída de dinheiro).
+ */
+const REPORTED_AMOUNT = `CASE WHEN e.loan_role = 'payment'
+  THEN e.amount - COALESCE(e.principal_amount, 0) ELSE e.amount END`;
+
 export function createSqliteEntryRepository(context: SqliteRepositoryContext): EntryRepository {
   const { db } = context;
 
@@ -493,13 +501,14 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
         amount: number;
       }>(
         `SELECT substr(e.date, 1, 7) AS month, a.currency AS currency, e.type AS type,
-           e.category_id AS category_id, SUM(e.amount) AS amount
+           e.category_id AS category_id, SUM(${REPORTED_AMOUNT}) AS amount
          FROM entries e
          JOIN accounts a ON a.id = e.account_id
          WHERE e.deleted_at IS NULL AND e.type IN ('income', 'expense')
            AND (e.loan_role IS NULL OR e.loan_role <> 'disbursement')
            AND e.date >= ? AND e.date <= ?
          GROUP BY month, a.currency, e.type, e.category_id
+         HAVING SUM(${REPORTED_AMOUNT}) > 0
          ORDER BY month`,
         [from, to],
       );
@@ -521,13 +530,14 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
         amount: number;
       }>(
         `SELECT e.date AS date, a.currency AS currency, e.type AS type,
-           e.category_id AS category_id, SUM(e.amount) AS amount
+           e.category_id AS category_id, SUM(${REPORTED_AMOUNT}) AS amount
          FROM entries e
          JOIN accounts a ON a.id = e.account_id
          WHERE e.deleted_at IS NULL AND e.type IN ('income', 'expense')
            AND (e.loan_role IS NULL OR e.loan_role <> 'disbursement')
            AND e.date >= ? AND e.date <= ?
          GROUP BY e.date, a.currency, e.type, e.category_id
+         HAVING SUM(${REPORTED_AMOUNT}) > 0
          ORDER BY e.date`,
         [from, to],
       );
@@ -548,11 +558,12 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
         amount: number;
       }>(
         `SELECT e.category_id AS category_id, a.currency AS currency, e.date AS date,
-           e.amount AS amount
+           ${REPORTED_AMOUNT} AS amount
          FROM entries e
          JOIN accounts a ON a.id = e.account_id
          WHERE e.deleted_at IS NULL AND a.deleted_at IS NULL AND e.type = 'expense'
-           AND e.category_id IS NOT NULL AND e.date >= ? AND e.date <= ?`,
+           AND e.category_id IS NOT NULL AND e.date >= ? AND e.date <= ?
+           AND ${REPORTED_AMOUNT} > 0`,
         [from, to],
       );
       return rows.map((row) => ({

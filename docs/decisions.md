@@ -822,7 +822,10 @@ entrada com Google.
   encargos = valor. A dívida é calculada (`loanState`) e guardada no item na mesma transação de
   cada criação, edição ou eliminação de um movimento ligado; nunca abaixo de zero.
 - Desembolso (dinheiro recebido do empréstimo): entra na conta, soma à dívida e fica fora dos
-  relatórios de rendimentos. Eliminar um empréstimo desliga os movimentos sem os apagar.
+  relatórios de rendimentos.
+- **Revisto a 2026-11-12 (validação):** nos relatórios de despesas, orçamentos e previsões, uma
+  prestação conta só pelo custo financeiro (juros + encargos); o capital amortizado reduz a dívida
+  e não é consumo. O saldo da conta continua a descontar o pagamento inteiro. Eliminar um empréstimo desliga os movimentos sem os apagar.
 - Fusão: decomposição acoplada ao valor; ligação ao empréstimo acoplada. Migração local v14;
   servidor `20261115000100_cards_and_loans.sql` (aplicada a 2026-11-11), com guardas para apps antigas.
 

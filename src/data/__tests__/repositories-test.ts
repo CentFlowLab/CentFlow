@@ -1425,9 +1425,10 @@ describe('credit cards and loans (ADR-057)', () => {
       feesAmount: 1000,
     });
     expect((await repos.wealth.get(loan.id))?.amount).toBe(1525000);
-    // Despesa contada uma vez (o total pago).
+    // Despesa do mês: só o custo financeiro (juros + encargos); o capital amortizado não é
+    // consumo (validação 2026-11-12). O banco desce o total pago.
     const aggregate = await repos.entries.aggregate({ from: '2026-11-01', to: '2026-11-30' });
-    expect(aggregate.reduce((sum, row) => sum + row.amount, 0)).toBe(30000);
+    expect(aggregate.reduce((sum, row) => sum + row.amount, 0)).toBe(5000);
 
     // Editar o valor (ecrã sem campos do empréstimo): capital e juros mantêm-se, o resto é encargo.
     const edited = await repos.entries.update(entry.id, {
