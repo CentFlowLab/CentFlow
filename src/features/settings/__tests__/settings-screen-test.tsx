@@ -13,7 +13,10 @@ afterEach(async () => {
 describe('SettingsScreen', () => {
   it('groups the options and shows the current values at a glance', async () => {
     await renderWithProviders(<SettingsScreen />);
-    expect(await screen.findByRole('header', { name: 'Personalização' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Aparência' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Idioma e região' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Dados e privacidade' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: /^Cópias de segurança/ })).toBeOnTheScreen();
     expect(screen.getByRole('header', { name: 'Ajuda e informação' })).toBeOnTheScreen();
     // Idioma atual visível sem abrir nada; a lista só aparece ao tocar.
     expect(screen.getByRole('button', { name: 'Idioma' })).toBeCollapsed();

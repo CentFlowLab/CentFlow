@@ -232,7 +232,25 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
               </Text>
             </View>
           </View>
-          <Divider inset={spacing.lg} />
+          {user.email ? (
+            <>
+              <Divider inset={spacing.lg} />
+              <ListItem
+                icon="key-outline"
+                iconColor="textSecondary"
+                iconBackground="surfaceMuted"
+                title={t('account.changePassword')}
+                subtitle={t('account.changePasswordHint')}
+                showChevron={false}
+                onPress={changePassword}
+              />
+            </>
+          ) : null}
+        </Card>
+      </Section>
+
+      <Section title={t('settings.groups.sync')}>
+        <Card padding="xs">
           <ListItem
             icon={status === 'offline' ? 'cloud-offline-outline' : 'cloud-done-outline'}
             iconColor="textSecondary"
@@ -291,20 +309,6 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
                 subtitle={t('account.importDataHint')}
                 onPress={offerImport}
                 showChevron={false}
-              />
-            </>
-          ) : null}
-          {user.email ? (
-            <>
-              <Divider inset={spacing.lg} />
-              <ListItem
-                icon="key-outline"
-                iconColor="textSecondary"
-                iconBackground="surfaceMuted"
-                title={t('account.changePassword')}
-                subtitle={t('account.changePasswordHint')}
-                showChevron={false}
-                onPress={changePassword}
               />
             </>
           ) : null}

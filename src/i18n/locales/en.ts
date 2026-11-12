@@ -178,6 +178,8 @@ const en: Translation = {
     },
   },
   settings: {
+    formats: 'Numbers, currencies and dates',
+    formatsHint: 'They follow the device region: {{example}}',
     backup: 'Backups',
     backupHint: 'Export, restore and automatic copies',
     analytics: {
@@ -188,6 +190,10 @@ const en: Translation = {
         'If you share, Miven sends PostHog (EU servers) only the names of the screens you open, to learn what to improve. Never amounts, descriptions, accounts or your email. You can turn this off at any time.',
     },
     groups: {
+      sync: 'Sync',
+      appearance: 'Appearance',
+      language: 'Language and region',
+      data: 'Data and privacy',
       account: 'Account',
       personalization: 'Personalisation',
       experience: 'Experience',

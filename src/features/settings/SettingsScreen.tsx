@@ -1,9 +1,11 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { Fragment, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountSettings } from '@/features/account/AccountSection';
+import { useLocaleFormat , LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
 import {
   CONTACT_EMAIL,
   openExternal,
@@ -16,7 +18,6 @@ import {
   type LanguagePreference,
   type ThemePreference,
 } from '@/features/preferences';
-import { LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
 import { analyticsAvailable } from '@/lib/analytics';
 import {
   Card,
@@ -46,22 +47,50 @@ const DIVIDER_INSET = spacing.lg + 36 + spacing.md;
 const NEUTRAL = { iconColor: 'textSecondary', iconBackground: 'surfaceMuted' } as const;
 
 /**
- * Definições: Conta, Personalização, Experiência, Ajuda e informação e Zona de perigo.
+ * Definições: Conta, Sincronização, Aparência, Idioma e região, Dados e privacidade,
+ * Experiência, Ajuda e Zona de perigo. Só aparecem opções que já funcionam.
  * Escolhas simples (aparência, idioma) fazem-se aqui, sem abrir outro ecrã.
  */
 export function SettingsScreen() {
   const { t } = useTranslation();
   const version = Constants.expoConfig?.version ?? '—';
+  const { formatMoney, formatDate } = useLocaleFormat();
 
   return (
     <Screen title={t('settings.title')}>
       <View style={styles.column}>
         <AccountSettings>
-          <Section title={t('settings.groups.personalization')}>
+          <Section title={t('settings.groups.appearance')}>
             <Card padding="xs">
               <AppearanceSetting />
-              <Divider inset={DIVIDER_INSET} />
+            </Card>
+          </Section>
+
+          <Section title={t('settings.groups.language')}>
+            <Card padding="xs">
               <LanguageSetting />
+              <Divider inset={DIVIDER_INSET} />
+              {/* Números, moedas e datas seguem a região do aparelho (useLocaleFormat). */}
+              <ListItem
+                {...NEUTRAL}
+                icon="globe-outline"
+                title={t('settings.formats')}
+                subtitle={t('settings.formatsHint', {
+                  example: `${formatMoney({ amountMinor: 123456, currency: 'EUR' })} · ${formatDate(new Date(), 'short')}`,
+                })}
+              />
+            </Card>
+          </Section>
+
+          <Section title={t('settings.groups.data')}>
+            <Card padding="xs">
+              <ListItem
+                {...NEUTRAL}
+                icon="archive-outline"
+                title={t('settings.backup')}
+                subtitle={t('settings.backupHint')}
+                onPress={() => router.push('/backup')}
+              />
               {analyticsAvailable() ? (
                 <>
                   <Divider inset={DIVIDER_INSET} />

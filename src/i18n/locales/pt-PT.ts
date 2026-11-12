@@ -177,6 +177,8 @@ const ptPT = {
     },
   },
   settings: {
+    formats: 'Números, moedas e datas',
+    formatsHint: 'Seguem a região do aparelho: {{example}}',
     backup: 'Cópias de segurança',
     backupHint: 'Exportar, restaurar e cópias automáticas',
     analytics: {
@@ -187,6 +189,10 @@ const ptPT = {
         'Se partilhares, o Miven envia ao PostHog (servidores na UE) só o nome dos ecrãs que abres, para perceber o que melhorar. Nunca valores, descrições, contas nem o teu email. Podes desligar a qualquer momento.',
     },
     groups: {
+      sync: 'Sincronização',
+      appearance: 'Aparência',
+      language: 'Idioma e região',
+      data: 'Dados e privacidade',
       account: 'Conta',
       personalization: 'Personalização',
       experience: 'Experiência',

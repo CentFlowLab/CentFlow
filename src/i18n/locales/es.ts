@@ -179,6 +179,8 @@ const es: Translation = {
     },
   },
   settings: {
+    formats: 'Números, monedas y fechas',
+    formatsHint: 'Siguen la región del dispositivo: {{example}}',
     backup: 'Copias de seguridad',
     backupHint: 'Exportar, restaurar y copias automáticas',
     analytics: {
@@ -189,6 +191,10 @@ const es: Translation = {
         'Si compartes, Miven envía a PostHog (servidores en la UE) solo el nombre de las pantallas que abres, para saber qué mejorar. Nunca importes, descripciones, cuentas ni tu email. Puedes desactivarlo en cualquier momento.',
     },
     groups: {
+      sync: 'Sincronización',
+      appearance: 'Apariencia',
+      language: 'Idioma y región',
+      data: 'Datos y privacidad',
       account: 'Cuenta',
       personalization: 'Personalización',
       experience: 'Experiencia',
