@@ -290,3 +290,16 @@ Autorizado pelo responsável ("Sim, aplica"). ADR-059. Guard antes de cada coman
 3. Verificação só de leitura igual à do staging; dados intactos (1 utilizador, 16 categorias,
    3 movimentos).
 4. Compatibilidade testada em PGlite: uma app 0.1.16 que edita uma categoria não apaga a posição.
+
+## Execução de 2026-11-12 — integrações e administração, **só staging**
+
+Autorizado pelo responsável ("Sim, push e staging"). ADR-064 e ADR-065.
+
+1. Staging: dry-run só com `20261118000100_integrations.sql` e `20261119000100_admin.sql`;
+   aplicadas sem erros; histórico local e remoto iguais até `20261119000100`.
+2. Verificação só de leitura: RLS ligado em `integrations`, `investment_snapshots`,
+   `private.integration_secrets`, `private.admin_roles` e `private.admin_audit`; `authenticated`
+   lê `integrations` mas não escreve; `integration_secret_*` e `private.admin_require` não são
+   executáveis por `authenticated`; `admin_role`, `admin_overview` e `admin_audit_log` são (e
+   verificam o papel por dentro); todas com `search_path` vazio.
+3. **Produção: não aplicado.** Função `t212` e segredo `INTEGRATIONS_KEY`: não publicados.
