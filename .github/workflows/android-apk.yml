@@ -5,6 +5,12 @@ name: Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente (production = app publicada; preview = "Miven Teste" contra o staging)
+        type: choice
+        options: [production, preview]
+        default: production
 
 permissions:
   contents: write
@@ -80,7 +86,7 @@ jobs:
       - name: Obter as variáveis públicas de produção
         shell: bash
         run: |
-          eas env:pull production --non-interactive --path .env.local > /tmp/eas-env-pull.txt
+          eas env:pull "${{ inputs.environment }}" --non-interactive --path .env.local > /tmp/eas-env-pull.txt
           node <<'EOF'
           const fs = require('node:fs');
           const names = fs
@@ -101,6 +107,18 @@ jobs:
           }
           console.log('Variáveis públicas de produção presentes.');
           EOF
+
+      - name: Confirmar o projeto Supabase do ambiente
+        shell: bash
+        run: |
+          # production só fala com a produção; preview só com o staging (docs/ambientes.md).
+          url=$(grep '^EXPO_PUBLIC_SUPABASE_URL=' .env.local | head -n1 | cut -d= -f2- | tr -d '"')
+          if [ "${{ inputs.environment }}" = "preview" ]; then expected=qlimqcgrgaqzwjmafora; else expected=slfgslfzolfvqavuccom; fi
+          case "$url" in
+            *"$expected"*) echo "Ambiente ${{ inputs.environment }}: projeto certo." ;;
+            *) echo "O ambiente ${{ inputs.environment }} não aponta para o projeto esperado."; exit 1 ;;
+          esac
+          if [ "${{ inputs.environment }}" = "preview" ]; then echo "APP_VARIANT=preview" >> "$GITHUB_ENV"; fi
 
       - name: Configurar o Java
         uses: actions/setup-java@v4
@@ -197,6 +215,7 @@ jobs:
           cp "$aab" "$RUNNER_TEMP/miven-${VERSION_NAME}-${VERSION_CODE}.aab"
 
       - name: Publicar
+        if: inputs.environment == 'production'
         shell: bash
         run: |
           tag="android-build-${VERSION_CODE}"
@@ -212,3 +231,18 @@ jobs:
           gh release upload android-latest "$RUNNER_TEMP/miven.apk" --clobber
           gh release edit android-latest --notes "Versão ${VERSION_NAME}, compilação ${VERSION_CODE}." --latest=false
           echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/android-latest/miven.apk"
+
+      - name: Publicar a versão de teste
+        if: inputs.environment == 'preview'
+        shell: bash
+        run: |
+          # "Miven Teste" (app.centflow.mobile.preview, staging): instala-se ao lado da app real.
+          # Nunca toca em android-latest nem nas compilações publicadas.
+          if ! gh release view android-preview >/dev/null 2>&1; then
+            gh release create android-preview --title "Android: Miven Teste (staging)" \
+              --notes "APK de teste ligado ao staging. Não substitui a app publicada." --prerelease --latest=false
+          fi
+          cp "$RUNNER_TEMP/miven.apk" "$RUNNER_TEMP/miven-teste.apk"
+          gh release upload android-preview "$RUNNER_TEMP/miven-teste.apk" --clobber
+          gh release edit android-preview --notes "Miven Teste ${VERSION_NAME} (${VERSION_CODE}), commit ${GITHUB_SHA::7}, contra o staging." --prerelease --latest=false
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/android-preview/miven-teste.apk"

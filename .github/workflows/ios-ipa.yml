@@ -9,6 +9,11 @@ on:
         description: Publicar a Release e a fonte do SideStore (desligado = só compilar e verificar)
         type: boolean
         default: true
+      environment:
+        description: Ambiente (production = app publicada; preview = "Miven Teste" contra o staging)
+        type: choice
+        options: [production, preview]
+        default: production
 
 permissions:
   contents: write
@@ -121,7 +126,7 @@ jobs:
       - name: Obter as variáveis públicas de produção
         shell: bash
         run: |
-          eas env:pull production --non-interactive --path .env.local > /tmp/eas-env-pull.txt
+          eas env:pull "${{ inputs.environment }}" --non-interactive --path .env.local > /tmp/eas-env-pull.txt
           node <<'EOF'
           const fs = require('node:fs');
           const text = fs.readFileSync('.env.local', 'utf8');
@@ -143,6 +148,17 @@ jobs:
           console.log('Variáveis públicas de produção presentes: ' + required.join(', '));
           EOF
 
+      - name: Confirmar o projeto Supabase do ambiente
+        shell: bash
+        run: |
+          # production só fala com a produção; preview só com o staging (docs/ambientes.md).
+          url=$(grep '^EXPO_PUBLIC_SUPABASE_URL=' .env.local | head -n1 | cut -d= -f2- | tr -d '"')
+          if [ "${{ inputs.environment }}" = "preview" ]; then expected=qlimqcgrgaqzwjmafora; else expected=slfgslfzolfvqavuccom; fi
+          case "$url" in
+            *"$expected"*) echo "Ambiente ${{ inputs.environment }}: projeto certo." ;;
+            *) echo "O ambiente ${{ inputs.environment }} não aponta para o projeto esperado."; exit 1 ;;
+          esac
+          if [ "${{ inputs.environment }}" = "preview" ]; then echo "APP_VARIANT=preview" >> "$GITHUB_ENV"; fi
       - name: Gerar o projeto iOS
         shell: bash
         run: npx expo prebuild --platform ios --no-install
@@ -227,7 +243,9 @@ jobs:
             exit 1
           fi
           bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")"
-          if [ "$bundle_id" != "app.centflow.mobile" ]; then
+          expected_id="app.centflow.mobile"
+          if [ "${{ inputs.environment }}" = "preview" ]; then expected_id="app.centflow.mobile.preview"; fi
+          if [ "$bundle_id" != "$expected_id" ]; then
             echo "Bundle identifier inesperado no IPA: $bundle_id"
             exit 1
           fi
@@ -281,7 +299,8 @@ jobs:
         run: rm -f .env.local
 
       - name: Publicar a Release
-        if: inputs.publish
+        # A versão de teste nunca é publicada na Release nem na fonte do SideStore: só artefacto.
+        if: inputs.publish && inputs.environment == 'production'
         shell: bash
         run: |
           tag="sideload-build-${BUILD_NUMBER}"
@@ -291,7 +310,8 @@ jobs:
             "$RUNNER_TEMP/centflow-unsigned.ipa#centflow-unsigned.ipa"
 
       - name: Atualizar a fonte do SideStore
-        if: inputs.publish
+        # A versão de teste nunca é publicada na Release nem na fonte do SideStore: só artefacto.
+        if: inputs.publish && inputs.environment == 'production'
         shell: bash
         run: |
           node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sideload-source-cli.mjs record \

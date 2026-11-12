@@ -41,7 +41,8 @@ aplicar migrations remotas sem autorização explícita para esse passo. Staging
 npm run check   # typecheck + lint + prettier --check + jest
 ```
 
-Para alterações visuais, verificar também na web (`npm run web`) em largura de telemóvel
+Para alterações visuais, verificar também na web (`npm run web`, contra o **staging**; `web:local`
+sem servidor; ver [docs/ambientes.md](docs/ambientes.md)) em largura de telemóvel
 (< 768px), tablet (768–1199px) e desktop (≥ 1200px), em modo claro e escuro.
 
 ## Arquitetura em camadas

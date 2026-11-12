@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "web",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/start-env.mjs", "staging", "--web", "--port", "8081"],
       "port": 8081
     },
     {
