@@ -35,4 +35,4 @@ const wide = new Jimp(310, 150, background);
 wide.composite(source.clone().resize(130, 130), 90, 10);
 await wide.writeAsync(join(desktop, 'build', 'appx', 'Wide310x150Logo.png'));
 
-console.log('Ícones gerados em desktop/build.');
+console.warn('Ícones gerados em desktop/build.');

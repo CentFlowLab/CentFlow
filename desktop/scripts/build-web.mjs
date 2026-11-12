@@ -36,6 +36,6 @@ const result = spawnSync('npx', ['expo', 'export', '--platform', 'web', '--outpu
   shell: true,
 });
 if (result.status !== 0) process.exit(result.status ?? 1);
-console.log(
+console.warn(
   `Web exportada para desktop/web (${production ? 'produção' : 'staging, Miven Teste'}).`,
 );

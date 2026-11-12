@@ -1,3 +1,4 @@
+/* global __dirname */
 // Miven para Windows (docs/windows.md): a app web exportada, numa janela nativa do Electron.
 // - A app é servida por um protocolo próprio e seguro (app://miven), sem servidor nem browser.
 // - A base de dados (sql.js no IndexedDB, ADR-060) fica no perfil da app e sobrevive a atualizações.
