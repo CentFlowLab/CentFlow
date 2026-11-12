@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
@@ -9,6 +9,7 @@ import {
   type Account,
   type Category,
   type EntryInput,
+  suggestionFor,
 } from '@/core/finance';
 import {
   findLikelyDuplicates,
@@ -18,7 +19,7 @@ import {
   type StatementParseError,
   type StatementRow,
 } from '@/core/import';
-import { useRepositories, type Repositories } from '@/data';
+import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
   Amount,
@@ -83,6 +84,13 @@ export function ImportStatementScreen() {
   const repositories = useRepositories();
   const { formatDate } = useLocaleFormat();
   const lookups = useFinanceLookups();
+  // Histórico de descrições: cada linha usa a categoria habitual dessa descrição, se for clara.
+  const history = useDataQuery(
+    useCallback(
+      (repos: Repositories) => repos.entries.history({ since: '1900-01-01', limit: 5000 }),
+      [],
+    ),
+  );
 
   const [accountId, setAccountId] = useState<string | null>(null);
   const [text, setText] = useState('');
@@ -160,7 +168,9 @@ export function ImportStatementScreen() {
       type: row.type,
       amount: row.amount,
       description: row.description,
-      categoryId: row.type === 'expense' ? expenseCategory : incomeCategory,
+      categoryId:
+        suggestionFor(history.data ?? [], row.description, row.type)?.categoryId ??
+        (row.type === 'expense' ? expenseCategory : incomeCategory),
       accountId: account.id,
       destinationAccountId: null,
       date: row.date,
@@ -272,6 +282,9 @@ export function ImportStatementScreen() {
           </Text>
         ) : null}
       </Card>
+      <Text variant="footnote" tone="tertiary">
+        {t('statementImport.categoryFromHistory')}
+      </Text>
       {hasExpenses ? (
         <ChipGroup label={t('statementImport.expenseCategory')}>
           {categories

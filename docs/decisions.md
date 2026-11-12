@@ -885,6 +885,25 @@ um service worker não existe ou não atua em todos estes casos.
   e ainda não enviadas antes desta versão perdem-se (na produção há um só utilizador).
 - Sem novos fornecedores nem dados pessoais: a política de privacidade não muda.
 
+## ADR-061 — Menos introdução manual: histórico, duplicar, repetidos e pagamentos
+
+**Contexto:** plano de evolução, Fase 9 (`docs/plano-evolucao-2026-11.md`).
+**Decisão (sem migração):**
+
+- Sugestões só com dados reais da pessoa (último ano, `entries.history`): atalhos "Frequentes"
+  (descrições repetidas ≥ 2 vezes) e categoria sugerida ao escrever a descrição. Uma categoria ou
+  conta só é sugerida com ≥ 2 usos e ≥ 60 % dos casos; a categoria só é preenchida sozinha quando
+  ainda está vazia, e a pessoa vê que veio do histórico.
+- "Duplicar movimento" abre o registo rápido preenchido com a data de hoje.
+- Antes de gravar um movimento novo, um igual (tipo, valor, conta e dia) pede confirmação.
+  Vale para a entrada manual, a IA e os atalhos (todos passam pelo mesmo formulário e validação).
+- Subscrições: "Registar pagamento" abre o mesmo formulário preenchido; só ao gravar há despesa
+  real, e a próxima cobrança avança um período. O compromisso nunca conta sozinho.
+- Importação CSV: cada descrição já conhecida recebe a sua categoria habitual (mesma regra).
+- Por fazer: movimentos recorrentes gerais (salário, renda) precisam de migração (tipo e conta nas
+  subscrições); leitura de recibos fica em avaliação (OCR/IA no servidor e novo fornecedor na
+  política de privacidade).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

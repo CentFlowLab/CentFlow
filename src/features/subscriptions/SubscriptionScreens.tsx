@@ -72,7 +72,21 @@ export function SubscriptionDetailScreen() {
       footer={
         item ? (
           <View style={styles.actions}>
-            <Button label={t('subscriptions.edit')} onPress={() => setEditing(true)} />
+            {item.status === 'active' ? (
+              // O compromisso só vira despesa real quando a pessoa confirma o pagamento.
+              <Button
+                label={t('subscriptions.recordPayment')}
+                icon="checkmark-circle-outline"
+                onPress={() =>
+                  router.push({ pathname: '/new-transaction', params: { subscriptionId: item.id } })
+                }
+              />
+            ) : null}
+            <Button
+              label={t('subscriptions.edit')}
+              variant="secondary"
+              onPress={() => setEditing(true)}
+            />
             <Button
               label={t('subscriptions.delete')}
               variant="destructive"

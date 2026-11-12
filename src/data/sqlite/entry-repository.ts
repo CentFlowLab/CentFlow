@@ -563,5 +563,43 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
         amount: row.amount,
       }));
     },
+
+    async history({ since, limit = 2000 }) {
+      const rows = await db.all<{
+        id: string;
+        type: Entry['type'];
+        description: string;
+        category_id: string | null;
+        account_id: string;
+        amount: number;
+        date: string;
+      }>(
+        `SELECT e.id, e.type, e.description, e.category_id, e.account_id, e.amount, e.date
+           FROM entries e
+          WHERE e.deleted_at IS NULL AND e.date >= ? AND e.loan_id IS NULL
+          ORDER BY e.date DESC, e.rowid DESC
+          LIMIT ?`,
+        [since, limit],
+      );
+      return rows.map((row) => ({
+        id: row.id,
+        type: row.type,
+        description: row.description,
+        categoryId: row.category_id,
+        accountId: row.account_id,
+        amount: row.amount,
+        date: row.date,
+      }));
+    },
+
+    async findSimilar({ type, amount, accountId, date }) {
+      const row = await db.first<{ id: string }>(
+        `SELECT id FROM entries
+          WHERE deleted_at IS NULL AND type = ? AND amount = ? AND account_id = ? AND date = ?
+          LIMIT 1`,
+        [type, amount, accountId, date],
+      );
+      return row?.id ?? null;
+    },
   };
 }

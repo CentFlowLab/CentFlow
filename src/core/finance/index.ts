@@ -18,3 +18,4 @@ export * from './types';
 export * from './validation';
 export * from './vehicles';
 export * from './credit';
+export * from './suggestions';

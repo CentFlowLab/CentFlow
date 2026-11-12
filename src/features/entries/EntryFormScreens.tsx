@@ -10,7 +10,7 @@ import { useTheme } from '@/ui/theme';
 import { closeModal } from '../finance/navigation';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
-import { EntryForm } from './EntryForm';
+import { EntryForm, type EntryPrefill } from './EntryForm';
 
 function Loading() {
   const { colors } = useTheme();
@@ -24,12 +24,26 @@ function Loading() {
 /** Registo rápido: `/new-transaction`. */
 export function NewEntryScreen() {
   const { t } = useTranslation();
-  // Vindo da ficha de um veículo (`/new-transaction?vehicleId=…`).
-  const { vehicleId } = useLocalSearchParams<{ vehicleId?: string }>();
+  // Vindo da ficha de um veículo (`?vehicleId=…`), de "Duplicar" (`?duplicateOf=…`) ou do
+  // pagamento de uma subscrição (`?subscriptionId=…`).
+  const { vehicleId, duplicateOf, subscriptionId } = useLocalSearchParams<{
+    vehicleId?: string;
+    duplicateOf?: string;
+    subscriptionId?: string;
+  }>();
   const today = useToday();
   const lookups = useFinanceLookups();
+  const source = useDataQuery(
+    useCallback(
+      async (repositories: Repositories) => ({
+        entry: duplicateOf ? await repositories.entries.get(duplicateOf) : null,
+        subscription: subscriptionId ? await repositories.subscriptions.get(subscriptionId) : null,
+      }),
+      [duplicateOf, subscriptionId],
+    ),
+  );
 
-  if (!lookups.data) {
+  if (!lookups.data || !source.data) {
     return (
       <FormScreen
         title={t('entryForm.newTitle')}
@@ -60,7 +74,41 @@ export function NewEntryScreen() {
     );
   }
 
-  return <EntryForm lookups={lookups.data} today={today} initialVehicleId={vehicleId} />;
+  const { entry: original, subscription } = source.data;
+  const prefill: EntryPrefill | undefined = original
+    ? {
+        type: original.type,
+        amount: original.amount,
+        categoryId: original.categoryId,
+        accountId: original.accountId,
+        destinationAccountId: original.destinationAccountId,
+        description: original.description,
+        notes: original.notes ?? '',
+        // O duplicado é de hoje; muda-se a data se for preciso.
+        date: null,
+      }
+    : subscription
+      ? {
+          type: 'expense',
+          amount: subscription.amount,
+          categoryId: subscription.categoryId,
+          accountId: null,
+          destinationAccountId: null,
+          description: subscription.name,
+          notes: '',
+          date: subscription.nextOn <= today ? subscription.nextOn : today,
+        }
+      : undefined;
+
+  return (
+    <EntryForm
+      lookups={lookups.data}
+      today={today}
+      initialVehicleId={vehicleId}
+      prefill={prefill}
+      subscription={subscription ?? undefined}
+    />
+  );
 }
 
 /** Edição: `/entry/[id]`. */

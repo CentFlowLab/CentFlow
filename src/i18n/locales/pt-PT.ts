@@ -218,6 +218,8 @@ const ptPT = {
     transferBetween: '{{from}} → {{to}}',
   },
   statementImport: {
+    categoryFromHistory:
+      'Descrições que já usaste ficam com a categoria habitual; as restantes com a categoria escolhida abaixo.',
     title: 'Importar extrato',
     intro:
       'Escolhe um ficheiro CSV exportado do banco ou cola o conteúdo. Nada é gravado antes de confirmares.',
@@ -250,6 +252,13 @@ const ptPT = {
     noAccounts: 'Cria primeiro uma conta para receber os movimentos.',
   },
   entryForm: {
+    frequent: 'Frequentes',
+    suggestedFromHistory: 'Categoria sugerida pelos teus movimentos anteriores.',
+    duplicate: 'Duplicar movimento',
+    duplicateTitle: 'Parece repetido',
+    duplicateMessage:
+      'Já existe um movimento igual (mesmo tipo, valor, conta e dia). Queres gravar este também?',
+    duplicateSaveAnyway: 'Gravar na mesma',
     disbursement: 'Dinheiro de um empréstimo (opcional)',
     disbursementHint: 'Não conta como rendimento: entra na conta e soma à dívida do empréstimo.',
     cardsInWealth_one:
@@ -633,6 +642,7 @@ const ptPT = {
     },
   },
   subscriptions: {
+    recordPayment: 'Registar pagamento',
     subtitle: 'Despesas que se repetem. Não alteram o saldo das contas.',
     activeCount_one: '{{count}} ativa',
     activeCount_other: '{{count}} ativas',

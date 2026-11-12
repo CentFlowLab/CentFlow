@@ -6,7 +6,12 @@ import { StyleSheet, View, type TextInputInstance } from 'react-native';
 import {
   addDays,
   calendarDateToLocalDate,
+  followingCharge,
+  frequentEntries,
   hasErrors,
+  suggestionFor,
+  type EntrySuggestion,
+  type Subscription,
   normalizeEntryInput,
   validateEntryInput,
   ValidationError,
@@ -32,6 +37,7 @@ import {
   ChipGroup,
   Dialog,
   FormScreen,
+  type IconName,
   SegmentedControl,
   Text,
   TextField,
@@ -52,6 +58,21 @@ type Props = {
   entry?: Entry;
   /** Registo a partir da ficha de um veículo: já vem escolhido. */
   initialVehicleId?: string;
+  /** Campos já preenchidos (duplicar um movimento, pagamento de uma subscrição). */
+  prefill?: EntryPrefill;
+  /** Pagamento de uma subscrição: depois de gravar, a próxima cobrança avança um período. */
+  subscription?: Subscription;
+};
+
+export type EntryPrefill = {
+  type: EntryType;
+  amount: number | null;
+  categoryId: string | null;
+  accountId: string | null;
+  destinationAccountId: string | null;
+  description: string;
+  notes: string;
+  date: string | null;
 };
 
 type FieldErrors = Partial<Record<EntryField, string>>;
@@ -66,7 +87,14 @@ function rememberAccount(id: string): void {
   lastAccountId = id;
 }
 
-export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
+export function EntryForm({
+  lookups,
+  today,
+  entry,
+  initialVehicleId,
+  prefill,
+  subscription,
+}: Props) {
   const { t } = useTranslation();
   const { locale, formatDate, formatUnitPrice } = useLocaleFormat();
   const repositories = useRepositories();
@@ -86,25 +114,43 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
 
   const initialAccountId =
     entry?.accountId ??
+    selectableAccounts.find((account) => account.id === prefill?.accountId)?.id ??
     selectableAccounts.find((account) => account.id === lastAccountId)?.id ??
     selectableAccounts[0]?.id ??
     '';
 
-  const [type, setType] = useState<EntryType>(entry?.type ?? 'expense');
+  const [type, setType] = useState<EntryType>(entry?.type ?? prefill?.type ?? 'expense');
   const [amountText, setAmountText] = useState(() => {
-    if (!entry) return '';
+    if (!entry) {
+      if (prefill?.amount == null) return '';
+      const prefillCurrency = lookups.accounts.get(initialAccountId)?.currency ?? 'EUR';
+      return amountToInputString(prefill.amount, prefillCurrency, decimalSeparatorFor(locale));
+    }
     const currency = lookups.accounts.get(entry.accountId)?.currency ?? 'EUR';
     return amountToInputString(entry.amount, currency, decimalSeparatorFor(locale));
   });
-  const [categoryId, setCategoryId] = useState<string | null>(entry?.categoryId ?? null);
+  const [categoryId, setCategoryId] = useState<string | null>(
+    entry?.categoryId ?? prefill?.categoryId ?? null,
+  );
   const [accountId, setAccountId] = useState(initialAccountId);
   const [destinationAccountId, setDestinationAccountId] = useState<string | null>(
-    entry?.destinationAccountId ?? null,
+    entry?.destinationAccountId ?? prefill?.destinationAccountId ?? null,
   );
-  const [date, setDate] = useState(entry?.date ?? today);
-  const [description, setDescription] = useState(entry?.description ?? '');
-  const [notes, setNotes] = useState(entry?.notes ?? '');
-  const [showDetails, setShowDetails] = useState(Boolean(entry?.description || entry?.notes));
+  const [date, setDate] = useState(entry?.date ?? prefill?.date ?? today);
+  const [description, setDescription] = useState(entry?.description ?? prefill?.description ?? '');
+  const [notes, setNotes] = useState(entry?.notes ?? prefill?.notes ?? '');
+  const [showDetails, setShowDetails] = useState(
+    Boolean(entry?.description || entry?.notes || prefill?.description || prefill?.notes),
+  );
+  // Histórico do último ano: atalhos e sugestões só a partir de movimentos reais da pessoa.
+  const history = useDataQuery(
+    useCallback(
+      (repos: Repositories) => repos.entries.history({ since: addDays(today, -365) }),
+      [today],
+    ),
+  );
+  const [suggestedFrom, setSuggestedFrom] = useState<string | null>(null);
+  const [duplicatePrompt, setDuplicatePrompt] = useState<{ addAnother: boolean } | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
@@ -163,6 +209,34 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
     setErrors({});
     if (next === 'transfer') setCategoryId(null);
     else if (categoryId && lookups.categories.get(categoryId)?.type !== next) setCategoryId(null);
+  };
+
+  /** Escreve a descrição e, se a categoria ainda estiver vazia, usa a do histórico (se clara). */
+  const changeDescription = (text: string) => {
+    setDescription(text);
+    if (isEditing || !history.data) return;
+    const suggestion = suggestionFor(history.data, text, type);
+    if (!suggestion) {
+      setSuggestedFrom(null);
+      return;
+    }
+    if (categoryId === null && suggestion.categoryId) {
+      setCategoryId(suggestion.categoryId);
+      setSuggestedFrom(text);
+    }
+  };
+
+  /** Atalho de um movimento frequente: preenche tudo menos o valor. */
+  const applyFrequent = (suggestion: EntrySuggestion) => {
+    changeType(suggestion.type);
+    setDescription(suggestion.description);
+    setShowDetails(true);
+    if (suggestion.categoryId) setCategoryId(suggestion.categoryId);
+    if (suggestion.accountId && selectableAccounts.some((a) => a.id === suggestion.accountId)) {
+      setAccountId(suggestion.accountId);
+    }
+    setSuggestedFrom(suggestion.description);
+    amountRef.current?.focus();
   };
 
   const changeAccount = (id: string) => {
@@ -226,7 +300,7 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
     return { input: hasErrors(fieldErrors) ? null : input, fieldErrors };
   };
 
-  const save = async (addAnother: boolean) => {
+  const save = async (addAnother: boolean, allowDuplicate = false) => {
     setFormError(null);
     setSavedMessage(null);
     const { input, fieldErrors } = buildInput();
@@ -235,9 +309,20 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
 
     setSaving(true);
     try {
+      // Um movimento igual no mesmo dia (mesmo valor e conta) costuma ser um registo repetido.
+      if (!entry && !allowDuplicate && (await repositories.entries.findSimilar(input))) {
+        setDuplicatePrompt({ addAnother });
+        return;
+      }
       if (entry) await repositories.entries.update(entry.id, input);
       else await repositories.entries.create(input);
       rememberAccount(input.accountId);
+      if (subscription && !entry) {
+        // Pagamento confirmado: a próxima cobrança passa para o período seguinte.
+        await repositories.subscriptions
+          .update(subscription.id, { ...subscription, nextOn: followingCharge(subscription) })
+          .catch(() => undefined);
+      }
       if (addAnother) {
         setAmountText('');
         setDescription('');
@@ -293,6 +378,7 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
 
   const yesterday = addDays(today, -1);
   const isCustomDate = date !== today && date !== yesterday;
+  const frequent = history.data ? frequentEntries(history.data, 6) : [];
 
   return (
     <FormScreen
@@ -369,6 +455,23 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
           }}
         />
       )}
+      {!isEditing && !prefill && frequent.length > 0 ? (
+        <ChipGroup label={t('entryForm.frequent')}>
+          {frequent.map((suggestion) => (
+            <Chip
+              key={`${suggestion.type}:${suggestion.description}`}
+              label={suggestion.description}
+              icon={
+                suggestion.categoryId
+                  ? (lookups.categories.get(suggestion.categoryId)?.icon as IconName | undefined)
+                  : undefined
+              }
+              selected={description === suggestion.description}
+              onPress={() => applyFrequent(suggestion)}
+            />
+          ))}
+        </ChipGroup>
+      ) : null}
       <SegmentedControl
         accessibilityLabel={t('entryForm.type')}
         value={type}
@@ -592,8 +695,9 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
           <TextField
             label={`${t('entryForm.description')} (${t('common.optional').toLocaleLowerCase(locale)})`}
             value={description}
-            onChangeText={setDescription}
+            onChangeText={changeDescription}
             placeholder={t('entryForm.descriptionPlaceholder')}
+            helperText={suggestedFrom ? t('entryForm.suggestedFromHistory') : undefined}
             maxLength={140}
             errorText={errors.description}
           />
@@ -618,6 +722,39 @@ export function EntryForm({ lookups, today, entry, initialVehicleId }: Props) {
       )}
 
       {sourceAccount?.archivedAt ? <Badge label={t('accounts.archived')} tone="warning" /> : null}
+
+      {entry ? (
+        <Button
+          label={t('entryForm.duplicate')}
+          variant="ghost"
+          icon="copy-outline"
+          onPress={() =>
+            router.push({ pathname: '/new-transaction', params: { duplicateOf: entry.id } })
+          }
+        />
+      ) : null}
+
+      <Dialog
+        visible={duplicatePrompt !== null}
+        title={t('entryForm.duplicateTitle')}
+        message={t('entryForm.duplicateMessage')}
+        onDismiss={() => setDuplicatePrompt(null)}
+        actions={[
+          {
+            label: t('entryForm.duplicateSaveAnyway'),
+            onPress: () => {
+              const pending = duplicatePrompt;
+              setDuplicatePrompt(null);
+              if (pending) void save(pending.addAnother, true);
+            },
+          },
+          {
+            label: t('common.cancel'),
+            variant: 'secondary',
+            onPress: () => setDuplicatePrompt(null),
+          },
+        ]}
+      />
 
       <Dialog
         visible={calendarOpen}

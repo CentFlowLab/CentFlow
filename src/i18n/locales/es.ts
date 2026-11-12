@@ -220,6 +220,8 @@ const es: Translation = {
     transferBetween: '{{from}} → {{to}}',
   },
   statementImport: {
+    categoryFromHistory:
+      'Las descripciones que ya usaste reciben su categoría habitual; el resto, la categoría elegida abajo.',
     title: 'Importar extracto',
     intro:
       'Elige un archivo CSV exportado del banco o pega su contenido. No se guarda nada hasta que confirmes.',
@@ -253,6 +255,13 @@ const es: Translation = {
     noAccounts: 'Crea primero una cuenta para recibir los movimientos.',
   },
   entryForm: {
+    frequent: 'Frecuentes',
+    suggestedFromHistory: 'Categoría sugerida por tus movimientos anteriores.',
+    duplicate: 'Duplicar movimiento',
+    duplicateTitle: 'Parece repetido',
+    duplicateMessage:
+      'Ya existe un movimiento igual (mismo tipo, importe, cuenta y día). ¿Quieres guardar este también?',
+    duplicateSaveAnyway: 'Guardar igualmente',
     disbursement: 'Dinero de un préstamo (opcional)',
     disbursementHint: 'No cuenta como ingreso: entra en la cuenta y suma a la deuda del préstamo.',
     cardsInWealth_one:
@@ -637,6 +646,7 @@ const es: Translation = {
     },
   },
   subscriptions: {
+    recordPayment: 'Registrar pago',
     subtitle: 'Gastos que se repiten. No cambian el saldo de las cuentas.',
     activeCount_one: '{{count}} activa',
     activeCount_other: '{{count}} activas',

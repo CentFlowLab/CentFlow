@@ -219,6 +219,8 @@ const en: Translation = {
     transferBetween: '{{from}} → {{to}}',
   },
   statementImport: {
+    categoryFromHistory:
+      'Descriptions you have used before get their usual category; the rest get the category chosen below.',
     title: 'Import statement',
     intro:
       'Choose a CSV file exported from your bank or paste its contents. Nothing is saved until you confirm.',
@@ -252,6 +254,13 @@ const en: Translation = {
     noAccounts: 'Create an account first to receive the movements.',
   },
   entryForm: {
+    frequent: 'Frequent',
+    suggestedFromHistory: 'Category suggested from your previous entries.',
+    duplicate: 'Duplicate entry',
+    duplicateTitle: 'Looks like a repeat',
+    duplicateMessage:
+      'There is already an identical entry (same type, amount, account and day). Save this one too?',
+    duplicateSaveAnyway: 'Save anyway',
     disbursement: 'Money from a loan (optional)',
     disbursementHint: 'Not counted as income: it goes into the account and adds to the loan debt.',
     cardsInWealth_one:
@@ -636,6 +645,7 @@ const en: Translation = {
     },
   },
   subscriptions: {
+    recordPayment: 'Record payment',
     subtitle: 'Expenses that repeat. They do not change account balances.',
     activeCount_one: '{{count}} active',
     activeCount_other: '{{count}} active',

@@ -15,6 +15,7 @@ import type {
   EntryType,
   Id,
   GoalContribution,
+  HistoryEntry,
   GoalContributionInput,
   SavingsGoal,
   SavingsGoalInput,
@@ -154,6 +155,12 @@ export interface EntryRepository {
    * Não altera saldos: rendimentos e transferências ficam de fora.
    */
   listExpenses(range: { from: CalendarDate; to: CalendarDate }): Promise<BudgetCandidate[]>;
+  /** Movimentos desde `since` (mais recentes primeiro), para sugestões a partir do histórico. */
+  history(options: { since: CalendarDate; limit?: number }): Promise<(HistoryEntry & { id: Id })[]>;
+  /** Outro movimento com o mesmo tipo, valor, conta e dia (provável repetição), ou `null`. */
+  findSimilar(
+    candidate: Pick<HistoryEntry, 'type' | 'amount' | 'accountId' | 'date'>,
+  ): Promise<Id | null>;
 }
 
 export interface SubscriptionRepository {

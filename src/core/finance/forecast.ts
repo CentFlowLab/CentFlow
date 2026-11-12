@@ -60,6 +60,18 @@ export function chargesBetween(
   return dates;
 }
 
+/** Cobrança seguinte à data guardada (`nextOn`), pelo período: depois de registar um pagamento. */
+export function followingCharge(
+  subscription: Pick<Subscription, 'nextOn' | 'period'>,
+): CalendarDate {
+  if (subscription.period === 'weekly') return addDays(subscription.nextOn, 7);
+  return shiftMonths(
+    subscription.nextOn,
+    subscription.period === 'yearly' ? 12 : 1,
+    dayOfMonth(subscription.nextOn),
+  );
+}
+
 export type UpcomingCharge = {
   subscriptionId: Id;
   name: string;
