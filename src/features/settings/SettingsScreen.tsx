@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountSettings } from '@/features/account/AccountSection';
-import { useLocaleFormat , LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
+import { useLocaleFormat, LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
 import {
   CONTACT_EMAIL,
   openExternal,
