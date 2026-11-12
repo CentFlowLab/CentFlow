@@ -1,7 +1,7 @@
 # Lançamento das Fases 3 a 5 em produção
 
-> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 20
-> migrações (`20261108000100` a `20261116000100`); 14 tabelas com RLS, sem leitura nem escrita
+> **Estado atual (2026-11-11), verificado só em leitura:** produção e staging com as mesmas 21
+> migrações (`20261108000100` a `20261117000100`); 14 tabelas com RLS, sem leitura nem escrita
 > para `anon` e sem escrita direta para `authenticated`; esquema `private` não exposto; funções
 > com `search_path` vazio; Edge Functions `delete-account` e `suggest-entry` ativas nos dois
 > (validam a sessão com `auth.getUser()`); sem segredos próprios (falta `ANTHROPIC_API_KEY`).
@@ -277,3 +277,16 @@ Migrações `20261114000100` (compra de veículo só como despesa), `20261115000
 5. Compatibilidade testada em PGlite: uma app 0.1.15 que edita contas, empréstimos, movimentos,
    objetivos ou contribuições não apaga os campos novos.
 6. App com estas alterações **não publicada**; os testes em aparelhos ainda não foram feitos.
+
+## Execução de 2026-11-12 — ordem das categorias (`20261117000100`)
+
+Autorizado pelo responsável ("Sim, aplica"). ADR-059. Guard antes de cada comando na produção.
+
+1. Staging: dry-run só com `20261117000100`; aplicada; histórico igual; verificação só de leitura:
+   `categories.sort_order` (`integer`), `search_path` vazio em `sync_apply_op`, 14 tabelas com RLS.
+2. Produção: cópia em `~/Documents/Miven-backups/miven-prod-20261112-000955-{public-auth.dump,schema.sql}`
+   e contagem antes (1 utilizador, 16 categorias, 3 movimentos). Dry-run só com `20261117000100`;
+   aplicada sem erros; histórico local e remoto iguais até `20261117000100`.
+3. Verificação só de leitura igual à do staging; dados intactos (1 utilizador, 16 categorias,
+   3 movimentos).
+4. Compatibilidade testada em PGlite: uma app 0.1.16 que edita uma categoria não apaga a posição.

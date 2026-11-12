@@ -857,7 +857,7 @@ percorrer dezenas de botões para escolher uma.
   sem conflito, e nunca conta como edição contra uma eliminação (`SERVER_WINS` em `merge.ts`).
 - Movimentos, subscrições, orçamentos e pagamentos de dívidas escolhem a categoria num campo que
   abre uma lista com pesquisa (sem acentos), pela ordem escolhida.
-- Migração local v16; servidor `20261117000100_category_order.sql` (por aplicar), com guarda
+- Migração local v16; servidor `20261117000100_category_order.sql` (aplicada a 2026-11-12), com guarda
   para apps antigas.
 
 ## Decisões pendentes
