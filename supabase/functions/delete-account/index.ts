@@ -1,6 +1,6 @@
 // Eliminação de conta (RGPD). A chave administrativa existe só neste ambiente de servidor.
 // A decisão (confirmação + sessão recente) está em src/core e é a mesma que os testes executam.
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 import {
   deleteAccountCorsHeaders,
@@ -79,10 +79,7 @@ Deno.serve(async (req) => {
  * Apaga `documents/<userId>/<documento>/<ficheiro>`. Sem o balde (ambiente sem a migração), não há
  * nada a apagar. Devolve `false` se não conseguir listar ou apagar.
  */
-async function removeUserFiles(
-  admin: ReturnType<typeof createClient>,
-  userId: string,
-): Promise<boolean> {
+async function removeUserFiles(admin: SupabaseClient, userId: string): Promise<boolean> {
   const bucket = admin.storage.from('documents');
   const folders = await bucket.list(userId, { limit: 1000 });
   if (folders.error) return /not found/i.test(folders.error.message);

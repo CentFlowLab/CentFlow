@@ -66,9 +66,10 @@ Deno.serve(async (req) => {
   } = await caller.auth.getUser();
   if (userError || !user) return json({ error: 'unauthorized' }, 401);
 
-  let body: { text?: unknown; context?: unknown } | null = null;
+  type RequestBody = { text?: unknown; context?: unknown } | null;
+  let body: RequestBody = null;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as RequestBody;
   } catch {
     return json({ error: 'invalid_request' }, 400);
   }
