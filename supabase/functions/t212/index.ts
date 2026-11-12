@@ -62,11 +62,30 @@ type Credentials = { apiKey: string; apiSecret: string; environment: T212Environ
 async function fetchAccount(credentials: Credentials) {
   const host = T212_HOSTS[credentials.environment];
   const headers = { Authorization: basicAuth(credentials.apiKey, credentials.apiSecret) };
-  const summary = await fetch(`${host}/api/v0/equity/account/summary`, { headers });
-  if (!summary.ok) return { ok: false as const, error: errorFromStatus(summary.status) };
-  const positions = await fetch(`${host}/api/v0/equity/positions`, { headers });
-  if (!positions.ok) return { ok: false as const, error: errorFromStatus(positions.status) };
-  const parsed = parseT212(await summary.json(), await positions.json(), new Date().toISOString());
+  let summaryBody: unknown;
+  let positionsBody: unknown;
+  try {
+    // Sem resposta em 15 s, a Trading 212 está indisponível (nunca fica à espera para sempre).
+    const summary = await fetch(`${host}/api/v0/equity/account/summary`, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!summary.ok) return { ok: false as const, error: errorFromStatus(summary.status) };
+    const positions = await fetch(`${host}/api/v0/equity/positions`, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!positions.ok) return { ok: false as const, error: errorFromStatus(positions.status) };
+    try {
+      summaryBody = await summary.json();
+      positionsBody = await positions.json();
+    } catch {
+      return { ok: false as const, error: 'invalid' as const };
+    }
+  } catch {
+    return { ok: false as const, error: 'unavailable' as const };
+  }
+  const parsed = parseT212(summaryBody, positionsBody, new Date().toISOString());
   return parsed.ok
     ? { ok: true as const, snapshot: parsed.snapshot }
     : { ok: false as const, error: 'invalid' as const };
@@ -112,7 +131,7 @@ Deno.serve(async (req) => {
     result: Awaited<ReturnType<typeof fetchAccount>>,
   ) => {
     const now = new Date().toISOString();
-    await admin.from('integrations').upsert({
+    const state = await admin.from('integrations').upsert({
       user_id: user.id,
       provider: PROVIDER,
       environment,
@@ -121,8 +140,9 @@ Deno.serve(async (req) => {
       last_error: result.ok ? null : result.error,
       updated_at: now,
     });
+    if (state.error) return false;
     if (result.ok) {
-      await admin.from('investment_snapshots').upsert({
+      const snapshot = await admin.from('investment_snapshots').upsert({
         user_id: user.id,
         provider: PROVIDER,
         taken_at: result.snapshot.takenAt,
@@ -130,44 +150,71 @@ Deno.serve(async (req) => {
         total: result.snapshot.total,
         data: result.snapshot,
       });
+      if (snapshot.error) return false;
     }
+    return true;
   };
+
+  /** Último pedido desta pessoa (connect e refresh partilham o intervalo mínimo). */
+  const current = async () =>
+    (
+      await admin
+        .from('integrations')
+        .select('environment, last_sync_at')
+        .eq('user_id', user.id)
+        .eq('provider', PROVIDER)
+        .maybeSingle()
+    ).data as { environment: T212Environment; last_sync_at: string | null } | null;
 
   if (action === 'connect') {
     const credentials = validCredentials(body ?? {});
     if (!credentials) return json({ error: 'invalid' }, 400);
+    const existing = await current();
+    if (existing && !canRefresh(existing.last_sync_at, Date.now())) {
+      return json({ error: 'rateLimited' satisfies T212ErrorCode }, 429);
+    }
     // Só guarda depois de a Trading 212 aceitar as credenciais.
     const result = await fetchAccount(credentials);
     if (!result.ok) return json({ error: result.error satisfies T212ErrorCode }, 400);
     const sealed = await seal(key, JSON.stringify(credentials));
-    await admin.rpc('integration_secret_put', {
+    const stored = await admin.rpc('integration_secret_put', {
       p_user: user.id,
       p_provider: PROVIDER,
       p_iv: sealed.iv,
       p_ciphertext: sealed.ciphertext,
     });
-    await saveResult(credentials.environment, result);
+    // Sem a chave guardada, a ligação não fica marcada como feita.
+    if (stored.error) return json({ error: 'unavailable' }, 500);
+    if (!(await saveResult(credentials.environment, result))) {
+      return json({ error: 'unavailable' }, 500);
+    }
     return json({ ok: true });
   }
 
   if (action === 'refresh') {
-    const { data: current } = await admin
-      .from('integrations')
-      .select('environment, last_sync_at')
-      .eq('user_id', user.id)
-      .eq('provider', PROVIDER)
-      .maybeSingle();
-    if (!current) return json({ error: 'notConnected' }, 404);
-    if (!canRefresh(current.last_sync_at, Date.now())) return json({ ok: true, throttled: true });
+    const integration = await current();
+    if (!integration) return json({ error: 'notConnected' }, 404);
+    if (!canRefresh(integration.last_sync_at, Date.now())) {
+      return json({ ok: true, throttled: true });
+    }
     const { data: rows } = await admin.rpc('integration_secret_get', {
       p_user: user.id,
       p_provider: PROVIDER,
     });
     const stored = (rows as { iv: string; ciphertext: string }[] | null)?.[0];
     if (!stored) return json({ error: 'notConnected' }, 404);
-    const credentials = JSON.parse(await open(key, stored.iv, stored.ciphertext)) as Credentials;
+    let credentials: Credentials;
+    try {
+      credentials = JSON.parse(await open(key, stored.iv, stored.ciphertext)) as Credentials;
+    } catch {
+      // Chave de cifra mudada ou dados danificados: é preciso ligar a conta outra vez.
+      await saveResult(integration.environment, { ok: false, error: 'unauthorized' });
+      return json({ error: 'unauthorized' }, 409);
+    }
     const result = await fetchAccount(credentials);
-    await saveResult(credentials.environment, result);
+    if (!(await saveResult(credentials.environment, result))) {
+      return json({ error: 'unavailable' }, 500);
+    }
     return result.ok ? json({ ok: true }) : json({ error: result.error }, 502);
   }
 

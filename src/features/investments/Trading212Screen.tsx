@@ -101,14 +101,16 @@ export function Trading212Screen() {
   const refresh = useCallback(
     async (force: boolean) => {
       if (!client) return;
-      if (force) {
+      let next = await load();
+      // Sem conta ligada não há nada a atualizar (nem erro a mostrar).
+      if (force && next?.integration) {
         const { error: failure } = await client.functions.invoke('t212', {
           method: 'POST',
           body: { action: 'refresh' },
         });
-        if (failure) setError('refreshFailed');
+        setError(failure ? 'refreshFailed' : null);
+        next = await load();
       }
-      const next = await load();
       setState(next);
       setNow(Date.now());
       const linkedId = await appStorage.getItem(LINK_KEY).catch(() => null);
