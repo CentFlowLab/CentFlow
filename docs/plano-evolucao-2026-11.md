@@ -30,27 +30,27 @@ submissões a lojas. As migrações do servidor ficam escritas e testadas em PGl
 
 ### 1.1 Objetivos (sem migração)
 
-| | |
-|---|---|
-| Estado | Lista com Em curso/Concluídos, detalhe, contribuições ligadas a transferências (ADR-058). |
-| Problema | (a) Não grava sem descrição; (b) detalhe desarrumado no telemóvel; (c) sem deslizar. |
-| Causa | (a) `GoalForm` valida a descrição vazia `''` com `isTextBetween(1, 280)` **antes** de a converter em `null` (o repositório converte, mas nunca chega lá). (b) O detalhe é um `FormScreen` com o calendário sempre aberto, o título repetido e o formulário de contribuição misturado com o resumo. (c) A lista não usa `SwipeableRow`. |
-| Solução | Normalizar texto vazio para `null` antes de validar. Detalhe como ecrã de leitura (resumo, evolução, histórico) com a contribuição num formulário próprio que só abre a pedido e uma data compacta (`OptionalDateField`/chips Hoje/Ontem). `SwipeableRow` com Editar/Eliminar + confirmação; ações equivalentes por acessibilidade e botões na web. |
-| Ficheiros | `src/features/goals/*`, testes em `src/features/goals/__tests__`. |
-| Modelo | Nenhuma alteração. |
-| Testes | Criar e editar sem descrição; deslizar e confirmar eliminação; contribuições não criam movimentos. |
+|           |                                                                                                                                                                                                                                                                                                                                                     |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Estado    | Lista com Em curso/Concluídos, detalhe, contribuições ligadas a transferências (ADR-058).                                                                                                                                                                                                                                                           |
+| Problema  | (a) Não grava sem descrição; (b) detalhe desarrumado no telemóvel; (c) sem deslizar.                                                                                                                                                                                                                                                                |
+| Causa     | (a) `GoalForm` valida a descrição vazia `''` com `isTextBetween(1, 280)` **antes** de a converter em `null` (o repositório converte, mas nunca chega lá). (b) O detalhe é um `FormScreen` com o calendário sempre aberto, o título repetido e o formulário de contribuição misturado com o resumo. (c) A lista não usa `SwipeableRow`.              |
+| Solução   | Normalizar texto vazio para `null` antes de validar. Detalhe como ecrã de leitura (resumo, evolução, histórico) com a contribuição num formulário próprio que só abre a pedido e uma data compacta (`OptionalDateField`/chips Hoje/Ontem). `SwipeableRow` com Editar/Eliminar + confirmação; ações equivalentes por acessibilidade e botões na web. |
+| Ficheiros | `src/features/goals/*`, testes em `src/features/goals/__tests__`.                                                                                                                                                                                                                                                                                   |
+| Modelo    | Nenhuma alteração.                                                                                                                                                                                                                                                                                                                                  |
+| Testes    | Criar e editar sem descrição; deslizar e confirmar eliminação; contribuições não criam movimentos.                                                                                                                                                                                                                                                  |
 
 ### 1.2 Categorias — arrastar e largar (sem migração)
 
-| | |
-|---|---|
-| Estado | Ordem manual sincronizada desde a 0.1.17 (`sort_order`, ADR-059), com setas. |
-| Problema | Falta arrastar e largar. |
-| Causa | Não há biblioteca de gestos (sem `react-native-gesture-handler`/`reanimated`). |
-| Solução | Componente `ReorderableList` com `PanResponder` + `Animated` (como o `SwipeableRow`): toque longo (telemóvel) ou arrastar com o rato (web/Windows); grava com `categories.reorder`. As setas ficam como alternativa acessível e de teclado. Categorias predefinidas e personalizadas ordenam-se juntas, dentro de cada tipo. |
-| Ficheiros | `src/ui/components/ReorderableList.tsx`, `CategoriesScreen.tsx`. |
-| Modelo | Nenhuma (`sort_order` já existe; conflito de ordem: fica a do servidor, testado). |
-| Testes | Reordenar por gesto (lógica de destino), persistência e sincronização (já existentes). |
+|           |                                                                                                                                                                                                                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Estado    | Ordem manual sincronizada desde a 0.1.17 (`sort_order`, ADR-059), com setas.                                                                                                                                                                                                                                                 |
+| Problema  | Falta arrastar e largar.                                                                                                                                                                                                                                                                                                     |
+| Causa     | Não há biblioteca de gestos (sem `react-native-gesture-handler`/`reanimated`).                                                                                                                                                                                                                                               |
+| Solução   | Componente `ReorderableList` com `PanResponder` + `Animated` (como o `SwipeableRow`): toque longo (telemóvel) ou arrastar com o rato (web/Windows); grava com `categories.reorder`. As setas ficam como alternativa acessível e de teclado. Categorias predefinidas e personalizadas ordenam-se juntas, dentro de cada tipo. |
+| Ficheiros | `src/ui/components/ReorderableList.tsx`, `CategoriesScreen.tsx`.                                                                                                                                                                                                                                                             |
+| Modelo    | Nenhuma (`sort_order` já existe; conflito de ordem: fica a do servidor, testado).                                                                                                                                                                                                                                            |
+| Testes    | Reordenar por gesto (lógica de destino), persistência e sincronização (já existentes).                                                                                                                                                                                                                                       |
 
 ### 1.3 Menos introdução manual (sem migração, exceto recorrências)
 
@@ -101,12 +101,12 @@ Notificações fica fora até existirem notificações reais.
 
 ### 1.7 Aplicação Windows
 
-| Opção | Reutilização | Toolchain nesta máquina | MSIX/Store | Notas |
-|---|---|---|---|---|
-| **Electron + electron-builder** | 100 % (build web) | Node (já existe) | `appx` nativo | Janela nativa, protocolo `miven://`, ficheiros e notificações; maior (~90 MB). |
-| Tauri | 100 % (build web) | Rust + MSVC (não instalados) | MSI/NSIS; MSIX manual | Mais leve; exige toolchain. |
-| WinUI/Windows App SDK | 0 % | .NET | sim | Reescrever a app: excluído. |
-| PWA (PWABuilder) | 100 % | — | MSIX | Continua a ser uma página instalada: excluído como principal. |
+| Opção                           | Reutilização      | Toolchain nesta máquina      | MSIX/Store            | Notas                                                                          |
+| ------------------------------- | ----------------- | ---------------------------- | --------------------- | ------------------------------------------------------------------------------ |
+| **Electron + electron-builder** | 100 % (build web) | Node (já existe)             | `appx` nativo         | Janela nativa, protocolo `miven://`, ficheiros e notificações; maior (~90 MB). |
+| Tauri                           | 100 % (build web) | Rust + MSVC (não instalados) | MSI/NSIS; MSIX manual | Mais leve; exige toolchain.                                                    |
+| WinUI/Windows App SDK           | 0 %               | .NET                         | sim                   | Reescrever a app: excluído.                                                    |
+| PWA (PWABuilder)                | 100 %             | —                            | MSIX                  | Continua a ser uma página instalada: excluído como principal.                  |
 
 **Escolha: Electron**, empacotado em MSIX (`appx`) pelo electron-builder, com a web exportada
 servida por um protocolo próprio (`app://miven`), sem servidor nem browser. Dados no IndexedDB do
@@ -149,6 +149,6 @@ previsão do fim do mês marcada como estimativa, próximos compromissos, evolu�
 
 ## 2. O que precisa de migrações
 
-| Sem migração | Com migração (escritas, por aplicar) |
-|---|---|
+| Sem migração                                                                                                                                 | Com migração (escritas, por aplicar)                                                                                                                     |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Objetivos, drag and drop, registo rápido, IA (só falta o segredo), importação, backups/exportação, definições, ambientes, Windows, dashboard | Trading 212 (`integrations`, `investment_snapshots`, Vault), painel de administração (`admin_roles`, `admin_audit`, RPCs), movimentos recorrentes gerais |
