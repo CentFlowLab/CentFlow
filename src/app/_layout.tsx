@@ -49,6 +49,7 @@ function RootStack() {
         <Stack.Screen name="documents/new" options={MODAL} />
         <Stack.Screen name="documents/[id]" options={MODAL} />
         <Stack.Screen name="sync/conflicts" options={MODAL} />
+        <Stack.Screen name="backup" options={MODAL} />
       </Stack.Protected>
       <Stack.Protected guard={!granted}>
         <Stack.Screen name="welcome" />

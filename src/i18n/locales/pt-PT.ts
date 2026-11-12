@@ -142,7 +142,43 @@ const ptPT = {
     title: 'Mais',
     subtitle: 'Todas as áreas do Miven',
   },
+  backup: {
+    title: 'Cópias de segurança',
+    intro:
+      'A sincronização mantém os teus aparelhos iguais, mas não te protege de um engano: um registo apagado é apagado em todo o lado. Uma cópia de segurança guarda tudo como estava naquele momento.',
+    exportTitle: 'Exportar',
+    exportJson: 'Exportar cópia completa (JSON)',
+    exportCsv: 'Exportar movimentos (CSV)',
+    lastExport: 'Última cópia exportada: {{date}}',
+    neverExported: 'Ainda não exportaste nenhuma cópia.',
+    fileWarning:
+      'O ficheiro tem os teus dados financeiros sem encriptação: guarda-o num sítio seguro. Os anexos dos documentos ficam no servidor e aparecem só listados.',
+    restoreTitle: 'Restaurar',
+    restoreRule:
+      'Restaurar acrescenta o que falta e atualiza só o que é mais antigo do que a cópia. Nada mais recente é substituído e o que apagaste depois não volta. Vês o resumo antes de confirmar.',
+    restoreFile: 'Restaurar a partir de um ficheiro',
+    restore: 'Restaurar',
+    autoTitle: 'Cópias automáticas neste aparelho',
+    autoInfo:
+      'Uma por semana, as 5 mais recentes. Servem para recuperar de um engano; para mudar de aparelho, exporta uma cópia.',
+    autoEmpty: 'Ainda não há cópias automáticas.',
+    autoNow: 'Fazer uma cópia agora',
+    confirmTitle: 'Restaurar esta cópia?',
+    confirmMessage:
+      'Cópia de {{date}}. Entram {{inserted}} registos novos e {{updated}} são atualizados. Ficam como estão {{kept}} iguais ou mais recentes neste aparelho e {{deleted}} que apagaste depois.',
+    confirm: 'Restaurar',
+    exported: 'Ficheiro criado.',
+    restored: 'Restauro concluído: {{inserted}} novos, {{updated}} atualizados.',
+    failed: 'Não foi possível concluir. Os teus dados não foram alterados.',
+    invalid: {
+      notBackup: 'Este ficheiro não é uma cópia do Miven.',
+      corrupted: 'A cópia está danificada ou foi alterada (a verificação de integridade falhou).',
+      tooNew: 'Esta cópia é de uma versão mais recente do Miven. Atualiza a app primeiro.',
+    },
+  },
   settings: {
+    backup: 'Cópias de segurança',
+    backupHint: 'Exportar, restaurar e cópias automáticas',
     analytics: {
       title: 'Estatísticas de utilização',
       off: 'Não partilhar',

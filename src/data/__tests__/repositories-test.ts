@@ -1679,3 +1679,30 @@ describe('category order', () => {
     expect(await db.first('SELECT count(*) AS n FROM entries')).toEqual(entries);
   });
 });
+
+describe('backup and restore', () => {
+  it('exports everything, restores into an empty database and never overwrites newer data', async () => {
+    const entry = await repos.entries.create({ ...baseExpense(), description: 'Almoço' });
+    const backup = await repos.backup.exportData('0.1.17');
+    expect(backup.counts.accounts).toBeGreaterThanOrEqual(2);
+    expect(backup.counts.entries).toBe(1);
+    expect(await repos.backup.entriesCsv()).toContain('Almoço');
+
+    // Instalação nova: tudo entra.
+    const fresh = await openTestRepositories();
+    const preview = await fresh.repos.backup.planRestore(backup);
+    expect(preview.totalUpdate).toBe(0);
+    await fresh.repos.backup.applyRestore(backup);
+    expect((await fresh.repos.entries.get(entry.id))?.description).toBe('Almoço');
+    expect(await fresh.repos.accounts.listWithBalances()).toEqual(
+      await repos.accounts.listWithBalances(),
+    );
+
+    // Aqui o movimento mudou depois da cópia: restaurar não o substitui.
+    await repos.entries.update(entry.id, { ...baseExpense(), description: 'Jantar' });
+    const plan = await repos.backup.applyRestore(backup);
+    expect(plan.totalInsert).toBe(0);
+    expect(plan.totalUpdate).toBe(0);
+    expect((await repos.entries.get(entry.id))?.description).toBe('Jantar');
+  });
+});

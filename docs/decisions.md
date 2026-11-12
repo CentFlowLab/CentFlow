@@ -904,6 +904,30 @@ um service worker não existe ou não atua em todos estes casos.
   subscrições); leitura de recibos fica em avaliação (OCR/IA no servidor e novo fornecedor na
   política de privacidade).
 
+## ADR-062 — Cópias de segurança, exportação e restauro
+
+**Contexto:** a sincronização não é backup (um engano propaga-se a todos os aparelhos) e não
+havia forma de a pessoa guardar os seus dados. Plano de evolução, Fase 5.
+**Decisão (sem migração):**
+
+- **Exportação JSON completa** (`miven-backup` v1): todas as tabelas sincronizadas (só linhas
+  ativas), versão do esquema e da app, contagens, lista de anexos (que ficam no Storage) e SHA-256
+  sobre o esquema e as tabelas. O SHA-256 é TypeScript puro (`src/core/backup/sha256.ts`): o
+  Hermes do iPhone não tem `crypto.subtle`. **CSV dos movimentos** para folhas de cálculo.
+- **Restauro** só depois de um resumo: entra o que falta, é atualizado só o que é mais antigo do
+  que a cópia (`updated_at`), nada mais recente é substituído e o que foi apagado depois não volta.
+  O plano é refeito dentro da transação; as escritas seguem a fila de sincronização normal.
+  Ficheiros alterados, de outra app ou de um esquema mais recente são recusados.
+- **Cópias automáticas** semanais no próprio aparelho (as 5 mais recentes): pasta privada da app
+  no iPhone/Android, IndexedDB na web/Windows. Nunca no AsyncStorage (dados financeiros).
+- Partilha no telemóvel pela folha do sistema (`expo-sharing`, módulo Expo, nova dependência);
+  na web e no Windows, descarregamento.
+- **Sem encriptação nesta versão:** o ficheiro avisa que contém dados sem encriptação. AES exigiria
+  WebCrypto (indisponível no Hermes) ou um módulo nativo novo; e uma chave perdida tornaria a cópia
+  irrecuperável. Fica para uma decisão própria.
+- Recuperação de conta: continua pelo email (Supabase Auth). Perda do aparelho: os dados estão no
+  servidor e numa cópia exportada; cópias automáticas locais não sobrevivem à perda do aparelho.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

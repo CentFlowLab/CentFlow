@@ -1,3 +1,4 @@
+import type { BackupFile, RestorePlan } from '@/core/backup';
 import type {
   Account,
   AccountFlows,
@@ -163,6 +164,17 @@ export interface EntryRepository {
   ): Promise<Id | null>;
 }
 
+/** Cópias de segurança: exportar, e restaurar sem nunca sobrescrever dados mais recentes. */
+export interface BackupRepository {
+  exportData(appVersion: string): Promise<BackupFile>;
+  /** Movimentos ativos em CSV (data, tipo, valor, moeda, descrição, categoria, contas, notas). */
+  entriesCsv(): Promise<string>;
+  /** Pré-visualização: o que entraria, o que seria atualizado e o que fica por ser mais recente. */
+  planRestore(backup: Pick<BackupFile, 'tables'>): Promise<RestorePlan>;
+  /** Aplica numa transação; as alterações seguem para a sincronização como escritas normais. */
+  applyRestore(backup: Pick<BackupFile, 'tables'>): Promise<RestorePlan>;
+}
+
 export interface SubscriptionRepository {
   list(): Promise<Subscription[]>;
   get(id: Id): Promise<Subscription | null>;
@@ -312,6 +324,7 @@ export interface Repositories {
   entries: EntryRepository;
   budgets: BudgetRepository;
   subscriptions: SubscriptionRepository;
+  backup: BackupRepository;
   goals: SavingsGoalRepository;
   wealth: WealthRepository;
   vehicles: VehicleRepository;

@@ -31,3 +31,5 @@ export {
   type ImportState,
 } from './sync/import';
 export { createSupabaseTransport } from './sync/supabase-transport';
+/** Versão do esquema local desta app (cópias de versões mais recentes são recusadas). */
+export { LATEST_SCHEMA_VERSION } from './db/migrations';

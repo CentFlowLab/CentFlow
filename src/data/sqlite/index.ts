@@ -1,3 +1,4 @@
+import { createSqliteBackupRepository } from './backup-repository';
 import type { SqlDatabase } from '../db/sql-database';
 import type { Repositories } from '../repositories/types';
 import { createSqliteAccountRepository } from './account-repository';
@@ -43,6 +44,7 @@ export function createSqliteRepositories(
     attachmentUploads: createSqliteAttachmentUploadRepository(context),
     categories: createSqliteCategoryRepository(context),
     entries: createSqliteEntryRepository(context),
+    backup: createSqliteBackupRepository(context),
     subscribe: changes.subscribe,
   };
 }

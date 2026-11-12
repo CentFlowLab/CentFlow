@@ -167,7 +167,8 @@
           "cameraPermission": "O Miven usa a câmara só quando tiras uma fotografia para anexar a um documento (ex.: uma fatura).",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

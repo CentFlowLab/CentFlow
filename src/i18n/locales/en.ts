@@ -143,7 +143,43 @@ const en: Translation = {
     title: 'More',
     subtitle: 'Every area of Miven',
   },
+  backup: {
+    title: 'Backups',
+    intro:
+      'Sync keeps your devices the same, but it does not protect you from a mistake: something deleted is deleted everywhere. A backup keeps everything as it was at that moment.',
+    exportTitle: 'Export',
+    exportJson: 'Export full backup (JSON)',
+    exportCsv: 'Export entries (CSV)',
+    lastExport: 'Last exported backup: {{date}}',
+    neverExported: 'You have not exported a backup yet.',
+    fileWarning:
+      'The file holds your financial data without encryption: keep it somewhere safe. Document attachments stay on the server and are only listed.',
+    restoreTitle: 'Restore',
+    restoreRule:
+      'Restoring adds what is missing and only updates what is older than the backup. Nothing newer is replaced and what you deleted later does not come back. You see a summary before confirming.',
+    restoreFile: 'Restore from a file',
+    restore: 'Restore',
+    autoTitle: 'Automatic copies on this device',
+    autoInfo:
+      'One a week, the 5 most recent. They help you recover from a mistake; to move to another device, export a backup.',
+    autoEmpty: 'No automatic copies yet.',
+    autoNow: 'Make a copy now',
+    confirmTitle: 'Restore this backup?',
+    confirmMessage:
+      'Backup from {{date}}. {{inserted}} new records are added and {{updated}} updated. {{kept}} identical or newer on this device and {{deleted}} you deleted later stay as they are.',
+    confirm: 'Restore',
+    exported: 'File created.',
+    restored: 'Restore finished: {{inserted}} new, {{updated}} updated.',
+    failed: 'Could not finish. Your data was not changed.',
+    invalid: {
+      notBackup: 'This file is not a Miven backup.',
+      corrupted: 'The backup is damaged or was changed (the integrity check failed).',
+      tooNew: 'This backup is from a newer version of Miven. Update the app first.',
+    },
+  },
   settings: {
+    backup: 'Backups',
+    backupHint: 'Export, restore and automatic copies',
     analytics: {
       title: 'Usage statistics',
       off: "Don't share",

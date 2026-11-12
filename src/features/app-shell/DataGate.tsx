@@ -25,6 +25,7 @@ import {
 import { i18n } from '@/i18n';
 import { Button, EmptyState } from '@/ui/components';
 import { spacing, useTheme } from '@/ui/theme';
+import { AutoBackup } from '../settings/AutoBackup';
 
 import {
   copyAppAddress,
@@ -208,6 +209,7 @@ export function DataGate({
       <ActiveSpaceContext.Provider value={state.current}>
         <RepositoriesProvider repositories={state.current.store.repositories}>
           {children}
+          <AutoBackup />
         </RepositoriesProvider>
       </ActiveSpaceContext.Provider>
     );

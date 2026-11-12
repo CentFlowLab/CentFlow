@@ -60,7 +60,7 @@ export type SyncStateRow = {
 export type LocalCounts = Record<SyncEntity, { live: number; deleted: number }>;
 
 /** Colunas guardadas localmente para cada entidade, além de `search_text` (derivado). */
-const COLUMNS: Record<SyncEntity, readonly string[]> = {
+export const SYNC_COLUMNS: Record<SyncEntity, readonly string[]> = {
   accounts: [
     'id',
     'name',
@@ -298,9 +298,9 @@ export function createSyncStore(db: SqlDatabase, { now, newId, notify }: Options
         [now(), now(), row.category_id, row.id],
       );
     }
-    const columns = [...COLUMNS[entity], 'version', 'server_seq', 'synced_at'];
+    const columns = [...SYNC_COLUMNS[entity], 'version', 'server_seq', 'synced_at'];
     const values: SyncValue[] = [
-      ...COLUMNS[entity].map((column) => row[column] ?? COLUMN_DEFAULTS[column] ?? null),
+      ...SYNC_COLUMNS[entity].map((column) => row[column] ?? COLUMN_DEFAULTS[column] ?? null),
       row.version,
       row.server_seq,
       now(),
