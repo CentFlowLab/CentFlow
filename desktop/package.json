@@ -1,0 +1,76 @@
+{
+  "name": "miven-desktop",
+  "productName": "Miven",
+  "version": "0.1.17",
+  "description": "Miven para Windows: a app web empacotada numa janela nativa (Electron) e em MSIX.",
+  "author": "Miven",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "build:web": "node scripts/build-web.mjs",
+    "assets": "node scripts/make-assets.mjs",
+    "start": "electron .",
+    "dist:dir": "electron-builder --win dir",
+    "dist:msix": "electron-builder --win appx",
+    "dist:setup": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^39.8.10",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "app.centflow.desktop",
+    "productName": "Miven",
+    "copyright": "Miven",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "web/**/*",
+      "build/icon.png",
+      "!**/*.map"
+    ],
+    "asar": true,
+    "protocols": [
+      {
+        "name": "Miven",
+        "schemes": [
+          "miven"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "appx"
+      ]
+    },
+    "appx": {
+      "identityName": "Miven.Miven",
+      "applicationId": "Miven",
+      "displayName": "Miven",
+      "publisher": "CN=Miven Teste",
+      "publisherDisplayName": "Miven",
+      "backgroundColor": "#0B1220",
+      "languages": [
+        "pt-PT",
+        "en-US",
+        "es-ES"
+      ],
+      "showNameOnTiles": false,
+      "addAutoLaunchExtension": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Miven",
+      "artifactName": "Miven-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

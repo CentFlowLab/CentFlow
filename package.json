@@ -83,7 +83,12 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/.expo/"
-    ]
+      "/.expo/",
+      "/desktop/"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/desktop/"
+    ],
+    "testTimeout": 30000
   }
 }

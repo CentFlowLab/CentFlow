@@ -14,6 +14,9 @@ module.exports = defineConfig([
       'supabase/.temp/*',
       'supabase/functions/**',
       'public/coi-serviceworker.min.js',
+      'desktop/node_modules/*',
+      'desktop/web/*',
+      'desktop/release/*',
     ],
   },
   {

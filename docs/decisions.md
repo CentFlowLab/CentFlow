@@ -928,6 +928,22 @@ havia forma de a pessoa guardar os seus dados. Plano de evolução, Fase 5.
 - Recuperação de conta: continua pelo email (Supabase Auth). Perda do aparelho: os dados estão no
   servidor e numa cópia exportada; cópias automáticas locais não sobrevivem à perda do aparelho.
 
+## ADR-063 — Aplicação Windows com Electron e MSIX
+
+**Contexto:** a versão web instalada parecia uma página do Chrome; o objetivo é uma app Windows
+distribuível (e, mais tarde, na Microsoft Store) sem reescrever a app. Comparação em
+`docs/plano-evolucao-2026-11.md` §1.7.
+**Decisão:** Electron (dependência nova, só em `desktop/`, isolada da app Expo) com
+electron-builder (MSIX `appx` e instalador NSIS). Reutiliza 100 % da app web; só precisa de Node
+para compilar. Tauri exigiria Rust e MSVC (não instalados) e não gera MSIX diretamente;
+WinUI seria reescrever; PWA continua a ser uma página instalada.
+
+- Protocolo próprio `app://miven` (origem padrão e segura): IndexedDB, Web Crypto e localStorage
+  como em https; sem servidor local. Links `miven://` declarados no pacote e no instalador.
+- `contextIsolation`, `sandbox` e sem `nodeIntegration`: a página não tem acesso ao sistema.
+- MSIX de teste: certificado descartável; a Store assina na submissão. Nada submetido.
+- Custo: ~90 MB por instalação (Chromium incluído).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |
