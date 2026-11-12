@@ -25,7 +25,6 @@ import {
   Amount,
   BarChart,
   Button,
-  CalendarPicker,
   Card,
   Chip,
   ChipGroup,
@@ -41,6 +40,7 @@ import {
 } from '@/ui/components';
 import { categorySwatch, spacing, useTheme } from '@/ui/theme';
 
+import { DateChips } from '../finance/DateChips';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
@@ -62,13 +62,14 @@ export function NewGoalScreen() {
 }
 
 export function GoalDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `edit=1`: aberto pela ação Editar da lista, começa no formulário.
+  const { id, edit } = useLocalSearchParams<{ id: string; edit?: string }>();
   const { t } = useTranslation();
   const { colors, scheme } = useTheme();
   const { formatDate, formatMoney, formatMonthYear, formatPercent, locale } = useLocaleFormat();
   const today = useToday();
   const repositories = useRepositories();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(edit === '1');
   const [confirmingGoal, setConfirmingGoal] = useState(false);
   const [confirmingContribution, setConfirmingContribution] = useState<string | null>(null);
   // Contribuição em edição (null = nova).
@@ -80,6 +81,8 @@ export function GoalDetailScreen() {
   const [dateError, setDateError] = useState<string>();
   const [linkError, setLinkError] = useState<string>();
   const [saving, setSaving] = useState(false);
+  // O formulário de contribuição só aparece a pedido (o detalhe é sobretudo leitura).
+  const [composing, setComposing] = useState(false);
   const query = useDataQuery(useCallback((repos: Repositories) => loadDetail(repos, id), [id]));
   const goal = query.data?.goal;
 
@@ -90,6 +93,7 @@ export function GoalDetailScreen() {
   }
 
   const resetContribution = () => {
+    setComposing(false);
     setEditingContribution(null);
     setAmountText('');
     setDate(today);
@@ -100,6 +104,7 @@ export function GoalDetailScreen() {
   };
 
   const startEditing = (current: SavingsGoal, contribution: GoalContribution) => {
+    setComposing(true);
     setEditingContribution(contribution);
     setAmountText(
       amountToInputString(contribution.amount, current.currency, decimalSeparatorFor(locale)),
@@ -168,19 +173,7 @@ export function GoalDetailScreen() {
     <FormScreen
       title={goal?.name ?? t('goals.detailTitle')}
       closeLabel={t('common.close')}
-      onClose={() => closeModal('/goals')}
-      footer={
-        goal ? (
-          <View style={styles.actions}>
-            <Button label={t('goals.changeTarget')} onPress={() => setEditing(true)} />
-            <Button
-              label={t('goals.delete')}
-              variant="destructive"
-              onPress={() => setConfirmingGoal(true)}
-            />
-          </View>
-        ) : undefined
-      }>
+      onClose={() => closeModal('/goals')}>
       {!query.data ? (
         query.status === 'error' ? (
           <EmptyState icon="alert-circle-outline" title={t('errors.loadFailed')} />
@@ -206,15 +199,14 @@ export function GoalDetailScreen() {
                   done={status.reached}
                 />
                 <View style={styles.flex}>
-                  <Text variant="title3">{goal.name}</Text>
                   {status.reached ? (
-                    <Text variant="footnote" tone="positive">
+                    <Text variant="bodyStrong" tone="positive">
                       {status.achievedOn
                         ? t('goals.completedOn', { date: day(status.achievedOn) })
                         : t('goals.completedBadge')}
                     </Text>
                   ) : (
-                    <Text variant="footnote" tone="secondary">
+                    <Text variant="bodyStrong">
                       {t('goals.percentDone', { percent: formatPercent(status.ratio, 0) })}
                     </Text>
                   )}
@@ -265,132 +257,124 @@ export function GoalDetailScreen() {
             </View>
           </Card>
 
-          <Card>
-            <View style={styles.detail}>
-              <Text variant="title3">{t('goals.evolution')}</Text>
-              {evolution.length === 0 ? (
-                <Text variant="callout" tone="secondary">
-                  {t('goals.evolutionEmpty')}
-                </Text>
-              ) : (
-                <BarChart
-                  seriesColors={[swatch.foreground]}
-                  height={110}
-                  groups={evolution.map((month) => {
-                    const label = new Intl.DateTimeFormat(locale, { month: 'short' })
-                      .format(calendarDateToLocalDate(`${month.month}-01`))
-                      .replace('.', '');
-                    return {
-                      key: month.month,
-                      label,
-                      values: [month.amount],
-                      accessibilityLabel: `${formatMonthYear(calendarDateToLocalDate(`${month.month}-01`))}: ${money(month.amount)}, ${t(
-                        'goals.savedShort',
-                        { amount: money(month.cumulative) },
-                      )}`,
-                    };
-                  })}
-                />
-              )}
-            </View>
-          </Card>
+          {!composing ? (
+            <Button
+              label={t('goals.contributionAdd')}
+              icon="add"
+              fullWidth
+              onPress={() => setComposing(true)}
+            />
+          ) : null}
 
-          <Card>
-            <View style={styles.detail}>
-              <Text variant="title3">
-                {editingContribution ? t('goals.contributionEdit') : t('goals.contributionAdd')}
-              </Text>
-              <TextField
-                label={t('goals.form.amount')}
-                value={amountText}
-                onChangeText={(text) => {
-                  setAmountText(text);
-                  setAmountError(undefined);
-                }}
-                placeholder={t('entryForm.amountPlaceholder')}
-                keyboardType="decimal-pad"
-                inputMode="decimal"
-                helperText={goal.currency}
-                errorText={amountError}
-              />
-              <Text variant="footnote" tone="secondary">
-                {t('goals.form.date')}
-              </Text>
-              <Text variant="label">{day(date)}</Text>
-              <CalendarPicker
-                value={date}
-                today={today}
-                locale={locale}
-                labels={{
-                  previousMonth: t('calendar.previousMonth'),
-                  nextMonth: t('calendar.nextMonth'),
-                }}
-                onChange={setDate}
-              />
-              {dateError ? (
-                <Text variant="footnote" tone="negative">
-                  {dateError}
+          {composing ? (
+            <Card>
+              <View style={styles.detail}>
+                <Text variant="title3">
+                  {editingContribution ? t('goals.contributionEdit') : t('goals.contributionAdd')}
                 </Text>
-              ) : null}
-              <ChipGroup label={t('goals.linkTransfer')} errorText={linkError}>
-                <Chip
-                  label={t('goals.noLink')}
-                  selected={entryId === null}
-                  onPress={() => setEntryId(null)}
+                <TextField
+                  label={t('goals.form.amount')}
+                  value={amountText}
+                  onChangeText={(text) => {
+                    setAmountText(text);
+                    setAmountError(undefined);
+                  }}
+                  placeholder={t('entryForm.amountPlaceholder')}
+                  keyboardType="decimal-pad"
+                  inputMode="decimal"
+                  helperText={goal.currency}
+                  errorText={amountError}
                 />
-                {linkedNow && !transferChoices.some((choice) => choice.id === linkedNow) ? (
+                <DateChips
+                  label={t('goals.form.date')}
+                  value={date}
+                  today={today}
+                  onChange={setDate}
+                  errorText={dateError}
+                />
+                <ChipGroup label={t('goals.linkTransfer')} errorText={linkError}>
                   <Chip
-                    label={t('goals.linked')}
-                    selected={entryId === linkedNow}
-                    onPress={() => setEntryId(linkedNow)}
+                    label={t('goals.noLink')}
+                    selected={entryId === null}
+                    onPress={() => setEntryId(null)}
                   />
+                  {linkedNow && !transferChoices.some((choice) => choice.id === linkedNow) ? (
+                    <Chip
+                      label={t('goals.linked')}
+                      selected={entryId === linkedNow}
+                      onPress={() => setEntryId(linkedNow)}
+                    />
+                  ) : null}
+                  {transferChoices.slice(0, 6).map((transfer) => (
+                    <Chip
+                      key={transfer.id}
+                      label={`${day(transfer.date)} · ${money(transfer.amount)}${
+                        transfer.description ? ` · ${transfer.description}` : ''
+                      }`}
+                      selected={entryId === transfer.id}
+                      onPress={() => {
+                        setEntryId(transfer.id);
+                        setLinkError(undefined);
+                        // Sem valor escrito, a contribuição fica com o valor e a data da transferência.
+                        if (amountText.trim() === '') {
+                          setAmountText(
+                            amountToInputString(
+                              transfer.amount,
+                              goal.currency,
+                              decimalSeparatorFor(locale),
+                            ),
+                          );
+                          setDate(transfer.date);
+                        }
+                      }}
+                    />
+                  ))}
+                </ChipGroup>
+                {transferChoices.length === 0 && !linkedNow ? (
+                  <Text variant="footnote" tone="tertiary">
+                    {t('goals.noTransfers')}
+                  </Text>
                 ) : null}
-                {transferChoices.map((transfer) => (
-                  <Chip
-                    key={transfer.id}
-                    label={`${day(transfer.date)} · ${money(transfer.amount)}${
-                      transfer.description ? ` · ${transfer.description}` : ''
-                    }`}
-                    selected={entryId === transfer.id}
-                    onPress={() => {
-                      setEntryId(transfer.id);
-                      setLinkError(undefined);
-                      // Sem valor escrito, a contribuição fica com o valor e a data da transferência.
-                      if (amountText.trim() === '') {
-                        setAmountText(
-                          amountToInputString(
-                            transfer.amount,
-                            goal.currency,
-                            decimalSeparatorFor(locale),
-                          ),
-                        );
-                        setDate(transfer.date);
-                      }
-                    }}
-                  />
-                ))}
-              </ChipGroup>
-              {transferChoices.length === 0 && !linkedNow ? (
-                <Text variant="footnote" tone="tertiary">
-                  {t('goals.noTransfers')}
-                </Text>
-              ) : null}
-              <Button
-                label={
-                  editingContribution ? t('goals.contributionSave') : t('goals.contributionAdd')
-                }
-                loading={saving}
-                disabled={saving}
-                onPress={() => void saveContribution(goal)}
-              />
-              {editingContribution ? (
+                <Button
+                  label={
+                    editingContribution ? t('goals.contributionSave') : t('goals.contributionAdd')
+                  }
+                  loading={saving}
+                  disabled={saving}
+                  onPress={() => void saveContribution(goal)}
+                />
                 <Button label={t('common.cancel')} variant="ghost" onPress={resetContribution} />
-              ) : null}
-              <Text variant="caption" tone="tertiary">
-                {t('goals.howItWorks')}
-              </Text>
-            </View>
-          </Card>
+              </View>
+            </Card>
+          ) : null}
+
+          {evolution.length > 0 ? (
+            <Card>
+              <View style={styles.detail}>
+                <Text variant="title3">{t('goals.evolution')}</Text>
+                {
+                  <BarChart
+                    seriesColors={[swatch.foreground]}
+                    height={110}
+                    groups={evolution.map((month) => {
+                      const label = new Intl.DateTimeFormat(locale, { month: 'short' })
+                        .format(calendarDateToLocalDate(`${month.month}-01`))
+                        .replace('.', '');
+                      return {
+                        key: month.month,
+                        label,
+                        values: [month.amount],
+                        accessibilityLabel: `${formatMonthYear(calendarDateToLocalDate(`${month.month}-01`))}: ${money(month.amount)}, ${t(
+                          'goals.savedShort',
+                          { amount: money(month.cumulative) },
+                        )}`,
+                      };
+                    })}
+                  />
+                }
+              </View>
+            </Card>
+          ) : null}
 
           <Card padding="md">
             <View style={styles.history}>
@@ -441,6 +425,21 @@ export function GoalDetailScreen() {
           <Text variant="caption" tone="tertiary">
             {t('goals.doesNotChangeBalances')}
           </Text>
+          {/* Ações do objetivo no fim do conteúdo: um rodapé fixo tapava o histórico no telemóvel. */}
+          <View style={styles.actions}>
+            <Button
+              label={t('goals.changeTarget')}
+              icon="create-outline"
+              variant="secondary"
+              onPress={() => setEditing(true)}
+            />
+            <Button
+              label={t('goals.delete')}
+              icon="trash-outline"
+              variant="destructive"
+              onPress={() => setConfirmingGoal(true)}
+            />
+          </View>
         </View>
       )}
       <Dialog
@@ -506,7 +505,7 @@ function Figure({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  actions: { gap: spacing.sm },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   body: { gap: spacing.lg },
   detail: { gap: spacing.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

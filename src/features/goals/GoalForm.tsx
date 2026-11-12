@@ -108,7 +108,8 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
       targetOn,
       icon,
       color,
-      description,
+      // Opcional: vazio grava-se como sem descrição (antes falhava a validação, 1–280).
+      description: description.trim() === '' ? null : description.trim(),
       accountId: resolvedAccountId,
     };
     const fieldErrors = validateSavingsGoalInput(input);

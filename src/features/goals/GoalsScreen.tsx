@@ -1,12 +1,22 @@
 import { router, type Href } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { goalStatus } from '@/core/finance';
-import { useDataQuery, type Repositories } from '@/data';
+import { goalStatus, type SavingsGoal } from '@/core/finance';
+import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import { Button, Card, EmptyState, HeroCard, IconButton, Screen, Text } from '@/ui/components';
+import {
+  Button,
+  Card,
+  Dialog,
+  EmptyState,
+  HeroCard,
+  IconButton,
+  Screen,
+  SwipeableRow,
+  Text,
+} from '@/ui/components';
 import { useBreakpoint } from '@/ui/layout/useBreakpoint';
 import { radius, spacing, useTheme } from '@/ui/theme';
 
@@ -62,6 +72,9 @@ export function GoalsScreen() {
   const breakpoint = useBreakpoint();
   const { formatMoney, formatPercent } = useLocaleFormat();
   const query = useDataQuery(useCallback((repositories: Repositories) => load(repositories), []));
+  const repositories = useRepositories();
+  // Eliminar pela lista (deslizar ou ações de acessibilidade) pede sempre confirmação.
+  const [deleting, setDeleting] = useState<SavingsGoal | null>(null);
 
   const add = () => router.push(NEW_HREF);
   const header = {
@@ -162,11 +175,31 @@ export function GoalsScreen() {
             <View style={styles.row}>
               {section.items.map(({ goal, status }) => (
                 <View key={goal.id} style={{ flexGrow: 1, flexBasis: isWide ? 340 : '100%' }}>
-                  <GoalCard
-                    goal={goal}
-                    status={status}
-                    onPress={() => router.push(`/goal/${goal.id}` as Href)}
-                  />
+                  <SwipeableRow
+                    borderRadius={radius.xl}
+                    actions={[
+                      {
+                        label: t('goals.edit'),
+                        icon: 'create-outline',
+                        onPress: () =>
+                          router.push({
+                            pathname: '/goal/[id]',
+                            params: { id: goal.id, edit: '1' },
+                          }),
+                      },
+                      {
+                        label: t('goals.delete'),
+                        icon: 'trash-outline',
+                        tone: 'negative',
+                        onPress: () => setDeleting(goal),
+                      },
+                    ]}>
+                    <GoalCard
+                      goal={goal}
+                      status={status}
+                      onPress={() => router.push(`/goal/${goal.id}` as Href)}
+                    />
+                  </SwipeableRow>
                 </View>
               ))}
             </View>
@@ -175,6 +208,24 @@ export function GoalsScreen() {
       <Text variant="caption" tone="tertiary">
         {t('goals.doesNotChangeBalances')}
       </Text>
+      <Dialog
+        visible={deleting !== null}
+        title={t('goals.deleteTitle')}
+        message={t('goals.deleteMessage')}
+        onDismiss={() => setDeleting(null)}
+        actions={[
+          {
+            label: t('goals.delete'),
+            variant: 'destructive',
+            onPress: () => {
+              const goal = deleting;
+              setDeleting(null);
+              if (goal) void repositories.goals.delete(goal.id).catch(() => undefined);
+            },
+          },
+          { label: t('common.cancel'), variant: 'ghost', onPress: () => setDeleting(null) },
+        ]}
+      />
     </Screen>
   );
 }
