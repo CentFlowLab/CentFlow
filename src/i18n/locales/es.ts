@@ -178,7 +178,60 @@ const es: Translation = {
       tooNew: 'Esta copia es de una versión más reciente de Miven. Actualiza la app primero.',
     },
   },
+  t212: {
+    title: 'Trading 212',
+    intro:
+      'Conecta tu cuenta Invest o Stocks ISA para ver el valor de la cartera, el efectivo disponible y las posiciones sin escribir nada. Miven solo lee: no compra, no vende ni mueve dinero.',
+    howToKey:
+      'En la app de Trading 212: Ajustes → API → Generar clave. Copia aquí la clave y el secreto. Puedes limitar la clave a direcciones IP y revocarla cuando quieras en Trading 212.',
+    account: 'Cuenta',
+    live: 'Real',
+    demo: 'Demo',
+    apiKey: 'Clave de la API',
+    apiSecret: 'Secreto de la API',
+    connect: 'Conectar cuenta',
+    privacy:
+      'La clave y el secreto viajan cifrados al servidor de Miven y nunca se guardan en este dispositivo. Nunca pedimos tu contraseña de Trading 212.',
+    updated_one: 'Actualizado hace {{count}} minuto',
+    updated_other: 'Actualizado hace {{count}} minutos',
+    noData: 'Aún sin datos.',
+    statusLive: 'Actual',
+    statusStale: 'Desactualizado',
+    statusError: 'Error',
+    total: 'Valor total de la cuenta',
+    cash: 'Efectivo disponible',
+    invested: 'Invertido (valor de mercado)',
+    cost: 'Coste de las posiciones',
+    unrealized: 'Ganancia/pérdida no realizada',
+    realized: 'Ganancia/pérdida realizada',
+    currencyNote:
+      'Importes en la moneda de la cuenta ({{currency}}), como los calcula Trading 212. Miven no convierte monedas.',
+    refresh: 'Actualizar ahora',
+    positions: 'Posiciones',
+    positionLine: '{{quantity}} × {{price}}',
+    netWorth: 'Patrimonio',
+    netWorthHint:
+      'El valor total de la cuenta entra en el patrimonio mediante un único elemento de inversión, actualizado en cada lectura. Comprar y vender en Trading 212 no son gastos ni ingresos.',
+    netWorthItem: 'Contar como',
+    notCounted: 'No contar',
+    createItem: 'Crear elemento',
+    disconnect: 'Desconectar cuenta',
+    disconnectTitle: '¿Desconectar Trading 212?',
+    disconnectMessage:
+      'La clave se borra del servidor y dejamos de leer la cuenta. El elemento del patrimonio conserva el último valor.',
+    errors: {
+      unauthorized:
+        'Trading 212 rechazó la clave. Revisa la clave y el secreto, o genera una nueva.',
+      rateLimited: 'Demasiadas peticiones a Trading 212. Lo intentaremos de nuevo en breve.',
+      unavailable: 'Trading 212 no respondió. Mostramos los últimos valores conocidos.',
+      invalid: 'La respuesta de Trading 212 no era la esperada. No se cambió nada.',
+      notConnected: 'La cuenta no está conectada.',
+      connectRejected: 'No se pudo conectar: revisa la clave, el secreto y el tipo de cuenta.',
+      refreshFailed: 'No se pudo actualizar ahora. Mostramos los últimos valores conocidos.',
+    },
+  },
   settings: {
+    t212Hint: 'Cartera y posiciones, solo lectura',
     formats: 'Números, monedas y fechas',
     formatsHint: 'Siguen la región del dispositivo: {{example}}',
     backup: 'Copias de seguridad',
@@ -191,6 +244,7 @@ const es: Translation = {
         'Si compartes, Miven envía a PostHog (servidores en la UE) solo el nombre de las pantallas que abres, para saber qué mejorar. Nunca importes, descripciones, cuentas ni tu email. Puedes desactivarlo en cualquier momento.',
     },
     groups: {
+      integrations: 'Integraciones',
       sync: 'Sincronización',
       appearance: 'Apariencia',
       language: 'Idioma y región',

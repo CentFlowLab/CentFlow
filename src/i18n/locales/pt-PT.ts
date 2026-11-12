@@ -176,7 +176,60 @@ const ptPT = {
       tooNew: 'Esta cópia é de uma versão mais recente do Miven. Atualiza a app primeiro.',
     },
   },
+  t212: {
+    title: 'Trading 212',
+    intro:
+      'Liga a tua conta Invest ou Stocks ISA para veres o valor da carteira, o dinheiro disponível e as posições sem escrever nada. A Miven só lê: não compra, não vende nem move dinheiro.',
+    howToKey:
+      'Na app da Trading 212: Definições → API → Gerar chave. Copia a chave e o segredo para aqui. Podes limitar a chave a endereços IP e revogá-la a qualquer momento na Trading 212.',
+    account: 'Conta',
+    live: 'Real',
+    demo: 'Demonstração',
+    apiKey: 'Chave da API',
+    apiSecret: 'Segredo da API',
+    connect: 'Ligar conta',
+    privacy:
+      'A chave e o segredo seguem cifrados para o servidor da Miven e nunca ficam neste aparelho. Nunca pedimos a tua palavra-passe da Trading 212.',
+    updated_one: 'Atualizado há {{count}} minuto',
+    updated_other: 'Atualizado há {{count}} minutos',
+    noData: 'Ainda sem dados.',
+    statusLive: 'Atual',
+    statusStale: 'Desatualizado',
+    statusError: 'Erro',
+    total: 'Valor total da conta',
+    cash: 'Dinheiro disponível',
+    invested: 'Valor investido (mercado)',
+    cost: 'Custo das posições',
+    unrealized: 'Ganho/perda por realizar',
+    realized: 'Ganho/perda realizado',
+    currencyNote:
+      'Valores na moeda da conta ({{currency}}), como a Trading 212 os calcula. A Miven não converte moedas.',
+    refresh: 'Atualizar agora',
+    positions: 'Posições',
+    positionLine: '{{quantity}} × {{price}}',
+    netWorth: 'Património',
+    netWorthHint:
+      'O valor total da conta entra no património por um único item de investimento, atualizado a cada leitura. Compras e vendas na Trading 212 não são despesas nem rendimentos.',
+    netWorthItem: 'Contar como',
+    notCounted: 'Não contar',
+    createItem: 'Criar item',
+    disconnect: 'Desligar conta',
+    disconnectTitle: 'Desligar a Trading 212?',
+    disconnectMessage:
+      'A chave é apagada do servidor e deixamos de ler a conta. O item do património fica com o último valor.',
+    errors: {
+      unauthorized:
+        'A Trading 212 recusou a chave. Confirma a chave e o segredo, ou gera uma nova.',
+      rateLimited: 'Demasiados pedidos à Trading 212. Tentamos de novo daqui a pouco.',
+      unavailable: 'A Trading 212 não respondeu. Mostramos os últimos valores conhecidos.',
+      invalid: 'A resposta da Trading 212 não era a esperada. Nada foi alterado.',
+      notConnected: 'A conta não está ligada.',
+      connectRejected: 'Não foi possível ligar: confirma a chave, o segredo e o tipo de conta.',
+      refreshFailed: 'Não foi possível atualizar agora. Mostramos os últimos valores conhecidos.',
+    },
+  },
   settings: {
+    t212Hint: 'Carteira e posições, só leitura',
     formats: 'Números, moedas e datas',
     formatsHint: 'Seguem a região do aparelho: {{example}}',
     backup: 'Cópias de segurança',
@@ -189,6 +242,7 @@ const ptPT = {
         'Se partilhares, o Miven envia ao PostHog (servidores na UE) só o nome dos ecrãs que abres, para perceber o que melhorar. Nunca valores, descrições, contas nem o teu email. Podes desligar a qualquer momento.',
     },
     groups: {
+      integrations: 'Integrações',
       sync: 'Sincronização',
       appearance: 'Aparência',
       language: 'Idioma e região',

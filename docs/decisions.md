@@ -944,6 +944,32 @@ WinUI seria reescrever; PWA continua a ser uma página instalada.
 - MSIX de teste: certificado descartável; a Store assina na submissão. Nada submetido.
 - Custo: ~90 MB por instalação (Chromium incluído).
 
+## ADR-064 — Trading 212: integração oficial só de leitura
+
+**Contexto:** acompanhar uma conta de investimentos sem atualizar valores à mão. Documentação
+oficial (docs.trading212.com, API pública v0) consultada a 2026-11-12: só contas **Invest** e
+**Stocks ISA**; chave e segredo gerados pela pessoa na app da Trading 212 (Basic auth), com
+restrição opcional a IPs; **sem tempo real nem streaming**; limites por conta (resumo 1/5 s,
+posições 1/s, histórico 20/min); valores na moeda principal da conta (sem multimoeda).
+**Decisão:**
+
+- Edge Function `t212` (servidor): `connect` valida a chave na Trading 212 **antes** de a guardar,
+  cifra-a com AES-GCM (`INTEGRATIONS_KEY`, segredo da função) e guarda-a em
+  `private.integration_secrets`, a que nenhum papel da app chega (só funções `security definer`
+  executáveis pelo `service_role`). `refresh` lê resumo e posições (só GET), no máximo a cada 10 s
+  por conta; `disconnect` apaga chave e leituras. A função usa o `service_role` só para estas
+  tabelas e só com o `user.id` da sessão verificada.
+- App: lê `integrations` e `investment_snapshots` (RLS: só as próprias). Atualiza ao abrir e a
+  cada 60 s com o ecrã aberto; mostra sempre a hora da leitura e "desatualizado" após 15 min.
+- Património: o `totalValue` entra por **um** item de investimento escolhido pela pessoa (ou um
+  novo), como avaliação; compras e vendas na Trading 212 não são despesas nem rendimentos; a
+  Miven não converte moedas.
+- Escondido até ao lançamento: `EXPO_PUBLIC_T212_ENABLED=true` só depois de aplicar a migração
+  `20261118000100_integrations.sql`, publicar a função e definir `INTEGRATIONS_KEY`
+  (`openssl rand -base64 32`, posto pelo responsável). Política de privacidade já atualizada.
+- Sem scraping, sem palavra-passe, sem ordens. Alternativas se a API deixar de servir:
+  importação de extratos ou atualização manual do item.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

@@ -1,10 +1,11 @@
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Fragment, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountSettings } from '@/features/account/AccountSection';
+import { t212Enabled } from '@/features/investments/Trading212Screen';
 import { useLocaleFormat, LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
 import {
   CONTACT_EMAIL,
@@ -99,6 +100,20 @@ export function SettingsScreen() {
               ) : null}
             </Card>
           </Section>
+
+          {t212Enabled() ? (
+            <Section title={t('settings.groups.integrations')}>
+              <Card padding="xs">
+                <ListItem
+                  {...NEUTRAL}
+                  icon="trending-up-outline"
+                  title={t('t212.title')}
+                  subtitle={t('settings.t212Hint')}
+                  onPress={() => router.push('/integrations/trading212' as Href)}
+                />
+              </Card>
+            </Section>
+          ) : null}
 
           {quickEntryAvailable() ? (
             <Section title={t('settings.groups.experience')}>

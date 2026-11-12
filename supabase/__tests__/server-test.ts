@@ -173,6 +173,8 @@ describe('schema', () => {
         'entries',
         'goal_contributions',
         'goals',
+        'integrations',
+        'investment_snapshots',
         'login_attempts',
         'lookup_attempts',
         'profiles',
@@ -1813,5 +1815,45 @@ describe('category order', () => {
     expect((await push(alice, [categoryOp(GROCERIES, 3, { sort_order: -1 })]))[0]).toMatchObject({
       status: 'rejected',
     });
+  });
+});
+
+describe('integrations (Trading 212)', () => {
+  it('lets each person read only their own state and never touch the encrypted secrets', async () => {
+    // Escrita como a Edge Function (service_role): estado, retrato e segredo cifrado.
+    const asService = (sql: string, params?: unknown[]) =>
+      server.pg.query(sql, params, { role: 'service_role' });
+    for (const user of [A, B]) {
+      await asService(
+        `insert into public.integrations (user_id, provider, environment, status, last_sync_at)
+         values ($1, 'trading212', 'live', 'connected', now())`,
+        [user],
+      );
+      await asService(
+        `insert into public.investment_snapshots (user_id, provider, taken_at, currency, total, data)
+         values ($1, 'trading212', now(), 'EUR', 258403, '{}'::jsonb)`,
+        [user],
+      );
+      await asService(`select public.integration_secret_put($1, 'trading212', 'iv', 'cipher')`, [
+        user,
+      ]);
+    }
+
+    expect(await alice.query('select user_id from public.integrations')).toEqual([{ user_id: A }]);
+    expect(
+      await alice.query('select total::int as total from public.investment_snapshots'),
+    ).toEqual([{ total: 258403 }]);
+    // A app não escreve diretamente nem chega aos segredos.
+    await expect(
+      alice.query(`update public.integrations set status = 'error' where user_id = '${A}'`),
+    ).rejects.toThrow();
+    await expect(alice.query('select * from private.integration_secrets')).rejects.toThrow();
+    await expect(
+      alice.query(`select * from public.integration_secret_get('${A}', 'trading212')`),
+    ).rejects.toThrow();
+    await expect(server.anonymous().query('select * from public.integrations')).rejects.toThrow();
+    expect(
+      await asService(`select iv from public.integration_secret_get($1, 'trading212')`, [A]),
+    ).toEqual([{ iv: 'iv' }]);
   });
 });

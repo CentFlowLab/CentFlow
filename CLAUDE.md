@@ -173,8 +173,8 @@ O ESLint bloqueia imports proibidos em `src/core` e impede `app`, `features` e `
   base de dados SQLite (`src/data`); a sessão vai para o armazenamento seguro
   (`expo-secure-store` no nativo, `localStorage` na web).
 - Logs da camada de dados registam apenas o motivo/código (ex.: `[database] open failed: otherTab`).
-- Todas as tabelas pessoais têm RLS (`auth.uid()`). A chave `service_role` só existe na Edge
-  Function `delete-account`. Migrações em `supabase/migrations`.
+- Todas as tabelas pessoais têm RLS (`auth.uid()`). A chave `service_role` só existe nas Edge
+  Functions `delete-account` e `t212` (esta só para as tabelas da integração, ADR-064). Migrações em `supabase/migrations`.
 - Cada conta tem a sua base de dados local (`centflow-u-<userId>.db`). Não há uso sem conta
   (ADR-034): `centflow.db` só existe em dispositivos antigos e é importado ou apagado no primeiro
   login, sempre com decisão explícita.

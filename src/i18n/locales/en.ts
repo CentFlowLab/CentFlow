@@ -177,7 +177,60 @@ const en: Translation = {
       tooNew: 'This backup is from a newer version of Miven. Update the app first.',
     },
   },
+  t212: {
+    title: 'Trading 212',
+    intro:
+      'Connect your Invest or Stocks ISA account to see the portfolio value, available cash and positions without typing anything. Miven only reads: it does not buy, sell or move money.',
+    howToKey:
+      'In the Trading 212 app: Settings → API → Generate key. Copy the key and the secret here. You can restrict the key to IP addresses and revoke it at any time in Trading 212.',
+    account: 'Account',
+    live: 'Real',
+    demo: 'Demo',
+    apiKey: 'API key',
+    apiSecret: 'API secret',
+    connect: 'Connect account',
+    privacy:
+      'The key and secret go encrypted to the Miven server and are never stored on this device. We never ask for your Trading 212 password.',
+    updated_one: 'Updated {{count}} minute ago',
+    updated_other: 'Updated {{count}} minutes ago',
+    noData: 'No data yet.',
+    statusLive: 'Current',
+    statusStale: 'Out of date',
+    statusError: 'Error',
+    total: 'Total account value',
+    cash: 'Available cash',
+    invested: 'Invested (market value)',
+    cost: 'Cost of positions',
+    unrealized: 'Unrealised gain/loss',
+    realized: 'Realised gain/loss',
+    currencyNote:
+      'Amounts in the account currency ({{currency}}), as Trading 212 calculates them. Miven does not convert currencies.',
+    refresh: 'Refresh now',
+    positions: 'Positions',
+    positionLine: '{{quantity}} × {{price}}',
+    netWorth: 'Net worth',
+    netWorthHint:
+      'The total account value counts in net worth through a single investment item, updated on every read. Buying and selling in Trading 212 are not expenses or income.',
+    netWorthItem: 'Count as',
+    notCounted: 'Do not count',
+    createItem: 'Create item',
+    disconnect: 'Disconnect account',
+    disconnectTitle: 'Disconnect Trading 212?',
+    disconnectMessage:
+      'The key is deleted from the server and we stop reading the account. The net worth item keeps its last value.',
+    errors: {
+      unauthorized:
+        'Trading 212 rejected the key. Check the key and secret, or generate a new one.',
+      rateLimited: 'Too many requests to Trading 212. We will try again shortly.',
+      unavailable: 'Trading 212 did not respond. Showing the last known values.',
+      invalid: 'The Trading 212 answer was not as expected. Nothing was changed.',
+      notConnected: 'The account is not connected.',
+      connectRejected: 'Could not connect: check the key, the secret and the account type.',
+      refreshFailed: 'Could not refresh now. Showing the last known values.',
+    },
+  },
   settings: {
+    t212Hint: 'Portfolio and positions, read-only',
     formats: 'Numbers, currencies and dates',
     formatsHint: 'They follow the device region: {{example}}',
     backup: 'Backups',
@@ -190,6 +243,7 @@ const en: Translation = {
         'If you share, Miven sends PostHog (EU servers) only the names of the screens you open, to learn what to improve. Never amounts, descriptions, accounts or your email. You can turn this off at any time.',
     },
     groups: {
+      integrations: 'Integrations',
       sync: 'Sync',
       appearance: 'Appearance',
       language: 'Language and region',
