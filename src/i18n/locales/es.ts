@@ -47,6 +47,12 @@ const es: Translation = {
     },
   },
   dashboard: {
+    investments: {
+      title: 'Inversiones',
+      unrealized: 'No realizado: {{amount}} · {{percent}}',
+      chooseItem: 'Elige cómo cuenta en el patrimonio (ya tienes inversiones registradas).',
+      notCounted: 'No cuenta en el patrimonio (tu elección).',
+    },
     cardDebtHint: 'No incluido: {{amount}} adeudado en tarjetas de crédito',
     transfersExcluded: 'Las transferencias entre tus cuentas no cuentan como ingreso ni gasto.',
     netWorth: {
@@ -189,6 +195,7 @@ const es: Translation = {
     },
   },
   t212: {
+    updatedNow: 'Actualizado ahora',
     title: 'Trading 212',
     intro:
       'Conecta tu cuenta Invest o Stocks ISA para ver el valor de la cartera, el efectivo disponible y las posiciones sin escribir nada. Miven solo lee: no compra, no vende ni mueve dinero.',

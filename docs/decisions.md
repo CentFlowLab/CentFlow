@@ -970,6 +970,11 @@ posições 1/s, histórico 20/min); valores na moeda principal da conta (sem mul
 - Escondido até ao lançamento: `EXPO_PUBLIC_T212_ENABLED=true` só depois de aplicar a migração
   `20261118000100_integrations.sql`, publicar a função e definir `INTEGRATIONS_KEY`
   (`openssl rand -base64 32`, posto pelo responsável). Política de privacidade já atualizada.
+- **Revisto a 2026-11-12 (teste real no staging):** a carteira está à vista sem abrir a integração:
+  cartão "Investimentos" no Dashboard (valor, ganho por realizar, hora da leitura, desatualizado) e
+  atualização em segundo plano a cada minuto com a app aberta (`T212Sync`). Sem escolha feita e
+  sem outros investimentos na mesma moeda, cria e liga sozinho o item "Trading 212"; havendo outros,
+  pede escolha (nunca conta duas vezes).
 - Sem scraping, sem palavra-passe, sem ordens. Alternativas se a API deixar de servir:
   importação de extratos ou atualização manual do item.
 

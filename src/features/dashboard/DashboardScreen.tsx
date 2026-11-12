@@ -43,6 +43,7 @@ import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
 import { hasSeenOnboarding } from '../onboarding/onboarding-state';
 import { FinancialHealthCard } from './FinancialHealthCard';
 import { NetWorthCard } from './NetWorthCard';
+import { InvestmentsCard } from '../investments/InvestmentsCard';
 import { MonthInsights } from './MonthInsights';
 import { UpcomingObligations } from './UpcomingObligations';
 
@@ -156,6 +157,8 @@ export function DashboardScreen() {
             </Text>
           </Pressable>
         </HeroCard>
+        {/* Investimentos ligados contam mesmo antes de haver contas bancárias. */}
+        <InvestmentsCard />
       </Screen>
     );
   }
@@ -438,6 +441,8 @@ export function DashboardScreen() {
       {month === currentMonth ? <UpcomingObligations today={today} /> : null}
 
       {month === currentMonth ? <NetWorthCard currency={currency} /> : null}
+
+      {month === currentMonth ? <InvestmentsCard /> : null}
 
       <View style={styles.actions}>
         {quickActions.map((action) => (

@@ -47,6 +47,12 @@ const en: Translation = {
     },
   },
   dashboard: {
+    investments: {
+      title: 'Investments',
+      unrealized: 'Unrealised: {{amount}} · {{percent}}',
+      chooseItem: 'Choose how it counts in net worth (you already have investments recorded).',
+      notCounted: 'Not counted in net worth (your choice).',
+    },
     cardDebtHint: 'Not included: {{amount}} owed on credit cards',
     transfersExcluded: 'Transfers between your accounts do not count as income or expenses.',
     netWorth: {
@@ -188,6 +194,7 @@ const en: Translation = {
     },
   },
   t212: {
+    updatedNow: 'Updated just now',
     title: 'Trading 212',
     intro:
       'Connect your Invest or Stocks ISA account to see the portfolio value, available cash and positions without typing anything. Miven only reads: it does not buy, sell or move money.',

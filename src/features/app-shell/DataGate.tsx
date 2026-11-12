@@ -25,6 +25,7 @@ import {
 import { i18n } from '@/i18n';
 import { Button, EmptyState } from '@/ui/components';
 import { spacing, useTheme } from '@/ui/theme';
+import { T212Sync } from '../investments/T212Sync';
 import { AutoBackup } from '../settings/AutoBackup';
 
 import {
@@ -210,6 +211,7 @@ export function DataGate({
         <RepositoriesProvider repositories={state.current.store.repositories}>
           {children}
           <AutoBackup />
+          <T212Sync />
         </RepositoriesProvider>
       </ActiveSpaceContext.Provider>
     );

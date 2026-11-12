@@ -45,6 +45,12 @@ const ptPT = {
     },
   },
   dashboard: {
+    investments: {
+      title: 'Investimentos',
+      unrealized: 'Por realizar: {{amount}} · {{percent}}',
+      chooseItem: 'Escolhe como contar no património (já tens investimentos registados).',
+      notCounted: 'Não conta no património (escolha tua).',
+    },
     cardDebtHint: 'Fora deste valor: {{amount}} em dívida nos cartões de crédito',
     transfersExcluded:
       'Transferências entre as tuas contas não contam como rendimento nem despesa.',
@@ -188,6 +194,7 @@ const ptPT = {
     },
   },
   t212: {
+    updatedNow: 'Atualizado agora',
     title: 'Trading 212',
     intro:
       'Liga a tua conta Invest ou Stocks ISA para veres o valor da carteira, o dinheiro disponível e as posições sem escrever nada. A Miven só lê: não compra, não vende nem move dinheiro.',

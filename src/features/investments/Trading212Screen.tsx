@@ -5,7 +5,6 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { isStale, T212_POLL_MS, type T212Snapshot } from '@/core/investments/trading212';
 import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import { appStorage } from '@/lib/storage/key-value-store';
 import {
   Badge,
   Button,
@@ -22,6 +21,13 @@ import { spacing, useTheme } from '@/ui/theme';
 
 import { useAuth } from '../account/AuthProvider';
 import { closeModal } from '../finance/navigation';
+import {
+  linkedItemId,
+  loadT212,
+  setLinkedItem,
+  syncT212Wealth,
+  type T212State,
+} from './trading212-sync';
 import { useToday } from '../finance/useToday';
 
 /** Só aparece quando a função `t212` e o segredo INTEGRATIONS_KEY estão no servidor (ADR-064). */
@@ -29,14 +35,7 @@ export function t212Enabled(): boolean {
   return process.env.EXPO_PUBLIC_T212_ENABLED === 'true';
 }
 
-const LINK_KEY = 't212.wealthItemId';
-type Integration = {
-  status: 'connected' | 'error';
-  environment: 'live' | 'demo';
-  last_sync_at: string | null;
-  last_error: string | null;
-};
-type State = { integration: Integration | null; snapshot: T212Snapshot | null };
+type State = T212State;
 
 export function Trading212Screen() {
   const { t } = useTranslation();
@@ -62,40 +61,18 @@ export function Trading212Screen() {
     ),
   );
 
-  /** Estado e último retrato (RLS: só os da própria pessoa). */
-  const load = useCallback(async (): Promise<State | null> => {
-    if (!client) return null;
-    const [integration, snapshot] = await Promise.all([
-      client
-        .from('integrations')
-        .select('status, environment, last_sync_at, last_error')
-        .eq('provider', 'trading212')
-        .maybeSingle(),
-      client.from('investment_snapshots').select('data').eq('provider', 'trading212').maybeSingle(),
-    ]);
-    return {
-      integration: (integration.data as Integration | null) ?? null,
-      snapshot: ((snapshot.data as { data: T212Snapshot } | null)?.data ??
-        null) as T212Snapshot | null,
-    };
-  }, [client]);
+  const load = useCallback(
+    async (): Promise<State | null> => (client ? loadT212(client) : null),
+    [client],
+  );
 
-  /** O valor da conta entra no património pelo item escolhido (uma só vez: nunca dois itens). */
+  /** O mesmo critério do Dashboard e da atualização em segundo plano (um só item, nunca dois). */
   const syncWealth = useCallback(
-    async (snapshot: T212Snapshot | null, linkedId: string | null) => {
-      if (!snapshot || !linkedId || linkedId === 'none') return;
-      const item = await repositories.wealth.get(linkedId);
-      if (!item || item.closedOn || item.currency !== snapshot.currency) return;
-      if (item.amount === snapshot.total && item.valuedOn === today) return;
-      await repositories.wealth.update(item.id, {
-        name: item.name,
-        type: item.type,
-        amount: snapshot.total,
-        currency: item.currency,
-        valuedOn: today,
-      });
+    async (snapshot: T212Snapshot | null) => {
+      await syncT212Wealth(repositories, snapshot, today, t('t212.title'));
+      setLink(await linkedItemId());
     },
-    [repositories, today],
+    [repositories, today, t],
   );
 
   const refresh = useCallback(
@@ -113,9 +90,7 @@ export function Trading212Screen() {
       }
       setState(next);
       setNow(Date.now());
-      const linkedId = await appStorage.getItem(LINK_KEY).catch(() => null);
-      setLink(linkedId);
-      await syncWealth(next?.snapshot ?? null, linkedId).catch(() => undefined);
+      await syncWealth(next?.snapshot ?? null).catch(() => undefined);
     },
     [client, load, syncWealth],
   );
@@ -159,7 +134,7 @@ export function Trading212Screen() {
     if (!client) return;
     setBusy(true);
     await client.functions.invoke('t212', { method: 'POST', body: { action: 'disconnect' } });
-    await appStorage.removeItem(LINK_KEY).catch(() => undefined);
+    await setLinkedItem(null);
     setBusy(false);
     await refresh(false);
   };
@@ -175,9 +150,9 @@ export function Trading212Screen() {
       });
       value = created.id;
     }
-    await appStorage.setItem(LINK_KEY, value).catch(() => undefined);
+    await setLinkedItem(value);
     setLink(value);
-    await syncWealth(state?.snapshot ?? null, value).catch(() => undefined);
+    await syncWealth(state?.snapshot ?? null).catch(() => undefined);
   };
 
   const snapshot = state?.snapshot ?? null;
@@ -255,7 +230,9 @@ export function Trading212Screen() {
               <View style={styles.row}>
                 <Text variant="footnote" tone="secondary" style={styles.flex}>
                   {snapshot && ago !== null
-                    ? t('t212.updated', { minutes: ago })
+                    ? ago === 0
+                      ? t('t212.updatedNow')
+                      : t('t212.updated', { count: ago })
                     : t('t212.noData')}
                 </Text>
                 <Badge

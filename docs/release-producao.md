@@ -303,3 +303,15 @@ Autorizado pelo responsável ("Sim, push e staging"). ADR-064 e ADR-065.
    executáveis por `authenticated`; `admin_role`, `admin_overview` e `admin_audit_log` são (e
    verificam o papel por dentro); todas com `search_path` vazio.
 3. **Produção: não aplicado.** Função `t212` e segredo `INTEGRATIONS_KEY`: não publicados.
+
+## Execução de 2026-11-12 (noite) — Trading 212 no staging
+
+Autorizado pelo responsável (pedido de teste no staging). ADR-064.
+
+1. Segredo `INTEGRATIONS_KEY` gerado aleatoriamente e definido no staging (`secrets set` a partir de
+   um ficheiro temporário apagado logo a seguir; o valor nunca foi mostrado nem guardado).
+2. Função `t212` publicada no staging; sem sessão responde 401.
+3. Conta de teste `technical` no staging (`private.admin_roles`), para validar o painel.
+4. Teste real do responsável com uma conta de demonstração da Trading 212: ligação, resumo e
+   posições corretos (custo + ganho = valor total).
+5. **Produção: nada.** Migrações, função e segredo continuam por aplicar.
