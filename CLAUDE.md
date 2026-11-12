@@ -13,7 +13,7 @@ ADR-059, todas na produção desde
 2026-11-11; ver
 [docs/release-producao.md](docs/release-producao.md)). Os anexos ficam no balde privado `documents`
 do Storage; a função `delete-account` apaga-os antes de eliminar o utilizador.
-App publicada: **0.1.16** (2026-11-11; migração local v15). Estado verificado e pendentes em
+App publicada: **0.1.17** (2026-11-12; migração local v16). Estado verificado e pendentes em
 [docs/audit-2026-11.md](docs/audit-2026-11.md) (secção "Estado atual"); testes em aparelhos reais
 ainda por fazer.
 Funções `delete-account` e
