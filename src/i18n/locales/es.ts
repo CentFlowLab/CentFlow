@@ -382,10 +382,11 @@ const es: Translation = {
     noResults: 'Ninguna categoría con ese nombre.',
   },
   categories: {
+    drag: 'Arrastrar {{name}}',
     order: 'Ordenar',
     orderDone: 'Listo',
     orderHint:
-      'Usa las flechas para cambiar la posición. Este orden se usa en todos los sitios donde eliges una categoría.',
+      'Arrastra por el asa (≡) o usa las flechas. Este orden se usa en todos los sitios donde eliges una categoría.',
     orderByName: 'Por nombre',
     moveUp: 'Subir {{name}}',
     moveDown: 'Bajar {{name}}',

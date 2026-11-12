@@ -852,7 +852,8 @@ percorrer dezenas de botões para escolher uma.
 
 - `categories.sort_order` (inteiro ≥ 0, opcional) guarda a posição dentro do tipo. Sem posição,
   a categoria segue a ordem de criação, depois das ordenadas; uma nova entra no fim. O ecrã de
-  Categorias tem o modo "Ordenar" (setas, acessível em todas as plataformas) e "Por nome".
+  Categorias tem o modo "Ordenar": arrastar pela pega (toque ou rato, `ReorderableList` só com
+  `PanResponder`), setas e ações de ajuste para leitores de ecrã, e "Por nome".
 - A posição sincroniza, mas é só de apresentação: alterada em dois aparelhos fica a do servidor,
   sem conflito, e nunca conta como edição contra uma eliminação (`SERVER_WINS` em `merge.ts`).
 - Movimentos, subscrições, orçamentos e pagamentos de dívidas escolhem a categoria num campo que

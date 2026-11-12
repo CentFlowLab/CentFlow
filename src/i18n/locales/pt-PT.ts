@@ -378,10 +378,11 @@ const ptPT = {
     noResults: 'Nenhuma categoria com esse nome.',
   },
   categories: {
+    drag: 'Arrastar {{name}}',
     order: 'Ordenar',
     orderDone: 'Concluído',
     orderHint:
-      'Usa as setas para mudar a posição. A ordem aparece em todo o lado onde escolhes uma categoria.',
+      'Arrasta pela pega (≡) ou usa as setas. A ordem aparece em todo o lado onde escolhes uma categoria.',
     orderByName: 'Por nome',
     moveUp: 'Subir {{name}}',
     moveDown: 'Descer {{name}}',

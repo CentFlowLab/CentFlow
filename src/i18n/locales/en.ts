@@ -380,10 +380,11 @@ const en: Translation = {
     noResults: 'No category with that name.',
   },
   categories: {
+    drag: 'Drag {{name}}',
     order: 'Reorder',
     orderDone: 'Done',
     orderHint:
-      'Use the arrows to change the position. This order is used wherever you pick a category.',
+      'Drag by the handle (≡) or use the arrows. This order is used wherever you pick a category.',
     orderByName: 'By name',
     moveUp: 'Move {{name}} up',
     moveDown: 'Move {{name}} down',

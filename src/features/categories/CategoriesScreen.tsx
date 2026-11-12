@@ -13,6 +13,8 @@ import {
   EmptyState,
   IconButton,
   ListItem,
+  moveItem,
+  ReorderableList,
   Screen,
   Section,
   Text,
@@ -33,10 +35,20 @@ export function CategoriesScreen() {
   const categories = query.data;
   const [ordering, setOrdering] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Ordem mostrada logo ao largar; vale só para a lista em que se baseou (a confirmada substitui-a).
+  const [optimistic, setOptimistic] = useState<{
+    base: typeof categories;
+    order: Partial<Record<CategoryType, string[]>>;
+  } | null>(null);
 
   // Grava a ordem nova; a lista atualiza-se sozinha depois da escrita.
   const save = (type: CategoryType, ids: string[]) => {
     setFailed(false);
+    // A nova ordem aparece logo; a lista confirmada substitui-a depois da escrita.
+    setOptimistic((current) => ({
+      base: categories,
+      order: { ...(current && current.base === categories ? current.order : {}), [type]: ids },
+    }));
     void repositories.categories.reorder(type, ids).catch(() => setFailed(true));
   };
   const move = (type: CategoryType, ids: string[], index: number, delta: -1 | 1) => {
@@ -91,7 +103,11 @@ export function CategoriesScreen() {
         )
       ) : (
         CATEGORY_TYPES.map((type) => {
-          const items = categories.filter((category) => category.type === type);
+          const pending = optimistic?.base === categories ? optimistic.order[type] : undefined;
+          const ofType = categories.filter((category) => category.type === type);
+          const items = pending
+            ? [...ofType].sort((a, b) => pending.indexOf(a.id) - pending.indexOf(b.id))
+            : ofType;
           const ids = items.map((category) => category.id);
           return (
             <Section
@@ -124,50 +140,57 @@ export function CategoriesScreen() {
                   <Text variant="footnote" tone="secondary" style={{ padding: spacing.lg }}>
                     {t('categories.empty')}
                   </Text>
+                ) : ordering ? (
+                  <ReorderableList
+                    data={items}
+                    keyOf={(category) => category.id}
+                    separator={<Divider inset={DIVIDER_INSET} />}
+                    handleLabel={(category) => t('categories.drag', { name: category.name })}
+                    onReorder={(from, to) => save(type, moveItem(ids, from, to))}
+                    renderItem={(category, index) => (
+                      <ListItem
+                        leading={<CategoryIcon icon={category.icon} color={category.color} />}
+                        title={category.name}
+                        trailing={
+                          <View style={styles.arrows}>
+                            <IconButton
+                              icon="chevron-up"
+                              accessibilityLabel={t('categories.moveUp', {
+                                name: category.name,
+                              })}
+                              disabled={index === 0}
+                              color={index === 0 ? 'textTertiary' : 'text'}
+                              onPress={() => move(type, ids, index, -1)}
+                            />
+                            <IconButton
+                              icon="chevron-down"
+                              accessibilityLabel={t('categories.moveDown', {
+                                name: category.name,
+                              })}
+                              disabled={index === items.length - 1}
+                              color={index === items.length - 1 ? 'textTertiary' : 'text'}
+                              onPress={() => move(type, ids, index, 1)}
+                            />
+                          </View>
+                        }
+                      />
+                    )}
+                  />
                 ) : (
                   items.map((category, index) => (
                     <Fragment key={category.id}>
                       {index > 0 ? <Divider inset={DIVIDER_INSET} /> : null}
-                      {ordering ? (
-                        <ListItem
-                          leading={<CategoryIcon icon={category.icon} color={category.color} />}
-                          title={category.name}
-                          trailing={
-                            <View style={styles.arrows}>
-                              <IconButton
-                                icon="chevron-up"
-                                accessibilityLabel={t('categories.moveUp', {
-                                  name: category.name,
-                                })}
-                                disabled={index === 0}
-                                color={index === 0 ? 'textTertiary' : 'text'}
-                                onPress={() => move(type, ids, index, -1)}
-                              />
-                              <IconButton
-                                icon="chevron-down"
-                                accessibilityLabel={t('categories.moveDown', {
-                                  name: category.name,
-                                })}
-                                disabled={index === items.length - 1}
-                                color={index === items.length - 1 ? 'textTertiary' : 'text'}
-                                onPress={() => move(type, ids, index, 1)}
-                              />
-                            </View>
-                          }
-                        />
-                      ) : (
-                        <ListItem
-                          leading={<CategoryIcon icon={category.icon} color={category.color} />}
-                          title={category.name}
-                          subtitle={t('categories.entryCount', { count: category.entryCount })}
-                          onPress={() =>
-                            router.push({
-                              pathname: '/category/[id]',
-                              params: { id: category.id },
-                            })
-                          }
-                        />
-                      )}
+                      <ListItem
+                        leading={<CategoryIcon icon={category.icon} color={category.color} />}
+                        title={category.name}
+                        subtitle={t('categories.entryCount', { count: category.entryCount })}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/category/[id]',
+                            params: { id: category.id },
+                          })
+                        }
+                      />
                     </Fragment>
                   ))
                 )}
