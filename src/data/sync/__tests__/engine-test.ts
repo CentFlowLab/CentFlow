@@ -836,3 +836,118 @@ describe('budget sync', () => {
     expect(await serverCount(user, 'budgets')).toBe(1);
   });
 });
+
+describe('new fields across devices (validation 2026-11-12)', () => {
+  it('carries cards, loans, goals, contribution links and category order intact to another device', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    const { account, category } = await setup(phone);
+    const card = await phone.repositories.accounts.create({
+      name: 'Visa',
+      type: 'card',
+      currency: 'EUR',
+      initialBalance: -20000,
+      creditLimit: 150000,
+      dueDay: 5,
+      paymentAccountId: account.id,
+    });
+    const transfer = await phone.repositories.entries.create({
+      ...expense(account, category, 20000, 'Pagar cartão'),
+      type: 'transfer',
+      categoryId: null,
+      destinationAccountId: card.id,
+    });
+    const goal = await phone.repositories.goals.create({
+      name: 'Férias',
+      targetAmount: 100000,
+      currency: 'EUR',
+      targetOn: null,
+      icon: 'airplane-outline',
+      color: 'indigo',
+      description: 'Japão',
+      accountId: account.id,
+    });
+    await phone.repositories.goals.addContribution({
+      goalId: goal.id,
+      amount: 20000,
+      date: '2026-11-08',
+      entryId: transfer.id,
+    });
+    const loan = await phone.repositories.wealth.create({
+      name: 'Crédito',
+      type: 'loan',
+      amount: 1000000,
+      currency: 'EUR',
+      valuedOn: '2026-11-01',
+    });
+    await phone.repositories.wealth.recordPayment(loan.id, {
+      amount: 30000,
+      principal: 25000,
+      interest: 4000,
+      fees: 1000,
+      accountId: account.id,
+      categoryId: category.id,
+      date: '2026-11-08',
+      description: 'Prestação',
+    });
+    const expenses = await phone.repositories.categories.list('expense');
+    await phone.repositories.categories.reorder('expense', expenses.map((c) => c.id).reverse());
+
+    expect(await phone.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+    expect(await laptop.engine.sync()).toMatchObject({ status: 'idle', pending: 0, conflicts: 0 });
+
+    const laptopCard = (await laptop.repositories.accounts.listWithBalances()).find(
+      (a) => a.id === card.id,
+    );
+    expect(laptopCard).toMatchObject({
+      creditLimit: 150000,
+      dueDay: 5,
+      paymentAccountId: account.id,
+      balance: 0,
+    });
+    expect(await laptop.repositories.goals.get(goal.id)).toMatchObject({
+      icon: 'airplane-outline',
+      color: 'indigo',
+      description: 'Japão',
+      accountId: account.id,
+    });
+    expect((await laptop.repositories.goals.listContributions(goal.id))[0]).toMatchObject({
+      entryId: transfer.id,
+    });
+    expect((await laptop.repositories.wealth.get(loan.id))?.amount).toBe(975000);
+    expect(
+      (await laptop.repositories.wealth.loanLedger(loan.id)).map((e) => e.principalAmount),
+    ).toEqual([25000]);
+    expect((await laptop.repositories.categories.list('expense')).map((c) => c.id)).toEqual(
+      expenses.map((c) => c.id).reverse(),
+    );
+    // Os mesmos saldos nos dois aparelhos.
+    expect(await balanceOf(laptop, account.id)).toBe(await balanceOf(phone, account.id));
+  });
+
+  it('keeps the server order when two devices reorder categories at the same time', async () => {
+    const user = await newUser();
+    const phone = await device(user);
+    const laptop = await device(user);
+    await setup(phone);
+    await phone.repositories.categories.create({
+      name: 'Casa',
+      type: 'expense',
+      icon: 'home',
+      color: 'blue',
+    });
+    await phone.engine.sync();
+    await laptop.engine.sync();
+    const ids = (await phone.repositories.categories.list('expense')).map((c) => c.id);
+    await phone.repositories.categories.reorder('expense', [...ids].reverse());
+    await laptop.repositories.categories.reorder('expense', ids);
+    await phone.engine.sync();
+    // A ordem não gera conflito para resolver: fica a do servidor (a primeira a chegar).
+    expect(await laptop.engine.sync()).toMatchObject({ conflicts: 0 });
+    await phone.engine.sync();
+    const phoneOrder = (await phone.repositories.categories.list('expense')).map((c) => c.id);
+    const laptopOrder = (await laptop.repositories.categories.list('expense')).map((c) => c.id);
+    expect(laptopOrder).toEqual(phoneOrder);
+  });
+});

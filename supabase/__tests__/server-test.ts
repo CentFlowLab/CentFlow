@@ -1892,3 +1892,50 @@ describe('admin panel', () => {
     );
   });
 });
+
+describe('security roles (validation)', () => {
+  it('stops a normal user from raising their own role or reaching other people', async () => {
+    await expect(
+      alice.query(`insert into private.admin_roles (user_id, role) values ('${A}', 'technical')`),
+    ).rejects.toThrow();
+    await expect(
+      alice.query(`select private.admin_require('overview', array['technical'])`),
+    ).rejects.toThrow();
+    await expect(alice.query('select * from private.admin_audit')).rejects.toThrow();
+    await expect(
+      alice.query(`select public.integration_secret_put('${A}', 'trading212', 'x', 'y')`),
+    ).rejects.toThrow();
+    // Dados de outra pessoa: invisíveis em todas as tabelas pessoais.
+    await seedBasics(bob);
+    for (const table of [
+      'accounts',
+      'categories',
+      'entries',
+      'integrations',
+      'investment_snapshots',
+    ]) {
+      expect(await alice.query(`select * from public.${table} where user_id = '${B}'`)).toEqual([]);
+    }
+  });
+
+  it('gives support only aggregates and no audit log, and no way to escalate', async () => {
+    await server.pg.query(
+      `insert into private.admin_roles (user_id, role) values ($1, 'support')`,
+      [A],
+    );
+    const [row] = await alice.query<{ overview: { users: { total: number } } }>(
+      'select public.admin_overview() as overview',
+    );
+    expect(row!.overview.users.total).toBe(2);
+    await expect(alice.query('select * from public.admin_audit_log()')).rejects.toThrow(
+      /forbidden/,
+    );
+    await expect(
+      alice.query(`update private.admin_roles set role = 'technical' where user_id = '${A}'`),
+    ).rejects.toThrow();
+    // Nenhuma função administrativa devolve linhas de movimentos ou contas.
+    await seedBasics(bob);
+    const text = JSON.stringify(row);
+    expect(text).not.toMatch(/Banco|Compras|example\.test/);
+  });
+});
