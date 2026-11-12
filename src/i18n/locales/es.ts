@@ -230,6 +230,27 @@ const es: Translation = {
       refreshFailed: 'No se pudo actualizar ahora. Mostramos los últimos valores conocidos.',
     },
   },
+  admin: {
+    title: 'Administración',
+    noAccess: 'Sin acceso',
+    noAccessHint: 'Esta área es solo para quien el servidor reconoce como administrador.',
+    scope:
+      'Rol: {{role}}. Solo números agregados: no ves movimientos, saldos, documentos ni datos de ninguna persona. Cada consulta queda registrada.',
+    roles: { technical: 'Técnico', support: 'Soporte', product: 'Producto' },
+    usersTotal: 'Cuentas registradas',
+    usersNew: 'Nuevas en los últimos 30 días',
+    usersSyncing: 'Sincronizaron en los últimos 7 días',
+    accounts: 'Cuentas financieras',
+    entries: 'Movimientos',
+    documents: 'Documentos',
+    goals: 'Objetivos',
+    integrations: 'Integraciones',
+    none: 'Ninguna conectada',
+    integrationStatus: { connected: 'Conectadas', error: 'Con errores' },
+    notAvailable:
+      'Errores técnicos: Sentry. Copias de la base de datos: panel de Supabase. Versiones de la app en uso: aún no se registran en el servidor.',
+    audit: 'Registro de consultas',
+  },
   settings: {
     t212Hint: 'Cartera y posiciones, solo lectura',
     formats: 'Números, monedas y fechas',

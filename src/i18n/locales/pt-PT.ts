@@ -228,6 +228,27 @@ const ptPT = {
       refreshFailed: 'Não foi possível atualizar agora. Mostramos os últimos valores conhecidos.',
     },
   },
+  admin: {
+    title: 'Administração',
+    noAccess: 'Sem acesso',
+    noAccessHint: 'Esta área é só para quem o servidor reconhece como administrador.',
+    scope:
+      'Papel: {{role}}. Só números agregados: não vês movimentos, saldos, documentos nem dados de nenhuma pessoa. Cada consulta fica registada.',
+    roles: { technical: 'Técnico', support: 'Suporte', product: 'Produto' },
+    usersTotal: 'Contas registadas',
+    usersNew: 'Novas nos últimos 30 dias',
+    usersSyncing: 'Sincronizaram nos últimos 7 dias',
+    accounts: 'Contas financeiras',
+    entries: 'Movimentos',
+    documents: 'Documentos',
+    goals: 'Objetivos',
+    integrations: 'Integrações',
+    none: 'Nenhuma ligada',
+    integrationStatus: { connected: 'Ligadas', error: 'Com erro' },
+    notAvailable:
+      'Erros técnicos: Sentry. Cópias da base de dados: painel do Supabase. Versões da app em uso: ainda não são registadas no servidor.',
+    audit: 'Registo de consultas',
+  },
   settings: {
     t212Hint: 'Carteira e posições, só leitura',
     formats: 'Números, moedas e datas',

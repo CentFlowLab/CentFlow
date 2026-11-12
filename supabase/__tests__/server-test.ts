@@ -1857,3 +1857,38 @@ describe('integrations (Trading 212)', () => {
     ).toEqual([{ iv: 'iv' }]);
   });
 });
+
+describe('admin panel', () => {
+  const grant = (user: string, role: string) =>
+    server.pg.query(`insert into private.admin_roles (user_id, role) values ($1, $2)`, [
+      user,
+      role,
+    ]);
+
+  it('refuses anyone without a server-side role and never returns personal rows', async () => {
+    expect(await alice.query('select public.admin_role() as role')).toEqual([{ role: null }]);
+    await expect(alice.query('select public.admin_overview()')).rejects.toThrow(/forbidden/);
+    await expect(server.anonymous().query('select public.admin_overview()')).rejects.toThrow();
+    await expect(alice.query('select * from private.admin_roles')).rejects.toThrow();
+
+    await seedBasics(alice);
+    await grant(B, 'product');
+    expect(await bob.query('select public.admin_role() as role')).toEqual([{ role: 'product' }]);
+    const rows = await bob.query<{ overview: Record<string, unknown> }>(
+      'select public.admin_overview() as overview',
+    );
+    const overview = rows[0]!.overview;
+    expect(overview).toMatchObject({ users: { total: 2 }, records: { accounts: 1 } });
+    // Só números: nada de emails, nomes, saldos ou movimentos.
+    expect(JSON.stringify(overview)).not.toMatch(/example\.test|Banco|Compras/);
+    // O registo de auditoria é só para o papel técnico; a consulta ficou registada.
+    await expect(bob.query('select * from public.admin_audit_log()')).rejects.toThrow(/forbidden/);
+    await grant(A, 'technical');
+    const log = await alice.query<{ action: string; role: string }>(
+      'select action, role from public.admin_audit_log()',
+    );
+    expect(log.map((row) => `${row.role}:${row.action}`)).toEqual(
+      expect.arrayContaining(['product:overview', 'technical:audit_log']),
+    );
+  });
+});

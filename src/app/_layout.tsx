@@ -51,6 +51,7 @@ function RootStack() {
         <Stack.Screen name="sync/conflicts" options={MODAL} />
         <Stack.Screen name="backup" options={MODAL} />
         <Stack.Screen name="integrations/trading212" options={MODAL} />
+        <Stack.Screen name="admin" options={MODAL} />
       </Stack.Protected>
       <Stack.Protected guard={!granted}>
         <Stack.Screen name="welcome" />

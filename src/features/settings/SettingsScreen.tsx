@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountSettings } from '@/features/account/AccountSection';
+import { useAdminRole } from '@/features/admin/AdminScreen';
 import { t212Enabled } from '@/features/investments/Trading212Screen';
 import { useLocaleFormat, LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
 import {
@@ -56,6 +57,8 @@ export function SettingsScreen() {
   const { t } = useTranslation();
   const version = Constants.expoConfig?.version ?? '—';
   const { formatMoney, formatDate } = useLocaleFormat();
+  // Só quem o servidor reconhece (admin_role()); esconder a linha não é a proteção.
+  const adminRole = useAdminRole();
 
   return (
     <Screen title={t('settings.title')}>
@@ -119,6 +122,20 @@ export function SettingsScreen() {
             <Section title={t('settings.groups.experience')}>
               <Card padding="xs">
                 <QuickEntryRow />
+              </Card>
+            </Section>
+          ) : null}
+
+          {adminRole ? (
+            <Section title={t('admin.title')}>
+              <Card padding="xs">
+                <ListItem
+                  {...NEUTRAL}
+                  icon="shield-outline"
+                  title={t('admin.title')}
+                  subtitle={t(`admin.roles.${adminRole}`)}
+                  onPress={() => router.push('/admin' as Href)}
+                />
               </Card>
             </Section>
           ) : null}

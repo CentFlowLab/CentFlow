@@ -970,6 +970,16 @@ posições 1/s, histórico 20/min); valores na moeda principal da conta (sem mul
 - Sem scraping, sem palavra-passe, sem ordens. Alternativas se a API deixar de servir:
   importação de extratos ou atualização manual do item.
 
+## ADR-065 — Painel de administração só com agregados
+
+**Decisão:** papéis em `private.admin_roles` (technical, support, product), geridos só por SQL;
+funções `security definer` que verificam o papel **no servidor**, devolvem apenas contagens e
+registam cada consulta em `private.admin_audit`. Nenhuma função devolve linhas de uma pessoa.
+A app mostra a área só quando `admin_role()` responde com um papel. Acesso de suporte a dados
+individuais com consentimento e prazo: proposta em `docs/admin.md`, não implementada.
+Migração `20261119000100_admin.sql`, por aplicar; testada em PGlite (sem papel: recusado;
+anónimo: recusado; produto: só agregados; técnico: registo de consultas).
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

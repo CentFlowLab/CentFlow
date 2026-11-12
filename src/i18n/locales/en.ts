@@ -229,6 +229,27 @@ const en: Translation = {
       refreshFailed: 'Could not refresh now. Showing the last known values.',
     },
   },
+  admin: {
+    title: 'Administration',
+    noAccess: 'No access',
+    noAccessHint: 'This area is only for people the server recognises as administrators.',
+    scope:
+      'Role: {{role}}. Aggregated numbers only: you do not see entries, balances, documents or anyone’s data. Every query is logged.',
+    roles: { technical: 'Technical', support: 'Support', product: 'Product' },
+    usersTotal: 'Registered accounts',
+    usersNew: 'New in the last 30 days',
+    usersSyncing: 'Synced in the last 7 days',
+    accounts: 'Financial accounts',
+    entries: 'Entries',
+    documents: 'Documents',
+    goals: 'Goals',
+    integrations: 'Integrations',
+    none: 'None connected',
+    integrationStatus: { connected: 'Connected', error: 'With errors' },
+    notAvailable:
+      'Technical errors: Sentry. Database backups: Supabase dashboard. App versions in use: not recorded on the server yet.',
+    audit: 'Query log',
+  },
   settings: {
     t212Hint: 'Portfolio and positions, read-only',
     formats: 'Numbers, currencies and dates',
