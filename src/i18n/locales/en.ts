@@ -47,6 +47,16 @@ const en: Translation = {
     },
   },
   dashboard: {
+    cardDebtHint: 'Not included: {{amount}} owed on credit cards',
+    transfersExcluded: 'Transfers between your accounts do not count as income or expenses.',
+    netWorth: {
+      title: 'Net worth',
+      available: 'In accounts',
+      invested: 'Invested',
+      debt: 'Total debt',
+      hint: 'Accounts + assets − debts, in {{currency}}, with the latest recorded values.',
+      open: 'See net worth',
+    },
     greeting: {
       morning: 'Good morning',
       afternoon: 'Good afternoon',
@@ -64,7 +74,7 @@ const en: Translation = {
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
     backToCurrentMonth: 'Back to current month',
-    totalBalance: 'Total balance',
+    totalBalance: 'Available in accounts',
     totalBalanceHint: 'Sum of active accounts in {{currency}}',
     otherCurrencies: 'Not included in the total: {{list}}',
     monthIncome: 'Income',

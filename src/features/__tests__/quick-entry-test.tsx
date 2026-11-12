@@ -11,7 +11,7 @@ async function createAccount() {
   await fireEvent.changeText(await screen.findByLabelText('Nome'), 'Banco');
   await fireEvent.changeText(screen.getByLabelText('Saldo inicial'), '500');
   await fireEvent.press(screen.getByRole('button', { name: 'Guardar' }));
-  await screen.findByText('Saldo total');
+  await screen.findByText('Disponível nas contas');
 }
 
 async function addCoffee(amount: string) {

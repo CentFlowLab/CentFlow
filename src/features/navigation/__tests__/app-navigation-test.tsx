@@ -51,7 +51,7 @@ describe('app navigation (phone layout)', () => {
     await renderRouter('./src/app');
     expect(screen).toHavePathname('/');
     expect(await screen.findByText('Começa pela tua primeira conta')).toBeOnTheScreen();
-    expect(screen.queryByText('Saldo total')).toBeNull();
+    expect(screen.queryByText('Disponível nas contas')).toBeNull();
   });
 
   it('reaches secondary areas through "Mais"', async () => {

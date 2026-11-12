@@ -37,7 +37,7 @@ describe('first-run onboarding trigger', () => {
         <DashboardScreen />
       </RepositoriesProvider>,
     );
-    expect(await screen.findByText('Saldo total')).toBeOnTheScreen();
+    expect(await screen.findByText('Disponível nas contas')).toBeOnTheScreen();
     expect(mockPush).not.toHaveBeenCalledWith('/onboarding');
   });
 

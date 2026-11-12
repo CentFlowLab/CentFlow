@@ -45,6 +45,17 @@ const ptPT = {
     },
   },
   dashboard: {
+    cardDebtHint: 'Fora deste valor: {{amount}} em dívida nos cartões de crédito',
+    transfersExcluded:
+      'Transferências entre as tuas contas não contam como rendimento nem despesa.',
+    netWorth: {
+      title: 'Património líquido',
+      available: 'Nas contas',
+      invested: 'Investido',
+      debt: 'Dívida total',
+      hint: 'Contas + bens − dívidas, em {{currency}}, com os últimos valores registados.',
+      open: 'Ver património',
+    },
     greeting: {
       morning: 'Bom dia',
       afternoon: 'Boa tarde',
@@ -62,7 +73,7 @@ const ptPT = {
     previousMonth: 'Mês anterior',
     nextMonth: 'Mês seguinte',
     backToCurrentMonth: 'Voltar ao mês atual',
-    totalBalance: 'Saldo total',
+    totalBalance: 'Disponível nas contas',
     totalBalanceHint: 'Soma das contas ativas em {{currency}}',
     otherCurrencies: 'Não incluído no total: {{list}}',
     monthIncome: 'Rendimentos',

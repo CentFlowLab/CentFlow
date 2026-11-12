@@ -42,6 +42,7 @@ import { useToday } from '../finance/useToday';
 import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
 import { hasSeenOnboarding } from '../onboarding/onboarding-state';
 import { FinancialHealthCard } from './FinancialHealthCard';
+import { NetWorthCard } from './NetWorthCard';
 import { MonthInsights } from './MonthInsights';
 import { UpcomingObligations } from './UpcomingObligations';
 
@@ -160,13 +161,17 @@ export function DashboardScreen() {
   }
 
   const currency = pickPrimaryCurrency(accounts.map((account) => account.currency));
+  // Disponível: o saldo dos cartões de crédito é dívida, não dinheiro (salvo se estiver a favor).
   const totals = totalsByCurrency(
     accounts.map((account) => ({
       accountId: account.id,
       currency: account.currency,
-      balance: account.balance,
+      balance: account.type === 'card' ? Math.max(0, account.balance) : account.balance,
     })),
   );
+  const cardDebt = accounts
+    .filter((account) => account.type === 'card' && account.currency === currency)
+    .reduce((sum, account) => sum + Math.max(0, -account.balance), 0);
   const otherCurrencies = [...totals.entries()]
     .filter(([code]) => code !== currency)
     .map(([code, amount]) => formatMoney({ amountMinor: amount, currency: code }));
@@ -397,6 +402,11 @@ export function DashboardScreen() {
         <Text variant="caption" tone="heroMuted">
           {t('dashboard.totalBalanceHint', { currency })}
         </Text>
+        {cardDebt > 0 ? (
+          <Text variant="caption" tone="heroMuted">
+            {t('dashboard.cardDebtHint', { amount: money(cardDebt) })}
+          </Text>
+        ) : null}
         {otherCurrencies.length > 0 ? (
           <Text variant="caption" tone="heroMuted">
             {t('dashboard.otherCurrencies', { list: otherCurrencies.join(' · ') })}
@@ -404,7 +414,30 @@ export function DashboardScreen() {
         ) : null}
       </HeroCard>
 
+      <View style={styles.kpis}>
+        {summaryCards.map((kpi) => (
+          <Card key={kpi.key} style={[styles.kpi, { flexBasis: isWide ? 240 : 140 }]}>
+            <View style={[styles.kpiIcon, { backgroundColor: kpi.background }]}>
+              <Icon name={kpi.icon} size={18} color={kpi.tone} />
+            </View>
+            <Text variant="footnote" tone="secondary" numberOfLines={1}>
+              {kpi.label}
+            </Text>
+            <Text variant="title2" tone={kpi.tone} tabular numberOfLines={1} adjustsFontSizeToFit>
+              {kpi.value}
+            </Text>
+          </Card>
+        ))}
+      </View>
+      <Text variant="caption" tone="tertiary">
+        {t('dashboard.transfersExcluded')}
+      </Text>
+
       {month === currentMonth ? <MonthInsights today={today} currency={currency} /> : null}
+
+      {month === currentMonth ? <UpcomingObligations today={today} /> : null}
+
+      {month === currentMonth ? <NetWorthCard currency={currency} /> : null}
 
       <View style={styles.actions}>
         {quickActions.map((action) => (
@@ -430,25 +463,7 @@ export function DashboardScreen() {
         ))}
       </View>
 
-      <View style={styles.kpis}>
-        {summaryCards.map((kpi) => (
-          <Card key={kpi.key} style={[styles.kpi, { flexBasis: isWide ? 240 : 140 }]}>
-            <View style={[styles.kpiIcon, { backgroundColor: kpi.background }]}>
-              <Icon name={kpi.icon} size={18} color={kpi.tone} />
-            </View>
-            <Text variant="footnote" tone="secondary" numberOfLines={1}>
-              {kpi.label}
-            </Text>
-            <Text variant="title2" tone={kpi.tone} tabular numberOfLines={1} adjustsFontSizeToFit>
-              {kpi.value}
-            </Text>
-          </Card>
-        ))}
-      </View>
-
       <BudgetSummary reference={referenceForMonth(month, today)} />
-
-      {month === currentMonth ? <UpcomingObligations today={today} /> : null}
 
       {month === currentMonth ? <FinancialHealthCard today={today} currency={currency} /> : null}
 

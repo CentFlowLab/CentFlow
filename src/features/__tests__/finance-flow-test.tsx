@@ -57,7 +57,7 @@ describe('local finance flow (real SQLite)', () => {
     expect(screen).toHavePathname('/account/new');
     await createAccount('Conta à ordem', '1000');
 
-    expect(await screen.findByText('Saldo total')).toBeOnTheScreen();
+    expect(await screen.findByText('Disponível nas contas')).toBeOnTheScreen();
     expect(screen).toHavePathname('/');
     await expectAmount('1000,00');
 
@@ -157,7 +157,7 @@ describe('local finance flow (real SQLite)', () => {
   it('transfers between accounts without changing the total', async () => {
     await renderRouter('./src/app', { initialUrl: '/account/new' });
     await createAccount('Banco Principal', '500');
-    await screen.findByText('Saldo total');
+    await screen.findByText('Disponível nas contas');
     await act(() => router.push('/account/new'));
     await createAccount('Mealheiro', '0');
     expect(await screen.findByText(eur('500,00'))).toBeOnTheScreen();

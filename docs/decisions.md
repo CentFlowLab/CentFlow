@@ -980,6 +980,15 @@ individuais com consentimento e prazo: proposta em `docs/admin.md`, não impleme
 Migração `20261119000100_admin.sql`, por aplicar; testada em PGlite (sem papel: recusado;
 anónimo: recusado; produto: só agregados; técnico: registo de consultas).
 
+## ADR-066 — Dashboard orientado a decisões
+
+**Decisão:** a primeira vista responde, por esta ordem: quanto tenho disponível (contas, **sem** a
+dívida dos cartões, que aparece à parte), quanto recebi e gastei este mês (transferências entre
+contas fora, e dito), como devo acabar o mês (previsão marcada como tal), que compromissos vêm aí
+e se estou a evoluir (património líquido, investido e dívida total, `netWorthSummary`, só na
+moeda principal e sem conversões). Atalhos, orçamentos, saúde financeira, gráficos e últimos
+movimentos continuam, mais abaixo. Nenhuma secção foi removida.
+
 ## Decisões pendentes
 
 | ID  | Decisão                                        | Opções / recomendação                                                                                                                                            | Quando            |

@@ -47,6 +47,16 @@ const es: Translation = {
     },
   },
   dashboard: {
+    cardDebtHint: 'No incluido: {{amount}} adeudado en tarjetas de crédito',
+    transfersExcluded: 'Las transferencias entre tus cuentas no cuentan como ingreso ni gasto.',
+    netWorth: {
+      title: 'Patrimonio neto',
+      available: 'En las cuentas',
+      invested: 'Invertido',
+      debt: 'Deuda total',
+      hint: 'Cuentas + bienes − deudas, en {{currency}}, con los últimos valores registrados.',
+      open: 'Ver patrimonio',
+    },
     greeting: {
       morning: 'Buenos días',
       afternoon: 'Buenas tardes',
@@ -64,7 +74,7 @@ const es: Translation = {
     previousMonth: 'Mes anterior',
     nextMonth: 'Mes siguiente',
     backToCurrentMonth: 'Volver al mes actual',
-    totalBalance: 'Saldo total',
+    totalBalance: 'Disponible en las cuentas',
     totalBalanceHint: 'Suma de las cuentas activas en {{currency}}',
     otherCurrencies: 'No incluido en el total: {{list}}',
     monthIncome: 'Ingresos',

@@ -1,5 +1,5 @@
 import type { WealthItem } from '../types';
-import { isLiabilityType, wealthTotals } from '../wealth';
+import { isLiabilityType, wealthTotals, netWorthSummary } from '../wealth';
 import { validateWealthItemInput } from '../validation';
 
 const base = { createdAt: '', updatedAt: '', valuedOn: '2026-11-01' };
@@ -46,5 +46,46 @@ describe('wealth validation', () => {
       valuedOn: '2026-02-31',
     });
     expect(Object.keys(errors).sort()).toEqual(['amount', 'type', 'valuedOn']);
+  });
+});
+
+describe('netWorthSummary', () => {
+  const item = (type: string, amount: number, extra: Partial<Record<string, unknown>> = {}) =>
+    ({
+      id: type,
+      name: type,
+      type,
+      amount,
+      currency: 'EUR',
+      valuedOn: '2026-11-01',
+      closedOn: null,
+      ...extra,
+    }) as never;
+
+  it('separates available money, card debt, invested and other debt without counting twice', () => {
+    const summary = netWorthSummary(
+      [
+        { type: 'bank', currency: 'EUR', balance: 300000 },
+        { type: 'card', currency: 'EUR', balance: -65000 },
+        { type: 'card', currency: 'EUR', balance: 1000 },
+        { type: 'bank', currency: 'USD', balance: 999999 },
+      ],
+      [
+        item('investment', 258403),
+        item('property', 20000000),
+        item('mortgage', 15000000),
+        item('loan', 500000, { closedOn: '2026-10-01' }),
+      ],
+      'EUR',
+    );
+    expect(summary).toEqual({
+      currency: 'EUR',
+      available: 301000,
+      cardDebt: 65000,
+      invested: 258403,
+      assets: 20258403,
+      debt: 15065000,
+      net: 301000 + 20258403 - 15065000,
+    });
   });
 });
