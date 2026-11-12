@@ -152,3 +152,21 @@ previsão do fim do mês marcada como estimativa, próximos compromissos, evolu�
 | Sem migração                                                                                                                                 | Com migração (escritas, por aplicar)                                                                                                                     |
 | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Objetivos, drag and drop, registo rápido, IA (só falta o segredo), importação, backups/exportação, definições, ambientes, Windows, dashboard | Trading 212 (`integrations`, `investment_snapshots`, Vault), painel de administração (`admin_roles`, `admin_audit`, RPCs), movimentos recorrentes gerais |
+
+## 3. Resultado (2026-11-12, tudo local, sem push)
+
+| Fase                    | Estado                                                                                                                                                                           | Onde                       |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Objetivos               | Feito: descrição opcional, detalhe arrumado, deslizar com confirmação                                                                                                            | `src/features/goals`       |
+| Categorias              | Feito: arrastar e largar (toque e rato), setas e ações de acessibilidade                                                                                                         | ADR-059                    |
+| Menos introdução manual | Feito: frequentes, categoria sugerida, duplicar, aviso de repetido, pagamento de subscrições, CSV com categorias. Por fazer: recorrências gerais (migração), recibos (avaliação) | ADR-061                    |
+| Cópias de segurança     | Feito: JSON verificado, CSV, restauro seguro, cópias automáticas. Sem encriptação (justificado)                                                                                  | ADR-062                    |
+| Definições              | Feito: grupos reorganizados, só opções reais                                                                                                                                     | `src/features/settings`    |
+| Ambientes               | Feito: dev contra o staging, "Miven Teste", preview web, APK/IPA de teste. Falta: variáveis do ambiente EAS `preview`                                                            | `docs/ambientes.md`        |
+| Windows                 | Feito: app Electron, instalador de teste, workflow MSIX. MSIX local precisa do Windows SDK                                                                                       | `docs/windows.md`, ADR-063 |
+| Trading 212             | Feito no código; servidor por aplicar (migração, função, segredo); escondido por omissão                                                                                         | ADR-064                    |
+| Administração           | Feito no código; migração por aplicar                                                                                                                                            | `docs/admin.md`, ADR-065   |
+| Dashboard               | Feito: disponível, mês, previsão, compromissos, património                                                                                                                       | ADR-066                    |
+
+Migrações escritas e testadas em PGlite, **não aplicadas**: `20261118000100_integrations.sql`,
+`20261119000100_admin.sql`. Nada foi testado em aparelhos físicos.

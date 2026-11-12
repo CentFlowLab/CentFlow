@@ -13,7 +13,11 @@ ADR-059, todas na produção desde
 2026-11-11; ver
 [docs/release-producao.md](docs/release-producao.md)). Os anexos ficam no balde privado `documents`
 do Storage; a função `delete-account` apaga-os antes de eliminar o utilizador.
-App publicada: **0.1.17** (2026-11-12; migração local v16). Estado verificado e pendentes em
+App publicada: **0.1.17** (2026-11-12; migração local v16).
+Desde a 0.1.17, só local (plano em [docs/plano-evolucao-2026-11.md](docs/plano-evolucao-2026-11.md),
+ADR-061 a 066): registo rápido, cópias de segurança, definições, ambientes (`docs/ambientes.md`),
+app Windows (`desktop/`, `docs/windows.md`), Trading 212 e administração. Migrações do servidor
+`20261118000100` e `20261119000100` escritas e **por aplicar**. Estado verificado e pendentes em
 [docs/audit-2026-11.md](docs/audit-2026-11.md) (secção "Estado atual"); testes em aparelhos reais
 ainda por fazer.
 Funções `delete-account` e
