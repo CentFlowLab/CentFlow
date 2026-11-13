@@ -251,6 +251,25 @@ describe('banks screen (ADR-069)', () => {
     expect(created?.type).toBe('card');
   });
 
+  it('adjusts the app balance to the bank, or to the debt a card shows as positive', async () => {
+    const app = await repos.accounts.create({
+      name: 'Unicre',
+      type: 'card',
+      currency: 'EUR',
+      initialBalance: 60000,
+    });
+    mockParams = { id: 'a1' };
+    mockTables = linkTables([{ ...bankRow('a1', app.id), balance: 387046 }]);
+    await render(<BankAccountLinkScreen />);
+    await fireEvent.press(
+      await screen.findByRole('button', { name: /^É dívida: acertar para -3870,46\s?€/ }),
+    );
+    await waitFor(async () =>
+      expect((await repos.accounts.get(app.id))?.initialBalance).toBe(-387046),
+    );
+    await waitFor(() => expect(screen.queryByText('Saldo na app')).toBeNull());
+  });
+
   it('explains a cancelled authorisation without calling the server', async () => {
     mockParams = { error: 'access_denied', state: 'x' };
     await render(<BankCallbackScreen />);

@@ -65,6 +65,42 @@ export function BankAccountLinkScreen() {
 
   const close = () => closeModal('/integrations/banks');
 
+  const linkedApp = (appAccounts.data ?? []).find(
+    (item) => item.id === account?.row.app_account_id,
+  );
+  const bankBalance = account?.row.balance ?? null;
+
+  /**
+   * Põe o saldo da app igual ao do banco mudando o saldo inicial da conta (os movimentos ficam
+   * como estão). Serve quando a conta já tinha movimentos apagados ou o banco mostra a dívida de
+   * um cartão como valor positivo.
+   */
+  const adjustTo = async (target: number) => {
+    if (!linkedApp) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      const current = await repositories.accounts.get(linkedApp.id);
+      if (!current) throw new Error('missing');
+      await repositories.accounts.update(current.id, {
+        name: current.name,
+        type: current.type,
+        currency: current.currency,
+        initialBalance: current.initialBalance + (target - linkedApp.balance),
+        creditLimit: current.creditLimit,
+        institution: current.institution,
+        statementDay: current.statementDay,
+        dueDay: current.dueDay,
+        paymentAccountId: current.paymentAccountId,
+        color: current.color,
+      });
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /** "Santander Totta Cartão de crédito"; só o banco quando não se sabe o que a conta é. */
   const suggestName = (bank: string, kind: BankAccountKind | null) =>
     kind ? `${bank} ${t(`banking.associate.kinds.${kind}`)}` : bank;
@@ -153,6 +189,52 @@ export function BankAccountLinkScreen() {
             <Text variant="footnote" tone="negative" accessibilityLiveRegion="polite">
               {t('banking.associate.failed')}
             </Text>
+          ) : null}
+          {linkedApp &&
+          bankBalance !== null &&
+          Math.abs(linkedApp.balance) !== Math.abs(bankBalance) ? (
+            <Section title={t('banking.associate.adjustTitle')}>
+              <Text variant="footnote" tone="secondary">
+                {t('banking.associate.adjustHint', {
+                  app: formatMoney({
+                    amountMinor: linkedApp.balance,
+                    currency: linkedApp.currency,
+                  }),
+                  bank: formatMoney({ amountMinor: bankBalance, currency: linkedApp.currency }),
+                })}
+              </Text>
+              <Card padding="xs">
+                <ListItem
+                  icon="checkmark-circle-outline"
+                  iconColor="primary"
+                  iconBackground="primaryMuted"
+                  title={t('banking.associate.adjustToBank', {
+                    amount: formatMoney({ amountMinor: bankBalance, currency: linkedApp.currency }),
+                  })}
+                  showChevron={false}
+                  onPress={busy ? undefined : () => void adjustTo(bankBalance)}
+                />
+                {bankBalance > 0 ? (
+                  <>
+                    <Divider inset={spacing.lg} />
+                    <ListItem
+                      icon="card-outline"
+                      iconColor="textSecondary"
+                      iconBackground="surfaceMuted"
+                      title={t('banking.associate.adjustAsDebt', {
+                        amount: formatMoney({
+                          amountMinor: -bankBalance,
+                          currency: linkedApp.currency,
+                        }),
+                      })}
+                      subtitle={t('banking.associate.adjustAsDebtHint')}
+                      showChevron={false}
+                      onPress={busy ? undefined : () => void adjustTo(-bankBalance)}
+                    />
+                  </>
+                ) : null}
+              </Card>
+            </Section>
           ) : null}
           {alreadyLinked ? null : (
             <TextField

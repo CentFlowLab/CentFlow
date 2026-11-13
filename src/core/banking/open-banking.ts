@@ -72,19 +72,36 @@ export function decimalToMinor(value: unknown, currency: string): number | null 
 /** Ordem de preferência: saldo contabilístico (o que os movimentos da app explicam) primeiro. */
 const BALANCE_PREFERENCE = ['ITBD', 'CLBD', 'XPCD', 'ITAV', 'CLAV', 'OPBD', 'OPAV', 'PRCD'];
 
-export function pickBalance(response: unknown): BankBalance | null {
+/**
+ * Saldo com o sinal da app: positivo é dinheiro teu, negativo é dívida. O `credit_debit_indicator`
+ * (ISO 20022) decide quando vem: `DBIT` é dívida. Sem ele, os cartões e créditos mostram a dívida
+ * como valor positivo, por isso passa a negativo.
+ */
+export function pickBalance(response: unknown, kind?: BankAccountKind | null): BankBalance | null {
   const list = (response as { balances?: unknown } | null)?.balances;
   if (!Array.isArray(list)) return null;
+  const owes = kind === 'card' || kind === 'loan';
   const parsed: BankBalance[] = [];
   for (const item of list) {
     const raw = item as {
       balance_amount?: { amount?: unknown; currency?: unknown };
       balance_type?: unknown;
+      credit_debit_indicator?: unknown;
     };
     const currency =
       typeof raw.balance_amount?.currency === 'string' ? raw.balance_amount.currency : '';
-    const amount = decimalToMinor(raw.balance_amount?.amount, currency);
-    if (amount === null) continue;
+    const value = decimalToMinor(raw.balance_amount?.amount, currency);
+    if (value === null) continue;
+    const indicator = text(raw.credit_debit_indicator).toUpperCase();
+    const magnitude = Math.abs(value);
+    const amount =
+      indicator === 'DBIT'
+        ? -magnitude
+        : indicator === 'CRDT'
+          ? magnitude
+          : owes && value > 0
+            ? -value
+            : value;
     parsed.push({
       amount,
       currency,

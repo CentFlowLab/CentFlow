@@ -54,6 +54,20 @@ describe('open banking parsing (ADR-069)', () => {
     expect(pickBalance(null)).toBeNull();
   });
 
+  it('gives debt a negative sign: debit indicator, or a card shown as positive', () => {
+    const one = (amount: string, extra: Record<string, string> = {}) => ({
+      balances: [{ balance_type: 'ITBD', balance_amount: { amount, currency: 'EUR' }, ...extra }],
+    });
+    expect(pickBalance(one('4858.93', { credit_debit_indicator: 'DBIT' }))?.amount).toBe(-485893);
+    expect(pickBalance(one('-12.00', { credit_debit_indicator: 'CRDT' }))?.amount).toBe(1200);
+    expect(pickBalance(one('4858.93'), 'card')?.amount).toBe(-485893);
+    expect(pickBalance(one('-4858.93'), 'card')?.amount).toBe(-485893);
+    expect(pickBalance(one('50.00', { credit_debit_indicator: 'CRDT' }), 'card')?.amount).toBe(
+      5000,
+    );
+    expect(pickBalance(one('600.00'), 'current')?.amount).toBe(60000);
+  });
+
   it('reads booked movements with the right type and a short description', () => {
     const parsed = parseTransactions({
       transactions: [

@@ -254,6 +254,12 @@ const es: Translation = {
       existing: 'Cuentas de la app en {{currency}}',
       none: 'No asociar',
       failed: 'No se pudo guardar. Inténtalo de nuevo.',
+      adjustTitle: 'Saldo en la app',
+      adjustHint:
+        'La app muestra {{app}} y el banco {{bank}}. Ajustar cambia el saldo inicial de la cuenta; los movimientos quedan como están.',
+      adjustToBank: 'Ajustar a {{amount}}',
+      adjustAsDebt: 'Es deuda: ajustar a {{amount}}',
+      adjustAsDebtHint: 'Para tarjetas en las que el banco muestra la deuda como positiva',
       nameLabel: 'Nombre de la cuenta nueva',
       nameHint: 'Puedes cambiarlo, por ejemplo por el nombre de la tarjeta o del banco.',
       kinds: {

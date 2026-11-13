@@ -253,6 +253,12 @@ const en: Translation = {
       existing: 'App accounts in {{currency}}',
       none: 'Do not link',
       failed: 'Could not save. Try again.',
+      adjustTitle: 'Balance in the app',
+      adjustHint:
+        'The app shows {{app}} and the bank {{bank}}. Adjusting changes the account’s opening balance; transactions stay as they are.',
+      adjustToBank: 'Adjust to {{amount}}',
+      adjustAsDebt: 'It’s debt: adjust to {{amount}}',
+      adjustAsDebtHint: 'For cards where the bank shows the amount owed as positive',
       nameLabel: 'Name of the new account',
       nameHint: 'You can change it, for example to the card or bank name.',
       kinds: {

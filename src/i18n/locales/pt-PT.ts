@@ -253,6 +253,12 @@ const ptPT = {
       existing: 'Contas da app em {{currency}}',
       none: 'Não associar',
       failed: 'Não foi possível guardar. Tenta novamente.',
+      adjustTitle: 'Saldo na app',
+      adjustHint:
+        'A app mostra {{app}} e o banco {{bank}}. Acertar muda o saldo inicial da conta; os movimentos ficam como estão.',
+      adjustToBank: 'Acertar para {{amount}}',
+      adjustAsDebt: 'É dívida: acertar para {{amount}}',
+      adjustAsDebtHint: 'Para cartões em que o banco mostra o valor em dívida como positivo',
       nameLabel: 'Nome da conta nova',
       nameHint: 'Podes mudar, por exemplo para o nome do cartão ou do banco.',
       kinds: {

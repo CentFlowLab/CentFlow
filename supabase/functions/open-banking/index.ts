@@ -259,14 +259,15 @@ Deno.serve(async (req) => {
       const name = [raw.product, raw.name, raw.details].find(
         (value): value is string => typeof value === 'string' && value.trim().length > 0,
       );
+      const kind = bankAccountKind(raw);
       const balance = await api(token, 'GET', `/accounts/${encodeURIComponent(uid)}/balances`);
-      const picked = balance.ok ? pickBalance(balance.body) : null;
+      const picked = balance.ok ? pickBalance(balance.body, kind) : null;
       await admin.from('bank_accounts').insert({
         connection_id: connection.id,
         user_id: user.id,
         uid,
         name: name ? name.trim().slice(0, 200) : null,
-        kind: bankAccountKind(raw),
+        kind,
         iban_last4: ibanLast4(accountId?.iban),
         currency,
         balance: picked && picked.currency === currency ? picked.amount : null,
@@ -310,7 +311,7 @@ Deno.serve(async (req) => {
     );
     const { data: accounts } = await admin
       .from('bank_accounts')
-      .select('id, uid, currency')
+      .select('id, uid, currency, kind')
       .eq('connection_id', connection.id);
     const result: { id: string; balance: number | null; transactions: BankTransaction[] }[] = [];
     let failure: BankErrorCode | null = null;
@@ -321,7 +322,7 @@ Deno.serve(async (req) => {
         failure = balance.error;
         break;
       }
-      const picked = pickBalance(balance.body);
+      const picked = pickBalance(balance.body, account.kind);
       const amount = picked && picked.currency === account.currency ? picked.amount : null;
       const transactions: BankTransaction[] = [];
       const from = since[account.id];
