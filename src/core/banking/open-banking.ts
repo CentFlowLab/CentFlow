@@ -192,6 +192,32 @@ export function canRefreshBank(lastSyncAt: string | null, now: number): boolean 
   return !Number.isFinite(last) || now - last >= BANK_MIN_REFRESH_MS;
 }
 
+/** O que a conta do banco é, para sugerir o nome e o tipo da conta na app. */
+export type BankAccountKind = 'current' | 'card' | 'savings' | 'loan';
+
+/**
+ * Tipo da conta a partir do `cash_account_type` (ISO 20022) e, sem ele, do `usage`/`product`.
+ * `null` quando o banco não diz.
+ */
+export function bankAccountKind(raw: unknown): BankAccountKind | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const account = raw as Record<string, unknown>;
+  const code = text(account.cash_account_type).toUpperCase();
+  if (code === 'CARD') return 'card';
+  if (code === 'LOAN') return 'loan';
+  if (['SVGS', 'MOMA', 'ONDP', 'MGLD'].includes(code)) return 'savings';
+  if (['CACC', 'CASH', 'TRAN', 'CISH', 'SLRY', 'TRAS', 'NREX', 'ODFT'].includes(code)) {
+    return 'current';
+  }
+  const product = text(account.product).toLowerCase();
+  if (/empr[eé]stimo|loan|habita[çc][aã]o|cr[eé]dito (pessoal|consumo|autom)/.test(product)) {
+    return 'loan';
+  }
+  if (/cart[aã]o|card/.test(product)) return 'card';
+  if (/poupan|saving|dep[oó]sito a prazo/.test(product)) return 'savings';
+  return null;
+}
+
 /** Últimos 4 caracteres do IBAN, para a pessoa reconhecer a conta (nunca o IBAN completo). */
 export function ibanLast4(value: unknown): string | null {
   const clean = text(value).replace(/\s/g, '').toUpperCase();

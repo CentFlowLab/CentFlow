@@ -11,6 +11,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { deleteAccountCorsHeaders } from '../../../src/core/account/delete-account-policy.ts';
 import {
   BANK_AUTH_STATE_TTL_MS,
+  bankAccountKind,
   bankErrorFromStatus,
   canRefreshBank,
   consentValidUntil,
@@ -254,7 +255,8 @@ Deno.serve(async (req) => {
         typeof raw.currency === 'string' && /^[A-Z]{3}$/.test(raw.currency) ? raw.currency : null;
       if (!uid || !currency) continue;
       const accountId = raw.account_id as { iban?: unknown } | undefined;
-      const name = [raw.name, raw.product, raw.details].find(
+      // O produto ("Conta Ordem", "Cartão Crédito") diz mais do que o nome, que costuma ser o titular.
+      const name = [raw.product, raw.name, raw.details].find(
         (value): value is string => typeof value === 'string' && value.trim().length > 0,
       );
       const balance = await api(token, 'GET', `/accounts/${encodeURIComponent(uid)}/balances`);
@@ -264,6 +266,7 @@ Deno.serve(async (req) => {
         user_id: user.id,
         uid,
         name: name ? name.trim().slice(0, 200) : null,
+        kind: bankAccountKind(raw),
         iban_last4: ibanLast4(accountId?.iban),
         currency,
         balance: picked && picked.currency === currency ? picked.amount : null,

@@ -1,4 +1,5 @@
 import {
+  bankAccountKind,
   bankErrorFromStatus,
   canRefreshBank,
   consentValidUntil,
@@ -8,6 +9,25 @@ import {
   parseTransactions,
   pickBalance,
 } from '../open-banking';
+
+describe('bank account kind', () => {
+  it('reads the ISO 20022 cash account type', () => {
+    expect(bankAccountKind({ cash_account_type: 'CACC' })).toBe('current');
+    expect(bankAccountKind({ cash_account_type: 'card' })).toBe('card');
+    expect(bankAccountKind({ cash_account_type: 'SVGS' })).toBe('savings');
+    expect(bankAccountKind({ cash_account_type: 'LOAN' })).toBe('loan');
+  });
+
+  it('falls back to the product name and says nothing when unsure', () => {
+    expect(bankAccountKind({ cash_account_type: 'OTHR', product: 'Cartão de Crédito' })).toBe(
+      'card',
+    );
+    expect(bankAccountKind({ product: 'Conta Poupança' })).toBe('savings');
+    expect(bankAccountKind({ product: 'Crédito Habitação' })).toBe('loan');
+    expect(bankAccountKind({ product: 'Conta Mundo' })).toBeNull();
+    expect(bankAccountKind(null)).toBeNull();
+  });
+});
 
 describe('open banking parsing (ADR-069)', () => {
   it('converts decimal strings to minor units without floats', () => {

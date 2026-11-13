@@ -3,10 +3,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { addDays } from '@/core/finance';
+import type { BankAccountKind } from '@/core/banking/open-banking';
+import { addDays, type AccountType } from '@/core/finance';
 import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import { Card, Divider, FormScreen, ListItem, Section, Text } from '@/ui/components';
+import { Card, Divider, FormScreen, ListItem, Section, Text, TextField } from '@/ui/components';
 import { spacing, useTheme } from '@/ui/theme';
 
 import { useAuth } from '../account/AuthProvider';
@@ -33,6 +34,7 @@ export function BankAccountLinkScreen() {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [newName, setNewName] = useState<string | null>(null);
   const [linkedElsewhere, setLinkedElsewhere] = useState<ReadonlySet<string>>(new Set());
   const { syncNow } = useSync();
   const appAccounts = useDataQuery(
@@ -63,6 +65,11 @@ export function BankAccountLinkScreen() {
 
   const close = () => closeModal('/integrations/banks');
 
+  /** "Santander Totta Cartão de crédito"; só o banco quando não se sabe o que a conta é. */
+  const suggestName = (bank: string, kind: BankAccountKind | null) =>
+    kind ? `${bank} ${t(`banking.associate.kinds.${kind}`)}` : bank;
+  const suggestedName = account ? suggestName(account.bank, account.row.kind) : '';
+
   const save = async (appAccountId: string | null, importFrom: string | null) => {
     if (!client || !account) return;
     setBusy(true);
@@ -87,8 +94,8 @@ export function BankAccountLinkScreen() {
       let accountId = createdId;
       if (!accountId) {
         const created = await repositories.accounts.create({
-          name: `${account.row.name ?? account.bank}`.slice(0, 60),
-          type: 'bank',
+          name: ((newName ?? '').trim() || suggestedName).slice(0, 60),
+          type: appTypeFor(account.row.kind),
           currency: account.row.currency,
           initialBalance: account.row.balance ?? 0,
           institution: account.bank.slice(0, 60),
@@ -148,6 +155,16 @@ export function BankAccountLinkScreen() {
             </Text>
           ) : null}
           {alreadyLinked ? null : (
+            <TextField
+              label={t('banking.associate.nameLabel')}
+              helperText={t('banking.associate.nameHint')}
+              value={newName ?? suggestedName}
+              onChangeText={setNewName}
+              maxLength={60}
+              editable={!busy && !createdId}
+            />
+          )}
+          {alreadyLinked ? null : (
             <Card padding="xs">
               <ListItem
                 icon="add-circle-outline"
@@ -204,3 +221,9 @@ const styles = StyleSheet.create({
   body: { gap: spacing.lg },
   title: { gap: spacing.xxs },
 });
+
+function appTypeFor(kind: BankAccountKind | null): AccountType {
+  if (kind === 'card') return 'card';
+  if (kind === 'savings') return 'savings';
+  return 'bank';
+}

@@ -253,6 +253,14 @@ const ptPT = {
       existing: 'Contas da app em {{currency}}',
       none: 'Não associar',
       failed: 'Não foi possível guardar. Tenta novamente.',
+      nameLabel: 'Nome da conta nova',
+      nameHint: 'Podes mudar, por exemplo para o nome do cartão ou do banco.',
+      kinds: {
+        current: 'Débito',
+        card: 'Cartão de crédito',
+        savings: 'Poupança',
+        loan: 'Crédito',
+      },
     },
   },
   t212: {

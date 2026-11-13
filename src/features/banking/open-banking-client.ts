@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   BANK_HISTORY_DAYS,
+  type BankAccountKind,
   type BankErrorCode,
   type BankTransaction,
 } from '@/core/banking/open-banking';
@@ -19,6 +20,7 @@ export type BankAccountRow = {
   id: string;
   connection_id: string;
   name: string | null;
+  kind: BankAccountKind | null;
   iban_last4: string | null;
   currency: string;
   balance: number | null;
@@ -106,7 +108,7 @@ export async function loadBankConnections(
       client
         .from('bank_accounts')
         .select(
-          'id, connection_id, name, iban_last4, currency, balance, balance_at, app_account_id, import_from',
+          'id, connection_id, name, kind, iban_last4, currency, balance, balance_at, app_account_id, import_from',
         )
         .order('created_at'),
     ]);

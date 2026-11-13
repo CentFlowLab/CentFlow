@@ -254,6 +254,14 @@ const es: Translation = {
       existing: 'Cuentas de la app en {{currency}}',
       none: 'No asociar',
       failed: 'No se pudo guardar. Inténtalo de nuevo.',
+      nameLabel: 'Nombre de la cuenta nueva',
+      nameHint: 'Puedes cambiarlo, por ejemplo por el nombre de la tarjeta o del banco.',
+      kinds: {
+        current: 'Débito',
+        card: 'Tarjeta de crédito',
+        savings: 'Ahorro',
+        loan: 'Préstamo',
+      },
     },
   },
   t212: {

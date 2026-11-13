@@ -17,8 +17,8 @@ App publicada: **0.1.19** (2026-11-13; migração local v16). Inclui, desde a 0.
 [docs/plano-evolucao-2026-11.md](docs/plano-evolucao-2026-11.md), ADR-061 a 069): open banking
 (Enable Banking, `docs/open-banking.md`), onboarding por conta, gestão da conta, registo rápido,
 cópias de segurança, definições, ambientes (`docs/ambientes.md`), app Windows (`desktop/`,
-`docs/windows.md`), Trading 212 e administração. Migrações do servidor até `20261120000100` nos dois
-ambientes; `20261121000100_open_banking` nos dois ambientes (produção desde 2026-11-13). Função
+`docs/windows.md`), Trading 212 e administração. Migrações do servidor até `20261122000100` (tipo da conta do
+banco) nos dois ambientes; open banking (`20261121000100`) na produção desde 2026-11-13. Função
 `open-banking` nos dois ambientes; `t212` só no staging. Segredos `ENABLE_BANKING_*` (aplicação
 Production da Enable Banking, modo restrito) no staging; na produção a definir pelo responsável;
 `INTEGRATIONS_KEY` só no staging. Supabase CLI 3: usar `--remote=<ref>` (ignora `--project-ref`). Estado verificado e pendentes em

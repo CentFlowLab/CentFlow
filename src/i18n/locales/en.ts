@@ -253,6 +253,14 @@ const en: Translation = {
       existing: 'App accounts in {{currency}}',
       none: 'Do not link',
       failed: 'Could not save. Try again.',
+      nameLabel: 'Name of the new account',
+      nameHint: 'You can change it, for example to the card or bank name.',
+      kinds: {
+        current: 'Current',
+        card: 'Credit card',
+        savings: 'Savings',
+        loan: 'Loan',
+      },
     },
   },
   t212: {

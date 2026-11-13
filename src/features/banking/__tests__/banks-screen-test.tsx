@@ -159,6 +159,7 @@ describe('banks screen (ADR-069)', () => {
     id,
     connection_id: 'c1',
     name: 'Conta à ordem',
+    kind: null,
     iban_last4: '0744',
     currency: 'EUR',
     balance: 5000,
@@ -234,6 +235,20 @@ describe('banks screen (ADR-069)', () => {
     expect(screen.getByText(free.name)).toBeOnTheScreen();
     expect(screen.queryByText('Outra')).toBeNull();
     expect(screen.queryByText('Criar conta nova')).toBeNull();
+  });
+
+  it('suggests the bank and account kind as the name, editable, and picks the account type', async () => {
+    mockParams = { id: 'a1' };
+    mockTables = linkTables([{ ...bankRow('a1', null), kind: 'card' }]);
+    await render(<BankAccountLinkScreen />);
+    const field = await screen.findByLabelText('Nome da conta nova');
+    expect(field.props.value).toBe('Crédito Agrícola Cartão de crédito');
+    await fireEvent.changeText(field, 'Moey Cartão');
+    await fireEvent.press(screen.getByRole('button', { name: /^Criar conta nova/ }));
+    await waitFor(() => expect(mockClient.rpc).toHaveBeenCalled());
+    const [created] = await repos.accounts.list();
+    expect(created?.name).toBe('Moey Cartão');
+    expect(created?.type).toBe('card');
   });
 
   it('explains a cancelled authorisation without calling the server', async () => {
