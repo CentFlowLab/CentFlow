@@ -13,13 +13,13 @@ ADR-059, todas na produção desde
 2026-11-11; ver
 [docs/release-producao.md](docs/release-producao.md)). Os anexos ficam no balde privado `documents`
 do Storage; a função `delete-account` apaga-os antes de eliminar o utilizador.
-App publicada: **0.1.18** (2026-11-13; migração local v16). Inclui, desde a 0.1.17 (plano em
-[docs/plano-evolucao-2026-11.md](docs/plano-evolucao-2026-11.md), ADR-061 a 068): onboarding por conta,
-gestão da conta, registo rápido, cópias de segurança, definições, ambientes (`docs/ambientes.md`),
-app Windows (`desktop/`, `docs/windows.md`), Trading 212 e administração. Migrações do servidor
-`20261118000100`, `20261119000100` e `20261120000100` (onboarding por conta, ADR-067) aplicadas
-nos dois ambientes (produção a 2026-11-13; histórico igual até `20261120000100`). Função `t212` e segredo
-`INTEGRATIONS_KEY` só no staging. Estado verificado e pendentes em
+App publicada: **0.1.19** (2026-11-13; migração local v16). Inclui, desde a 0.1.17 (plano em
+[docs/plano-evolucao-2026-11.md](docs/plano-evolucao-2026-11.md), ADR-061 a 069): open banking
+(Enable Banking, `docs/open-banking.md`), onboarding por conta, gestão da conta, registo rápido,
+cópias de segurança, definições, ambientes (`docs/ambientes.md`), app Windows (`desktop/`,
+`docs/windows.md`), Trading 212 e administração. Migrações do servidor até `20261120000100` nos dois
+ambientes; `20261121000100_open_banking` só no staging. Funções `t212` e `open-banking` só no
+staging; segredos `INTEGRATIONS_KEY` (só staging) e `ENABLE_BANKING_*` (nenhum ambiente) por definir. Estado verificado e pendentes em
 [docs/audit-2026-11.md](docs/audit-2026-11.md) (secção "Estado atual"); testes em aparelhos reais
 ainda por fazer.
 Funções `delete-account` e

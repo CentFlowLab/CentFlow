@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AccountSettings } from '@/features/account/AccountSection';
+import { useAuth } from '@/features/account/AuthProvider';
 import { useAdminRole } from '@/features/admin/AdminScreen';
 import { t212Enabled } from '@/features/investments/Trading212Screen';
 import { useLocaleFormat, LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
@@ -56,6 +57,8 @@ const NEUTRAL = { iconColor: 'textSecondary', iconBackground: 'surfaceMuted' } a
 export function SettingsScreen() {
   const { t } = useTranslation();
   const version = Constants.expoConfig?.version ?? '—';
+  // Integrações (bancos, Trading 212) precisam de conta e do servidor.
+  const signedIn = useAuth().state.status === 'signedIn';
   const { formatMoney, formatDate } = useLocaleFormat();
   // Só quem o servidor reconhece (admin_role()); esconder a linha não é a proteção.
   const adminRole = useAdminRole();
@@ -104,16 +107,28 @@ export function SettingsScreen() {
             </Card>
           </Section>
 
-          {t212Enabled() ? (
+          {signedIn ? (
             <Section title={t('settings.groups.integrations')}>
               <Card padding="xs">
                 <ListItem
                   {...NEUTRAL}
-                  icon="trending-up-outline"
-                  title={t('t212.title')}
-                  subtitle={t('settings.t212Hint')}
-                  onPress={() => router.push('/integrations/trading212' as Href)}
+                  icon="business-outline"
+                  title={t('banking.title')}
+                  subtitle={t('settings.banksHint')}
+                  onPress={() => router.push('/integrations/banks' as Href)}
                 />
+                {t212Enabled() ? (
+                  <>
+                    <Divider inset={DIVIDER_INSET} />
+                    <ListItem
+                      {...NEUTRAL}
+                      icon="trending-up-outline"
+                      title={t('t212.title')}
+                      subtitle={t('settings.t212Hint')}
+                      onPress={() => router.push('/integrations/trading212' as Href)}
+                    />
+                  </>
+                ) : null}
               </Card>
             </Section>
           ) : null}

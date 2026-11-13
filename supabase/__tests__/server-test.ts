@@ -167,6 +167,9 @@ describe('schema', () => {
     expect(rows).toEqual(
       [
         'accounts',
+        'bank_accounts',
+        'bank_auth_states',
+        'bank_connections',
         'budgets',
         'categories',
         'documents',
@@ -1964,5 +1967,81 @@ describe('onboarding per account (ADR-067)', () => {
       alice.query(`update public.profiles set onboarding_completed_at = null where id = '${A}'`),
     ).rejects.toThrow();
     await expect(server.anonymous().query('select public.complete_onboarding()')).rejects.toThrow();
+  });
+});
+
+describe('open banking (ADR-069)', () => {
+  it('shows each person only their own banks and never the aggregator identifiers', async () => {
+    const asService = (sql: string, params?: unknown[]) =>
+      server.pg.query(sql, params, { role: 'service_role' });
+    for (const [user, bank] of [
+      [A, 'Revolut'],
+      [B, 'Santander'],
+    ] as const) {
+      const [connection] = (await asService(
+        `insert into public.bank_connections
+             (user_id, session_id, aspsp_name, aspsp_country, status, valid_until)
+           values ($1, 'secret-session', $2, 'PT', 'connected', now() + interval '90 days')
+           returning id`,
+        [user, bank],
+      )) as unknown as { id: string }[];
+      await asService(
+        `insert into public.bank_accounts (connection_id, user_id, uid, name, currency, balance)
+         values ($1, $2, 'secret-uid', 'Conta', 'EUR', 125050)`,
+        [connection!.id, user],
+      );
+      await asService(
+        `insert into public.bank_auth_states (state, user_id, aspsp_name, aspsp_country)
+         values ($1, $2, $3, 'PT')`,
+        [`state-${user}-0123456789`, user, bank],
+      );
+    }
+
+    expect(await alice.query('select aspsp_name, status from public.bank_connections')).toEqual([
+      { aspsp_name: 'Revolut', status: 'connected' },
+    ]);
+    expect(await alice.query('select name, balance from public.bank_accounts')).toEqual([
+      { name: 'Conta', balance: 125050 },
+    ]);
+    // Identificadores do agregador e pedidos em curso: nem a própria pessoa os lê.
+    await expect(alice.query('select session_id from public.bank_connections')).rejects.toThrow();
+    await expect(alice.query('select uid from public.bank_accounts')).rejects.toThrow();
+    await expect(alice.query('select * from public.bank_auth_states')).rejects.toThrow();
+    // A app não escreve: só a Edge Function.
+    await expect(
+      alice.query(`update public.bank_connections set status = 'error'`),
+    ).rejects.toThrow();
+    await expect(alice.query('delete from public.bank_accounts')).rejects.toThrow();
+    await expect(
+      server.anonymous().query('select aspsp_name from public.bank_connections'),
+    ).rejects.toThrow();
+
+    // Associação a uma conta da app: só a própria conta bancária e só uma conta da app sua.
+    await seedBasics(alice);
+    await seedBasics(bob);
+    const [mine] = await alice.query<{ id: string }>('select id from public.bank_accounts');
+    const [ownAccount] = await alice.query<{ id: string }>(
+      `select id from public.accounts where user_id = '${A}' limit 1`,
+    );
+    // Conta que só o Bob tem (id diferente do da Alice).
+    const otherAccount = { id: '0b0b0b0b-0000-4000-8000-0000000000b0' };
+    await push(bob, [accountOp(otherAccount.id, 0)]);
+    await alice.query(
+      `select public.bank_account_link('${mine!.id}', '${ownAccount!.id}', '2026-11-13')`,
+    );
+    expect(
+      await alice.query('select app_account_id, import_from from public.bank_accounts'),
+    ).toEqual([{ app_account_id: ownAccount!.id, import_from: expect.anything() }]);
+    await expect(
+      alice.query(
+        `select public.bank_account_link('${mine!.id}', '${otherAccount!.id}', '2026-11-13')`,
+      ),
+    ).rejects.toThrow();
+    const [theirs] = (await asService(`select id from public.bank_accounts where user_id = $1`, [
+      B,
+    ])) as unknown as { id: string }[];
+    await expect(
+      alice.query(`select public.bank_account_link('${theirs!.id}', null, null)`),
+    ).rejects.toThrow();
   });
 });

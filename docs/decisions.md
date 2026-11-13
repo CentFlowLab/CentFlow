@@ -1045,3 +1045,28 @@ A limpeza local apaga a base de dados da conta, as suas cópias automáticas e a
 onboarding. As cópias automáticas passam a ter dono (`miven-auto-<userId>-…`): uma conta não vê nem
 restaura as de outra no mesmo aparelho. A eliminação no servidor não muda: ficheiros do Storage
 primeiro, depois `auth.admin.deleteUser`, com as tabelas pessoais e da integração em cascata.
+
+## ADR-069 — Open banking através de um agregador licenciado (Enable Banking)
+
+**Contexto.** A pessoa quer ver as contas bancárias na app sem registar tudo à mão, em qualquer
+banco e não só nos seus. Os bancos europeus só dão acesso a terceiros por PSD2, através de um
+prestador licenciado de serviços de informação sobre contas (AISP). A GoCardless Bank Account
+Data (ex-Nordigen) deixou de aceitar registos em 2025.
+
+**Decisão.** Usar a Enable Banking: cobre os bancos do EEE (incluindo Portugal), tem um modo
+gratuito para as contas da própria pessoa e contrato comercial para abrir a todos. A Edge
+Function `open-banking` assina os pedidos com a chave da aplicação (JWT RS256, segredos
+`ENABLE_BANKING_APP_ID` e `ENABLE_BANKING_PRIVATE_KEY`) e é o único sítio que fala com o
+agregador. A autorização acontece no banco; o regresso passa por `https://miven.pt/auth/bank/`
+(que abre `miven://bank-callback` ou `/app/bank-callback`) e o servidor só aceita o código com um
+`state` de uso único, desta pessoa e com menos de 30 minutos. A migração
+`20261121000100_open_banking.sql` guarda a ligação, o nome das contas, os 4 últimos caracteres do
+IBAN, o último saldo e a conta da app associada; os identificadores do agregador não são legíveis
+pela app (permissões por coluna) e só a função escreve, exceto a associação
+(`bank_account_link()`, só a própria pessoa e só contas suas). Os movimentos não ficam no
+servidor: a app recebe-os e regista-os na base local como uma importação de extrato
+(`findLikelyDuplicates`, categoria pelo histórico), desde a data de associação. Uma conta nova
+começa com o saldo do banco e recebe movimentos a partir do dia seguinte. Leituras automáticas
+com a app aberta, no máximo uma a cada 15 minutos por ligação; consentimento de 90 dias.
+Sem dependências novas. Robinhood não tem PSD2 nem API oficial: fica como património manual.
+Ativação e passos de produção em `docs/open-banking.md`.

@@ -14,8 +14,6 @@ import {
 import {
   findLikelyDuplicates,
   parseStatementCsv,
-  statementRange,
-  type ExistingMovement,
   type StatementParseError,
   type StatementRow,
 } from '@/core/import';
@@ -38,41 +36,17 @@ import {
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { closeModal } from '../finance/navigation';
+import { existingMovements } from './existing-movements';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { pickStatementFile } from './pick-statement-file';
 
 const OTHER_EXPENSE_ID = DEFAULT_CATEGORIES.find((category) => category.key === 'otherExpense')?.id;
 const OTHER_INCOME_ID = DEFAULT_CATEGORIES.find((category) => category.key === 'otherIncome')?.id;
-const PAGE = 500;
 
 type Preview = { rows: StatementRow[]; skipped: number[]; duplicates: Set<number> };
 type ScreenError = StatementParseError | 'noRows' | 'saveFailed' | 'readFailed';
 
 /** Movimentos da conta no intervalo, vistos do lado da conta (transferências incluídas). */
-async function existingMovements(
-  repositories: Repositories,
-  accountId: string,
-  rows: readonly StatementRow[],
-): Promise<ExistingMovement[]> {
-  const range = statementRange(rows);
-  if (!range) return [];
-  const movements: ExistingMovement[] = [];
-  for (let offset = 0; ; offset += PAGE) {
-    const page = await repositories.entries.list({ accountId, ...range, limit: PAGE, offset });
-    for (const entry of page.items) {
-      const type =
-        entry.type === 'transfer'
-          ? entry.accountId === accountId
-            ? 'expense'
-            : 'income'
-          : entry.type;
-      movements.push({ date: entry.date, amount: entry.amount, type });
-    }
-    if (offset + PAGE >= page.total) break;
-  }
-  return movements;
-}
-
 function defaultCategory(list: readonly Category[], type: Category['type'], preferred?: string) {
   const ofType = list.filter((category) => category.type === type);
   return (ofType.find((category) => category.id === preferred) ?? ofType[0])?.id ?? null;

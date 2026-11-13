@@ -52,6 +52,10 @@ function RootStack() {
         <Stack.Screen name="backup" options={MODAL} />
         <Stack.Screen name="account-management" options={MODAL} />
         <Stack.Screen name="integrations/trading212" options={MODAL} />
+        <Stack.Screen name="integrations/banks" options={MODAL} />
+        <Stack.Screen name="integrations/bank-link" options={MODAL} />
+        <Stack.Screen name="integrations/bank-account/[id]" options={MODAL} />
+        <Stack.Screen name="bank-callback" options={MODAL} />
         <Stack.Screen name="admin" options={MODAL} />
       </Stack.Protected>
       <Stack.Protected guard={!granted}>

@@ -77,6 +77,16 @@
             ordens nem movimentos. Ao desligar, a chave e a leitura são apagadas.
           </li>
           <li>
+            <strong>Contas bancárias que ligares (open banking):</strong> só se ligares um banco. A
+            autorização é dada por ti no próprio banco; não pedimos nem vemos as credenciais do
+            banco. Com essa autorização, só de leitura e válida até 90 dias, lemos o nome das
+            contas, os quatro últimos caracteres do IBAN, os saldos e os movimentos (data, valor,
+            descrição e nome da contraparte). No servidor guardamos o estado da ligação, o nome das
+            contas, os quatro últimos caracteres do IBAN e o último saldo; os movimentos seguem para
+            a tua app, que os regista como os restantes movimentos. Não fazemos pagamentos nem
+            transferências. Ao desligar, a autorização é revogada e estes dados são apagados.
+          </li>
+          <li>
             <strong>Estatísticas de utilização:</strong> só se aceitares. São anónimas e não criam
             um perfil teu. Podes desligá-las em Definições a qualquer momento.
           </li>
@@ -123,6 +133,12 @@
             <strong>Trading 212</strong> — só se ligares a tua conta: o nosso servidor pede-lhe o
             resumo e as posições com a chave que geraste. A Trading 212 é responsável pelos dados da
             tua conta nela.
+          </li>
+          <li>
+            <strong>Enable Banking</strong> (Enable Banking Oy, Finlândia, UE) — só se ligares um
+            banco: prestador licenciado de serviços de informação sobre contas (PSD2) que faz a
+            ligação ao teu banco com a autorização que dás. O teu banco é responsável pelos dados da
+            tua conta nele.
           </li>
           <li>
             <strong>Apple</strong> — se escolheres entrar com a Apple, recebemos o identificador e o
