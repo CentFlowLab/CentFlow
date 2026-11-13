@@ -20,6 +20,7 @@ import {
   shareFile,
   type StoredBackup,
 } from './backup-files';
+import { settingsHref } from './settings-sections';
 
 const LAST_EXPORT_KEY = 'backup.lastExportAt';
 
@@ -149,7 +150,7 @@ export function BackupScreen() {
     <FormScreen
       title={t('backup.title')}
       closeLabel={t('common.close')}
-      onClose={() => closeModal('/settings')}>
+      onClose={() => closeModal(settingsHref('data'))}>
       <View style={styles.body}>
         <Text variant="callout" tone="secondary">
           {t('backup.intro')}

@@ -1,368 +1,283 @@
 import Constants from 'expo-constants';
-import { router, type Href } from 'expo-router';
-import { Fragment, useState, type ReactNode } from 'react';
+import { Link, Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AccountSettings } from '@/features/account/AccountSection';
+import { AccountSettingsPage } from '@/features/account/AccountSettings';
 import { useAuth } from '@/features/account/AuthProvider';
-import { useAdminRole } from '@/features/admin/AdminScreen';
-import { t212Enabled } from '@/features/investments/Trading212Screen';
-import { useLocaleFormat, LANGUAGE_META, SUPPORTED_LANGUAGES } from '@/i18n';
+import { useSync } from '@/features/account/SyncProvider';
+import { usePreferences } from '@/features/preferences';
+import { LANGUAGE_META } from '@/i18n';
+import { Icon, IconButton, ListItem, Screen, Text } from '@/ui/components';
+import { useBreakpoint } from '@/ui/layout/useBreakpoint';
+import { layout, radius, spacing, useTheme } from '@/ui/theme';
+
+import { DataPage } from './DataPage';
+import { AboutPage, HelpPage } from './HelpAboutPages';
+import { IntegrationsPage } from './IntegrationsPage';
+import { PreferencesPage } from './PreferencesPage';
+import { SettingsGroup } from './SettingsBlocks';
 import {
-  CONTACT_EMAIL,
-  openExternal,
-  PRIVACY_URL,
-  SUPPORT_URL,
-  TERMS_URL,
-} from '@/features/account/legal-links';
-import {
-  usePreferences,
-  type LanguagePreference,
-  type ThemePreference,
-} from '@/features/preferences';
-import { analyticsAvailable } from '@/lib/analytics';
-import {
-  Card,
-  Divider,
-  FadeIn,
-  Icon,
-  ListItem,
-  Screen,
-  Section,
-  SegmentedControl,
-  Text,
-  type IconName,
-} from '@/ui/components';
-import { spacing } from '@/ui/theme';
+  isSettingsSection,
+  SECTION_ICONS,
+  SETTINGS_SECTIONS,
+  settingsHref,
+  type SettingsSection,
+} from './settings-sections';
 
-import { ListChevron, quickEntryAvailable, QuickEntryRow } from './QuickEntrySection';
+/** Largura da coluna de secções em tablet e desktop. */
+const NAV_WIDTH = 240;
+/** Largura de leitura do painel: as linhas não esticam até ao fim do ecrã. */
+const PANEL_MAX_WIDTH = 760;
 
-const THEME_OPTIONS: readonly ThemePreference[] = ['system', 'light', 'dark'];
-const LANGUAGE_OPTIONS: readonly LanguagePreference[] = ['system', ...SUPPORTED_LANGUAGES];
+const PAGES: Record<SettingsSection, () => ReactNode> = {
+  account: () => <AccountSettingsPage />,
+  preferences: () => <PreferencesPage />,
+  data: () => <DataPage />,
+  integrations: () => <IntegrationsPage />,
+  help: () => <HelpPage />,
+  about: () => <AboutPage />,
+};
 
-/** Largura de leitura confortável em tablet e desktop (as linhas não esticam até ao fim). */
-const SETTINGS_MAX_WIDTH = 680;
-/** Recuo dos separadores: alinha com o texto, depois do ícone. */
-const DIVIDER_INSET = spacing.lg + 36 + spacing.md;
+/** Pilha própria das Definições: no telemóvel, cada secção abre por cima da lista. */
+export function SettingsStack() {
+  const { colors } = useTheme();
+  const breakpoint = useBreakpoint();
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        // Em tablet e desktop a coluna de secções fica fixa: mudar de secção não desliza.
+        animation: breakpoint === 'compact' ? 'default' : 'none',
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    />
+  );
+}
 
-/** Ícone neutro das linhas: o verde fica para o que está selecionado. */
-const NEUTRAL = { iconColor: 'textSecondary', iconBackground: 'surfaceMuted' } as const;
+/** Rota `/settings/[section]`: secção desconhecida volta ao início das Definições. */
+export function SettingsSectionRoute() {
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  if (!isSettingsSection(section)) return <Redirect href="/settings" />;
+  return <SettingsScreen section={section} />;
+}
 
 /**
- * Definições: Conta, Sincronização, Aparência, Idioma e região, Dados e privacidade,
- * Experiência e Ajuda. Só aparecem opções que já funcionam.
- * Escolhas simples (aparência, idioma) fazem-se aqui, sem abrir outro ecrã.
+ * Definições com navegação interna (ADR-071). Tablet e desktop: coluna de secções à esquerda e a
+ * secção escolhida à direita (sem secção, abre a Conta). Telemóvel: lista de secções; cada uma
+ * abre numa página própria, com regresso à lista. Cada secção tem o seu endereço.
  */
-export function SettingsScreen() {
+export function SettingsScreen({ section = null }: { section?: SettingsSection | null }) {
   const { t } = useTranslation();
-  const version = Constants.expoConfig?.version ?? '—';
-  // Integrações (bancos, Trading 212) precisam de conta e do servidor.
-  const signedIn = useAuth().state.status === 'signedIn';
-  const { formatMoney, formatDate } = useLocaleFormat();
-  // Só quem o servidor reconhece (admin_role()); esconder a linha não é a proteção.
-  const adminRole = useAdminRole();
+  const breakpoint = useBreakpoint();
 
+  if (breakpoint === 'compact') {
+    if (!section) {
+      return (
+        <Screen title={t('settings.title')}>
+          <SectionList />
+        </Screen>
+      );
+    }
+    return (
+      <Screen>
+        <BackToSettings />
+        <View style={styles.page}>{PAGES[section]()}</View>
+      </Screen>
+    );
+  }
+
+  const current = section ?? 'account';
   return (
     <Screen title={t('settings.title')}>
-      <View style={styles.column}>
-        <AccountSettings>
-          <Section title={t('settings.groups.appearance')}>
-            <Card padding="xs">
-              <AppearanceSetting />
-            </Card>
-          </Section>
-
-          <Section title={t('settings.groups.language')}>
-            <Card padding="xs">
-              <LanguageSetting />
-              <Divider inset={DIVIDER_INSET} />
-              {/* Números, moedas e datas seguem a região do aparelho (useLocaleFormat). */}
-              <ListItem
-                {...NEUTRAL}
-                icon="globe-outline"
-                title={t('settings.formats')}
-                subtitle={t('settings.formatsHint', {
-                  example: `${formatMoney({ amountMinor: 123456, currency: 'EUR' })} · ${formatDate(new Date(), 'short')}`,
-                })}
-              />
-            </Card>
-          </Section>
-
-          <Section title={t('settings.groups.data')}>
-            <Card padding="xs">
-              <ListItem
-                {...NEUTRAL}
-                icon="archive-outline"
-                title={t('settings.backup')}
-                subtitle={t('settings.backupHint')}
-                onPress={() => router.push('/backup')}
-              />
-              {analyticsAvailable() ? (
-                <>
-                  <Divider inset={DIVIDER_INSET} />
-                  <AnalyticsSetting />
-                </>
-              ) : null}
-            </Card>
-          </Section>
-
-          {signedIn ? (
-            <Section title={t('settings.groups.integrations')}>
-              <Card padding="xs">
-                <ListItem
-                  {...NEUTRAL}
-                  icon="business-outline"
-                  title={t('banking.title')}
-                  subtitle={t('settings.banksHint')}
-                  onPress={() => router.push('/integrations/banks' as Href)}
-                />
-                {t212Enabled() ? (
-                  <>
-                    <Divider inset={DIVIDER_INSET} />
-                    <ListItem
-                      {...NEUTRAL}
-                      icon="trending-up-outline"
-                      title={t('t212.title')}
-                      subtitle={t('settings.t212Hint')}
-                      onPress={() => router.push('/integrations/trading212' as Href)}
-                    />
-                  </>
-                ) : null}
-              </Card>
-            </Section>
-          ) : null}
-
-          {quickEntryAvailable() ? (
-            <Section title={t('settings.groups.experience')}>
-              <Card padding="xs">
-                <QuickEntryRow />
-              </Card>
-            </Section>
-          ) : null}
-
-          {adminRole ? (
-            <Section title={t('admin.title')}>
-              <Card padding="xs">
-                <ListItem
-                  {...NEUTRAL}
-                  icon="shield-outline"
-                  title={t('admin.title')}
-                  subtitle={t(`admin.roles.${adminRole}`)}
-                  onPress={() => router.push('/admin' as Href)}
-                />
-              </Card>
-            </Section>
-          ) : null}
-
-          <Section title={t('settings.groups.help')}>
-            <Card padding="xs">
-              <ListItem
-                {...NEUTRAL}
-                icon="help-circle-outline"
-                title={t('settings.support')}
-                showChevron={false}
-                trailing={<ExternalMark />}
-                onPress={() => openExternal(SUPPORT_URL)}
-              />
-              <Divider inset={DIVIDER_INSET} />
-              <ListItem
-                {...NEUTRAL}
-                icon="mail-outline"
-                title={t('settings.contact')}
-                subtitle={CONTACT_EMAIL}
-                showChevron={false}
-                trailing={<ExternalMark />}
-                onPress={() => openExternal(`mailto:${CONTACT_EMAIL}`)}
-              />
-              <Divider inset={DIVIDER_INSET} />
-              <ListItem
-                {...NEUTRAL}
-                icon="shield-checkmark-outline"
-                title={t('settings.privacy')}
-                showChevron={false}
-                trailing={<ExternalMark />}
-                onPress={() => openExternal(PRIVACY_URL)}
-              />
-              <Divider inset={DIVIDER_INSET} />
-              <ListItem
-                {...NEUTRAL}
-                icon="document-text-outline"
-                title={t('settings.terms')}
-                showChevron={false}
-                trailing={<ExternalMark />}
-                onPress={() => openExternal(TERMS_URL)}
-              />
-              <Divider inset={DIVIDER_INSET} />
-              <ListItem
-                {...NEUTRAL}
-                icon="information-circle-outline"
-                title={t('settings.version')}
-                trailing={<Value>{version}</Value>}
-              />
-            </Card>
-          </Section>
-        </AccountSettings>
+      <View style={styles.split}>
+        <SectionNav current={current} compactRail={breakpoint === 'medium'} />
+        <View style={styles.panel}>{PAGES[current]()}</View>
       </View>
     </Screen>
   );
 }
 
-/** Valor atual à direita de uma linha. */
-function Value({ children }: { children: ReactNode }) {
+/** Resumo de cada secção na lista do telemóvel: o estado atual, quando ajuda a decidir. */
+function useSectionSummaries(): Record<SettingsSection, string> {
+  const { t } = useTranslation();
+  const { state } = useAuth();
+  const { snapshot } = useSync();
+  const { preferences } = usePreferences();
+  const language =
+    preferences.language === 'system'
+      ? t('settings.languageSystem')
+      : LANGUAGE_META[preferences.language].nativeName;
+  const user = state.status === 'signedIn' ? state.user : null;
+  return {
+    account: user
+      ? (user.email ?? user.username ?? t('account.signedIn'))
+      : t('account.localOnlyTitle'),
+    preferences: `${t(`settings.theme.${preferences.theme}`)} · ${language}`,
+    data: snapshot
+      ? t(`account.statusShort.${snapshot.status}`)
+      : t('settings.sections.data.description'),
+    integrations: t('settings.sections.integrations.description'),
+    help: t('settings.sections.help.description'),
+    about: `${t('settings.version')} ${Constants.expoConfig?.version ?? '—'}`,
+  };
+}
+
+/** Telemóvel: as secções como uma lista, com o estado atual em cada linha. */
+function SectionList() {
+  const { t } = useTranslation();
+  const summaries = useSectionSummaries();
   return (
-    <Text variant="callout" tone="secondary" tabular numberOfLines={1}>
-      {children}
-    </Text>
+    <SettingsGroup>
+      {SETTINGS_SECTIONS.map((key) => (
+        <ListItem
+          key={key}
+          icon={SECTION_ICONS[key]}
+          iconColor="primaryText"
+          iconBackground="primaryMuted"
+          title={t(`settings.sections.${key}.title`)}
+          subtitle={summaries[key]}
+          onPress={() => router.push(settingsHref(key))}
+        />
+      ))}
+    </SettingsGroup>
   );
 }
 
-/** Abre fora da app (browser ou email). */
-function ExternalMark() {
-  return <Icon name="open-outline" size={16} color="textTertiary" />;
-}
-
-/** Linha com título e um controlo por baixo (ex.: aparência). */
-function ControlRow({
-  icon,
-  title,
-  children,
-  footer,
-}: {
-  icon: IconName;
-  title: string;
-  children: ReactNode;
-  footer?: ReactNode;
-}) {
+/** Telemóvel: regresso à lista de secções (o mesmo que o botão de voltar do sistema). */
+function BackToSettings() {
+  const { t } = useTranslation();
   return (
-    <View style={styles.controlRow}>
-      <ListItem {...NEUTRAL} icon={icon} title={title} />
-      <View style={styles.control}>
-        {children}
-        {footer}
-      </View>
+    <View style={styles.back}>
+      <IconButton
+        icon="chevron-back"
+        accessibilityLabel={t('settings.nav.back')}
+        onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}
+      />
+      <Text variant="label" tone="secondary">
+        {t('settings.title')}
+      </Text>
     </View>
   );
 }
 
-function AppearanceSetting() {
+/**
+ * Tablet e desktop: navegação secundária das Definições. Ligações reais (endereço próprio,
+ * teclado, voltar do browser); a secção atual fica marcada para leitores de ecrã.
+ */
+function SectionNav({ current, compactRail }: { current: SettingsSection; compactRail: boolean }) {
   const { t } = useTranslation();
-  const { preferences, updatePreferences } = usePreferences();
   return (
-    <ControlRow icon="contrast-outline" title={t('settings.appearance')}>
-      <SegmentedControl
-        accessibilityLabel={t('settings.appearance')}
-        value={preferences.theme}
-        onChange={(theme) => updatePreferences({ theme })}
-        options={THEME_OPTIONS.map((value) => ({ value, label: t(`settings.theme.${value}`) }))}
-      />
-    </ControlRow>
+    <View
+      style={[styles.nav, compactRail && styles.navMedium]}
+      accessibilityRole="navigation"
+      aria-label={t('settings.nav.label')}>
+      {SETTINGS_SECTIONS.map((key) => (
+        <NavItem
+          key={key}
+          section={key}
+          label={t(`settings.sections.${key}.title`)}
+          active={key === current}
+        />
+      ))}
+    </View>
   );
 }
 
-/** Idioma: mostra o atual; tocar abre as opções no próprio cartão. */
-function LanguageSetting() {
-  const { t } = useTranslation();
-  const { preferences, updatePreferences } = usePreferences();
-  const [open, setOpen] = useState(false);
-  const label = (language: LanguagePreference) =>
-    language === 'system' ? t('settings.languageSystem') : LANGUAGE_META[language].nativeName;
-
+function NavItem({
+  section,
+  label,
+  active,
+}: {
+  section: SettingsSection;
+  label: string;
+  active: boolean;
+}) {
+  const { colors } = useTheme();
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   return (
-    <>
-      <ListItem
-        {...NEUTRAL}
-        icon="language-outline"
-        title={t('settings.language')}
-        expanded={open}
-        showChevron={false}
-        trailing={
-          <View style={styles.valueWithChevron}>
-            <Value>{label(preferences.language)}</Value>
-            <ListChevron open={open} />
-          </View>
-        }
-        onPress={() => setOpen((value) => !value)}
-      />
-      {open ? (
-        <FadeIn>
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.language')}>
-            {LANGUAGE_OPTIONS.map((language, index) => {
-              const selected = preferences.language === language;
-              return (
-                <Fragment key={language}>
-                  {index > 0 ? <Divider inset={DIVIDER_INSET} /> : null}
-                  <ListItem
-                    leading={<View style={styles.optionIndent} />}
-                    title={label(language)}
-                    selected={selected}
-                    showChevron={false}
-                    trailing={
-                      selected ? <Icon name="checkmark" size={20} color="primaryText" /> : null
-                    }
-                    onPress={() => {
-                      updatePreferences({ language });
-                      setOpen(false);
-                    }}
-                  />
-                </Fragment>
-              );
-            })}
-          </View>
-        </FadeIn>
-      ) : null}
-    </>
-  );
-}
-
-function AnalyticsSetting() {
-  const { t } = useTranslation();
-  const { preferences, updatePreferences } = usePreferences();
-  return (
-    <ControlRow
-      icon="analytics-outline"
-      title={t('settings.analytics.title')}
-      footer={
-        <Text variant="footnote" tone="tertiary">
-          {t('settings.analytics.description')}
+    <Link href={settingsHref(section)} asChild>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: active }}
+        aria-current={active ? 'page' : undefined}
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        // Um só objeto de estilo: o `Link` com `asChild` não aceita funções nem listas.
+        style={StyleSheet.flatten([
+          styles.navItem,
+          active && { backgroundColor: colors.primaryMuted },
+          !active && hovered && { backgroundColor: colors.surfaceHover },
+          // Foco do teclado visível (web): contorno na cor principal.
+          focused && { borderColor: colors.primary },
+        ])}>
+        <Icon
+          name={SECTION_ICONS[section]}
+          size={20}
+          color={active ? 'primaryText' : 'textSecondary'}
+        />
+        <Text
+          variant="label"
+          tone={active ? 'accent' : 'secondary'}
+          numberOfLines={2}
+          style={styles.navLabel}>
+          {label}
         </Text>
-      }>
-      <SegmentedControl
-        accessibilityLabel={t('settings.analytics.title')}
-        value={preferences.analytics ? 'on' : 'off'}
-        onChange={(value) => updatePreferences({ analytics: value === 'on' })}
-        options={[
-          { value: 'off', label: t('settings.analytics.off') },
-          { value: 'on', label: t('settings.analytics.on') },
-        ]}
-      />
-    </ControlRow>
+      </Pressable>
+    </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  column: {
-    width: '100%',
-    maxWidth: SETTINGS_MAX_WIDTH,
-    // Alinhada com o título do ecrã, como as restantes áreas da Miven.
-    alignSelf: 'flex-start',
+  split: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing['3xl'],
+  },
+  nav: {
+    width: NAV_WIDTH,
+    gap: spacing.xxs,
+    // Fica à vista enquanto o painel rola (web); no nativo é ignorado.
+    position: 'sticky' as never,
+    top: spacing.lg,
+  },
+  navMedium: {
+    width: 216,
+  },
+  navItem: {
+    // Borda sempre presente (transparente) para o contorno de foco não mexer no texto.
+    borderWidth: 2,
+    borderColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: layout.minTouchTarget,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+  },
+  navLabel: {
+    flex: 1,
+  },
+  panel: {
+    flex: 1,
+    minWidth: 0,
+    maxWidth: PANEL_MAX_WIDTH,
     gap: spacing['2xl'],
   },
-  controlRow: {
-    paddingBottom: spacing.md,
+  page: {
+    gap: spacing['2xl'],
   },
-  control: {
-    gap: spacing.sm,
-    paddingLeft: DIVIDER_INSET,
-    paddingRight: spacing.lg,
-  },
-  valueWithChevron: {
+  back: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    maxWidth: 180,
-  },
-  optionIndent: {
-    width: 36,
+    marginLeft: -spacing.sm,
+    marginBottom: -spacing.md,
   },
 });

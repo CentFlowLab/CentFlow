@@ -13,9 +13,11 @@ type Props = {
   entry: Entry;
   lookups: FinanceLookups;
   onPress: () => void;
+  /** Informação extra no fim da linha de baixo (ex.: tipo de custo de um veículo). */
+  detail?: string;
 };
 
-export function EntryListItem({ entry, lookups, onPress }: Props) {
+export function EntryListItem({ entry, lookups, onPress, detail }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { formatMoney, formatDate } = useLocaleFormat();
@@ -35,7 +37,9 @@ export function EntryListItem({ entry, lookups, onPress }: Props) {
   const where = isTransfer
     ? t('entries.transferBetween', { from: account?.name ?? '—', to: destination?.name ?? '—' })
     : (account?.name ?? '—');
-  const subtitle = `${formatDate(calendarDateToLocalDate(entry.date), 'medium')} · ${where}`;
+  const subtitle = [formatDate(calendarDateToLocalDate(entry.date), 'medium'), where, detail]
+    .filter(Boolean)
+    .join(' · ');
 
   const signed = entry.type === 'expense' ? -entry.amount : entry.amount;
   const amountText = formatMoney(

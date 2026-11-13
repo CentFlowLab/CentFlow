@@ -29,6 +29,7 @@ import {
   type T212State,
 } from './trading212-sync';
 import { useToday } from '../finance/useToday';
+import { settingsHref } from '../settings/settings-sections';
 
 /** Só aparece quando a função `t212` e o segredo INTEGRATIONS_KEY estão no servidor (ADR-064). */
 export function t212Enabled(): boolean {
@@ -168,7 +169,7 @@ export function Trading212Screen() {
     <FormScreen
       title={t('t212.title')}
       closeLabel={t('common.close')}
-      onClose={() => closeModal('/settings')}>
+      onClose={() => closeModal(settingsHref('integrations'))}>
       {!state ? (
         <ActivityIndicator color={colors.primary} />
       ) : !integration ? (

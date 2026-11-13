@@ -1081,3 +1081,37 @@ construtor de `androidx.work.impl.WorkDatabase_Impl`; o WorkManager arranca com 
 `adb logcat` num Galaxy A12, Android 12). O plugin local `plugins/android-no-minify` desliga o R8 e
 a redução de recursos no `gradle.properties` gerado. O APK fica maior, mas sem regras de exclusão
 por manter para cada biblioteca. Voltar a ligar o R8 só com regras testadas num aparelho real.
+
+## ADR-071 — Definições com navegação interna
+
+**Estado:** aceite (2026-11-13).
+
+As Definições deixam de ser uma página única com 8 grupos numa coluna de 680px. A rota passa a
+ser uma pasta (`src/app/(tabs)/settings/`: `_layout`, `index`, `[section]`) com seis secções, cada
+uma com endereço próprio: Conta e segurança, Preferências, Dados e sincronização, Integrações,
+Ajuda e suporte, Sobre a Miven (`src/features/settings/settings-sections.ts`). Em tablet e desktop,
+coluna de secções (ligações reais, `aria-current`) e painel até 760px; sem secção, abre a Conta.
+No telemóvel, lista de secções com o estado atual e cada secção numa página própria (pilha
+própria, regresso pelo sistema ou pelo browser). As integrações mostram o estado real lido do
+servidor ao abrir (bancos ligados, contas, última leitura; Trading 212 e o último valor), com o
+acesso ao open banking descrito como limitado. A lógica de conta, sincronização, cópias, bancos e
+Trading 212 não mudou: os ecrãs próprios continuam a ser os mesmos modais. A gestão da conta
+(exportar, eliminar) fica no fim da Conta, à parte das ações do dia a dia (ADR-068).
+
+## ADR-072 — Viaturas: painel, ficha por períodos e datas fechadas
+
+**Estado:** aceite (2026-11-13).
+
+A área de Viaturas passa a ter um resumo (quantas, gasto do ano por moeda, próximas obrigações
+com data e dias) e um cartão por viatura. A ficha mostra a identificação, o gasto por período
+(este mês, este ano, 12 meses, sempre), para onde vai o dinheiro, as quatro obrigações sempre
+(com data concreta ou "sem data definida"), indicadores só com dados suficientes, a evolução de
+12 meses e o histórico filtrável pelo tipo de custo. Tudo continua a agregar os movimentos
+ligados (ADR-054): nenhum movimento é criado e moedas diferentes não se somam
+(`vehiclePeriodStart`, `entriesInPeriod`, `vehicleMonthlyCosts`, `vehicleYearCost` em
+`src/core/finance/vehicles.ts`). O formulário agrupa os campos existentes (identificação,
+motorização, aquisição, documentos e prazos, notas), com duas colunas a partir do tablet
+(`FormScreen width="wide"`). `OptionalDateField` passa a estar fechado por omissão: mostra só a
+data; ao tocar abre a data escrita e o calendário (com salto de ano), um de cada vez, e fecha ao
+escolher o dia. Sem campos novos na base de dados: cilindrada, potência e dados próprios de
+elétricos não existem no modelo e não foram inventados.

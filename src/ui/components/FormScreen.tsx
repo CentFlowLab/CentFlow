@@ -14,13 +14,25 @@ type Props = {
   /** Ações fixas no fundo (ex.: Guardar). */
   footer?: ReactNode;
   headerRight?: ReactNode;
+  /** `wide`: fichas e formulários longos usam a largura do desktop (o telemóvel não muda). */
+  width?: 'default' | 'wide';
 };
 
 const FORM_MAX_WIDTH = 560;
+const WIDE_MAX_WIDTH = 1040;
 
 /** Estrutura de ecrãs de formulário apresentados como modal. */
-export function FormScreen({ title, closeLabel, onClose, children, footer, headerRight }: Props) {
+export function FormScreen({
+  title,
+  closeLabel,
+  onClose,
+  children,
+  footer,
+  headerRight,
+  width = 'default',
+}: Props) {
   const { colors } = useTheme();
+  const maxWidth = { maxWidth: width === 'wide' ? WIDE_MAX_WIDTH : FORM_MAX_WIDTH };
   const insets = useSafeAreaInsets();
   // No iOS o modal abre como folha (page sheet), já abaixo da barra de estado: somar a margem de
   // segurança do topo deixava o "×" e o título a meio da folha.
@@ -47,7 +59,7 @@ export function FormScreen({ title, closeLabel, onClose, children, footer, heade
         }}
       />
       <View style={[styles.header, { paddingTop: topInset + spacing.md }]}>
-        <View style={styles.headerInner}>
+        <View style={[styles.headerInner, maxWidth]}>
           <IconButton
             icon="close"
             variant="filled"
@@ -64,7 +76,7 @@ export function FormScreen({ title, closeLabel, onClose, children, footer, heade
         style={styles.root}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled">
-        <View style={styles.body}>{children}</View>
+        <View style={[styles.body, maxWidth]}>{children}</View>
       </ScrollView>
       {footer ? (
         <View
@@ -76,7 +88,7 @@ export function FormScreen({ title, closeLabel, onClose, children, footer, heade
               backgroundColor: colors.background,
             },
           ]}>
-          <View style={styles.footerInner}>{footer}</View>
+          <View style={[styles.footerInner, maxWidth]}>{footer}</View>
         </View>
       ) : null}
     </KeyboardAvoidingView>

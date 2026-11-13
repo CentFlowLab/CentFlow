@@ -18,6 +18,7 @@ import {
   type BankClientError,
   type BankConnection,
 } from './open-banking-client';
+import { settingsHref } from '../settings/settings-sections';
 
 const STATUS_TONE = { connected: 'positive', expired: 'warning', error: 'negative' } as const;
 
@@ -93,7 +94,7 @@ export function BanksScreen() {
     <FormScreen
       title={t('banking.title')}
       closeLabel={t('common.close')}
-      onClose={() => closeModal('/settings')}>
+      onClose={() => closeModal(settingsHref('integrations'))}>
       <View style={styles.body}>
         <Text variant="callout" tone="secondary">
           {t('banking.intro')}

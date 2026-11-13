@@ -279,7 +279,7 @@ describe('local finance flow (real SQLite)', () => {
     expect(screen).toHavePathname('/vehicles/new');
     await fireEvent.changeText(await screen.findByLabelText('Nome'), 'Carrinha');
     await fireEvent.press(screen.getByRole('radio', { name: 'Carrinha' }));
-    await fireEvent.changeText(screen.getByLabelText('Quilómetros (opcional)'), '120000');
+    await fireEvent.changeText(screen.getByLabelText('Quilómetros atuais (opcional)'), '120000');
     await fireEvent.press(screen.getByRole('button', { name: 'Guardar veículo' }));
     expect(await screen.findByText('Carrinha')).toBeOnTheScreen();
 

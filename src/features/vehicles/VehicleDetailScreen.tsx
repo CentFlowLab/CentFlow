@@ -1,16 +1,25 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Fragment, useCallback, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import {
   calendarDateToLocalDate,
   currentOdometer,
-  vehicleDeadlines,
-  vehicleStats,
+  daysUntil,
+  deadlineStatus,
+  entriesInPeriod,
+  monthKeyToLocalDate,
+  SERVICE_SOON_KM,
   VEHICLE_COST_TYPES,
+  VEHICLE_PERIODS,
+  vehicleMonthlyCosts,
+  vehicleStats,
+  vehicleYearCost,
+  type CalendarDate,
   type Vehicle,
-  type VehicleDeadline,
+  type VehicleCostType,
+  type VehiclePeriod,
 } from '@/core/finance';
 import { DEFAULT_CURRENCY } from '@/core/money';
 import { useDataQuery, type Repositories } from '@/data';
@@ -18,23 +27,29 @@ import { useLocaleFormat } from '@/i18n';
 import {
   Amount,
   Badge,
+  BarChart,
   Button,
   Card,
+  Chip,
   Divider,
   EmptyState,
   FormScreen,
+  Icon,
   ListItem,
-  Section,
+  ProgressBar,
+  SegmentedControl,
   Text,
+  type BadgeTone,
 } from '@/ui/components';
-import { spacing } from '@/ui/theme';
+import { useBreakpoint } from '@/ui/layout/useBreakpoint';
+import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { DEADLINE_TONES, deadlineLabel } from '../finance/DeadlineBadge';
 import { EntryListItem } from '../finance/EntryListItem';
 import { closeModal } from '../finance/navigation';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
-import { energyUnit, vehicleKindLabel } from './presentation';
+import { energyUnit, vehicleIcon, vehicleKindLabel } from './presentation';
 
 async function loadVehicle(repositories: Repositories, id: string) {
   const [vehicle, entries, documents] = [
@@ -49,7 +64,11 @@ async function loadVehicle(repositories: Repositories, id: string) {
   };
 }
 
-/** Ficha do veículo (`/vehicles/[id]`): prazos, gastos, combustível, custo por km e histórico. */
+/**
+ * Ficha do veículo (`/vehicles/[id]`): identificação, gastos por período, para onde vai o dinheiro,
+ * obrigações com datas concretas, indicadores e o histórico. Tudo agrega os movimentos existentes
+ * (ADR-054): nenhum valor é criado aqui.
+ */
 export function VehicleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
@@ -62,7 +81,7 @@ export function VehicleDetailScreen() {
   if (!query.data || !lookups.data) {
     return (
       <FormScreen title={t('vehicles.detailTitle')} closeLabel={t('common.close')} onClose={close}>
-        <ActivityIndicator />
+        <ActivityIndicator accessibilityLabel={t('common.loading')} />
       </FormScreen>
     );
   }
@@ -86,6 +105,11 @@ export function VehicleDetailScreen() {
 }
 
 type Loaded = Awaited<ReturnType<typeof loadVehicle>>;
+type Lookups = NonNullable<ReturnType<typeof useFinanceLookups>['data']>;
+
+/** Obrigações que a ficha mostra sempre (as que não têm data aparecem como "por definir"). */
+const OBLIGATIONS = ['insurance', 'inspection', 'roadTax', 'service'] as const;
+type ObligationKind = (typeof OBLIGATIONS)[number];
 
 function VehicleSheet({
   vehicle,
@@ -97,60 +121,58 @@ function VehicleSheet({
   vehicle: Vehicle;
   entries: Loaded['entries'];
   documents: Loaded['documents'];
-  lookups: NonNullable<ReturnType<typeof useFinanceLookups>['data']>;
+  lookups: Lookups;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { formatDate, formatMoney, formatNumber, formatDecimal, formatUnitPrice } =
-    useLocaleFormat();
+  const { formatNumber } = useLocaleFormat();
   const today = useToday();
+  const wide = useBreakpoint() !== 'compact';
+  const [period, setPeriod] = useState<VehiclePeriod>('year');
 
-  // Totais só numa moeda: a do veículo, ou a mais usada nos movimentos.
+  // Totais só numa moeda: a do veículo, ou a do primeiro movimento. Outras moedas não se somam.
   const currency = vehicle.currency ?? entries[0]?.currency ?? DEFAULT_CURRENCY;
   const inCurrency = entries.filter((entry) => entry.currency === currency);
-  const stats = vehicleStats(vehicle, inCurrency, today);
+  const overall = vehicleStats(vehicle, inCurrency, today);
+  const inPeriod = vehicleStats(vehicle, entriesInPeriod(inCurrency, period, today), today);
   const odometer = currentOdometer(vehicle, entries);
-  const deadlines = vehicleDeadlines(vehicle, today, odometer);
-  const money = (amountMinor: number) => ({ amountMinor, currency });
   const unit = energyUnit(vehicle);
-  const costTypeLabel = (type: (typeof VEHICLE_COST_TYPES)[number]) =>
+  const costTypeLabel = (type: VehicleCostType) =>
     type === 'fuel' && unit === 'kwh'
       ? t('entryVehicle.chargeCostType')
       : t(`vehicles.costTypes.${type}`);
-  const day = (value: string) => formatDate(calendarDateToLocalDate(value), 'medium');
 
-  const subtitle = [
-    vehicleKindLabel(t, vehicle),
-    vehicle.plate,
-    [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(' ') || null,
-    vehicle.fuelType ? t(`vehicles.fuelTypes.${vehicle.fuelType}`) : null,
-    odometer === null ? null : t('vehicles.km', { value: formatNumber(odometer) }),
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-  const deadlineDetail = (deadline: VehicleDeadline) => {
-    const parts: string[] = [];
-    if (deadline.dueOn) parts.push(day(deadline.dueOn));
-    if (deadline.dueKm !== null)
-      parts.push(t('vehicles.km', { value: formatNumber(deadline.dueKm) }));
-    return parts.join(' · ');
-  };
-  // Com data, os dias; só com quilómetros (revisão), os km que faltam.
-  const deadlineBadge = (deadline: VehicleDeadline) => {
-    if (deadline.daysLeft !== null) return deadlineLabel(t, deadline.daysLeft);
-    if (deadline.kmLeft === null) return '';
-    return deadline.kmLeft >= 0
-      ? t('vehicles.kmLeft', { value: formatNumber(deadline.kmLeft) })
-      : t('vehicles.kmOver', { value: formatNumber(-deadline.kmLeft) });
-  };
-
-  const byType = VEHICLE_COST_TYPES.filter((type) => stats.byType[type] !== undefined).sort(
-    (a, b) => (stats.byType[b] ?? 0) - (stats.byType[a] ?? 0),
+  const header = (
+    <VehicleHeader vehicle={vehicle} odometer={odometer} formatKm={(km) => formatNumber(km)} />
   );
+  const summary = (
+    <SpendingCard
+      period={period}
+      onPeriod={setPeriod}
+      spentInPeriod={inPeriod.spent}
+      overall={overall}
+      currency={currency}
+      otherCurrency={inCurrency.length !== entries.length}
+    />
+  );
+  const breakdown = (
+    <Breakdown
+      byType={inPeriod.byType}
+      currency={currency}
+      label={costTypeLabel}
+      total={inPeriod.spent}
+    />
+  );
+  const obligations = <Obligations vehicle={vehicle} today={today} odometer={odometer} />;
+  const indicators = (
+    <Indicators vehicle={vehicle} entries={inCurrency} currency={currency} today={today} />
+  );
+  const documentList = documents.length > 0 ? <Documents documents={documents} /> : null;
+  const history = <History entries={entries} lookups={lookups} costTypeLabel={costTypeLabel} />;
 
   return (
     <FormScreen
+      width="wide"
       title={vehicle.name}
       closeLabel={t('common.close')}
       onClose={onClose}
@@ -159,29 +181,30 @@ function VehicleSheet({
           label={t('vehicles.edit')}
           variant="ghost"
           size="sm"
+          icon="create-outline"
           onPress={() =>
             router.push({ pathname: '/vehicles/edit/[id]', params: { id: vehicle.id } })
           }
         />
       }
       footer={
-        <View style={styles.actions}>
-          <View style={styles.flex}>
+        <View style={wide ? styles.actionsWide : styles.actions}>
+          <View style={wide ? undefined : styles.flex}>
             <Button
               label={t('vehicles.link')}
               variant="secondary"
               icon="link-outline"
-              fullWidth
+              fullWidth={!wide}
               onPress={() =>
                 router.push({ pathname: '/vehicles/link/[id]', params: { id: vehicle.id } })
               }
             />
           </View>
-          <View style={styles.flex}>
+          <View style={wide ? undefined : styles.flex}>
             <Button
               label={t('vehicles.addExpense')}
               icon="add"
-              fullWidth
+              fullWidth={!wide}
               onPress={() =>
                 router.push({ pathname: '/new-transaction', params: { vehicleId: vehicle.id } })
               }
@@ -189,200 +212,97 @@ function VehicleSheet({
           </View>
         </View>
       }>
-      {subtitle ? (
-        <Text variant="callout" tone="secondary">
-          {subtitle}
-        </Text>
-      ) : null}
-
-      <Section title={t('vehicles.deadlines')}>
-        <Card padding="xs">
-          {deadlines.length === 0 ? (
-            <View style={styles.padded}>
-              <Text variant="footnote" tone="secondary">
-                {t('vehicles.noDeadlines')}
-              </Text>
-            </View>
-          ) : (
-            deadlines.map((deadline, index) => (
-              <Fragment key={deadline.kind}>
-                {index > 0 ? <Divider /> : null}
-                <ListItem
-                  title={t(`vehicles.deadlineKinds.${deadline.kind}`)}
-                  subtitle={deadlineDetail(deadline)}
-                  showChevron={false}
-                  trailing={
-                    <Badge label={deadlineBadge(deadline)} tone={DEADLINE_TONES[deadline.status]} />
-                  }
-                />
-              </Fragment>
-            ))
-          )}
-        </Card>
-      </Section>
-
-      <Section title={t('vehicles.spending')}>
-        <Card padding="md" style={styles.gap}>
-          <View style={styles.row}>
-            <Figure label={t('vehicles.thisMonth')}>
-              <Amount value={money(stats.spentThisMonth)} variant="bodyStrong" />
-            </Figure>
-            <Figure label={t('vehicles.thisYear')}>
-              <Amount value={money(stats.spentThisYear)} variant="bodyStrong" />
-            </Figure>
-            <Figure label={t('vehicles.total')}>
-              <Amount value={money(stats.spent)} variant="bodyStrong" />
-            </Figure>
+      {header}
+      {wide ? (
+        <View style={styles.columns}>
+          <View style={styles.main}>
+            {summary}
+            {breakdown}
+            {indicators}
           </View>
-          <Divider />
-          <Figure label={t('vehicles.ownership')}>
-            <Amount value={money(stats.ownershipCost)} />
-          </Figure>
-          <Text variant="footnote" tone="tertiary">
-            {stats.purchase
-              ? t(
-                  stats.purchase.source === 'entry'
-                    ? 'vehicles.purchaseEntry'
-                    : 'vehicles.purchaseInformative',
-                  { amount: formatMoney(money(stats.purchase.amount)) },
-                )
-              : t('vehicles.noPurchase')}
-          </Text>
-          {stats.beforeAcquisition > 0 ? (
-            <Text variant="footnote" tone="tertiary">
-              {t('vehicles.beforeAcquisition', { count: stats.beforeAcquisition })}
-            </Text>
-          ) : null}
-          {inCurrency.length !== entries.length ? (
-            <Text variant="footnote" tone="tertiary">
-              {t('vehicles.otherCurrency')}
-            </Text>
-          ) : null}
-        </Card>
-      </Section>
-
-      {byType.length > 0 ? (
-        <Section title={t('vehicles.byType')}>
-          <Card padding="xs">
-            {byType.map((type, index) => (
-              <Fragment key={type}>
-                {index > 0 ? <Divider /> : null}
-                <ListItem
-                  title={costTypeLabel(type)}
-                  showChevron={false}
-                  trailing={<Amount value={money(stats.byType[type] ?? 0)} variant="label" />}
-                />
-              </Fragment>
-            ))}
-          </Card>
-        </Section>
-      ) : null}
-
-      <Section title={t('vehicles.costPerKm')}>
-        <Card padding="md" style={styles.gap}>
-          {stats.fuel.fills > 0 ? (
-            <Text variant="callout">
-              {unit === 'kwh'
-                ? t('vehicles.chargeSummary', {
-                    kwh: formatDecimal(stats.fuel.quantityMilli / 1000, 1),
-                    count: stats.fuel.fills,
-                  })
-                : t('vehicles.fuelSummary', {
-                    litres: formatDecimal(stats.fuel.quantityMilli / 1000, 1),
-                    count: stats.fuel.fills,
-                  })}
-              {stats.fuel.pricePerLitre !== null
-                ? ` · ${t(unit === 'kwh' ? 'vehicles.avgPriceKwh' : 'vehicles.avgPrice', {
-                    price: formatUnitPrice(stats.fuel.pricePerLitre, currency),
-                  })}`
-                : ''}
-            </Text>
-          ) : null}
-          {stats.costPerKm ? (
-            <>
-              <View style={styles.row}>
-                {stats.costPerKm.fuelPerKm !== null ? (
-                  <Figure label={t(unit === 'kwh' ? 'vehicles.energyPerKm' : 'vehicles.fuelPerKm')}>
-                    <Text variant="bodyStrong" tabular>
-                      {t('vehicles.perKm', {
-                        value: formatUnitPrice(stats.costPerKm.fuelPerKm, currency),
-                      })}
-                    </Text>
-                  </Figure>
-                ) : null}
-                <Figure label={t('vehicles.totalPerKm')}>
-                  <Text variant="bodyStrong" tabular>
-                    {t('vehicles.perKm', {
-                      value: formatUnitPrice(stats.costPerKm.totalPerKm, currency),
-                    })}
-                  </Text>
-                </Figure>
-              </View>
-              {stats.costPerKm.quantityPer100Km !== null ? (
-                <Text variant="callout">
-                  {t(unit === 'kwh' ? 'vehicles.consumptionKwh' : 'vehicles.consumptionLitres', {
-                    value: formatDecimal(stats.costPerKm.quantityPer100Km / 1000, 1),
-                  })}
-                </Text>
-              ) : null}
-              <Text variant="footnote" tone="tertiary">
-                {t('vehicles.kmRange', {
-                  from: formatNumber(stats.costPerKm.fromKm),
-                  to: formatNumber(stats.costPerKm.toKm),
-                })}
-              </Text>
-            </>
-          ) : (
-            <Text variant="footnote" tone="secondary">
-              {t('vehicles.needMoreData')}
-            </Text>
-          )}
-        </Card>
-      </Section>
-
-      {documents.length > 0 ? (
-        <Section title={t('vehicles.documents')}>
-          <Card padding="xs">
-            {documents.map((document, index) => (
-              <Fragment key={document.id}>
-                {index > 0 ? <Divider /> : null}
-                <ListItem
-                  icon="document-text-outline"
-                  title={document.title}
-                  subtitle={document.expiresOn ? day(document.expiresOn) : undefined}
-                  onPress={() =>
-                    router.push({ pathname: '/documents/[id]', params: { id: document.id } })
-                  }
-                />
-              </Fragment>
-            ))}
-          </Card>
-        </Section>
-      ) : null}
-
-      <Section title={t('vehicles.history')}>
-        <Card padding="xs">
-          {entries.length === 0 ? (
-            <View style={styles.padded}>
-              <Text variant="footnote" tone="secondary">
-                {t('vehicles.noEntries')}
-              </Text>
-            </View>
-          ) : (
-            entries.map((entry, index) => (
-              <Fragment key={entry.id}>
-                {index > 0 ? <Divider /> : null}
-                <EntryListItem
-                  entry={entry}
-                  lookups={lookups}
-                  onPress={() => router.push({ pathname: '/entry/[id]', params: { id: entry.id } })}
-                />
-              </Fragment>
-            ))
-          )}
-        </Card>
-      </Section>
+          <View style={styles.side}>
+            {obligations}
+            {documentList}
+          </View>
+        </View>
+      ) : (
+        <>
+          {summary}
+          {obligations}
+          {breakdown}
+          {indicators}
+          {documentList}
+        </>
+      )}
+      {history}
     </FormScreen>
+  );
+}
+
+/** Identificação: ícone, marca e modelo, e as características em etiquetas. */
+function VehicleHeader({
+  vehicle,
+  odometer,
+  formatKm,
+}: {
+  vehicle: Vehicle;
+  odometer: number | null;
+  formatKm: (km: number) => string;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const makeModel = [vehicle.make, vehicle.model].filter(Boolean).join(' ');
+  const facts = [
+    vehicleKindLabel(t, vehicle),
+    vehicle.year ? String(vehicle.year) : null,
+    vehicle.fuelType ? t(`vehicles.fuelTypes.${vehicle.fuelType}`) : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <View style={styles.header}>
+      <View style={[styles.heroIcon, { backgroundColor: colors.primaryMuted }]}>
+        <Icon name={vehicleIcon(vehicle)} size={32} color="primaryText" />
+      </View>
+      <View style={styles.headerText}>
+        {makeModel ? (
+          <Text variant="title3" accessibilityRole="text">
+            {makeModel}
+          </Text>
+        ) : null}
+        <View style={styles.badges}>
+          {vehicle.plate ? <Plate value={vehicle.plate} /> : null}
+          {facts.map((fact) => (
+            <Badge key={fact} label={fact} />
+          ))}
+          {odometer !== null ? (
+            <Badge tone="accent" label={t('vehicles.km', { value: formatKm(odometer) })} />
+          ) : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Matrícula com o aspeto de uma placa (contorno), legível em claro e escuro. */
+function Plate({ value }: { value: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.plate, { borderColor: colors.borderStrong }]}>
+      <Text variant="caption" tabular>
+        {value.toLocaleUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
+function SectionTitle({ children, action }: { children: string; action?: ReactNode }) {
+  return (
+    <View style={styles.sectionTitle}>
+      <Text variant="overline" tone="tertiary" accessibilityRole="header">
+        {children}
+      </Text>
+      {action}
+    </View>
   );
 }
 
@@ -397,11 +317,524 @@ function Figure({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function SpendingCard({
+  period,
+  onPeriod,
+  spentInPeriod,
+  overall,
+  currency,
+  otherCurrency,
+}: {
+  period: VehiclePeriod;
+  onPeriod: (period: VehiclePeriod) => void;
+  spentInPeriod: number;
+  overall: ReturnType<typeof vehicleStats>;
+  currency: string;
+  otherCurrency: boolean;
+}) {
+  const { t } = useTranslation();
+  const { formatMoney, formatUnitPrice } = useLocaleFormat();
+  const money = (amountMinor: number) => ({ amountMinor, currency });
+
+  return (
+    <Card padding="lg">
+      <View style={styles.cardBody}>
+        <SegmentedControl
+          accessibilityLabel={t('vehicles.period')}
+          value={period}
+          onChange={onPeriod}
+          options={VEHICLE_PERIODS.map((value) => ({
+            value,
+            label: t(`vehicles.periods.${value}`),
+          }))}
+        />
+        <View style={styles.figure}>
+          <Text variant="footnote" tone="secondary">
+            {t('vehicles.spentInPeriod')}
+          </Text>
+          <Amount value={money(spentInPeriod)} variant="amountHero" />
+        </View>
+        <Divider />
+        <View style={styles.figures}>
+          <Figure label={t('vehicles.total')}>
+            <Amount value={money(overall.spent)} variant="bodyStrong" />
+          </Figure>
+          <Figure label={t('vehicles.ownership')}>
+            <Amount value={money(overall.ownershipCost)} variant="bodyStrong" />
+          </Figure>
+          {overall.costPerKm ? (
+            <Figure label={t('vehicles.costPerKm')}>
+              <Text variant="bodyStrong" tabular>
+                {t('vehicles.perKm', {
+                  value: formatUnitPrice(overall.costPerKm.totalPerKm, currency),
+                })}
+              </Text>
+            </Figure>
+          ) : null}
+        </View>
+        <Text variant="footnote" tone="tertiary">
+          {overall.purchase
+            ? t(
+                overall.purchase.source === 'entry'
+                  ? 'vehicles.purchaseEntry'
+                  : 'vehicles.purchaseInformative',
+                { amount: formatMoney(money(overall.purchase.amount)) },
+              )
+            : t('vehicles.noPurchase')}
+        </Text>
+        {overall.beforeAcquisition > 0 ? (
+          <Text variant="footnote" tone="tertiary">
+            {t('vehicles.beforeAcquisition', { count: overall.beforeAcquisition })}
+          </Text>
+        ) : null}
+        {otherCurrency ? (
+          <Text variant="footnote" tone="tertiary">
+            {t('vehicles.otherCurrency')}
+          </Text>
+        ) : null}
+      </View>
+    </Card>
+  );
+}
+
+/** Para onde vai o dinheiro no período: cada tipo com a sua parte (sem a compra). */
+function Breakdown({
+  byType,
+  currency,
+  label,
+  total,
+}: {
+  byType: Partial<Record<VehicleCostType, number>>;
+  currency: string;
+  label: (type: VehicleCostType) => string;
+  total: number;
+}) {
+  const { t } = useTranslation();
+  const { formatMoney, formatPercent } = useLocaleFormat();
+  const types = VEHICLE_COST_TYPES.filter((type) => (byType[type] ?? 0) !== 0).sort(
+    (a, b) => (byType[b] ?? 0) - (byType[a] ?? 0),
+  );
+  const positive = types.reduce((sum, type) => sum + Math.max(0, byType[type] ?? 0), 0);
+
+  return (
+    <View style={styles.section}>
+      <SectionTitle>{t('vehicles.breakdown')}</SectionTitle>
+      {types.length === 0 || total === 0 ? (
+        <Text variant="callout" tone="secondary">
+          {t('vehicles.breakdownEmpty')}
+        </Text>
+      ) : (
+        <View style={styles.breakdown}>
+          {types.map((type) => {
+            const amount = byType[type] ?? 0;
+            const share = positive > 0 ? Math.max(0, amount) / positive : 0;
+            const text = formatMoney({ amountMinor: amount, currency });
+            return (
+              <View key={type} style={styles.breakdownRow}>
+                <View style={styles.breakdownLine}>
+                  <Text variant="label" style={styles.flex} numberOfLines={1}>
+                    {label(type)}
+                  </Text>
+                  <Text variant="label" tabular>
+                    {text}
+                  </Text>
+                </View>
+                <ProgressBar
+                  progress={share}
+                  height={6}
+                  accessibilityLabel={`${label(type)}: ${text}, ${t('vehicles.breakdownShare', {
+                    share: formatPercent(share),
+                  })}`}
+                />
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+/** Seguro, inspeção, IUC e revisão: data concreta, estado e quanto falta (ou "sem data"). */
+function Obligations({
+  vehicle,
+  today,
+  odometer,
+}: {
+  vehicle: Vehicle;
+  today: CalendarDate;
+  odometer: number | null;
+}) {
+  const { t } = useTranslation();
+  const { formatDate, formatNumber } = useLocaleFormat();
+  const dateOf: Record<ObligationKind, CalendarDate | null> = {
+    insurance: vehicle.insuranceDue,
+    inspection: vehicle.inspectionDue,
+    roadTax: vehicle.roadTaxDue,
+    service: vehicle.serviceDueOn,
+  };
+  const icons: Record<
+    ObligationKind,
+    'shield-checkmark-outline' | 'clipboard-outline' | 'receipt-outline' | 'construct-outline'
+  > = {
+    insurance: 'shield-checkmark-outline',
+    inspection: 'clipboard-outline',
+    roadTax: 'receipt-outline',
+    service: 'construct-outline',
+  };
+
+  return (
+    <View style={styles.section}>
+      <SectionTitle>{t('vehicles.obligations')}</SectionTitle>
+      <Card padding="xs">
+        {OBLIGATIONS.map((kind, index) => {
+          const date = dateOf[kind];
+          const days = daysUntil(date, today);
+          let status = deadlineStatus(date, today);
+          let badge: { label: string; tone: BadgeTone } | null =
+            date !== null && days !== null && status !== 'none'
+              ? { label: deadlineLabel(t, days), tone: DEADLINE_TONES[status] }
+              : null;
+          const parts: string[] = [];
+          if (date)
+            parts.push(
+              t('vehicles.dueOn', { date: formatDate(calendarDateToLocalDate(date), 'medium') }),
+            );
+          // Revisão também por quilómetros: o que chegar primeiro.
+          if (kind === 'service' && vehicle.serviceDueKm !== null) {
+            parts.push(t('vehicles.km', { value: formatNumber(vehicle.serviceDueKm) }));
+            const kmLeft = odometer === null ? null : vehicle.serviceDueKm - odometer;
+            if (kmLeft !== null) {
+              const kmStatus = kmLeft < 0 ? 'overdue' : kmLeft <= SERVICE_SOON_KM ? 'soon' : 'ok';
+              const worse =
+                status === 'none' ||
+                (kmStatus === 'overdue' && status !== 'overdue') ||
+                (kmStatus === 'soon' && status === 'ok');
+              if (worse) {
+                status = kmStatus;
+                badge = {
+                  label:
+                    kmLeft >= 0
+                      ? t('vehicles.kmLeft', { value: formatNumber(kmLeft) })
+                      : t('vehicles.kmOver', { value: formatNumber(-kmLeft) }),
+                  tone: DEADLINE_TONES[kmStatus],
+                };
+              }
+            }
+          }
+          return (
+            <View key={kind}>
+              {index > 0 ? <Divider inset={spacing.lg} /> : null}
+              <ListItem
+                icon={icons[kind]}
+                iconColor={
+                  status === 'overdue'
+                    ? 'negative'
+                    : status === 'soon'
+                      ? 'warning'
+                      : 'textSecondary'
+                }
+                iconBackground={
+                  status === 'overdue'
+                    ? 'negativeMuted'
+                    : status === 'soon'
+                      ? 'warningMuted'
+                      : 'surfaceMuted'
+                }
+                title={t(`vehicles.deadlineKinds.${kind}`)}
+                subtitle={parts.length > 0 ? parts.join(' · ') : t('vehicles.notSet')}
+                showChevron={false}
+                trailing={badge ? <Badge label={badge.label} tone={badge.tone} /> : null}
+              />
+            </View>
+          );
+        })}
+      </Card>
+    </View>
+  );
+}
+
+/** Abastecimentos, consumo, custo por km e evolução, só com dados suficientes. */
+function Indicators({
+  vehicle,
+  entries,
+  currency,
+  today,
+}: {
+  vehicle: Vehicle;
+  entries: Loaded['entries'];
+  currency: string;
+  today: CalendarDate;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { formatDecimal, formatMoney, formatNumber, formatUnitPrice, locale } = useLocaleFormat();
+  const stats = vehicleStats(vehicle, entries, today);
+  const unit = energyUnit(vehicle);
+  const series = vehicleMonthlyCosts(entries, today);
+  const hasSeries = series.some((item) => item.amount > 0);
+  const year = Number(today.slice(0, 4));
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'short' });
+  const money = (amountMinor: number) => formatMoney({ amountMinor, currency });
+
+  return (
+    <View style={styles.section}>
+      <SectionTitle>{t('vehicles.indicators')}</SectionTitle>
+      <Card padding="lg">
+        <View style={styles.cardBody}>
+          <View style={styles.figures}>
+            {stats.fuel.fills > 0 ? (
+              <Figure label={t(unit === 'kwh' ? 'vehicles.charges' : 'vehicles.fills')}>
+                <Text variant="bodyStrong" tabular>
+                  {unit === 'kwh'
+                    ? t('vehicles.chargeSummary', {
+                        kwh: formatDecimal(stats.fuel.quantityMilli / 1000, 1),
+                        count: stats.fuel.fills,
+                      })
+                    : t('vehicles.fuelSummary', {
+                        litres: formatDecimal(stats.fuel.quantityMilli / 1000, 1),
+                        count: stats.fuel.fills,
+                      })}
+                </Text>
+              </Figure>
+            ) : null}
+            {stats.fuel.pricePerLitre !== null ? (
+              <Figure label={t('vehicles.pricePerUnit')}>
+                <Text variant="bodyStrong" tabular>
+                  {t(unit === 'kwh' ? 'vehicles.perKwh' : 'vehicles.perLitre', {
+                    price: formatUnitPrice(stats.fuel.pricePerLitre, currency),
+                  })}
+                </Text>
+              </Figure>
+            ) : null}
+            {stats.costPerKm?.quantityPer100Km != null ? (
+              <Figure label={t('vehicles.consumption')}>
+                <Text variant="bodyStrong" tabular>
+                  {t(unit === 'kwh' ? 'vehicles.per100Kwh' : 'vehicles.per100Litres', {
+                    value: formatDecimal(stats.costPerKm.quantityPer100Km / 1000, 1),
+                  })}
+                </Text>
+              </Figure>
+            ) : null}
+            {stats.costPerKm ? (
+              <>
+                <Figure label={t('vehicles.costPerKm')}>
+                  <Text variant="bodyStrong" tabular>
+                    {t('vehicles.perKm', {
+                      value: formatUnitPrice(stats.costPerKm.totalPerKm, currency),
+                    })}
+                  </Text>
+                </Figure>
+                <Figure label={t('vehicles.costPer100Km')}>
+                  <Text variant="bodyStrong" tabular>
+                    {money(Math.round(stats.costPerKm.totalPerKm * 100))}
+                  </Text>
+                </Figure>
+              </>
+            ) : null}
+          </View>
+          {stats.costPerKm ? (
+            <Text variant="footnote" tone="tertiary">
+              {t('vehicles.kmRange', {
+                from: formatNumber(stats.costPerKm.fromKm),
+                to: formatNumber(stats.costPerKm.toKm),
+              })}
+            </Text>
+          ) : (
+            <Text variant="footnote" tone="secondary">
+              {t('vehicles.needMoreData')}
+            </Text>
+          )}
+          <Divider />
+          <Text variant="label">{t('vehicles.evolution')}</Text>
+          {hasSeries ? (
+            <BarChart
+              height={96}
+              seriesColors={[colors.primary]}
+              groups={series.map((item, index) => ({
+                key: item.month,
+                label: monthName.format(monthKeyToLocalDate(item.month)).replace('.', ''),
+                values: [Math.max(0, item.amount)],
+                highlighted: index === series.length - 1,
+                accessibilityLabel: t('vehicles.monthTotal', {
+                  month: monthName.format(monthKeyToLocalDate(item.month)),
+                  amount: money(item.amount),
+                }),
+              }))}
+            />
+          ) : (
+            <Text variant="footnote" tone="secondary">
+              {t('vehicles.evolutionEmpty')}
+            </Text>
+          )}
+          <Text variant="footnote" tone="secondary">
+            {t('vehicles.compareYears', {
+              current: money(vehicleYearCost(entries, String(year))),
+              previous: money(vehicleYearCost(entries, String(year - 1))),
+            })}
+          </Text>
+        </View>
+      </Card>
+    </View>
+  );
+}
+
+function Documents({ documents }: { documents: Loaded['documents'] }) {
+  const { t } = useTranslation();
+  const { formatDate } = useLocaleFormat();
+  return (
+    <View style={styles.section}>
+      <SectionTitle>{t('vehicles.documents')}</SectionTitle>
+      <Card padding="xs">
+        {documents.map((document, index) => (
+          <View key={document.id}>
+            {index > 0 ? <Divider inset={spacing.lg} /> : null}
+            <ListItem
+              icon="document-text-outline"
+              iconColor="textSecondary"
+              iconBackground="surfaceMuted"
+              title={document.title}
+              subtitle={
+                document.expiresOn
+                  ? formatDate(calendarDateToLocalDate(document.expiresOn), 'medium')
+                  : undefined
+              }
+              onPress={() =>
+                router.push({ pathname: '/documents/[id]', params: { id: document.id } })
+              }
+            />
+          </View>
+        ))}
+      </Card>
+    </View>
+  );
+}
+
+/** Os mesmos movimentos da área de Movimentos, filtráveis pelo tipo de custo. */
+function History({
+  entries,
+  lookups,
+  costTypeLabel,
+}: {
+  entries: Loaded['entries'];
+  lookups: Lookups;
+  costTypeLabel: (type: VehicleCostType) => string;
+}) {
+  const { t } = useTranslation();
+  const [filter, setFilter] = useState<VehicleCostType | null>(null);
+  const present = VEHICLE_COST_TYPES.filter((type) =>
+    entries.some((entry) => (entry.vehicleCostType ?? 'other') === type),
+  );
+  const shown = filter
+    ? entries.filter((entry) => (entry.vehicleCostType ?? 'other') === filter)
+    : entries;
+
+  return (
+    <View style={styles.section}>
+      <SectionTitle
+        action={
+          <Text variant="footnote" tone="tertiary">
+            {t('vehicles.historyCount', { count: shown.length })}
+          </Text>
+        }>
+        {t('vehicles.history')}
+      </SectionTitle>
+      {present.length > 1 ? (
+        <View style={styles.chips} accessibilityRole="radiogroup">
+          <Chip
+            label={t('vehicles.historyAll')}
+            selected={filter === null}
+            onPress={() => setFilter(null)}
+          />
+          {present.map((type) => (
+            <Chip
+              key={type}
+              label={costTypeLabel(type)}
+              selected={filter === type}
+              onPress={() => setFilter(filter === type ? null : type)}
+            />
+          ))}
+        </View>
+      ) : null}
+      <Card padding="xs">
+        {entries.length === 0 ? (
+          <View style={styles.padded}>
+            <Text variant="callout" tone="secondary">
+              {t('vehicles.noEntries')}
+            </Text>
+          </View>
+        ) : shown.length === 0 ? (
+          <View style={styles.padded}>
+            <Text variant="callout" tone="secondary">
+              {t('vehicles.historyEmptyType')}
+            </Text>
+          </View>
+        ) : (
+          shown.map((entry, index) => {
+            const category = entry.categoryId
+              ? lookups.categories.get(entry.categoryId)
+              : undefined;
+            const detail = [
+              costTypeLabel(entry.vehicleCostType ?? 'other'),
+              entry.description && category ? category.name : null,
+            ]
+              .filter(Boolean)
+              .join(' · ');
+            return (
+              <View key={entry.id}>
+                {index > 0 ? <Divider inset={spacing.lg} /> : null}
+                <EntryListItem
+                  entry={entry}
+                  lookups={lookups}
+                  detail={detail}
+                  onPress={() => router.push({ pathname: '/entry/[id]', params: { id: entry.id } })}
+                />
+              </View>
+            );
+          })
+        )}
+      </Card>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: spacing.sm },
+  actionsWide: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   flex: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  heroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerText: { flex: 1, minWidth: 0, gap: spacing.sm },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, alignItems: 'center' },
+  plate: {
+    borderWidth: 1.5,
+    borderRadius: radius.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
+  main: { flex: 3, minWidth: 0, gap: spacing.xl },
+  side: { flex: 2, minWidth: 0, gap: spacing.xl },
+  section: { gap: spacing.sm },
+  sectionTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xs,
+    minHeight: 24,
+  },
+  cardBody: { gap: spacing.md },
+  figures: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xl },
+  figure: { gap: spacing.xxs, minWidth: 110 },
+  breakdown: { gap: spacing.md },
+  breakdownRow: { gap: spacing.xs },
+  breakdownLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   padded: { padding: spacing.md },
-  gap: { gap: spacing.md },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
-  figure: { gap: spacing.xs, minWidth: 96 },
 });

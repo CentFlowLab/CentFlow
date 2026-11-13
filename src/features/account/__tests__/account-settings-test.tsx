@@ -1,10 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
-import { Text } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 
-import { AccountSettings } from '../AccountSection';
+import { AccountSettingsPage, SyncStatusGroup } from '../AccountSettings';
 import { AuthProvider } from '../AuthProvider';
 
 const mockPush = jest.fn();
@@ -49,26 +48,37 @@ function signedInClient() {
     signOut: jest.fn(async () => ({ error: null })),
     resetPasswordForEmail: jest.fn(async () => ({ error: null })),
   };
-  return { client: { auth, rpc: jest.fn() } as unknown as SupabaseClient, auth };
+  return {
+    client: {
+      auth,
+      rpc: jest.fn(async () => ({ data: null, error: null })),
+    } as unknown as SupabaseClient,
+    auth,
+  };
 }
 
-describe('AccountSettings', () => {
-  it('keeps account management in the account card, with no danger zone', async () => {
+describe('Account settings page', () => {
+  it('separates profile, password, session and, last, account management', async () => {
     const { client } = signedInClient();
     await renderWithProviders(
       <AuthProvider client={client}>
-        <AccountSettings>
-          <Text>meio</Text>
-        </AccountSettings>
+        <AccountSettingsPage />
       </AuthProvider>,
     );
     expect(await screen.findByText('@ana.silva')).toBeOnTheScreen();
     expect(screen.getByText('ana@exemplo.pt')).toBeOnTheScreen();
 
     const order = screen
-      .getAllByText(/^(Conta|Sincronização|meio)$/)
-      .map((node) => node.props.children as string);
-    expect(order).toEqual(['Conta', 'Sincronização', 'meio']);
+      .getAllByRole('header')
+      .map((node) => node.props.children as string)
+      .filter((text) => typeof text === 'string');
+    expect(order).toEqual([
+      'Conta e segurança',
+      'Perfil',
+      'Palavra-passe e acesso',
+      'Sessão',
+      'Gestão da conta',
+    ]);
 
     // Sem "Zona de perigo" e sem eliminar conta em destaque nas Definições.
     expect(screen.queryByText('Zona de perigo')).toBeNull();
@@ -77,16 +87,27 @@ describe('AccountSettings', () => {
     expect(mockPush).toHaveBeenCalledWith('/account-management');
   });
 
-  it('syncs from the status row and signs out from the account card', async () => {
+  it('signs out from the session group', async () => {
     const { client, auth } = signedInClient();
     await renderWithProviders(
       <AuthProvider client={client}>
-        <AccountSettings>{null}</AccountSettings>
+        <AccountSettingsPage />
       </AuthProvider>,
     );
-    await fireEvent.press(await screen.findByRole('button', { name: /^Sincronizado/ }));
-    expect(mockSyncNow).toHaveBeenCalled();
-    await fireEvent.press(screen.getByRole('button', { name: 'Terminar sessão' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Terminar sessão' }));
     expect(auth.signOut).toHaveBeenCalled();
+  });
+
+  it('syncs on request and says when it is done', async () => {
+    const { client } = signedInClient();
+    await renderWithProviders(
+      <AuthProvider client={client}>
+        <SyncStatusGroup />
+      </AuthProvider>,
+    );
+    expect(await screen.findByText('Sincronizado')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Sincronizar agora' }));
+    expect(mockSyncNow).toHaveBeenCalled();
+    expect(await screen.findByText('Sincronização concluída.')).toBeOnTheScreen();
   });
 });

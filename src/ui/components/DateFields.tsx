@@ -31,6 +31,8 @@ type Props = {
   onComplete?: () => void;
   /** `focus()` põe o cursor no dia (vindo do campo anterior). */
   ref?: Ref<{ focus(): void }>;
+  /** Sem o título visível (quando já está por cima, ex.: num campo de data que abre). */
+  hideLabel?: boolean;
 };
 
 type Parts = { day: string; month: string; year: string };
@@ -69,6 +71,7 @@ export function DateFields({
   errorText,
   onComplete,
   ref,
+  hideLabel = false,
 }: Props) {
   const [parts, setParts] = useState<Parts>(() => split(value));
   const day = useRef<TextInputInstance>(null);
@@ -106,7 +109,7 @@ export function DateFields({
 
   return (
     <View style={styles.container} accessibilityRole="none" accessibilityLabel={label}>
-      <Text variant="label">{label}</Text>
+      {hideLabel ? null : <Text variant="label">{label}</Text>}
       <View style={styles.row}>
         <View style={styles.small}>
           <TextField

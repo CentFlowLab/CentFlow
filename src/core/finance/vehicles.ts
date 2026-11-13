@@ -1,5 +1,5 @@
 import { daysUntil, deadlineStatus, type DeadlineStatus } from './deadlines';
-import { monthOf, type CalendarDate } from './dates';
+import { addMonths, monthOf, type CalendarDate, type MonthKey } from './dates';
 import { VEHICLE_LIMITS, type Entry, type Vehicle, type VehicleCostType } from './types';
 
 /** Movimento ligado a um veículo, com o que os cálculos precisam (ADR-054). */
@@ -225,6 +225,67 @@ function costPerKm(entries: readonly VehicleEntry[]): VehicleCostPerKm | null {
     totalPerKm: total / km,
     quantityPer100Km: quantity > 0 ? (quantity / km) * 100 : null,
   };
+}
+
+/** Períodos da ficha do veículo. */
+export const VEHICLE_PERIODS = ['month', 'year', 'last12', 'all'] as const;
+export type VehiclePeriod = (typeof VEHICLE_PERIODS)[number];
+
+/** Primeiro dia do período (inclusive); `null` em "sempre". Datas de calendário, sem UTC. */
+export function vehiclePeriodStart(
+  period: VehiclePeriod,
+  today: CalendarDate,
+): CalendarDate | null {
+  if (period === 'all') return null;
+  if (period === 'year') return `${today.slice(0, 4)}-01-01`;
+  const month = period === 'month' ? monthOf(today) : addMonths(monthOf(today), -11);
+  return `${month}-01`;
+}
+
+/** Movimentos do período (até hoje inclusive não é exigido: datas futuras também contam). */
+export function entriesInPeriod<T extends Pick<VehicleEntry, 'date'>>(
+  entries: readonly T[],
+  period: VehiclePeriod,
+  today: CalendarDate,
+): T[] {
+  const start = vehiclePeriodStart(period, today);
+  return start === null ? [...entries] : entries.filter((entry) => entry.date >= start);
+}
+
+/**
+ * Gasto de cada um dos últimos `months` meses (do mais antigo ao atual): despesas menos
+ * rendimentos, sem transferências nem a compra. Agrega os movimentos existentes, não cria nenhum.
+ */
+export function vehicleMonthlyCosts(
+  entries: readonly VehicleEntry[],
+  today: CalendarDate,
+  months = 12,
+): { month: MonthKey; amount: number }[] {
+  const current = monthOf(today);
+  const series = Array.from({ length: months }, (_, index) => ({
+    month: addMonths(current, index - (months - 1)),
+    amount: 0,
+  }));
+  const byMonth = new Map(series.map((item) => [item.month, item]));
+  for (const entry of entries) {
+    if (entry.type === 'transfer' || entry.vehicleCostType === 'purchase') continue;
+    const slot = byMonth.get(monthOf(entry.date));
+    if (slot) slot.amount += signed(entry);
+  }
+  return series;
+}
+
+/** Gasto num ano civil (despesas menos rendimentos, sem a compra). */
+export function vehicleYearCost(entries: readonly VehicleEntry[], year: string): number {
+  return entries.reduce(
+    (sum, entry) =>
+      entry.type === 'transfer' ||
+      entry.vehicleCostType === 'purchase' ||
+      !entry.date.startsWith(year)
+        ? sum
+        : sum + signed(entry),
+    0,
+  );
 }
 
 /**

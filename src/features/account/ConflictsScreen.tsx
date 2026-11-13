@@ -16,6 +16,7 @@ import { radius, spacing, useTheme } from '@/ui/theme';
 import { closeModal } from '../finance/navigation';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useSync } from './SyncProvider';
+import { settingsHref } from '../settings/settings-sections';
 
 type Version = SyncConflict['local'];
 
@@ -225,7 +226,7 @@ export function ConflictsScreen() {
     <FormScreen
       title={t('conflicts.title')}
       closeLabel={t('common.close')}
-      onClose={() => closeModal('/settings')}>
+      onClose={() => closeModal(settingsHref('data'))}>
       {conflicts === null ? (
         <ActivityIndicator color={colors.primary} accessibilityLabel={t('common.loading')} />
       ) : conflicts.length === 0 ? (

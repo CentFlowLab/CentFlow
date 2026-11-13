@@ -20,7 +20,8 @@ type Props = {
   onChange: (value: CalendarDate) => void;
   locale: string;
   today: CalendarDate;
-  labels: { previousMonth: string; nextMonth: string };
+  /** Com `previousYear`/`nextYear`, mostra também o salto de um ano (datas distantes). */
+  labels: { previousMonth: string; nextMonth: string; previousYear?: string; nextYear?: string };
 };
 
 function firstDayOfWeek(locale: string): number {
@@ -43,6 +44,12 @@ function buildWeeks(month: MonthKey, weekStart: number): (CalendarDate | null)[]
 export function CalendarPicker({ value, onChange, locale, today, labels }: Props) {
   const { colors } = useTheme();
   const [visibleMonth, setVisibleMonth] = useState<MonthKey>(monthOf(value));
+  // Data mudada de fora (ex.: escrita à mão): mostra o mês dessa data.
+  const [shownValue, setShownValue] = useState(value);
+  if (shownValue !== value) {
+    setShownValue(value);
+    setVisibleMonth(monthOf(value));
+  }
   const weekStart = firstDayOfWeek(locale);
 
   const weekdayNames = useMemo(() => {
@@ -64,6 +71,14 @@ export function CalendarPicker({ value, onChange, locale, today, labels }: Props
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        {labels.previousYear ? (
+          <IconButton
+            icon="play-back-outline"
+            size={16}
+            accessibilityLabel={labels.previousYear}
+            onPress={() => setVisibleMonth((month) => addMonths(month, -12))}
+          />
+        ) : null}
         <IconButton
           icon="chevron-back"
           accessibilityLabel={labels.previousMonth}
@@ -77,6 +92,14 @@ export function CalendarPicker({ value, onChange, locale, today, labels }: Props
           accessibilityLabel={labels.nextMonth}
           onPress={() => setVisibleMonth((month) => addMonths(month, 1))}
         />
+        {labels.nextYear ? (
+          <IconButton
+            icon="play-forward-outline"
+            size={16}
+            accessibilityLabel={labels.nextYear}
+            onPress={() => setVisibleMonth((month) => addMonths(month, 12))}
+          />
+        ) : null}
       </View>
       <View style={styles.row}>
         {weekdayNames.map((name, index) => (

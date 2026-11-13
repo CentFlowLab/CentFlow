@@ -13,6 +13,7 @@ import { useAuth, type AuthUser } from './AuthProvider';
 import { isGoogleOnly, signedInRecently } from './google-sign-in';
 import { PasswordField } from './PasswordField';
 import { markPendingAccountDeletion } from './pending-account-deletion';
+import { settingsHref } from '../settings/settings-sections';
 
 type Step = 'overview' | 'delete' | 'done';
 type Failure = 'deleteFailed' | 'deleteReauthFailed' | 'deleteGoogleStale';
@@ -38,7 +39,7 @@ export function matchesDeletePhrase(typed: string, phrase: string): boolean {
 export function AccountManagementScreen() {
   const { t } = useTranslation();
   const { state } = useAuth();
-  const close = () => closeModal('/settings');
+  const close = () => closeModal(settingsHref('account'));
 
   return (
     <FormScreen

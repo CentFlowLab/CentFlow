@@ -7,10 +7,14 @@ import {
 } from '..';
 import {
   currentOdometer,
+  entriesInPeriod,
   parseQuantityMilli,
   quantityToInputString,
   vehicleDeadlines,
+  vehicleMonthlyCosts,
+  vehiclePeriodStart,
   vehicleStats,
+  vehicleYearCost,
   type VehicleEntry,
 } from '../vehicles';
 
@@ -248,5 +252,36 @@ describe('litres input', () => {
     }
     expect(quantityToInputString(40_500, ',')).toBe('40,5');
     expect(quantityToInputString(38_000, '.')).toBe('38');
+  });
+});
+
+describe('vehicle periods and evolution', () => {
+  it('starts each period on a calendar day, without UTC', () => {
+    expect(vehiclePeriodStart('month', '2026-11-13')).toBe('2026-11-01');
+    expect(vehiclePeriodStart('year', '2026-11-13')).toBe('2026-01-01');
+    expect(vehiclePeriodStart('last12', '2026-11-13')).toBe('2025-12-01');
+    expect(vehiclePeriodStart('all', '2026-11-13')).toBeNull();
+    const list = [entry({ date: '2025-11-30' }), entry({ date: '2025-12-01' })];
+    expect(entriesInPeriod(list, 'last12', '2026-11-13')).toHaveLength(1);
+    expect(entriesInPeriod(list, 'all', '2026-11-13')).toHaveLength(2);
+  });
+
+  it('adds up each month from the existing entries, without the purchase or transfers', () => {
+    const list = [
+      entry({ date: '2026-11-02', amount: 6000, vehicleCostType: 'fuel' }),
+      entry({ date: '2026-11-20', amount: 1000, type: 'income', vehicleCostType: 'repair' }),
+      entry({ date: '2026-10-05', amount: 24000, vehicleCostType: 'tyres' }),
+      entry({ date: '2026-10-06', amount: 900000, vehicleCostType: 'purchase' }),
+      entry({ date: '2026-09-01', amount: 5000, type: 'transfer' }),
+      entry({ date: '2025-10-01', amount: 7000 }),
+    ];
+    const series = vehicleMonthlyCosts(list, '2026-11-13');
+    expect(series).toHaveLength(12);
+    expect(series[0]).toEqual({ month: '2025-12', amount: 0 });
+    expect(series[11]).toEqual({ month: '2026-11', amount: 5000 });
+    expect(series[10]).toEqual({ month: '2026-10', amount: 24000 });
+    expect(series.find((item) => item.month === '2026-09')?.amount).toBe(0);
+    expect(vehicleYearCost(list, '2026')).toBe(29000);
+    expect(vehicleYearCost(list, '2025')).toBe(7000);
   });
 });

@@ -8,6 +8,7 @@ import { spacing, useTheme } from '@/ui/theme';
 
 import { useAuth } from '../account/AuthProvider';
 import { closeModal } from '../finance/navigation';
+import { settingsHref } from '../settings/settings-sections';
 
 export type AdminRole = 'technical' | 'support' | 'product';
 
@@ -73,7 +74,7 @@ export function AdminScreen() {
     <FormScreen
       title={t('admin.title')}
       closeLabel={t('common.close')}
-      onClose={() => closeModal('/settings')}>
+      onClose={() => closeModal(settingsHref('account'))}>
       {!role ? (
         <EmptyState
           icon="lock-closed-outline"
