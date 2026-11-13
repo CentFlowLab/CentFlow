@@ -88,6 +88,16 @@ jobs:
           sed -i -E "s#<span data-app-version>[^<]*</span>#<span data-app-version>${version}</span>#" site/experimentar/index.html
           grep -q "<span data-app-version>${version}</span>" site/experimentar/index.html
 
+      - name: Endereços dos CSS e JS com a versão publicada
+        # O Pages guarda os ficheiros 10 minutos em cache: sem isto, um browser podia juntar o HTML
+        # novo com o CSS antigo. A app web (/app) já tem nomes com hash e fica de fora.
+        shell: bash
+        run: |
+          version="${GITHUB_SHA::7}"
+          find site -name '*.html' -not -path 'site/app/*' -print0 \
+            | xargs -0 sed -i -E "s#(href|src)=\"(/assets/[a-z0-9-]+\.(css|js))\"#\1=\"\2?v=${version}\"#g"
+          grep -q "home.css?v=${version}" site/index.html
+
       - name: Configurar o Pages
         uses: actions/configure-pages@v5
 
