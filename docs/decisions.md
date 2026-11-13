@@ -1070,3 +1070,14 @@ começa com o saldo do banco e recebe movimentos a partir do dia seguinte. Leitu
 com a app aberta, no máximo uma a cada 15 minutos por ligação; consentimento de 90 dias.
 Sem dependências novas. Robinhood não tem PSD2 nem API oficial: fica como património manual.
 Ativação e passos de produção em `docs/open-banking.md`.
+
+## ADR-070 — APK Android sem R8
+
+**Estado:** aceite (2026-11-13).
+
+O modelo do Expo SDK 58 liga `android.enableMinifyInReleaseBuilds`. Na 0.1.19, o R8 removeu o
+construtor de `androidx.work.impl.WorkDatabase_Impl`; o WorkManager arranca com a app (pelo
+`androidx.startup`) e a app fechava antes de correr o JavaScript, sem chegar ao Sentry (visto com
+`adb logcat` num Galaxy A12, Android 12). O plugin local `plugins/android-no-minify` desliga o R8 e
+a redução de recursos no `gradle.properties` gerado. O APK fica maior, mas sem regras de exclusão
+por manter para cada biblioteca. Voltar a ligar o R8 só com regras testadas num aparelho real.

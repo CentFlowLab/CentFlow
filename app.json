@@ -160,6 +160,7 @@
         }
       ],
       "./plugins/quick-expense",
+      "./plugins/android-no-minify",
       [
         "expo-image-picker",
         {
