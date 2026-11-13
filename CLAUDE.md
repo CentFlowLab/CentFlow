@@ -13,7 +13,7 @@ ADR-059, todas na produção desde
 2026-11-11; ver
 [docs/release-producao.md](docs/release-producao.md)). Os anexos ficam no balde privado `documents`
 do Storage; a função `delete-account` apaga-os antes de eliminar o utilizador.
-App publicada: **0.1.20** (2026-11-13; Android corrigido, ADR-070; migração local v16). Inclui, desde a 0.1.17 (plano em
+App publicada: **0.1.21** (2026-11-13; Definições e Viaturas reformuladas, ADR-071 e 072; Android corrigido, ADR-070; migração local v16). Inclui, desde a 0.1.17 (plano em
 [docs/plano-evolucao-2026-11.md](docs/plano-evolucao-2026-11.md), ADR-061 a 069): open banking
 (Enable Banking, `docs/open-banking.md`), onboarding por conta, gestão da conta, registo rápido,
 cópias de segurança, definições, ambientes (`docs/ambientes.md`), app Windows (`desktop/`,

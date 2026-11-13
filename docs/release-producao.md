@@ -349,3 +349,10 @@ removia o construtor de `WorkDatabase_Impl` (WorkManager). Corrigido com
 Open banking em produção (migrações `20261121000100` e `20261122000100`, função `open-banking`,
 segredos da Enable Banking em modo restrito). O ambiente `preview` do EAS passou a apontar para o
 staging (URL e chave pública), para os APK de teste.
+
+## 2026-11-13 — versão 0.1.21
+
+Definições com navegação interna (ADR-071), Viaturas reformuladas e datas opcionais fechadas
+(ADR-072), saldo dos cartões com o sinal certo e "Saldo na app" nas contas do banco associadas.
+Função `open-banking` com o sinal dos saldos no staging; na produção, publicar com
+`npx supabase functions deploy open-banking --remote=slfgslfzolfvqavuccom --no-verify-jwt`.
