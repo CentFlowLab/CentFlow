@@ -64,7 +64,7 @@ Google no iPhone. No SideStore não se aplica; antes de submeter à App Store, l
    demasiado altas: tirar novas a 1080×1920 ou cortar a 2:1).
 7. **Conteúdo da app**:
    - Política de privacidade: `https://miven.pt/privacidade/`.
-   - Eliminação de conta: dentro da app (Definições › Zona de perigo › Eliminar conta) e na web,
+   - Eliminação de conta: dentro da app (Definições › Conta › Gerir conta › Eliminar conta) e na web,
      `https://miven.pt/suporte/#eliminar` (a app web em `miven.pt/app` também elimina).
    - Segurança dos dados: igual à tabela de `app-store-readiness.md` (email, identificador,
      informação financeira e conteúdo do utilizador ligados à pessoa, só para funcionalidade;

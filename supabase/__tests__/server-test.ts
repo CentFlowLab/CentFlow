@@ -1939,3 +1939,30 @@ describe('security roles (validation)', () => {
     expect(text).not.toMatch(/Banco|Compras|example\.test/);
   });
 });
+
+describe('onboarding per account (ADR-067)', () => {
+  it('marks only the own profile, keeps the first date and cannot be set directly', async () => {
+    const before = await alice.query<{ done: string | null }>(
+      'select onboarding_completed_at as done from public.profiles',
+    );
+    expect(before).toEqual([{ done: null }]);
+    const [first] = await alice.query<{ done: string }>(
+      'select public.complete_onboarding() as done',
+    );
+    expect(first!.done).toBeTruthy();
+    const [again] = await alice.query<{ done: string }>(
+      'select public.complete_onboarding() as done',
+    );
+    expect(again!.done).toEqual(first!.done); // a primeira data fica
+    // A outra pessoa continua por concluir; ninguém vê nem marca o perfil de outra.
+    expect(await bob.query('select onboarding_completed_at as done from public.profiles')).toEqual([
+      { done: null },
+    ]);
+    expect(await alice.query(`select * from public.profiles where id = '${B}'`)).toEqual([]);
+    // Escrever a coluna diretamente não é permitido (só por complete_onboarding()).
+    await expect(
+      alice.query(`update public.profiles set onboarding_completed_at = null where id = '${A}'`),
+    ).rejects.toThrow();
+    await expect(server.anonymous().query('select public.complete_onboarding()')).rejects.toThrow();
+  });
+});

@@ -290,10 +290,8 @@ const en: Translation = {
       personalization: 'Personalisation',
       experience: 'Experience',
       help: 'Help and information',
-      danger: 'Danger zone',
     },
     quickEntryHint: 'Double tap on the back of your iPhone',
-    deleteAccountHint: 'Deletes your data on the server and on this device.',
     title: 'Settings',
     appearance: 'Appearance',
     theme: {
@@ -1643,9 +1641,6 @@ const en: Translation = {
     changePasswordSentMessage: 'We sent a link to {{email}}. Open it to set a new password.',
     changePasswordFailed: "The link couldn't be sent. Try again in a moment.",
     deleteAccount: 'Delete account',
-    deleteTitle: 'Permanently delete your account?',
-    deleteMessage:
-      'Your account and all data stored on the server are deleted immediately, along with this account’s copy on this device. This can’t be undone.',
     deleteConfirm: 'Permanently delete account',
     deletePassword: 'Password',
     deletePasswordHint: 'Enter your password to confirm it is you.',
@@ -1656,6 +1651,36 @@ const en: Translation = {
       'You signed in with Google: leave this blank. For your security, you can only delete the account within 10 minutes of signing in.',
     deleteGoogleStale:
       'More than 10 minutes have passed since you signed in. Sign out, sign in again with Google and delete the account right away. The account was not deleted.',
+    manage: 'Manage account',
+    manageHint: 'Export data and delete the account',
+    management: {
+      title: 'Account management',
+      dataTitle: 'Your data',
+      dataBody: 'You can download a full copy of your data at any time.',
+      export: 'Export data',
+      deleteTitle: 'Delete account',
+      deleteBody:
+        'Removes your Miven account and the data linked to it. We recommend exporting a copy first.',
+      deleteStart: 'Delete account',
+      consequencesTitle: 'When you delete the account',
+      consequences: {
+        account:
+          'Your account and profile stop existing and you will not be able to sign in with them.',
+        finance:
+          'Accounts, transactions, budgets, subscriptions, goals, net worth, vehicles and documents are deleted from the server.',
+        integrations: 'Connections to external services and stored keys are removed.',
+        device: 'Data and automatic backups stored on this device are deleted.',
+        otherDevices:
+          'On other devices, the session stops being valid. To remove the data stored there, uninstall the app or clear the browser data.',
+        final: 'Deletion is permanent and cannot be undone.',
+      },
+      phraseLabel: 'To confirm, type {{phrase}}',
+      phrase: 'DELETE ACCOUNT',
+      phraseMismatch: 'The text does not match.',
+      doneTitle: 'Account deleted',
+      doneBody: 'Your account and the data linked to it were deleted.',
+      doneAction: 'Finish',
+    },
   },
   importData: {
     title: "Add this device's data to your account?",

@@ -7,6 +7,12 @@ export const AUTO_BACKUPS_KEPT = 5;
 
 export type StoredBackup = { name: string; createdAt: string };
 
+/**
+ * Cada cópia automática pertence a uma conta (`owner` = id do utilizador): uma conta nunca vê
+ * nem restaura as cópias de outra no mesmo aparelho, e eliminar a conta apaga as suas.
+ */
+export const autoBackupPrefix = (owner: string) => `miven-auto-${owner}-`;
+
 function folder(): Directory {
   // Pasta privada da app: não é sincronizada nem visível a outras apps.
   const directory = new Directory(Paths.document, 'backups');
@@ -43,14 +49,18 @@ export async function pickBackupFile(): Promise<PickedBackup> {
   }
 }
 
-export async function listAutoBackups(): Promise<StoredBackup[]> {
+export async function listAutoBackups(owner: string): Promise<StoredBackup[]> {
+  const prefix = autoBackupPrefix(owner);
   try {
     return folder()
       .list()
-      .filter((item): item is File => item instanceof File && item.name.endsWith('.json'))
+      .filter(
+        (item): item is File =>
+          item instanceof File && item.name.startsWith(prefix) && item.name.endsWith('.json'),
+      )
       .map((file) => ({
         name: file.name,
-        createdAt: file.name.replace(/^miven-auto-|\.json$/g, ''),
+        createdAt: file.name.slice(prefix.length).replace(/\.json$/, ''),
       }))
       .sort((a, b) => (a.name < b.name ? 1 : -1));
   } catch {
@@ -58,18 +68,30 @@ export async function listAutoBackups(): Promise<StoredBackup[]> {
   }
 }
 
-export async function saveAutoBackup(name: string, text: string): Promise<void> {
+export async function saveAutoBackup(owner: string, name: string, text: string): Promise<void> {
   const file = new File(folder(), name);
   if (!file.exists) file.create();
   file.write(text);
-  const all = await listAutoBackups();
+  const all = await listAutoBackups(owner);
   for (const old of all.slice(AUTO_BACKUPS_KEPT)) new File(folder(), old.name).delete();
 }
 
-export async function readAutoBackup(name: string): Promise<string | null> {
+export async function readAutoBackup(owner: string, name: string): Promise<string | null> {
+  if (!name.startsWith(autoBackupPrefix(owner))) return null;
   try {
     return await new File(folder(), name).text();
   } catch {
     return null;
+  }
+}
+
+/** Apaga as cópias automáticas desta conta (eliminação da conta). */
+export async function deleteAutoBackups(owner: string): Promise<void> {
+  for (const item of await listAutoBackups(owner)) {
+    try {
+      new File(folder(), item.name).delete();
+    } catch {
+      // Já não existe.
+    }
   }
 }

@@ -4,6 +4,9 @@ export const AUTO_BACKUPS_KEPT = 5;
 
 export type StoredBackup = { name: string; createdAt: string };
 
+/** Cada cópia automática pertence a uma conta (ver backup-files.ts). */
+export const autoBackupPrefix = (owner: string) => `miven-auto-${owner}-`;
+
 /** Web e Windows: descarrega o ficheiro (pasta Transferências ou a escolhida pela pessoa). */
 export async function shareFile(name: string, text: string, mimeType: string): Promise<void> {
   const url = URL.createObjectURL(new Blob([text], { type: `${mimeType};charset=utf-8` }));
@@ -62,30 +65,40 @@ function run<T>(mode: IDBTransactionMode, task: (store: IDBObjectStore) => IDBRe
   });
 }
 
-export async function listAutoBackups(): Promise<StoredBackup[]> {
+export async function listAutoBackups(owner: string): Promise<StoredBackup[]> {
+  const prefix = autoBackupPrefix(owner);
   try {
     const keys = (await run('readonly', (store) => store.getAllKeys())) as string[];
     return keys
-      .map((name) => ({ name, createdAt: name.replace(/^miven-auto-|\.json$/g, '') }))
+      .filter((name) => name.startsWith(prefix))
+      .map((name) => ({ name, createdAt: name.slice(prefix.length).replace(/\.json$/, '') }))
       .sort((a, b) => (a.name < b.name ? 1 : -1));
   } catch {
     return [];
   }
 }
 
-export async function saveAutoBackup(name: string, text: string): Promise<void> {
+export async function saveAutoBackup(owner: string, name: string, text: string): Promise<void> {
   await run('readwrite', (store) => store.put(text, name));
-  const all = await listAutoBackups();
+  const all = await listAutoBackups(owner);
   for (const old of all.slice(AUTO_BACKUPS_KEPT)) {
     await run('readwrite', (store) => store.delete(old.name));
   }
 }
 
-export async function readAutoBackup(name: string): Promise<string | null> {
+export async function readAutoBackup(owner: string, name: string): Promise<string | null> {
+  if (!name.startsWith(autoBackupPrefix(owner))) return null;
   try {
     const value = await run('readonly', (store) => store.get(name) as IDBRequest<unknown>);
     return typeof value === 'string' ? value : null;
   } catch {
     return null;
+  }
+}
+
+/** Apaga as cópias automáticas desta conta (eliminação da conta). */
+export async function deleteAutoBackups(owner: string): Promise<void> {
+  for (const item of await listAutoBackups(owner)) {
+    await run('readwrite', (store) => store.delete(item.name)).catch(() => undefined);
   }
 }

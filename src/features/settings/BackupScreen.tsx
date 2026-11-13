@@ -11,7 +11,8 @@ import { Button, Card, Dialog, Divider, FormScreen, ListItem, Text } from '@/ui/
 import { spacing } from '@/ui/theme';
 
 import { closeModal } from '../finance/navigation';
-import { runAutoBackup } from './AutoBackup';
+import { useActiveSpace } from '../app-shell/DataGate';
+import { backupOwner, runAutoBackup } from './AutoBackup';
 import {
   listAutoBackups,
   pickBackupFile,
@@ -28,6 +29,7 @@ export function BackupScreen() {
   const { t } = useTranslation();
   const { formatDate } = useLocaleFormat();
   const repositories = useRepositories();
+  const owner = backupOwner(useActiveSpace().space);
   const [lastExport, setLastExport] = useState<string | null>(null);
   const [autos, setAutos] = useState<StoredBackup[]>([]);
   const [busy, setBusy] = useState(false);
@@ -38,14 +40,14 @@ export function BackupScreen() {
 
   const refresh = useCallback(async () => {
     setLastExport(await appStorage.getItem(LAST_EXPORT_KEY).catch(() => null));
-    setAutos(await listAutoBackups());
-  }, []);
+    setAutos(await listAutoBackups(owner));
+  }, [owner]);
   useEffect(() => {
     let alive = true;
     void (async () => {
       const [stamp, list] = await Promise.all([
         appStorage.getItem(LAST_EXPORT_KEY).catch(() => null),
-        listAutoBackups(),
+        listAutoBackups(owner),
       ]);
       if (!alive) return;
       setLastExport(stamp);
@@ -54,7 +56,7 @@ export function BackupScreen() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [owner]);
 
   const when = (iso: string) => {
     const date = new Date(iso.replace(/-(\d{2})-(\d{2})-(\d{3})Z$/, ':$1:$2.$3Z'));
@@ -125,7 +127,7 @@ export function BackupScreen() {
 
   const restoreAuto = (item: StoredBackup) =>
     run(async () => {
-      const text = await readAutoBackup(item.name);
+      const text = await readAutoBackup(owner, item.name);
       if (text) await prepare(text);
       else setMessage({ tone: 'negative', text: t('backup.failed') });
     });
@@ -240,7 +242,7 @@ export function BackupScreen() {
               disabled={busy}
               onPress={() =>
                 void run(async () => {
-                  await runAutoBackup(repositories, new Date(), { force: true });
+                  await runAutoBackup(repositories, owner, new Date(), { force: true });
                   await refresh();
                 })
               }

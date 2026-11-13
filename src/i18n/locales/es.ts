@@ -291,10 +291,8 @@ const es: Translation = {
       personalization: 'Personalización',
       experience: 'Experiencia',
       help: 'Ayuda e información',
-      danger: 'Zona de peligro',
     },
     quickEntryHint: 'Dos toques en la parte trasera del iPhone',
-    deleteAccountHint: 'Borra tus datos en el servidor y en este dispositivo.',
     title: 'Ajustes',
     appearance: 'Apariencia',
     theme: {
@@ -1656,9 +1654,6 @@ const es: Translation = {
       'Enviamos un enlace a {{email}}. Ábrelo para definir la nueva contraseña.',
     changePasswordFailed: 'No se pudo enviar el enlace. Inténtalo de nuevo en un momento.',
     deleteAccount: 'Eliminar cuenta',
-    deleteTitle: '¿Eliminar la cuenta definitivamente?',
-    deleteMessage:
-      'La cuenta y todos los datos guardados en el servidor se eliminan de inmediato, junto con la copia de esta cuenta en este dispositivo. Esta acción no se puede deshacer.',
     deleteConfirm: 'Eliminar cuenta definitivamente',
     deletePassword: 'Contraseña',
     deletePasswordHint: 'Escribe la contraseña para confirmar que eres tú.',
@@ -1670,6 +1665,35 @@ const es: Translation = {
       'Entraste con Google: déjalo en blanco. Por seguridad, solo puedes eliminar la cuenta hasta 10 minutos después de entrar.',
     deleteGoogleStale:
       'Han pasado más de 10 minutos desde que entraste. Cierra sesión, vuelve a entrar con Google y elimina la cuenta justo después. La cuenta no se ha eliminado.',
+    manage: 'Gestionar cuenta',
+    manageHint: 'Exportar datos y eliminar la cuenta',
+    management: {
+      title: 'Gestión de la cuenta',
+      dataTitle: 'Tus datos',
+      dataBody: 'Puedes descargar una copia completa de tus datos cuando quieras.',
+      export: 'Exportar datos',
+      deleteTitle: 'Eliminar cuenta',
+      deleteBody:
+        'Elimina la cuenta de Miven y los datos asociados. Recomendamos exportar una copia antes.',
+      deleteStart: 'Eliminar cuenta',
+      consequencesTitle: 'Al eliminar la cuenta',
+      consequences: {
+        account: 'La cuenta y el perfil dejan de existir y no podrás volver a entrar con ellos.',
+        finance:
+          'Cuentas, movimientos, presupuestos, suscripciones, objetivos, patrimonio, vehículos y documentos se borran del servidor.',
+        integrations: 'Las conexiones con servicios externos y las claves guardadas se eliminan.',
+        device: 'Los datos y las copias automáticas guardados en este dispositivo se borran.',
+        otherDevices:
+          'En otros dispositivos, la sesión deja de ser válida. Para borrar los datos guardados en ellos, desinstala la app o borra los datos del navegador.',
+        final: 'La eliminación es definitiva y no se puede deshacer.',
+      },
+      phraseLabel: 'Para confirmar, escribe {{phrase}}',
+      phrase: 'ELIMINAR CUENTA',
+      phraseMismatch: 'El texto no coincide.',
+      doneTitle: 'Cuenta eliminada',
+      doneBody: 'La cuenta y los datos asociados se han eliminado.',
+      doneAction: 'Terminar',
+    },
   },
   importData: {
     title: '¿Añadir los datos de este dispositivo a la cuenta?',

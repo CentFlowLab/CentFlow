@@ -40,7 +40,9 @@ import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
 import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
-import { hasSeenOnboarding } from '../onboarding/onboarding-state';
+import { useSync } from '../account/SyncProvider';
+import { markOnboardingOpened, onboardingOpenedThisSession } from '../onboarding/onboarding-state';
+import { useOnboarding } from '../onboarding/useOnboarding';
 import { FinancialHealthCard } from './FinancialHealthCard';
 import { NetWorthCard } from './NetWorthCard';
 import { InvestmentsCard } from '../investments/InvestmentsCard';
@@ -81,17 +83,26 @@ export function DashboardScreen() {
   const now = new Date();
   const noAccounts = query.data?.accounts.length === 0;
 
-  // Primeira utilização: sem contas, o onboarding abre uma vez (concluído ou saltado, não volta).
+  // Onboarding por conta (ADR-067): só quando o servidor confirma que esta conta ainda não o fez
+  // e os dados já foram descarregados. Na dúvida (a carregar, primeira sincronização), espera.
+  const { decision, syncedOnce, key: onboardingKey } = useOnboarding();
+  const { snapshot: syncSnapshot } = useSync();
   useEffect(() => {
-    if (!noAccounts) return;
-    let active = true;
-    void hasSeenOnboarding().then((seen) => {
-      if (active && !seen) router.push('/onboarding' as Href);
-    });
-    return () => {
-      active = false;
-    };
-  }, [noAccounts]);
+    // Uma vez por abertura da app (se a pessoa sair a meio, volta a ser proposto na próxima).
+    if (decision !== 'needed' || onboardingOpenedThisSession(onboardingKey)) return;
+    markOnboardingOpened(onboardingKey);
+    router.push('/onboarding' as Href);
+  }, [decision, onboardingKey]);
+  // Sem contas e sem certeza ainda: um indicador em vez do ecrã de boas-vindas (sem "piscar").
+  // Sem rede ou com erro de sincronização, mostra o ecrã normal (nunca fica preso a esperar).
+  // Aparelho novo: espera pela primeira sincronização antes de mostrar "sem contas" (os dados
+  // desta conta ainda podem estar a chegar). Depois disso, ou sem rede, mostra o estado real.
+  const waitingForAccount =
+    noAccounts &&
+    decision === 'unknown' &&
+    !syncedOnce &&
+    syncSnapshot?.status !== 'offline' &&
+    syncSnapshot?.status !== 'error';
 
   const header = {
     title: t(`dashboard.greeting.${getDayPart(now)}`),
@@ -112,6 +123,18 @@ export function DashboardScreen() {
 
   const { accounts, aggregates, latest } = query.data;
   const lookupData = lookups.data;
+
+  if (waitingForAccount) {
+    return (
+      <Screen {...header}>
+        <ActivityIndicator
+          color={colors.primary}
+          style={styles.waiting}
+          accessibilityLabel={t('common.loading')}
+        />
+      </Screen>
+    );
+  }
 
   if (accounts.length === 0) {
     const welcomeSteps = t('dashboard.welcomeSteps', {
@@ -524,6 +547,7 @@ export function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  waiting: { marginTop: spacing.xl },
   loading: {
     paddingVertical: spacing['4xl'],
   },

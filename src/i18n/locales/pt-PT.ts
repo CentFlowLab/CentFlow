@@ -290,10 +290,8 @@ const ptPT = {
       personalization: 'Personalização',
       experience: 'Experiência',
       help: 'Ajuda e informação',
-      danger: 'Zona de perigo',
     },
     quickEntryHint: 'Dois toques na traseira do iPhone',
-    deleteAccountHint: 'Apaga os teus dados no servidor e neste dispositivo.',
     title: 'Definições',
     appearance: 'Aparência',
     theme: {
@@ -1649,9 +1647,6 @@ const ptPT = {
       'Enviámos um link para {{email}}. Abre-o para definires a nova palavra-passe.',
     changePasswordFailed: 'Não foi possível enviar o link. Tenta novamente daqui a pouco.',
     deleteAccount: 'Eliminar conta',
-    deleteTitle: 'Eliminar a conta definitivamente?',
-    deleteMessage:
-      'A conta e todos os dados guardados no servidor são eliminados de imediato, bem como a cópia desta conta neste dispositivo. Esta ação não pode ser anulada.',
     deleteConfirm: 'Eliminar conta definitivamente',
     deletePassword: 'Palavra-passe',
     deletePasswordHint: 'Escreve a palavra-passe para confirmar que és tu.',
@@ -1662,6 +1657,35 @@ const ptPT = {
       'Entraste com a Google: deixa em branco. Por segurança, só podes eliminar a conta até 10 minutos depois de entrares.',
     deleteGoogleStale:
       'Passaram mais de 10 minutos desde que entraste. Termina sessão, volta a entrar com a Google e elimina a conta logo a seguir. A conta não foi eliminada.',
+    manage: 'Gerir conta',
+    manageHint: 'Exportar dados e eliminar a conta',
+    management: {
+      title: 'Gestão da conta',
+      dataTitle: 'Os teus dados',
+      dataBody: 'Podes descarregar uma cópia completa dos teus dados quando quiseres.',
+      export: 'Exportar dados',
+      deleteTitle: 'Eliminar conta',
+      deleteBody:
+        'Remove a conta Miven e os dados associados. Recomendamos exportar uma cópia antes.',
+      deleteStart: 'Eliminar conta',
+      consequencesTitle: 'Ao eliminar a conta',
+      consequences: {
+        account: 'A conta e o perfil deixam de existir e não vais poder voltar a entrar com eles.',
+        finance:
+          'Contas, movimentos, orçamentos, subscrições, objetivos, património, veículos e documentos são apagados do servidor.',
+        integrations: 'As ligações a serviços externos e as chaves guardadas são removidas.',
+        device: 'Os dados e as cópias automáticas guardados neste aparelho são apagados.',
+        otherDevices:
+          'Noutros aparelhos, a sessão deixa de ser válida. Para apagar os dados guardados neles, desinstala a app ou limpa os dados do browser.',
+        final: 'A eliminação é definitiva e não pode ser anulada.',
+      },
+      phraseLabel: 'Para confirmar, escreve {{phrase}}',
+      phrase: 'ELIMINAR CONTA',
+      phraseMismatch: 'O texto não corresponde.',
+      doneTitle: 'Conta eliminada',
+      doneBody: 'A conta e os dados associados foram eliminados.',
+      doneAction: 'Terminar',
+    },
   },
   importData: {
     title: 'Juntar os dados deste dispositivo à conta?',

@@ -50,7 +50,7 @@ const NEUTRAL = { iconColor: 'textSecondary', iconBackground: 'surfaceMuted' } a
 
 /**
  * Definições: Conta, Sincronização, Aparência, Idioma e região, Dados e privacidade,
- * Experiência, Ajuda e Zona de perigo. Só aparecem opções que já funcionam.
+ * Experiência e Ajuda. Só aparecem opções que já funcionam.
  * Escolhas simples (aparência, idioma) fazem-se aqui, sem abrir outro ecrã.
  */
 export function SettingsScreen() {

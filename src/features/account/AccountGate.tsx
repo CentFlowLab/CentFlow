@@ -9,6 +9,8 @@ import { EmptyState } from '@/ui/components';
 import { useTheme } from '@/ui/theme';
 
 import { DataGate } from '../app-shell/DataGate';
+import { forgetOnboarding } from '../onboarding/onboarding-state';
+import { deleteAutoBackups } from '../settings/backup-files';
 import { appAccessFor, type AppAccess } from './app-access';
 import { emailLocaleFor, useAuth } from './AuthProvider';
 import { ConfirmEmailScreen } from './ConfirmEmailScreen';
@@ -52,7 +54,12 @@ export function AccountGate({ children }: PropsWithChildren) {
       signOut: async () => {
         await actions.signOut();
       },
-      deleteSpace: (id) => deleteLocalSpace({ kind: 'user', userId: id }),
+      // Base de dados local, cópias automáticas e marcas desta conta neste aparelho.
+      deleteSpace: async (id) => {
+        await deleteLocalSpace({ kind: 'user', userId: id });
+        await deleteAutoBackups(id).catch(() => undefined);
+        await forgetOnboarding(id);
+      },
     })
       .catch(() => undefined)
       .finally(() => {

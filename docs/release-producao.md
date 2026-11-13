@@ -315,3 +315,18 @@ Autorizado pelo responsável (pedido de teste no staging). ADR-064.
 4. Teste real do responsável com uma conta de demonstração da Trading 212: ligação, resumo e
    posições corretos (custo + ganho = valor total).
 5. **Produção: nada.** Migrações, função e segredo continuam por aplicar.
+
+## Execução de 2026-11-13 — onboarding por conta, staging e produção
+
+Autorizado pelo responsável ("aplica em todo o lado"; produção com as três migrações pendentes).
+ADR-064, ADR-065 e ADR-067.
+
+1. Staging: dry-run só com `20261120000100_onboarding.sql`; aplicada sem erros. A app contra o
+   staging leu o perfil (200) e gravou `onboarding_completed_at` de uma conta antiga com dados.
+2. Produção: `production:guard`; dump lógico (esquema e dados) guardado fora do repositório;
+   dry-run com `20261118000100`, `20261119000100` e `20261120000100`, por esta ordem; aplicadas
+   sem erros; histórico local e remoto iguais até `20261120000100` e `db push --dry-run` sem nada
+   por aplicar.
+3. **Por fazer na produção:** função `t212` e segredo `INTEGRATIONS_KEY` (sem eles, a integração
+   Trading 212 não liga; as tabelas ficam vazias). App com o código do onboarding por conta ainda
+   não publicada (alterações locais, sem commit).

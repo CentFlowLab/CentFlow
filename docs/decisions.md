@@ -1006,3 +1006,42 @@ movimentos continuam, mais abaixo. Nenhuma secção foi removida.
 | D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                       | Fase 5            |
 | D-6 | Fornecedor de IA/OCR                           | Registo por texto resolvido no ADR-029 (Anthropic, em Edge Function). OCR de recibos continua por decidir: exige imagem e um fornecedor.                         | Fase 5            |
 | D-7 | Alojamento da PWA                              | O domínio é miven.pt. Falta escolher o alojamento estático com COOP/COEP (ADR-015): Vercel, Netlify, Cloudflare Pages ou EAS Hosting. Confirmar suporte Safari.  | Fase 2            |
+
+## ADR-067 — Onboarding uma vez por conta, guardado no perfil
+
+**Contexto.** A conclusão do onboarding ficava só no AsyncStorage do aparelho
+(`onboarding:seen`), partilhada por todas as contas desse aparelho. O Dashboard decidia pelo número
+de contas locais antes da primeira sincronização: num aparelho novo, numa reinstalação ou na web
+com o browser limpo, a base local está vazia até chegar o primeiro pull, e o onboarding abria a uma
+conta que já o tinha feito. E uma conta nova num aparelho onde outra já o tinha visto nunca o via.
+
+**Decisão.** A fonte de verdade é `profiles.onboarding_completed_at` (migração
+`20261120000100_onboarding.sql`), escrita só pela função `complete_onboarding()` (`security
+definer`, só `auth.uid()`, mantém a primeira data; o `grant update` continua limitado a
+`display_name`). A app (`useOnboarding`, `decideOnboarding`) só abre o onboarding quando o
+servidor diz "não concluído" **e** este aparelho já sincronizou pelo menos uma vez **e** não há
+contas: na dúvida (sessão ou perfil a carregar, sem rede), espera e não mostra. Uma cópia local por
+conta (`onboarding:done:<userId>`) evita repetir sem rede; sem confirmação do servidor fica
+`onboarding:pending:<userId>` e é reenviada. "Saltar" adia só até à próxima abertura (retoma).
+Contas antigas: sem preenchimento em massa; quem já tem dados é tratado como concluído e a app grava
+a conclusão nessa altura. Sem servidor configurado (modo local e testes) continua a marca do
+aparelho. Eliminar a conta apaga as marcas dessa conta.
+
+## ADR-068 — Gestão da conta em vez de "Zona de perigo"
+
+**Contexto.** As Definições terminavam com "Zona de perigo" e um "Eliminar conta" vermelho em
+destaque, ao alcance de um toque no uso diário. A eliminação tem de continuar acessível dentro da
+app (App Store 5.1.1(v), Google Play, RGPD), mas não deve competir com as opções do dia a dia.
+
+**Decisão.** O cartão "Conta" passa a ter "Gerir conta" e "Terminar sessão"; deixa de haver "Zona
+de perigo". Em `/account-management` (rota de dados, dentro de `Stack.Protected`) ficam "Exportar
+dados" (abre as cópias de segurança) e "Eliminar conta", com texto neutro. A eliminação mostra o que
+acontece (conta e perfil, dados no servidor, ligações e chaves, dados e cópias deste aparelho,
+outros aparelhos, definitiva), pede nova autenticação (palavra-passe; Apple; Google com sessão
+recente, ADR-055) e a frase da língua da app (`ELIMINAR CONTA`, `DELETE ACCOUNT`, `ELIMINAR
+CUENTA`). Só depois chama `delete-account`. Erros dizem que a conta não foi eliminada; o sucesso é
+confirmado antes de terminar a sessão, e a limpeza local fica marcada para retomar se a app fechar.
+A limpeza local apaga a base de dados da conta, as suas cópias automáticas e as marcas do
+onboarding. As cópias automáticas passam a ter dono (`miven-auto-<userId>-…`): uma conta não vê nem
+restaura as de outra no mesmo aparelho. A eliminação no servidor não muda: ficheiros do Storage
+primeiro, depois `auth.admin.deleteUser`, com as tabelas pessoais e da integração em cascata.

@@ -3,10 +3,15 @@ import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
 import { Text } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
-import { lightColors } from '@/ui/theme/colors';
 
 import { AccountSettings } from '../AccountSection';
 import { AuthProvider } from '../AuthProvider';
+
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  ...jest.requireActual('expo-router'),
+  router: { push: (...args: unknown[]) => mockPush(...args) },
+}));
 
 const mockSyncNow = jest.fn(async () => ({ status: 'idle', pending: 0 }));
 
@@ -48,7 +53,7 @@ function signedInClient() {
 }
 
 describe('AccountSettings', () => {
-  it('puts the account first, the other groups in the middle and the danger zone last', async () => {
+  it('keeps account management in the account card, with no danger zone', async () => {
     const { client } = signedInClient();
     await renderWithProviders(
       <AuthProvider client={client}>
@@ -61,17 +66,18 @@ describe('AccountSettings', () => {
     expect(screen.getByText('ana@exemplo.pt')).toBeOnTheScreen();
 
     const order = screen
-      .getAllByText(/^(Conta|meio|Zona de perigo)$/)
+      .getAllByText(/^(Conta|Sincronização|meio)$/)
       .map((node) => node.props.children as string);
-    expect(order).toEqual(['Conta', 'meio', 'Zona de perigo']);
+    expect(order).toEqual(['Conta', 'Sincronização', 'meio']);
 
-    // Eliminar conta: vermelho e com o que faz; abre a confirmação, não elimina logo.
-    expect(screen.getByText('Eliminar conta')).toHaveStyle({ color: lightColors.negative });
-    await fireEvent.press(screen.getByRole('button', { name: /^Eliminar conta/ }));
-    expect(await screen.findByText('Eliminar a conta definitivamente?')).toBeOnTheScreen();
+    // Sem "Zona de perigo" e sem eliminar conta em destaque nas Definições.
+    expect(screen.queryByText('Zona de perigo')).toBeNull();
+    expect(screen.queryByText('Eliminar conta')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: /^Gerir conta/ }));
+    expect(mockPush).toHaveBeenCalledWith('/account-management');
   });
 
-  it('syncs from the status row and signs out from the danger zone', async () => {
+  it('syncs from the status row and signs out from the account card', async () => {
     const { client, auth } = signedInClient();
     await renderWithProviders(
       <AuthProvider client={client}>

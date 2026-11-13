@@ -5,7 +5,6 @@ import { StyleSheet, View } from 'react-native';
 
 import { cancelImport, getImportState, type ImportState, type SyncStatus } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import { appStorage } from '@/lib/storage/key-value-store';
 import {
   Badge,
   Button,
@@ -21,21 +20,9 @@ import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { useActiveSpace } from '../app-shell/DataGate';
 import { useAuth, type AuthUser } from './AuthProvider';
-import { PasswordField } from './PasswordField';
-import { isAppleSignInAvailable } from './apple-sign-in';
-import { isGoogleOnly, signedInRecently } from './google-sign-in';
-import { markPendingAccountDeletion } from './pending-account-deletion';
 import { useSync } from './SyncProvider';
 
-type DialogKind =
-  | 'signOutPending'
-  | 'delete'
-  | 'deleteFailed'
-  | 'cancelImport'
-  | 'passwordSent'
-  | 'passwordFailed'
-  | null;
-type DeleteFailure = 'deleteFailed' | 'deleteReauthFailed' | 'deleteGoogleStale';
+type DialogKind = 'signOutPending' | 'cancelImport' | 'passwordSent' | 'passwordFailed' | null;
 
 const STATUS_TONE: Record<SyncStatus, 'positive' | 'neutral' | 'warning' | 'negative'> = {
   idle: 'positive',
@@ -46,8 +33,8 @@ const STATUS_TONE: Record<SyncStatus, 'positive' | 'neutral' | 'warning' | 'nega
 };
 
 /**
- * Definições: "Conta" no topo e "Zona de perigo" (terminar sessão, eliminar conta) no fundo, com
- * as restantes secções (`children`) entre as duas. Partilham o estado dos diálogos.
+ * Definições: "Conta" e "Sincronização" no topo, seguidas das restantes secções (`children`).
+ * Terminar sessão e a gestão da conta (exportar, eliminar) ficam no cartão da conta (ADR-068).
  */
 export function AccountSettings({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -98,38 +85,13 @@ function initialOf(user: AuthUser): string {
 function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNode }) {
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const { client, actions } = useAuth();
+  const { actions } = useAuth();
   const { space, store } = useActiveSpace();
   const { snapshot, syncNow, offerImport } = useSync();
   const { formatDateTime } = useLocaleFormat();
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [busy, setBusy] = useState(false);
   const [importState, setImportState] = useState<ImportState | null>(null);
-  const [password, setPassword] = useState('');
-  const [appleAvailable, setAppleAvailable] = useState(false);
-  const [googleOnly, setGoogleOnly] = useState(false);
-  const [failure, setFailure] = useState<DeleteFailure>('deleteFailed');
-
-  useEffect(() => {
-    if (!client) return;
-    let active = true;
-    void client.auth.getUser().then(({ data }) => {
-      if (active && data.user) setGoogleOnly(isGoogleOnly(data.user));
-    });
-    return () => {
-      active = false;
-    };
-  }, [client]);
-
-  useEffect(() => {
-    let active = true;
-    void isAppleSignInAvailable().then((available) => {
-      if (active) setAppleAvailable(available);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (space.kind !== 'user') return;
@@ -162,50 +124,6 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
     const result = await actions.requestPasswordReset(user.email);
     setBusy(false);
     setDialog(result.ok ? 'passwordSent' : 'passwordFailed');
-  };
-
-  const deleteAccount = async () => {
-    if (!client) return;
-    setBusy(true);
-    // Só Google, sem palavra-passe: a confirmação é ter entrado há pouco (ADR-055).
-    if (!password && googleOnly) {
-      const { data } = await client.auth.getUser();
-      if (!data.user || !signedInRecently(data.user)) {
-        setBusy(false);
-        setFailure('deleteGoogleStale');
-        setDialog('deleteFailed');
-        return;
-      }
-    }
-    const reauth = password
-      ? await actions.signIn(user.email ?? '', password)
-      : googleOnly
-        ? ({ ok: true, value: undefined } as const)
-        : appleAvailable
-          ? await actions.reauthenticateWithApple()
-          : ({ ok: false, error: 'invalidCredentials' } as const);
-    if (!reauth.ok) {
-      setBusy(false);
-      if (reauth.error === 'cancelled') return;
-      setFailure('deleteReauthFailed');
-      setDialog('deleteFailed');
-      return;
-    }
-    const { error } = await client.functions.invoke('delete-account', {
-      method: 'POST',
-      body: { confirm: 'DELETE' },
-    });
-    if (error) {
-      setBusy(false);
-      setFailure('deleteFailed');
-      setDialog('deleteFailed');
-      return;
-    }
-    await markPendingAccountDeletion(appStorage, user.id);
-    setPassword('');
-    await actions.signOut();
-    setBusy(false);
-    setDialog(null);
   };
 
   const name = user.username ? `@${user.username}` : (user.email ?? t('account.signedIn'));
@@ -246,6 +164,24 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
               />
             </>
           ) : null}
+          <Divider inset={spacing.lg} />
+          <ListItem
+            icon="person-circle-outline"
+            iconColor="textSecondary"
+            iconBackground="surfaceMuted"
+            title={t('account.manage')}
+            subtitle={t('account.manageHint')}
+            onPress={() => router.push('/account-management' as Href)}
+          />
+          <Divider inset={spacing.lg} />
+          <ListItem
+            icon="log-out-outline"
+            iconColor="textSecondary"
+            iconBackground="surfaceMuted"
+            title={t('account.signOut')}
+            showChevron={false}
+            onPress={() => (pending > 0 ? setDialog('signOutPending') : void signOut())}
+          />
         </Card>
       </Section>
 
@@ -317,30 +253,6 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
 
       {children}
 
-      <Section title={t('settings.groups.danger')}>
-        <Card padding="xs">
-          <ListItem
-            icon="log-out-outline"
-            iconColor="textSecondary"
-            iconBackground="surfaceMuted"
-            title={t('account.signOut')}
-            showChevron={false}
-            onPress={() => (pending > 0 ? setDialog('signOutPending') : void signOut())}
-          />
-          <Divider inset={spacing.lg} />
-          <ListItem
-            icon="trash-outline"
-            iconColor="negative"
-            iconBackground="negativeMuted"
-            title={t('account.deleteAccount')}
-            subtitle={t('settings.deleteAccountHint')}
-            tone="negative"
-            showChevron={false}
-            onPress={() => setDialog('delete')}
-          />
-        </Card>
-      </Section>
-
       <Dialog
         visible={dialog === 'signOutPending'}
         title={t('account.signOutPendingTitle')}
@@ -360,47 +272,6 @@ function SignedInAccount({ user, children }: { user: AuthUser; children: ReactNo
           { label: t('account.signOutAnyway'), variant: 'secondary', onPress: signOut },
           { label: t('common.cancel'), variant: 'ghost', onPress: () => setDialog(null) },
         ]}
-      />
-      <Dialog
-        visible={dialog === 'delete'}
-        title={t('account.deleteTitle')}
-        message={t('account.deleteMessage')}
-        onDismiss={() => (busy ? undefined : setDialog(null))}
-        actions={[
-          {
-            label: t('account.deleteConfirm'),
-            variant: 'destructive',
-            loading: busy,
-            onPress: deleteAccount,
-          },
-          { label: t('common.cancel'), variant: 'ghost', onPress: () => setDialog(null) },
-        ]}>
-        <PasswordField
-          label={t('account.deletePassword')}
-          helperText={
-            googleOnly
-              ? t('account.deleteGoogleHint')
-              : appleAvailable
-                ? t('account.deleteAppleHint')
-                : t('account.deletePasswordHint')
-          }
-          value={password}
-          onChangeText={setPassword}
-          editable={!busy}
-        />
-      </Dialog>
-      <Dialog
-        visible={dialog === 'deleteFailed'}
-        title={t('account.deleteAccount')}
-        message={
-          failure === 'deleteReauthFailed'
-            ? t('account.deleteReauthFailed')
-            : failure === 'deleteGoogleStale'
-              ? t('account.deleteGoogleStale')
-              : t('account.deleteFailed')
-        }
-        onDismiss={() => setDialog(null)}
-        actions={[{ label: t('common.ok'), onPress: () => setDialog(null) }]}
       />
       <Dialog
         visible={dialog === 'passwordSent'}

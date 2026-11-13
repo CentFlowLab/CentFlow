@@ -10,7 +10,12 @@ import { BrandMark, Button, Icon, Text, TextField, type IconName } from '@/ui/co
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
-import { markOnboardingSeen } from './onboarding-state';
+import { useAuth } from '../account/AuthProvider';
+import {
+  completeOnboarding,
+  markOnboardingSeen,
+  skipOnboardingForSession,
+} from './onboarding-state';
 
 type Step = 'welcome' | 'account' | 'ready';
 const STEPS: readonly Step[] = ['welcome', 'account', 'ready'];
@@ -19,8 +24,8 @@ const MAX_WIDTH = 480;
 
 /**
  * Primeira utilização (ADR-044): três passos, menos de um minuto. Mostra o que o Miven faz, cria a
- * conta principal com o saldo de hoje e propõe o primeiro registo. Pode ser saltado; não volta a
- * aparecer.
+ * conta principal com o saldo de hoje e propõe o primeiro registo. Concluído uma vez por conta, em
+ * todos os aparelhos (ADR-067); "Mais tarde" volta a propô-lo na próxima abertura.
  */
 export function OnboardingScreen() {
   const { t } = useTranslation();
@@ -33,8 +38,18 @@ export function OnboardingScreen() {
   const [error, setError] = useState<'amount' | 'name' | 'save' | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const { client, state } = useAuth();
+  const userId = state.status === 'signedIn' ? state.user.id : null;
+
+  /**
+   * Sair antes do fim ("Mais tarde") não conclui: com conta, volta a ser proposto na próxima
+   * abertura da app (ADR-067). Sem servidor (modo local), vale a marca do aparelho, como antes.
+   */
   const leave = (href: Href) => {
-    void markOnboardingSeen();
+    if (step !== 'ready') {
+      if (userId) skipOnboardingForSession(userId);
+      else void markOnboardingSeen();
+    }
     router.replace(href);
   };
 
@@ -61,7 +76,9 @@ export function OnboardingScreen() {
         currency: DEFAULT_CURRENCY,
         initialBalance: parsed.amountMinor,
       });
-      void markOnboardingSeen();
+      // Concluído: grava no perfil da conta (ou fica pendente sem rede e é enviado depois).
+      if (userId) await completeOnboarding(client, userId);
+      else await markOnboardingSeen();
       setStep('ready');
     } catch {
       console.error('[onboarding] account_create_failed');
