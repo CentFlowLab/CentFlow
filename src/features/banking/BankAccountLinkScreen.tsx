@@ -10,6 +10,7 @@ import { Card, Divider, FormScreen, ListItem, Section, Text } from '@/ui/compone
 import { spacing, useTheme } from '@/ui/theme';
 
 import { useAuth } from '../account/AuthProvider';
+import { useSync } from '../account/SyncProvider';
 import { closeModal } from '../finance/navigation';
 import { useToday } from '../finance/useToday';
 import { linkBankAccount, loadBankConnections, type BankAccountRow } from './open-banking-client';
@@ -31,6 +32,9 @@ export function BankAccountLinkScreen() {
   const [missing, setMissing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [linkedElsewhere, setLinkedElsewhere] = useState<ReadonlySet<string>>(new Set());
+  const { syncNow } = useSync();
   const appAccounts = useDataQuery(
     useCallback((repos: Repositories) => repos.accounts.listWithBalances(), []),
   );
@@ -40,14 +44,17 @@ export function BankAccountLinkScreen() {
     let alive = true;
     void loadBankConnections(client).then((connections) => {
       if (!alive) return;
+      const others = new Set<string>();
+      let found: { row: BankAccountRow; bank: string } | null = null;
       for (const connection of connections ?? []) {
-        const row = connection.accounts.find((item) => item.id === id);
-        if (row) {
-          setAccount({ row, bank: connection.aspsp_name });
-          return;
+        for (const item of connection.accounts) {
+          if (item.id === id) found = { row: item, bank: connection.aspsp_name };
+          else if (item.app_account_id) others.add(item.app_account_id);
         }
       }
-      setMissing(true);
+      setLinkedElsewhere(others);
+      if (found) setAccount(found);
+      else setMissing(true);
     });
     return () => {
       alive = false;
@@ -60,7 +67,12 @@ export function BankAccountLinkScreen() {
     if (!client || !account) return;
     setBusy(true);
     setFailed(false);
-    const ok = await linkBankAccount(client, account.row.id, appAccountId, importFrom);
+    let ok = await linkBankAccount(client, account.row.id, appAccountId, importFrom);
+    if (!ok && appAccountId) {
+      // O servidor só aceita contas que já recebeu: sincronizar e tentar outra vez.
+      await syncNow();
+      ok = await linkBankAccount(client, account.row.id, appAccountId, importFrom);
+    }
     setBusy(false);
     if (ok) close();
     else setFailed(true);
@@ -69,24 +81,35 @@ export function BankAccountLinkScreen() {
   const createAccount = async () => {
     if (!account) return;
     setBusy(true);
+    setFailed(false);
     try {
-      const created = await repositories.accounts.create({
-        name: `${account.row.name ?? account.bank}`.slice(0, 60),
-        type: 'bank',
-        currency: account.row.currency,
-        initialBalance: account.row.balance ?? 0,
-        institution: account.bank.slice(0, 60),
-      });
-      await save(created.id, addDays(today, 1));
+      // Uma nova tentativa usa a conta já criada, em vez de criar outra igual.
+      let accountId = createdId;
+      if (!accountId) {
+        const created = await repositories.accounts.create({
+          name: `${account.row.name ?? account.bank}`.slice(0, 60),
+          type: 'bank',
+          currency: account.row.currency,
+          initialBalance: account.row.balance ?? 0,
+          institution: account.bank.slice(0, 60),
+        });
+        accountId = created.id;
+        setCreatedId(accountId);
+      }
+      await syncNow();
+      await save(accountId, addDays(today, 1));
     } catch {
       setBusy(false);
       setFailed(true);
     }
   };
 
+  // Cada conta da app recebe movimentos de uma só conta do banco.
   const sameCurrency = (appAccounts.data ?? []).filter(
-    (item) => item.currency === account?.row.currency && !item.archivedAt,
+    (item) =>
+      item.currency === account?.row.currency && !item.archivedAt && !linkedElsewhere.has(item.id),
   );
+  const alreadyLinked = Boolean(account?.row.app_account_id);
   const bankLabel = account
     ? `${account.row.name ?? t('banking.account.unnamed')}${
         account.row.iban_last4 ? ` ·· ${account.row.iban_last4}` : ''
@@ -124,16 +147,18 @@ export function BankAccountLinkScreen() {
               {t('banking.associate.failed')}
             </Text>
           ) : null}
-          <Card padding="xs">
-            <ListItem
-              icon="add-circle-outline"
-              iconColor="primary"
-              iconBackground="primaryMuted"
-              title={t('banking.associate.create')}
-              subtitle={t('banking.associate.createHint')}
-              onPress={busy ? undefined : () => void createAccount()}
-            />
-          </Card>
+          {alreadyLinked ? null : (
+            <Card padding="xs">
+              <ListItem
+                icon="add-circle-outline"
+                iconColor="primary"
+                iconBackground="primaryMuted"
+                title={t('banking.associate.create')}
+                subtitle={t('banking.associate.createHint')}
+                onPress={busy ? undefined : () => void createAccount()}
+              />
+            </Card>
+          )}
           {sameCurrency.length > 0 ? (
             <Section title={t('banking.associate.existing', { currency: account.row.currency })}>
               <Card padding="xs">

@@ -5,9 +5,11 @@ leitura). A pessoa autoriza no próprio banco; o Miven nunca vê credenciais ban
 entram nas contas da app como numa importação de extrato (sem duplicados, com a categoria
 habitual), e o saldo do banco aparece ao lado do saldo da app.
 
-Estado em 2026-11-13: código, migração `20261121000100_open_banking.sql` e função `open-banking` no
-**staging**. Sem a aplicação da Enable Banking, a app diz "A ligação a bancos ainda não está
-disponível". Produção: por aplicar (passos 3 e 4).
+Estado em 2026-11-13: migração `20261121000100_open_banking.sql` e função `open-banking` no
+**staging e na produção**. Aplicação Production da Enable Banking ativa em modo restrito (só as
+contas ligadas no Control Panel); segredos definidos no staging, onde a função devolve 38 bancos
+de Portugal. Produção: faltam os segredos (passo 2). Sem eles, a app diz "A ligação a bancos ainda
+não está disponível". Trading 212 na produção: passo 4, por fazer.
 
 ## 1. Criar a aplicação na Enable Banking (só a pessoa responsável)
 
@@ -33,10 +35,14 @@ openssl pkcs8 -topk8 -nocrypt -in chave.pem -out chave-pkcs8.pem
 
 ## 2. Segredos da função (staging e produção)
 
-Na pasta do repositório, numa shell **bash** (Git Bash), com o caminho do `.pem`:
+Usar sempre `--remote=<ref>`: o Supabase CLI 3 ignora `--project-ref` sem erro e escreve no
+projeto ligado (a produção). Confirmar a linha **Target** antes de responder "Yes".
+
+Na pasta do repositório, numa shell **bash** (Git Bash), com o caminho do `.pem` (no PowerShell,
+`"ENABLE_BANKING_PRIVATE_KEY=$(Get-Content -Raw C:\caminho\chave.pem)"`):
 
 ```bash
-npx supabase secrets set ENABLE_BANKING_APP_ID=<application-id> ENABLE_BANKING_PRIVATE_KEY="$(cat /caminho/chave-pkcs8.pem)" --project-ref qlimqcgrgaqzwjmafora
+npx supabase secrets set ENABLE_BANKING_APP_ID=<application-id> ENABLE_BANKING_PRIVATE_KEY="$(cat /caminho/chave-pkcs8.pem)" --remote=qlimqcgrgaqzwjmafora
 ```
 
 ```bash
@@ -44,7 +50,7 @@ npm run production:guard -- --remote=slfgslfzolfvqavuccom CONFIRMO-PRODUCAO
 ```
 
 ```bash
-npx supabase secrets set ENABLE_BANKING_APP_ID=<application-id> ENABLE_BANKING_PRIVATE_KEY="$(cat /caminho/chave-pkcs8.pem)" --project-ref slfgslfzolfvqavuccom
+npx supabase secrets set ENABLE_BANKING_APP_ID=<application-id> ENABLE_BANKING_PRIVATE_KEY="$(cat /caminho/chave-pkcs8.pem)" --remote=slfgslfzolfvqavuccom
 ```
 
 Os valores não ficam em ficheiros do projeto nem no histórico do git.
@@ -60,7 +66,7 @@ npx supabase db push --skip-vault --remote=slfgslfzolfvqavuccom
 ```
 
 ```bash
-npx supabase functions deploy open-banking --project-ref slfgslfzolfvqavuccom --no-verify-jwt
+npx supabase functions deploy open-banking --remote=slfgslfzolfvqavuccom --no-verify-jwt
 ```
 
 O dry-run (`db push --dry-run`) deve listar só `20261121000100_open_banking.sql`.
@@ -68,13 +74,13 @@ O dry-run (`db push --dry-run`) deve listar só `20261121000100_open_banking.sql
 ## 4. Trading 212 na produção (ADR-064)
 
 ```bash
-npx supabase functions deploy t212 --project-ref slfgslfzolfvqavuccom --no-verify-jwt
+npx supabase functions deploy t212 --remote=slfgslfzolfvqavuccom --no-verify-jwt
 ```
 
 Segredo `INTEGRATIONS_KEY` (32 bytes aleatórios; o comando gera-o e não o mostra):
 
 ```bash
-npx supabase secrets set INTEGRATIONS_KEY="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))")" --project-ref slfgslfzolfvqavuccom
+npx supabase secrets set INTEGRATIONS_KEY="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))")" --remote=slfgslfzolfvqavuccom
 ```
 
 Ativar o ecrã nas apps (ambiente `production` do EAS) e gerar a versão seguinte (APK e IPA):

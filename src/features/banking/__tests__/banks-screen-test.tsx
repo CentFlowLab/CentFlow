@@ -4,6 +4,7 @@ import { RepositoriesProvider, type Repositories } from '@/data';
 import { openTestRepositories } from '@/test-utils/node-sqlite-driver';
 import { renderWithProviders } from '@/test-utils/render';
 
+import { BankAccountLinkScreen } from '../BankAccountLinkScreen';
 import { BankCallbackScreen } from '../BankCallbackScreen';
 import { BankLinkScreen } from '../BankLinkScreen';
 import { BanksScreen } from '../BanksScreen';
@@ -30,7 +31,7 @@ const mockClient = {
     select: () => ({ order: async () => ({ data: mockTables[table] ?? [], error: null }) }),
   }),
   functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
-  rpc: jest.fn(async () => ({ error: null })),
+  rpc: jest.fn(async (): Promise<{ error: unknown }> => ({ error: null })),
 };
 jest.mock('../../account/AuthProvider', () => ({
   ...jest.requireActual('../../account/AuthProvider'),
@@ -45,6 +46,8 @@ beforeEach(async () => {
   mockPush.mockClear();
   mockReplace.mockClear();
   mockInvoke.mockReset();
+  mockClient.rpc.mockReset();
+  mockClient.rpc.mockResolvedValue({ error: null });
   mockParams = {};
   mockTables = {};
 });
@@ -150,6 +153,87 @@ describe('banks screen (ADR-069)', () => {
       method: 'POST',
       body: { action: 'finish', code: 'abc', state: 'state-123.m' },
     });
+  });
+
+  const bankRow = (id: string, appAccount: string | null) => ({
+    id,
+    connection_id: 'c1',
+    name: 'Conta à ordem',
+    iban_last4: '0744',
+    currency: 'EUR',
+    balance: 5000,
+    balance_at: null,
+    app_account_id: appAccount,
+    import_from: null,
+  });
+  const linkTables = (accounts: unknown[]) => ({
+    bank_connections: [
+      {
+        id: 'c1',
+        aspsp_name: 'Crédito Agrícola',
+        aspsp_country: 'PT',
+        status: 'connected',
+        valid_until: '2027-02-10T00:00:00Z',
+        last_sync_at: null,
+        last_error: null,
+      },
+    ],
+    bank_accounts: accounts,
+  });
+
+  it('creates one new account even when the server only accepts it after syncing', async () => {
+    mockParams = { id: 'a1' };
+    mockTables = linkTables([bankRow('a1', null)]);
+    // 1.ª tentativa: o servidor ainda não tem a conta nova; depois de sincronizar aceita.
+    mockClient.rpc
+      .mockResolvedValueOnce({ error: { code: '22023' } } as never)
+      .mockResolvedValueOnce({ error: null });
+    await render(<BankAccountLinkScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: /^Criar conta nova/ }));
+    await waitFor(() => expect(mockClient.rpc).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText(/Não foi possível associar/)).toBeNull();
+    expect(await repos.accounts.list()).toHaveLength(1);
+  });
+
+  it('retrying after a failure reuses the account it already created', async () => {
+    mockParams = { id: 'a1' };
+    mockTables = linkTables([bankRow('a1', null)]);
+    mockClient.rpc.mockResolvedValue({ error: { code: '22023' } } as never);
+    await render(<BankAccountLinkScreen />);
+    const create = await screen.findByRole('button', { name: /^Criar conta nova/ });
+    await fireEvent.press(create);
+    await waitFor(() => expect(mockClient.rpc).toHaveBeenCalledTimes(2));
+    await fireEvent.press(screen.getByRole('button', { name: /^Criar conta nova/ }));
+    await waitFor(() => expect(mockClient.rpc).toHaveBeenCalledTimes(4));
+    expect(await repos.accounts.list()).toHaveLength(1);
+  });
+
+  it('offers neither a new account once linked nor accounts fed by another bank account', async () => {
+    const mine = await repos.accounts.create({
+      name: 'Minha',
+      type: 'bank',
+      currency: 'EUR',
+      initialBalance: 0,
+    });
+    const other = await repos.accounts.create({
+      name: 'Outra',
+      type: 'bank',
+      currency: 'EUR',
+      initialBalance: 0,
+    });
+    const free = await repos.accounts.create({
+      name: 'Livre',
+      type: 'bank',
+      currency: 'EUR',
+      initialBalance: 0,
+    });
+    mockParams = { id: 'a1' };
+    mockTables = linkTables([bankRow('a1', mine.id), bankRow('a2', other.id)]);
+    await render(<BankAccountLinkScreen />);
+    expect(await screen.findByText('Minha')).toBeOnTheScreen();
+    expect(screen.getByText(free.name)).toBeOnTheScreen();
+    expect(screen.queryByText('Outra')).toBeNull();
+    expect(screen.queryByText('Criar conta nova')).toBeNull();
   });
 
   it('explains a cancelled authorisation without calling the server', async () => {
