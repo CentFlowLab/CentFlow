@@ -340,3 +340,12 @@ ADR-064, ADR-065 e ADR-067.
    `open-banking` foram recusadas pela ferramenta (escritas na produção); ficam para o
    responsável, com os comandos em `docs/open-banking.md`. Histórico da produção até
    `20261120000100`.
+
+## 2026-11-13 — versão 0.1.20 (Android)
+
+A 0.1.19 fechava logo ao abrir em todos os Android: o R8, ligado por omissão no Expo SDK 58,
+removia o construtor de `WorkDatabase_Impl` (WorkManager). Corrigido com
+`plugins/android-no-minify` (ADR-070), verificado com o APK de teste num Galaxy A12 (Android 12).
+Open banking em produção (migrações `20261121000100` e `20261122000100`, função `open-banking`,
+segredos da Enable Banking em modo restrito). O ambiente `preview` do EAS passou a apontar para o
+staging (URL e chave pública), para os APK de teste.
