@@ -8,29 +8,49 @@
       name="description"
       content="Que dados o Miven trata, para quê, onde ficam e como exerces os teus direitos." />
     <link rel="canonical" href="https://miven.pt/privacidade/" />
-    <meta name="theme-color" content="#fbfcfd" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a1220" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.png" />
-    <link rel="stylesheet" href="/assets/site.css" />
     <link rel="stylesheet" href="/assets/home.css" />
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
   </head>
   <body class="home">
     <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
-    <header class="site-header is-scrolled">
+    <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Miven, página inicial">
           <img src="/assets/logo.png" width="28" height="28" alt="" />
           <span>Miven</span>
         </a>
-        <div class="header-actions legal-actions">
-          <a class="button small" href="/app/">Experimentar</a>
+        <nav id="site-nav" class="site-nav" aria-label="Principal">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/#plataformas">Plataformas</a>
+          <a href="/#privacidade">Privacidade</a>
+          <a href="/suporte/">Suporte</a>
+          <a class="nav-login" href="/app/">Entrar</a>
+        </nav>
+        <div class="header-actions">
+          <a class="login" href="/app/">Entrar</a>
+          <a class="button small" href="/experimentar/">Experimentar</a>
+          <button
+            type="button"
+            class="nav-toggle"
+            id="nav-toggle"
+            aria-expanded="false"
+            aria-controls="site-nav">
+            <span class="nav-toggle-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Menu</span>
+          </button>
         </div>
       </div>
     </header>
 
     <main id="conteudo" class="legal">
       <article class="wrap legal-body">
-        <p class="pillar-tag">Versão de 11 de novembro de 2026</p>
+        <p class="pillar-tag">Versão de 13 de novembro de 2026</p>
         <h1>Política de privacidade</h1>
         <p class="legal-lead">
           O Miven guarda informação sobre o teu dinheiro. Por isso explicamos, sem rodeios, que
@@ -69,22 +89,28 @@
             nem o teu nome.
           </li>
           <li>
-            <strong>Integrações que ligares (Trading 212):</strong> só se ligares a tua conta. A
-            chave e o segredo da API que geras na Trading 212 ficam cifrados no nosso servidor e
-            nunca no teu aparelho; com eles lemos o resumo da conta e as posições (dinheiro
-            disponível, valor investido, ativos, quantidades, preços e ganhos/perdas). Guardamos só
-            a leitura mais recente. Não pedimos a tua palavra-passe da Trading 212 e não fazemos
-            ordens nem movimentos. Ao desligar, a chave e a leitura são apagadas.
+            <strong>Integrações que ligares (Trading 212):</strong> quando disponível na app, e só
+            se ligares a tua conta. A chave e o segredo da API que geras na Trading 212 ficam
+            cifrados no nosso servidor e nunca no teu aparelho; com eles lemos o resumo da conta e
+            as posições (dinheiro disponível, valor investido, ativos, quantidades, preços e
+            ganhos/perdas). Guardamos só a leitura mais recente. Não pedimos a tua palavra-passe da
+            Trading 212 e não fazemos ordens nem movimentos. Ao desligar, a chave e a leitura são
+            apagadas.
           </li>
           <li>
-            <strong>Contas bancárias que ligares (open banking):</strong> só se ligares um banco. A
-            autorização é dada por ti no próprio banco; não pedimos nem vemos as credenciais do
-            banco. Com essa autorização, só de leitura e válida até 90 dias, lemos o nome das
-            contas, os quatro últimos caracteres do IBAN, os saldos e os movimentos (data, valor,
-            descrição e nome da contraparte). No servidor guardamos o estado da ligação, o nome das
-            contas, os quatro últimos caracteres do IBAN e o último saldo; os movimentos seguem para
-            a tua app, que os regista como os restantes movimentos. Não fazemos pagamentos nem
-            transferências. Ao desligar, a autorização é revogada e estes dados são apagados.
+            <strong>Contas bancárias que ligares (open banking):</strong> quando disponível na app,
+            e só se ligares um banco. A autorização é dada por ti no próprio banco, através da
+            Enable Banking; não pedimos nem vemos as credenciais do banco. Com essa autorização, só
+            de leitura e válida até 90 dias (ou menos, se o banco não permitir tanto), lemos o nome
+            das contas, os quatro últimos caracteres do IBAN, os saldos e os movimentos
+            contabilizados (data, valor, descrição e nome da contraparte). No servidor guardamos o
+            estado da ligação, o banco, o nome das contas, os quatro últimos caracteres do IBAN, o
+            último saldo, a conta do Miven onde os movimentos entram e os identificadores técnicos
+            da ligação na Enable Banking. Os movimentos não ficam guardados no servidor por esta
+            via: seguem para a tua app, que os regista como os restantes movimentos (e estes
+            sincronizam como qualquer outro). Não fazemos pagamentos nem transferências. Ao
+            desligar, pedimos a revogação da autorização e apagamos estes dados do servidor; os
+            movimentos já registados na app ficam.
           </li>
           <li>
             <strong>Estatísticas de utilização:</strong> só se aceitares. São anónimas e não criam
@@ -135,10 +161,11 @@
             tua conta nela.
           </li>
           <li>
-            <strong>Enable Banking</strong> (Enable Banking Oy, Finlândia, UE) — só se ligares um
-            banco: prestador licenciado de serviços de informação sobre contas (PSD2) que faz a
-            ligação ao teu banco com a autorização que dás. O teu banco é responsável pelos dados da
-            tua conta nele.
+            <strong>Enable Banking</strong> (Enable Banking Oy, Espoo, Finlândia, UE) — só se
+            ligares um banco: prestador de serviços de informação sobre contas (PSD2),
+            supervisionado pela autoridade financeira finlandesa, que faz a ligação ao teu banco com
+            a autorização que dás e trata esses dados segundo as suas próprias condições. O teu
+            banco é responsável pelos dados da tua conta nele.
           </li>
           <li>
             <strong>Apple</strong> — se escolheres entrar com a Apple, recebemos o identificador e o
@@ -164,8 +191,11 @@
         <p>
           Guardamos os dados enquanto a conta existir. Os ficheiros anexados são apagados quando os
           retiras, quando eliminas o documento ou quando eliminas a conta. Quando eliminas a conta
-          na app, os teus dados no servidor são apagados. Podem permanecer, por um período limitado,
-          em cópias de segurança protegidas, até serem substituídas.
+          na app, os teus dados no servidor são apagados. As ligações a bancos e à Trading 212, e o
+          que guardamos delas, são apagadas quando as desligas ou quando eliminas a conta; um pedido
+          de autorização num banco que não concluas deixa de valer ao fim de 30 minutos e é apagado
+          na limpeza seguinte. Podem permanecer, por um período limitado, em cópias de segurança
+          protegidas, até serem substituídas.
         </p>
 
         <h2>Os teus direitos</h2>
@@ -183,7 +213,8 @@
         <p>
           As ligações são cifradas (HTTPS). No servidor, cada registo fica ligado à tua conta e só é
           entregue a quem tem sessão nessa conta. No telemóvel, a sessão fica no armazenamento
-          seguro do sistema.
+          seguro do sistema. As chaves das integrações (a da Trading 212, cifrada, e a que assina os
+          pedidos à Enable Banking) existem só no servidor e nunca chegam à app.
         </p>
 
         <h2>Alterações</h2>
@@ -201,6 +232,9 @@
           <span>Miven</span>
         </a>
         <nav aria-label="Rodapé" class="footer-nav">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/experimentar/">Experimentar</a>
           <a href="/privacidade/" aria-current="page">Privacidade</a>
           <a href="/termos/">Termos</a>
           <a href="/suporte/">Suporte</a>
@@ -210,5 +244,6 @@
         <p class="footer-legal">© 2026 Miven · Em fase de testes</p>
       </div>
     </footer>
+    <script src="/assets/home.js"></script>
   </body>
 </html>

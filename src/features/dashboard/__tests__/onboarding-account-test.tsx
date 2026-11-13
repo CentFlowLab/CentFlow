@@ -19,7 +19,10 @@ jest.mock('expo-router', () => ({
 
 let mockUserId = 'user-a';
 let mockProfile: { data: unknown; error: unknown } = { data: null, error: null };
-const mockRpc = jest.fn(async (_name: string) => ({ error: null }));
+const mockRpc = jest.fn(async (_name: string) => ({
+  data: '2026-11-13T10:00:00Z',
+  error: null,
+}));
 // O cliente é estável, como na app (um por sessão).
 const mockFrom = jest.fn((_table: string) => ({
   select: () => ({ maybeSingle: async () => mockProfile }),

@@ -71,8 +71,9 @@ export async function completeOnboarding(
   await storage.setItem(doneKey(userId), '1').catch(() => undefined);
   if (client) {
     try {
-      const { error } = await client.rpc('complete_onboarding');
-      if (!error) {
+      // Só conta como gravado se o servidor devolver a data (sem perfil, não marcou nada).
+      const { data, error } = await client.rpc('complete_onboarding');
+      if (!error && data) {
         await storage.removeItem(pendingKey(userId)).catch(() => undefined);
         return 'confirmed';
       }

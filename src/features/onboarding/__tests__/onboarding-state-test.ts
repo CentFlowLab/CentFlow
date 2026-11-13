@@ -38,7 +38,10 @@ describe('decideOnboarding (ADR-067)', () => {
 describe('completion storage', () => {
   const client = (rpcError: unknown, profile: unknown = null) =>
     ({
-      rpc: jest.fn(async () => ({ error: rpcError })),
+      rpc: jest.fn(async () => ({
+        data: rpcError ? null : '2026-11-12T10:00:00Z',
+        error: rpcError,
+      })),
       from: () => ({
         select: () => ({ maybeSingle: async () => ({ data: profile, error: null }) }),
       }),
@@ -61,6 +64,15 @@ describe('completion storage', () => {
     );
     expect(await hasPendingCompletion('user-a', storage)).toBe(true);
     expect(await completeOnboarding(null, 'user-a', storage)).toBe('pending');
+  });
+
+  it('does not claim completion when the server marked nothing', async () => {
+    const storage = createMemoryStore();
+    const noProfile = {
+      rpc: jest.fn(async () => ({ data: null, error: null })),
+    } as unknown as SupabaseClient;
+    expect(await completeOnboarding(noProfile, 'user-a', storage)).toBe('pending');
+    expect(await hasPendingCompletion('user-a', storage)).toBe(true);
   });
 
   it('reads the server state, and unknown when it cannot', async () => {

@@ -330,3 +330,13 @@ ADR-064, ADR-065 e ADR-067.
 3. **Por fazer na produção:** função `t212` e segredo `INTEGRATIONS_KEY` (sem eles, a integração
    Trading 212 não liga; as tabelas ficam vazias). App com o código do onboarding por conta ainda
    não publicada (alterações locais, sem commit).
+
+## Estado em 2026-11-13 — versão 0.1.19 e open banking, **só staging**
+
+1. Staging: `20261121000100_open_banking.sql` aplicada e função `open-banking` publicada (sem as
+   chaves da Enable Banking: a app diz "ainda não disponível").
+2. Versão 0.1.19 publicada (APK 17, IPA 25, web) com os ecrãs dos Bancos.
+3. **Produção: nada de novo.** Tentativas de aplicar a migração e publicar as funções `t212` e
+   `open-banking` foram recusadas pela ferramenta (escritas na produção); ficam para o
+   responsável, com os comandos em `docs/open-banking.md`. Histórico da produção até
+   `20261120000100`.

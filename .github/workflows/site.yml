@@ -77,6 +77,17 @@ jobs:
           rm -rf site/app
           cp -r dist site/app
 
+      - name: Versão da app na página de instalação
+        shell: bash
+        run: |
+          version=$(node -p "require('./app.json').expo.version")
+          if ! printf '%s' "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Versão inesperada em app.json: $version"
+            exit 1
+          fi
+          sed -i -E "s#<span data-app-version>[^<]*</span>#<span data-app-version>${version}</span>#" site/experimentar/index.html
+          grep -q "<span data-app-version>${version}</span>" site/experimentar/index.html
+
       - name: Configurar o Pages
         uses: actions/configure-pages@v5
 

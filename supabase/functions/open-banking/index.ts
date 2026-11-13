@@ -183,7 +183,6 @@ Deno.serve(async (req) => {
     await admin
       .from('bank_auth_states')
       .delete()
-      .eq('user_id', user.id)
       .lt('created_at', new Date(Date.now() - BANK_AUTH_STATE_TTL_MS).toISOString());
     const saved = await admin
       .from('bank_auth_states')

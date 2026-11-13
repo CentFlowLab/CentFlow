@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Experimentar o Miven — Web, Android e iPhone</title>
+    <meta
+      name="description"
+      content="Escolhe onde usar o Miven: no browser, sem instalar nada, no Android com o APK assinado ou no iPhone pelo SideStore. A mesma conta em todas as plataformas." />
+    <link rel="canonical" href="https://miven.pt/experimentar/" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_PT" />
+    <meta property="og:site_name" content="Miven" />
+    <meta property="og:url" content="https://miven.pt/experimentar/" />
+    <meta property="og:title" content="Experimentar o Miven" />
+    <meta
+      property="og:description"
+      content="Web, Android ou iPhone. A mesma conta em todas as plataformas." />
+    <meta property="og:image" content="https://miven.pt/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Miven, gestão financeira pessoal" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/assets/logo.png" />
+    <link
+      rel="preload"
+      href="/assets/fonts/inter-latin-600.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin />
+    <link rel="stylesheet" href="/assets/home.css" />
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+  <body class="home">
+    <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="Miven, página inicial">
+          <img src="/assets/logo.png" width="28" height="28" alt="" />
+          <span>Miven</span>
+        </a>
+        <nav id="site-nav" class="site-nav" aria-label="Principal">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/#plataformas">Plataformas</a>
+          <a href="/#privacidade">Privacidade</a>
+          <a href="/suporte/">Suporte</a>
+          <a class="nav-login" href="/app/">Entrar</a>
+        </nav>
+        <div class="header-actions">
+          <a class="login" href="/app/">Entrar</a>
+          <a class="button small" href="/experimentar/" aria-current="page">Experimentar</a>
+          <button
+            type="button"
+            class="nav-toggle"
+            id="nav-toggle"
+            aria-expanded="false"
+            aria-controls="site-nav">
+            <span class="nav-toggle-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Menu</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="conteudo" class="install-page">
+      <section class="install-hero wrap" aria-labelledby="install-title">
+        <img class="install-icon" src="/assets/app-icon.webp" width="72" height="72" alt="" />
+        <h1 id="install-title">Começa a usar o Miven.</h1>
+        <p class="lead">
+          Escolhe onde. A conta é a mesma em todas as plataformas, e os teus dados sincronizam entre
+          elas.
+        </p>
+        <p class="install-meta">
+          Versão <span data-app-version>0.1.19</span> · Grátis durante a fase de testes
+        </p>
+        <p class="install-hint" id="install-hint" hidden></p>
+      </section>
+
+      <section class="wrap platform-grid" aria-label="Plataformas">
+        <article class="platform-card" id="web" data-platform="web">
+          <div class="platform-head">
+            <span class="platform-glyph" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="13" rx="2" />
+                <path d="M8 21h8M12 17v4" />
+              </svg>
+            </span>
+            <div>
+              <h2>Web</h2>
+              <p class="platform-kind">Aplicação web</p>
+            </div>
+            <span class="badge">Disponível</span>
+          </div>
+          <p>No browser, sem instalar nada. Funciona no computador, no tablet e no telemóvel.</p>
+          <ul class="platform-facts">
+            <li>Chrome, Edge, Firefox e Safari atuais</li>
+            <li>Os dados ficam também neste browser e sincronizam com a conta</li>
+          </ul>
+          <a class="button" href="/app/">Abrir Miven</a>
+          <p class="recommended" hidden>Recomendado para este aparelho</p>
+        </article>
+
+        <article class="platform-card" id="android" data-platform="android">
+          <div class="platform-head">
+            <span class="platform-glyph" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+                <path d="M10.5 18.5h3" />
+              </svg>
+            </span>
+            <div>
+              <h2>Android</h2>
+              <p class="platform-kind">Aplicação nativa · APK</p>
+            </div>
+            <span class="badge">Disponível</span>
+          </div>
+          <p>
+            A app Android completa, num ficheiro APK assinado. Ainda não está na Google Play: o
+            download é feito a partir das versões publicadas do projeto no GitHub.
+          </p>
+          <a
+            class="button"
+            href="https://github.com/CentFlowLab/Miven/releases/download/android-latest/miven.apk"
+            download
+            >Descarregar para Android</a
+          >
+          <details class="steps">
+            <summary>Como instalar</summary>
+            <ol>
+              <li>Descarrega o APK no telemóvel e abre-o a partir das transferências.</li>
+              <li>
+                O Android pede autorização para instalar apps dessa origem (o browser ou a app de
+                ficheiros). Autoriza, instala e abre o Miven.
+              </li>
+              <li>Entra com a tua conta ou cria uma.</li>
+              <li>
+                Para atualizar, descarrega o APK outra vez e instala por cima: os dados da conta
+                continuam.
+              </li>
+            </ol>
+          </details>
+          <p class="recommended" hidden>Recomendado para este aparelho</p>
+        </article>
+
+        <article class="platform-card" id="iphone" data-platform="ios">
+          <div class="platform-head">
+            <span class="platform-glyph" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="6" y="2.5" width="12" height="19" rx="3" />
+                <path d="M10 5h4" />
+              </svg>
+            </span>
+            <div>
+              <h2>iPhone</h2>
+              <p class="platform-kind">Aplicação nativa · SideStore</p>
+            </div>
+            <span class="badge">Disponível</span>
+          </div>
+          <p>
+            A app iOS instala-se pelo SideStore. Não é distribuída pela App Store: o ficheiro (IPA)
+            não vem assinado pela Apple, e o SideStore assina-o no teu iPhone com o teu Apple ID.
+          </p>
+          <ul class="platform-facts">
+            <li>iOS 16.4 ou mais recente</li>
+            <li>
+              Com um Apple ID gratuito, a assinatura dura 7 dias; o SideStore renova-a quando o
+              abres
+            </li>
+          </ul>
+          <a class="button" href="#instalar-iphone">Instalar no iPhone</a>
+          <p class="recommended" hidden>Recomendado para este aparelho</p>
+        </article>
+      </section>
+
+      <section class="wrap sidestore" id="instalar-iphone" aria-labelledby="sidestore-title">
+        <h2 id="sidestore-title">Instalar no iPhone pelo SideStore</h2>
+        <ol class="sidestore-steps">
+          <li>
+            <strong>Instala o SideStore</strong> no iPhone, se ainda não o tiveres, seguindo o guia
+            oficial em
+            <a href="https://sidestore.io" rel="noopener" target="_blank">sidestore.io</a>.
+          </li>
+          <li>
+            <strong>Adiciona a fonte do Miven.</strong> No SideStore, abre <em>Sources</em>, toca em
+            <em>+</em> e cola este endereço:
+            <div class="source-row">
+              <code class="source" id="sidestore-source"
+                >https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json</code
+              >
+              <button type="button" class="button small secondary" id="copy-source">Copiar</button>
+            </div>
+            <p id="copy-status" class="visually-hidden" aria-live="polite"></p>
+          </li>
+          <li><strong>Instala o Miven</strong> a partir da fonte e abre a app.</li>
+          <li><strong>Entra</strong> com a tua conta ou cria uma.</li>
+        </ol>
+        <p class="sidestore-note">
+          Quando sair uma versão nova, o SideStore mostra o botão de atualizar e pede confirmação. A
+          atualização instala-se por cima e mantém os dados.
+        </p>
+      </section>
+
+      <section class="wrap install-help" aria-labelledby="help-title">
+        <h2 id="help-title">Precisas de ajuda?</h2>
+        <p>
+          Consulta o <a href="/suporte/">suporte</a> ou escreve para
+          <a href="mailto:mivenapp@gmail.com">mivenapp@gmail.com</a>. Podes sempre começar pela
+          <a href="/app/">aplicação web</a>, sem instalar nada.
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <a class="brand" href="/">
+          <img src="/assets/logo.png" width="24" height="24" alt="" />
+          <span>Miven</span>
+        </a>
+        <nav aria-label="Rodapé" class="footer-nav">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/experimentar/">Experimentar</a>
+          <a href="/privacidade/">Privacidade</a>
+          <a href="/termos/">Termos</a>
+          <a href="/suporte/">Suporte</a>
+          <a href="/app/">Entrar</a>
+          <a href="mailto:mivenapp@gmail.com">Contacto</a>
+        </nav>
+        <p class="footer-legal">© 2026 Miven · Em fase de testes</p>
+      </div>
+    </footer>
+    <script src="/assets/home.js"></script>
+  </body>
+</html>

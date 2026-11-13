@@ -199,7 +199,7 @@ const es: Translation = {
     intro:
       'Conecta tus cuentas para ver el saldo y recibir los movimientos automáticamente. La conexión es solo de lectura: no permite pagos ni transferencias. Autorizas en tu banco y la autorización dura hasta 90 días.',
     provider:
-      'La conexión la presta Enable Banking, proveedor autorizado de servicios de información sobre cuentas (PSD2). Miven nunca ve tus credenciales del banco.',
+      'La conexión la presta Enable Banking, proveedor de servicios de información sobre cuentas (PSD2) supervisado en la UE. Miven nunca ve tus credenciales del banco.',
     connect: 'Conectar un banco',
     empty: 'Aún no has conectado ningún banco.',
     status: { connected: 'Conectado', expired: 'Caducado', error: 'Con error' },
@@ -1729,7 +1729,7 @@ const es: Translation = {
     deleteGoogleStale:
       'Han pasado más de 10 minutos desde que entraste. Cierra sesión, vuelve a entrar con Google y elimina la cuenta justo después. La cuenta no se ha eliminado.',
     manage: 'Gestionar cuenta',
-    manageHint: 'Exportar datos y eliminar la cuenta',
+    manageHint: 'Ver las opciones de gestión de tu cuenta',
     management: {
       title: 'Gestión de la cuenta',
       dataTitle: 'Tus datos',

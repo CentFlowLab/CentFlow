@@ -1003,7 +1003,7 @@ movimentos continuam, mais abaixo. Nenhuma secção foi removida.
 | --- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | D-3 | Identificadores de app (`app.centflow.mobile`) | Mantidos: já há compilações SideStore. O nome público e o domínio ficaram decididos no ADR-026. Não mudar o identificador depois da primeira submissão às lojas. | Antes de publicar |
 | D-4 | Licença e entidade legal                       | Proprietária por omissão. Privacidade e termos da fase de testes publicados (2026-11-10); falta o nome do responsável pelo tratamento e rever antes das lojas.   | Antes de publicar |
-| D-5 | Fornecedor de Open Banking                     | Agregadores licenciados PSD2 (ex.: GoCardless Bank Account Data, Tink, Salt Edge). Avaliar custos e cobertura em Portugal.                                       | Fase 5            |
+| D-5 | Fornecedor de Open Banking                     | Decidido: Enable Banking (ADR-069).                                                                                                                              | Fase 5            |
 | D-6 | Fornecedor de IA/OCR                           | Registo por texto resolvido no ADR-029 (Anthropic, em Edge Function). OCR de recibos continua por decidir: exige imagem e um fornecedor.                         | Fase 5            |
 | D-7 | Alojamento da PWA                              | O domínio é miven.pt. Falta escolher o alojamento estático com COOP/COEP (ADR-015): Vercel, Netlify, Cloudflare Pages ou EAS Hosting. Confirmar suporte Safari.  | Fase 2            |
 

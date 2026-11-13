@@ -1,14 +1,9 @@
-// Página de apresentação: menu, cabeçalho ao rolar, revelações suaves e a janela do SideStore.
-// Sem bibliotecas. Sem JavaScript o conteúdo aparece todo (as revelações dependem da classe .js).
+// miven.pt: menu, cabeçalho ao rolar, revelações suaves, plataforma recomendada e cópia da fonte
+// do SideStore. Sem bibliotecas nem pedidos externos. Sem JavaScript o conteúdo aparece todo.
 (function () {
   const header = document.querySelector('.site-header');
   const nav = document.querySelector('#site-nav');
   const toggle = document.querySelector('#nav-toggle');
-  const dialog = document.querySelector('#install');
-  const openInstall = document.querySelectorAll('[data-open="install"]');
-  const copy = document.querySelector('#copy-source');
-  const source = document.querySelector('#sidestore-source');
-  const copyStatus = document.querySelector('#copy-status');
 
   // Cabeçalho: linha inferior só depois de rolar.
   if (header) {
@@ -44,15 +39,15 @@
         setMenu(false, false);
       }
     });
-    window.matchMedia('(min-width: 800px)').addEventListener('change', (event) => {
+    window.matchMedia('(min-width: 900px)').addEventListener('change', (event) => {
       if (event.matches) setMenu(false, false);
     });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        setMenu(false, true);
+      }
+    });
   }
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    if (toggle && toggle.getAttribute('aria-expanded') === 'true') setMenu(false, true);
-  });
 
   // Revelações ao rolar (o CSS desliga-as com prefers-reduced-motion).
   const reveals = document.querySelectorAll('.reveal');
@@ -65,21 +60,41 @@
           observer.unobserve(entry.target);
         }
       },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.1 },
     );
     reveals.forEach((element) => observer.observe(element));
   } else {
     reveals.forEach((element) => element.classList.add('is-visible'));
   }
 
-  // Janela de instalação no iPhone.
-  if (dialog) {
-    openInstall.forEach((button) => button.addEventListener('click', () => dialog.showModal()));
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
+  // Escolha de plataforma: destaca a do aparelho, sem esconder as outras nem redirecionar.
+  const cards = document.querySelectorAll('.platform-card[data-platform]');
+  if (cards.length > 0) {
+    const ua = navigator.userAgent || '';
+    const iPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    const detected =
+      /iPhone|iPad|iPod/.test(ua) || iPadOS ? 'ios' : /Android/.test(ua) ? 'android' : 'web';
+    const names = { ios: 'iPhone', android: 'Android', web: 'computador' };
+    cards.forEach((card) => {
+      if (card.getAttribute('data-platform') !== detected) return;
+      card.classList.add('is-recommended');
+      const label = card.querySelector('.recommended');
+      if (label) label.hidden = false;
     });
+    const hint = document.querySelector('#install-hint');
+    if (hint) {
+      hint.textContent =
+        detected === 'web'
+          ? 'Neste computador, recomendamos a aplicação web. As outras opções continuam abaixo.'
+          : 'Parece que estás num ' + names[detected] + '. Destacámos a opção indicada.';
+      hint.hidden = false;
+    }
   }
 
+  // Copiar o endereço da fonte do SideStore.
+  const copy = document.querySelector('#copy-source');
+  const source = document.querySelector('#sidestore-source');
+  const copyStatus = document.querySelector('#copy-status');
   if (!copy || !source) return;
   copy.addEventListener('click', async () => {
     const url = source.textContent.trim();
@@ -97,7 +112,7 @@
       }
     }
     copy.textContent = label;
-    if (copyStatus) copyStatus.textContent = label;
+    if (copyStatus) copyStatus.textContent = label === 'Copiado' ? 'Endereço copiado.' : label;
     window.setTimeout(() => {
       copy.textContent = 'Copiar';
       if (copyStatus) copyStatus.textContent = '';

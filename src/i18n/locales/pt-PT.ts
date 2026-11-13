@@ -198,7 +198,7 @@ const ptPT = {
     intro:
       'Liga as tuas contas para veres o saldo e receberes os movimentos automaticamente. A ligação é só de leitura: não permite pagamentos nem transferências. Autorizas no teu banco e a autorização dura até 90 dias.',
     provider:
-      'A ligação é feita pela Enable Banking, prestador licenciado de serviços de informação sobre contas (PSD2). O Miven nunca vê as tuas credenciais do banco.',
+      'A ligação é feita pela Enable Banking, prestadora de serviços de informação sobre contas (PSD2) supervisionada na UE. O Miven nunca vê as tuas credenciais do banco.',
     connect: 'Ligar um banco',
     empty: 'Ainda não ligaste nenhum banco.',
     status: { connected: 'Ligado', expired: 'Expirado', error: 'Com erro' },
@@ -1721,7 +1721,7 @@ const ptPT = {
     deleteGoogleStale:
       'Passaram mais de 10 minutos desde que entraste. Termina sessão, volta a entrar com a Google e elimina a conta logo a seguir. A conta não foi eliminada.',
     manage: 'Gerir conta',
-    manageHint: 'Exportar dados e eliminar a conta',
+    manageHint: 'Ver opções de gestão da tua conta',
     management: {
       title: 'Gestão da conta',
       dataTitle: 'Os teus dados',

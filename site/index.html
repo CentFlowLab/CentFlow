@@ -6,11 +6,11 @@
     <title>Miven — As tuas finanças, finalmente claras</title>
     <meta
       name="description"
-      content="Contas, despesas, orçamentos, objetivos e património numa só app. Sabe quanto tens, para onde vai e quanto podes poupar. Na web, no iPhone e no Android." />
+      content="Contas, cartões, orçamentos, objetivos e património numa só app. Sabes quanto tens, para onde vai e quanto podes poupar. Na web, no Android e no iPhone." />
     <link rel="canonical" href="https://miven.pt/" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#fbfcfd" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a1220" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="pt_PT" />
     <meta property="og:site_name" content="Miven" />
@@ -18,7 +18,7 @@
     <meta property="og:title" content="Miven — As tuas finanças, finalmente claras" />
     <meta
       property="og:description"
-      content="Contas, despesas, orçamentos, objetivos e património numa só app. Sabe quanto tens, para onde vai e quanto podes poupar." />
+      content="Contas, cartões, orçamentos, objetivos e património numa só app. Na web, no Android e no iPhone." />
     <meta property="og:image" content="https://miven.pt/assets/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -27,7 +27,7 @@
     <meta name="twitter:title" content="Miven — As tuas finanças, finalmente claras" />
     <meta
       name="twitter:description"
-      content="Contas, despesas, orçamentos, objetivos e património numa só app. Sabe quanto tens, para onde vai e quanto podes poupar." />
+      content="Contas, cartões, orçamentos, objetivos e património numa só app. Na web, no Android e no iPhone." />
     <meta name="twitter:image" content="https://miven.pt/assets/og.png" />
     <meta name="twitter:image:alt" content="Miven, gestão financeira pessoal" />
     <link rel="icon" href="/favicon.png" />
@@ -38,7 +38,6 @@
       as="font"
       type="font/woff2"
       crossorigin />
-    <link rel="stylesheet" href="/assets/site.css" />
     <link rel="stylesheet" href="/assets/home.css" />
     <script>
       document.documentElement.classList.add('js');
@@ -49,10 +48,11 @@
         "@type": "SoftwareApplication",
         "name": "Miven",
         "applicationCategory": "FinanceApplication",
-        "operatingSystem": "Web, iOS, Android",
+        "operatingSystem": "Web, Android, iOS",
         "url": "https://miven.pt/",
+        "installUrl": "https://miven.pt/experimentar/",
         "inLanguage": "pt-PT",
-        "description": "Contas, despesas, orçamentos, objetivos e património numa só app.",
+        "description": "Contas, cartões, orçamentos, objetivos e património numa só app.",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
         "email": "mivenapp@gmail.com"
       }
@@ -69,13 +69,15 @@
         </a>
         <nav id="site-nav" class="site-nav" aria-label="Principal">
           <a href="#produto">Produto</a>
-          <a href="#privacidade">Privacidade</a>
+          <a href="#funcionalidades">Funcionalidades</a>
           <a href="#plataformas">Plataformas</a>
+          <a href="#privacidade">Privacidade</a>
+          <a href="/suporte/">Suporte</a>
           <a class="nav-login" href="/app/">Entrar</a>
         </nav>
         <div class="header-actions">
           <a class="login" href="/app/">Entrar</a>
-          <a class="button small" href="/app/">Experimentar</a>
+          <a class="button small" href="/experimentar/">Experimentar</a>
           <button
             type="button"
             class="nav-toggle"
@@ -90,151 +92,181 @@
     </header>
 
     <main id="conteudo">
-      <!-- 1. Promessa -->
+      <!-- 1. O que é -->
       <section class="hero" aria-labelledby="hero-title">
-        <div class="wrap hero-copy">
-          <img class="hero-icon" src="/assets/app-icon.webp" width="88" height="88" alt="" />
-          <h1 id="hero-title">As tuas finanças.<br /><span>Finalmente claras.</span></h1>
-          <p class="lead">
-            Contas, despesas, orçamentos e objetivos numa só app. Sabes quanto tens, para onde vai e
-            quanto podes poupar.
-          </p>
-          <div class="cta">
-            <a class="button large" href="/app/">Experimentar grátis</a>
-            <a class="text-link" href="#produto"
-              >Ver como funciona <span aria-hidden="true">→</span></a
-            >
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Gestão financeira pessoal</p>
+            <h1 id="hero-title">As tuas finanças.<br /><span>Finalmente claras.</span></h1>
+            <p class="lead">
+              Contas, cartões, orçamentos, objetivos e património numa só app. Sabes quanto tens,
+              para onde vai e quanto podes poupar.
+            </p>
+            <div class="cta">
+              <a class="button large" href="/experimentar/">Experimentar grátis</a>
+              <a class="button large secondary" href="/app/">Abrir na web</a>
+            </div>
+            <p class="fine">Grátis durante a fase de testes · Web, Android e iPhone</p>
           </div>
-          <p class="fine">Grátis durante a fase de testes · Web, iPhone e Android</p>
-        </div>
-
-        <figure class="stage" aria-label="Capturas da app Miven">
-          <div class="device device-main">
-            <div class="screen screen-shot">
+          <figure class="hero-device">
+            <div class="device">
               <img
                 src="/assets/screens/inicio.jpg"
                 width="390"
                 height="844"
-                alt="Início do Miven: saldo total, taxa de poupança e previsão para o fim do mês"
+                alt="Início do Miven: saldo total, taxa de poupança, previsão para o fim do mês e quanto podes gastar por dia"
                 fetchpriority="high" />
             </div>
-          </div>
-          <div class="device device-side">
-            <div class="screen screen-shot">
-              <img
-                src="/assets/screens/orcamentos.jpg"
-                width="390"
-                height="844"
-                alt="Orçamentos do Miven: total, já gasto, disponível e gastos ao longo do mês"
-                loading="lazy" />
-            </div>
-          </div>
-        </figure>
-      </section>
-
-      <!-- 2. Três benefícios -->
-      <section class="pillars" id="produto" aria-labelledby="pillars-title">
-        <div class="wrap">
-          <h2 id="pillars-title" class="kicker reveal">Uma app. Toda a tua vida financeira.</h2>
-
-          <article class="pillar reveal">
-            <p class="pillar-tag">Visão total</p>
-            <h3>Tudo o que tens,<br />num só ecrã.</h3>
-            <p>
-              Bancos, cartões, dinheiro e poupanças lado a lado, e percebes de imediato para onde
-              foi o mês. Os prazos que importam, da inspeção do carro ao IRS, aparecem antes de
-              chegarem.
-            </p>
-          </article>
-
-          <article class="pillar reveal">
-            <p class="pillar-tag">Controlo inteligente</p>
-            <h3>Decide antes<br />de gastar.</h3>
-            <p>
-              Vês como vais acabar o mês e quanto podes gastar por dia, já com as subscrições
-              descontadas. O Miven avisa quando uma categoria foge ao habitual, e cada orçamento e
-              objetivo mostra o que falta.
-            </p>
-          </article>
-
-          <article class="pillar reveal">
-            <p class="pillar-tag">Futuro financeiro</p>
-            <h3>Sabe quanto<br />vales, de facto.</h3>
-            <p>
-              Casa, carro, investimentos e créditos no mesmo sítio. O património líquido diz-te onde
-              estás, e os relatórios mostram para onde vais.
-            </p>
-          </article>
+            <figcaption>Captura da app com dados de exemplo.</figcaption>
+          </figure>
         </div>
       </section>
 
-      <!-- 3. A experiência -->
-      <section class="details" aria-labelledby="details-title">
+      <!-- 2. O que permite fazer -->
+      <section class="section" id="produto" aria-labelledby="produto-title">
         <div class="wrap">
-          <h2 id="details-title" class="section-title reveal">
-            Pensada para o dia a dia.<br /><span>Não para dar trabalho.</span>
-          </h2>
-          <div class="detail-list">
-            <article class="detail reveal">
-              <span class="detail-mark" aria-hidden="true">01</span>
-              <h3>Registo em segundos</h3>
+          <header class="section-head reveal">
+            <p class="eyebrow">O essencial</p>
+            <h2 id="produto-title" class="section-title">Uma app. Toda a tua vida financeira.</h2>
+          </header>
+          <div class="pillars">
+            <article class="pillar reveal">
+              <h3>Vês tudo o que tens.</h3>
               <p>
-                Um botão, sempre à mão. Valor, categoria, feito. No iPhone, dois toques na traseira
-                chegam, sem abrir a app.
+                Bancos, cartões, dinheiro e poupanças lado a lado, com o saldo total e a taxa de
+                poupança do mês.
               </p>
             </article>
-            <article class="detail reveal">
-              <span class="detail-mark" aria-hidden="true">02</span>
-              <h3>Extratos sem surpresas</h3>
-              <p>Importas o CSV do banco e revês cada linha, e os duplicados, antes de guardar.</p>
+            <article class="pillar reveal">
+              <h3>Decides antes de gastar.</h3>
+              <p>
+                A previsão para o fim do mês e quanto podes gastar por dia, já com as subscrições
+                descontadas.
+              </p>
             </article>
-            <article class="detail reveal">
-              <span class="detail-mark" aria-hidden="true">03</span>
-              <h3>Sempre em sintonia</h3>
-              <p>No iPhone funciona sem rede. Quando volta, tudo sincroniza com a tua conta.</p>
+            <article class="pillar reveal">
+              <h3>Sabes quanto vales.</h3>
+              <p>
+                Casa, carro, investimentos e créditos no mesmo sítio, e o património líquido ao
+                longo do tempo.
+              </p>
             </article>
           </div>
         </div>
       </section>
 
-      <!-- 3b. Veículos -->
-      <section class="feature" id="veiculos" aria-labelledby="vehicles-title">
-        <div class="wrap feature-grid">
-          <div class="feature-text reveal">
-            <p class="pillar-tag">Veículos</p>
-            <h2 id="vehicles-title" class="section-title">O carro, por inteiro.</h2>
-            <p>
-              Cada veículo tem a sua ficha: combustível, seguro, IUC, inspeção, pneus e revisões,
-              com o aviso de quantos dias faltam para cada prazo.
-            </p>
-            <p>
-              Registas a despesa uma vez, com a categoria e o cartão de sempre, e ela conta também
-              no carro. Vês quanto gastaste este mês, este ano e desde a compra, o preço médio do
-              combustível e, com os quilómetros, o custo por quilómetro.
-            </p>
-          </div>
-          <div class="device feature-device reveal">
-            <div class="screen screen-shot">
-              <img
-                src="/assets/screens/veiculo.jpg"
-                width="390"
-                height="844"
-                alt="Ficha de um carro no Miven: prazos do seguro, inspeção, IUC e revisão, e gastos"
-                loading="lazy" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. Confiança -->
-      <section class="trust" id="privacidade" aria-labelledby="trust-title">
+      <!-- 3. Como é por dentro -->
+      <section class="section showcase" aria-labelledby="showcase-title">
         <div class="wrap">
-          <h2 id="trust-title" class="section-title reveal">
-            Os teus dados<br /><span>são teus.</span>
-          </h2>
+          <header class="section-head reveal">
+            <p class="eyebrow">Por dentro da app</p>
+            <h2 id="showcase-title" class="section-title">Pensada para o dia a dia.</h2>
+          </header>
+
+          <div class="show-row reveal">
+            <div class="show-text">
+              <h3>Orçamentos que se percebem num relance.</h3>
+              <ul class="checks">
+                <li>Quanto definiste, quanto já gastaste e quanto ainda tens, por categoria.</li>
+                <li>Os gastos ao longo do mês, num gráfico simples.</li>
+                <li>Quando uma categoria foge ao habitual, a app mostra-o no Início.</li>
+              </ul>
+            </div>
+            <figure class="show-device">
+              <div class="device">
+                <img
+                  src="/assets/screens/orcamentos.jpg"
+                  width="390"
+                  height="844"
+                  alt="Orçamentos do Miven: total, já gasto, disponível e gastos ao longo do mês"
+                  loading="lazy" />
+              </div>
+              <figcaption>Dados de exemplo.</figcaption>
+            </figure>
+          </div>
+
+          <div class="show-row reverse reveal">
+            <div class="show-text">
+              <h3>O carro, por inteiro.</h3>
+              <ul class="checks">
+                <li>Seguro, IUC, inspeção e revisões, com os dias que faltam para cada prazo.</li>
+                <li>Registas a despesa uma vez e ela conta também no carro.</li>
+                <li>Gasto do mês, do ano e desde a compra, e o custo por quilómetro.</li>
+              </ul>
+            </div>
+            <figure class="show-device">
+              <div class="device">
+                <img
+                  src="/assets/screens/veiculo.jpg"
+                  width="390"
+                  height="844"
+                  alt="Ficha de um carro no Miven: prazos do seguro, inspeção, IUC e revisão, e gastos"
+                  loading="lazy" />
+              </div>
+              <figcaption>Dados de exemplo.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Porque é mais do que uma folha de despesas -->
+      <section class="section ecosystem" id="funcionalidades" aria-labelledby="eco-title">
+        <div class="wrap">
+          <header class="section-head reveal">
+            <p class="eyebrow">Tudo ligado</p>
+            <h2 id="eco-title" class="section-title">Mais do que uma folha de despesas.</h2>
+            <p class="section-lead">
+              Cada registo conta em todo o lado: na conta, no orçamento, no objetivo e no
+              património.
+            </p>
+          </header>
+          <ul class="eco-grid reveal">
+            <li>
+              <h3>Cartões e empréstimos</h3>
+              <p>Limite, data de pagamento e o que ainda deves, com juros à parte do capital.</p>
+            </li>
+            <li>
+              <h3>Subscrições</h3>
+              <p>O que pagas todos os meses e quando, descontado da previsão.</p>
+            </li>
+            <li>
+              <h3>Objetivos</h3>
+              <p>Quanto já juntaste, quanto falta e a evolução até à data prevista.</p>
+            </li>
+            <li>
+              <h3>Relatórios</h3>
+              <p>Para onde vai o dinheiro, mês a mês e por categoria.</p>
+            </li>
+            <li>
+              <h3>Documentos</h3>
+              <p>Faturas, garantias e apólices, com a data de validade e os anexos.</p>
+            </li>
+            <li>
+              <h3>Extratos CSV</h3>
+              <p>Importas o extrato do banco e revês cada linha antes de guardar.</p>
+            </li>
+            <li>
+              <h3>Registo rápido</h3>
+              <p>Valor, categoria, feito. No iPhone, dois toques na traseira chegam.</p>
+            </li>
+            <li>
+              <h3>Sem rede</h3>
+              <p>Os registos ficam no aparelho e sincronizam quando voltas a ter ligação.</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 5. Confiança -->
+      <section class="section trust" id="privacidade" aria-labelledby="trust-title">
+        <div class="wrap">
+          <header class="section-head reveal">
+            <p class="eyebrow">Privacidade</p>
+            <h2 id="trust-title" class="section-title">Os teus dados são teus.</h2>
+          </header>
           <div class="trust-list">
             <article class="reveal">
-              <h3>Só tu lhes acedes.</h3>
+              <h3>Só a tua conta lhes acede.</h3>
               <p>
                 Cada registo fica ligado à tua conta, e o servidor só o entrega a quem tem sessão
                 nessa conta.
@@ -248,57 +280,49 @@
               </p>
             </article>
             <article class="reveal">
-              <h3>Sais quando quiseres.</h3>
-              <p>Eliminas a conta na própria app, e os teus dados no servidor saem com ela.</p>
+              <h3>Uma cópia sempre à mão.</h3>
+              <p>Descarregas os teus dados quando quiseres, em JSON ou em CSV, na própria app.</p>
             </article>
           </div>
           <p class="trust-note reveal">
-            Tudo explicado, sem letra pequena, na
+            Sem publicidade e sem venda de dados. Tudo explicado na
             <a href="/privacidade/">política de privacidade</a> e nos
             <a href="/termos/">termos de utilização</a>.
           </p>
         </div>
       </section>
 
-      <!-- 5. Plataformas -->
-      <section class="platforms" id="plataformas" aria-labelledby="platforms-title">
+      <!-- 6. Plataformas -->
+      <section class="section" id="plataformas" aria-labelledby="platforms-title">
         <div class="wrap">
-          <h2 id="platforms-title" class="section-title reveal">
-            Onde estiveres.<br /><span>Com a mesma conta.</span>
-          </h2>
-          <div class="platform-list reveal">
-            <a class="platform" href="/app/">
+          <header class="section-head reveal">
+            <p class="eyebrow">Plataformas</p>
+            <h2 id="platforms-title" class="section-title">Onde estiveres. Com a mesma conta.</h2>
+          </header>
+          <div class="platform-strip reveal">
+            <a class="platform-link" href="/experimentar/#web">
               <span class="platform-name">Web</span>
               <span class="platform-text">No browser, sem instalar nada.</span>
-              <span class="platform-action">Abrir <span aria-hidden="true">→</span></span>
             </a>
-            <button type="button" class="platform" data-open="install">
-              <span class="platform-name">iPhone</span>
-              <span class="platform-text">Instalação pelo SideStore.</span>
-              <span class="platform-action">Instalar <span aria-hidden="true">→</span></span>
-            </button>
-            <a
-              class="platform"
-              id="android"
-              href="https://github.com/CentFlowLab/Miven/releases/download/android-latest/miven.apk"
-              download>
+            <a class="platform-link" href="/experimentar/#android">
               <span class="platform-name">Android</span>
-              <span class="platform-text"
-                >APK assinado. Autoriza a instalação quando o Android pedir.</span
-              >
-              <span class="platform-action">Descarregar <span aria-hidden="true">↓</span></span>
+              <span class="platform-text">App nativa, APK assinado.</span>
+            </a>
+            <a class="platform-link" href="/experimentar/#iphone">
+              <span class="platform-name">iPhone</span>
+              <span class="platform-text">App nativa, pelo SideStore.</span>
             </a>
           </div>
         </div>
       </section>
 
-      <!-- 6. Fecho -->
+      <!-- 7. Começar -->
       <section class="closing" aria-labelledby="closing-title">
         <div class="wrap">
           <img src="/assets/app-icon.webp" width="64" height="64" alt="" class="closing-icon" />
-          <h2 id="closing-title">O teu dinheiro<br />merece mais clareza.</h2>
+          <h2 id="closing-title">O teu dinheiro merece mais clareza.</h2>
           <p>Cria a conta, adiciona o primeiro saldo e vê o mês com outros olhos.</p>
-          <a class="button large" href="/app/">Experimentar grátis</a>
+          <a class="button large" href="/experimentar/">Experimentar grátis</a>
         </div>
       </section>
     </main>
@@ -311,7 +335,8 @@
         </a>
         <nav aria-label="Rodapé" class="footer-nav">
           <a href="#produto">Produto</a>
-          <a href="#plataformas">Plataformas</a>
+          <a href="#funcionalidades">Funcionalidades</a>
+          <a href="/experimentar/">Experimentar</a>
           <a href="/privacidade/">Privacidade</a>
           <a href="/termos/">Termos</a>
           <a href="/suporte/">Suporte</a>
@@ -321,31 +346,6 @@
         <p class="footer-legal">© 2026 Miven · Em fase de testes</p>
       </div>
     </footer>
-
-    <dialog id="install" class="install-dialog" aria-labelledby="install-title">
-      <div class="install-head">
-        <h2 id="install-title">Instalar no iPhone</h2>
-        <form method="dialog">
-          <button class="icon-close" aria-label="Fechar">×</button>
-        </form>
-      </div>
-      <p class="install-lead">Pelo SideStore, com a mesma conta da app web.</p>
-      <ol>
-        <li>Instala o SideStore no iPhone, se ainda não o tiveres.</li>
-        <li>No SideStore, abre <strong>Sources</strong> e acrescenta esta fonte:</li>
-      </ol>
-      <div class="source-row">
-        <code class="source" id="sidestore-source"
-          >https://raw.githubusercontent.com/CentFlowLab/CentFlow/master/sideload/source.json</code
-        >
-        <button type="button" class="button small secondary" id="copy-source">Copiar</button>
-      </div>
-      <p id="copy-status" class="visually-hidden" aria-live="polite"></p>
-      <ol start="3">
-        <li>Instala o <strong>Miven</strong> a partir da fonte e abre a app.</li>
-        <li>Cria a tua conta e confirma o email.</li>
-      </ol>
-    </dialog>
     <script src="/assets/home.js"></script>
   </body>
 </html>

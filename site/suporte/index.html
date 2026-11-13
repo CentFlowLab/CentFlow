@@ -6,24 +6,44 @@
     <title>Suporte — Miven</title>
     <meta
       name="description"
-      content="Ajuda e contacto do Miven: conta, palavra-passe, sincronização e eliminação da conta." />
+      content="Ajuda e contacto do Miven: instalação, conta, palavra-passe, sincronização e gestão da conta." />
     <link rel="canonical" href="https://miven.pt/suporte/" />
-    <meta name="theme-color" content="#fbfcfd" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a1220" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.png" />
-    <link rel="stylesheet" href="/assets/site.css" />
     <link rel="stylesheet" href="/assets/home.css" />
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
   </head>
   <body class="home">
     <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
-    <header class="site-header is-scrolled">
+    <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Miven, página inicial">
           <img src="/assets/logo.png" width="28" height="28" alt="" />
           <span>Miven</span>
         </a>
-        <div class="header-actions legal-actions">
-          <a class="button small" href="/app/">Experimentar</a>
+        <nav id="site-nav" class="site-nav" aria-label="Principal">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/#plataformas">Plataformas</a>
+          <a href="/#privacidade">Privacidade</a>
+          <a href="/suporte/" aria-current="page">Suporte</a>
+          <a class="nav-login" href="/app/">Entrar</a>
+        </nav>
+        <div class="header-actions">
+          <a class="login" href="/app/">Entrar</a>
+          <a class="button small" href="/experimentar/">Experimentar</a>
+          <button
+            type="button"
+            class="nav-toggle"
+            id="nav-toggle"
+            aria-expanded="false"
+            aria-controls="site-nav">
+            <span class="nav-toggle-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Menu</span>
+          </button>
         </div>
       </div>
     </header>
@@ -37,7 +57,14 @@
           Android ou web) e, se puderes, uma captura de ecrã. Nunca te pedimos a palavra-passe.
         </p>
 
-        <h2>Não recebi o email de confirmação</h2>
+        <h2 id="instalar">Instalar a app</h2>
+        <p>
+          Na <a href="/experimentar/">página de instalação</a> escolhes a plataforma: a aplicação
+          web abre no browser, sem instalar nada; no Android descarregas o APK assinado; no iPhone
+          instalas pelo SideStore, com os passos indicados. A conta é a mesma em todas.
+        </p>
+
+        
         <p>
           Vê o correio indesejado e as promoções. No ecrã "Confirma o teu email", toca em "Reenviar
           email".
@@ -53,7 +80,7 @@
         <h2>Os dados não aparecem noutro aparelho</h2>
         <p>
           O Miven guarda os dados no aparelho e sincroniza-os com a tua conta quando há ligação. Em
-          Definições › Conta, toca no estado da sincronização para sincronizar agora. Se aparecerem
+          Definições › Sincronização, toca no estado para sincronizar agora. Se aparecerem
           conflitos, a app pede-te para escolher a versão a manter.
         </p>
 
@@ -82,6 +109,9 @@
           <span>Miven</span>
         </a>
         <nav aria-label="Rodapé" class="footer-nav">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/experimentar/">Experimentar</a>
           <a href="/privacidade/">Privacidade</a>
           <a href="/termos/">Termos</a>
           <a href="/suporte/" aria-current="page">Suporte</a>
@@ -91,5 +121,6 @@
         <p class="footer-legal">© 2026 Miven · Em fase de testes</p>
       </div>
     </footer>
+    <script src="/assets/home.js"></script>
   </body>
 </html>

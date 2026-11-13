@@ -1,6 +1,6 @@
 # Open banking — ativar (ADR-069)
 
-O Miven liga contas bancárias através da **Enable Banking**, um agregador licenciado (PSD2, só
+O Miven liga contas bancárias através da **Enable Banking**, um agregador PSD2 supervisionado pela FIN-FSA (só
 leitura). A pessoa autoriza no próprio banco; o Miven nunca vê credenciais bancárias. Os movimentos
 entram nas contas da app como numa importação de extrato (sem duplicados, com a categoria
 habitual), e o saldo do banco aparece ao lado do saldo da app.

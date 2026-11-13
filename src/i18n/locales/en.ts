@@ -198,7 +198,7 @@ const en: Translation = {
     intro:
       'Connect your accounts to see the balance and receive transactions automatically. The connection is read-only: it cannot make payments or transfers. You authorise it in your bank and it lasts up to 90 days.',
     provider:
-      'The connection is provided by Enable Banking, a licensed account information service provider (PSD2). Miven never sees your bank credentials.',
+      'The connection is provided by Enable Banking, an account information service provider (PSD2) supervised in the EU. Miven never sees your bank credentials.',
     connect: 'Connect a bank',
     empty: 'You have not connected a bank yet.',
     status: { connected: 'Connected', expired: 'Expired', error: 'Error' },
@@ -1715,7 +1715,7 @@ const en: Translation = {
     deleteGoogleStale:
       'More than 10 minutes have passed since you signed in. Sign out, sign in again with Google and delete the account right away. The account was not deleted.',
     manage: 'Manage account',
-    manageHint: 'Export data and delete the account',
+    manageHint: 'View your account management options',
     management: {
       title: 'Account management',
       dataTitle: 'Your data',

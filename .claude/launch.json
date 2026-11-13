@@ -15,6 +15,12 @@
         "process.env.EXPO_PUBLIC_SUPABASE_URL='';process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY='';process.env.EXPO_NO_DOTENV='1';require('child_process').spawn('npx',['expo','start','--web','--port','8083'],{stdio:'inherit',shell:true,env:process.env})"
       ],
       "port": 8083
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8090", "--directory", "site"],
+      "port": 8090
     }
   ]
 }

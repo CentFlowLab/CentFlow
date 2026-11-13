@@ -6,29 +6,49 @@
     <title>Termos de utilização — Miven</title>
     <meta name="description" content="As regras de utilização do Miven durante a fase de testes." />
     <link rel="canonical" href="https://miven.pt/termos/" />
-    <meta name="theme-color" content="#fbfcfd" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a1220" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.png" />
-    <link rel="stylesheet" href="/assets/site.css" />
     <link rel="stylesheet" href="/assets/home.css" />
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
   </head>
   <body class="home">
     <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
-    <header class="site-header is-scrolled">
+    <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Miven, página inicial">
           <img src="/assets/logo.png" width="28" height="28" alt="" />
           <span>Miven</span>
         </a>
-        <div class="header-actions legal-actions">
-          <a class="button small" href="/app/">Experimentar</a>
+        <nav id="site-nav" class="site-nav" aria-label="Principal">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/#plataformas">Plataformas</a>
+          <a href="/#privacidade">Privacidade</a>
+          <a href="/suporte/">Suporte</a>
+          <a class="nav-login" href="/app/">Entrar</a>
+        </nav>
+        <div class="header-actions">
+          <a class="login" href="/app/">Entrar</a>
+          <a class="button small" href="/experimentar/">Experimentar</a>
+          <button
+            type="button"
+            class="nav-toggle"
+            id="nav-toggle"
+            aria-expanded="false"
+            aria-controls="site-nav">
+            <span class="nav-toggle-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Menu</span>
+          </button>
         </div>
       </div>
     </header>
 
     <main id="conteudo" class="legal">
       <article class="wrap legal-body">
-        <p class="pillar-tag">Versão de 10 de novembro de 2026</p>
+        <p class="pillar-tag">Versão de 13 de novembro de 2026</p>
         <h1>Termos de utilização</h1>
         <p class="legal-lead">
           Regras simples para usares o Miven enquanto está em fase de testes. Ao criares uma conta,
@@ -70,7 +90,18 @@
         <p>
           Os números, relatórios e sugestões do Miven baseiam-se nos dados que introduzes e servem
           para te dar visibilidade. Não são aconselhamento financeiro, fiscal ou de investimento. O
-          Miven não movimenta dinheiro nem se liga às tuas contas bancárias.
+          Miven não movimenta dinheiro nem inicia pagamentos ou transferências.
+        </p>
+
+        <h2>Ligações a outros serviços</h2>
+        <p>
+          Quando estas ligações estiverem disponíveis na app, e só se escolheres, podes ligar contas
+          bancárias através de um serviço de open banking, ou uma conta da Trading 212,
+          exclusivamente para consultar informação financeira e registar no Miven os dados que essas
+          instituições disponibilizam. O acesso é só de leitura e podes desligá-lo a qualquer
+          momento. Nem todas as instituições são suportadas, a informação depende do que cada uma
+          disponibiliza e pode não estar atualizada no momento em que a vês. Esses serviços têm os
+          seus próprios termos, e as instituições continuam responsáveis pelas tuas contas nelas.
         </p>
 
         <h2>Utilização aceitável</h2>
@@ -103,6 +134,9 @@
           <span>Miven</span>
         </a>
         <nav aria-label="Rodapé" class="footer-nav">
+          <a href="/#produto">Produto</a>
+          <a href="/#funcionalidades">Funcionalidades</a>
+          <a href="/experimentar/">Experimentar</a>
           <a href="/privacidade/">Privacidade</a>
           <a href="/termos/" aria-current="page">Termos</a>
           <a href="/suporte/">Suporte</a>
@@ -112,5 +146,6 @@
         <p class="footer-legal">© 2026 Miven · Em fase de testes</p>
       </div>
     </footer>
+    <script src="/assets/home.js"></script>
   </body>
 </html>
