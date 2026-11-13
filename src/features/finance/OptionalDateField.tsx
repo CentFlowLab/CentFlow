@@ -31,6 +31,7 @@ export function OptionalDateField({ label, value, today, errorText, onChange }: 
   const { colors } = useTheme();
   const { formatDate, locale } = useLocaleFormat();
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const id = useId();
 
   useEffect(() => {
@@ -58,7 +59,9 @@ export function OptionalDateField({ label, value, today, errorText, onChange }: 
         aria-expanded={open}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((current) => !current)}
-        style={({ pressed, hovered }) => [
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
+        style={({ pressed }) => [
           styles.trigger,
           {
             backgroundColor: pressed || hovered ? colors.surfaceHover : colors.surface,

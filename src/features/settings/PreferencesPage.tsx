@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -90,6 +90,7 @@ function ThemeChooser() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { preferences, updatePreferences } = usePreferences();
+  const [hovered, setHovered] = useState<ThemePreference | null>(null);
 
   return (
     <View
@@ -106,13 +107,16 @@ function ThemeChooser() {
             aria-checked={selected}
             accessibilityState={{ checked: selected }}
             onPress={() => updatePreferences({ theme: value })}
-            style={({ pressed, hovered }) => [
+            onHoverIn={() => setHovered(value)}
+            onHoverOut={() => setHovered((current) => (current === value ? null : current))}
+            style={({ pressed }) => [
               styles.themeOption,
               {
                 backgroundColor: colors.surface,
                 borderColor: selected ? colors.primary : colors.border,
               },
-              (pressed || hovered) && !selected && { backgroundColor: colors.surfaceHover },
+              (pressed || hovered === value) &&
+                !selected && { backgroundColor: colors.surfaceHover },
             ]}>
             <View style={styles.preview}>
               {value === 'system' ? (
