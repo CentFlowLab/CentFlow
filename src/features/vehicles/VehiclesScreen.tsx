@@ -29,13 +29,14 @@ import {
   Screen,
   SwipeableRow,
   Text,
+  LicensePlate,
 } from '@/ui/components';
 import { useBreakpoint } from '@/ui/layout/useBreakpoint';
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { DEADLINE_TONES, deadlineLabel } from '../finance/DeadlineBadge';
 import { useToday } from '../finance/useToday';
-import { vehicleIcon, vehicleKindLabel } from './presentation';
+import { plateCountry, vehicleIcon, vehicleKindLabel } from './presentation';
 
 type VehicleSummary = {
   vehicle: Vehicle;
@@ -365,11 +366,11 @@ function VehicleCard({ summary }: { summary: VehicleSummary }) {
             ) : null}
           </View>
           {vehicle.plate ? (
-            <View style={[styles.plate, { borderColor: colors.borderStrong }]}>
-              <Text variant="caption" tabular>
-                {vehicle.plate.toLocaleUpperCase()}
-              </Text>
-            </View>
+            <LicensePlate
+              value={vehicle.plate}
+              country={plateCountry(vehicle.plate)}
+              accessibilityLabel={t('vehicles.plateA11y', { plate: vehicle.plate })}
+            />
           ) : null}
         </View>
         {facts ? (
@@ -446,12 +447,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardText: { flex: 1, minWidth: 0, gap: spacing.xxs },
-  plate: {
-    borderWidth: 1.5,
-    borderRadius: radius.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-  },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'flex-end',

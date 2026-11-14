@@ -114,10 +114,16 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
     vehicle?.serviceDueKm == null ? '' : String(vehicle.serviceDueKm),
   );
   const [notes, setNotes] = useState(vehicle?.notes ?? '');
+  // Quem paga as despesas (ADR-081): eu (omissão) ou empresa/terceiros com nome.
+  const [paidByOther, setPaidByOther] = useState(vehicle?.costsPaidBy != null);
+  const [payerName, setPayerName] = useState(vehicle?.costsPaidBy ?? '');
   const [errors, setErrors] = useState<FieldErrors>({});
   const [purchaseError, setPurchaseError] = useState<string>();
   const [saving, setSaving] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState<number | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<{
+    entries: number;
+    externalCosts: number;
+  } | null>(null);
   const close = () => closeModal(vehicle ? `/vehicles/${vehicle.id}` : '/vehicles');
 
   const currencyChoices = choices.data?.currencies ?? [];
@@ -167,6 +173,7 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
       serviceDueOn,
       serviceDueKm: toNumber(serviceDueKm),
       notes: notes.trim() === '' ? null : notes,
+      costsPaidBy: paidByOther ? payerName : null,
     };
     const fieldErrors = validateVehicleInput(input);
     if (hasErrors(fieldErrors)) {
@@ -187,7 +194,7 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
   async function askDelete() {
     if (!vehicle) return;
     const links = await repositories.vehicles.countLinks(vehicle.id);
-    setConfirmingDelete(links.entries);
+    setConfirmingDelete({ entries: links.entries, externalCosts: links.externalCosts });
   }
 
   return (
@@ -196,6 +203,12 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
       title={t(editing ? 'vehicles.form.editTitle' : 'vehicles.form.createTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{
+        label: t('vehicles.form.save'),
+        onPress: () => void save(),
+        loading: saving,
+        disabled: saving,
+      }}
       footer={
         <View style={wide ? styles.footerWide : styles.footer}>
           {editing ? (
@@ -448,6 +461,30 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
           </Pair>
         </FormGroup>
 
+        <FormGroup title={t('vehicleCosts.payerGroup')} hint={t('vehicleCosts.payerHint')}>
+          <ChipGroup label={t('vehicleCosts.payerGroup')}>
+            <Chip
+              label={t('vehicleCosts.payerSelf')}
+              selected={!paidByOther}
+              onPress={() => setPaidByOther(false)}
+            />
+            <Chip
+              label={t('vehicleCosts.payerOther')}
+              selected={paidByOther}
+              onPress={() => setPaidByOther(true)}
+            />
+          </ChipGroup>
+          {paidByOther ? (
+            <TextField
+              label={t('vehicleCosts.payerName')}
+              value={payerName}
+              onChangeText={setPayerName}
+              maxLength={80}
+              errorText={validationMessage(t, errors.costsPaidBy)}
+            />
+          ) : null}
+        </FormGroup>
+
         <FormGroup title={t('vehicleForm.groups.notes')}>
           <TextField
             label={t('vehicleForm.notes')}
@@ -462,11 +499,16 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
       <Dialog
         visible={confirmingDelete !== null}
         title={t('vehicles.deleteTitle')}
-        message={
-          confirmingDelete
-            ? t('vehicles.deleteMessage', { count: confirmingDelete })
-            : t('vehicles.deleteMessageNone')
-        }
+        message={[
+          confirmingDelete?.entries
+            ? t('vehicles.deleteMessage', { count: confirmingDelete.entries })
+            : t('vehicles.deleteMessageNone'),
+          confirmingDelete?.externalCosts
+            ? t('vehicleCosts.deleteKeeps', { count: confirmingDelete.externalCosts })
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' ')}
         onDismiss={() => setConfirmingDelete(null)}
         actions={[
           {

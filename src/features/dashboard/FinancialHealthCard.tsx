@@ -15,7 +15,7 @@ import { Button, Card, Divider, Icon, Section, Text, type IconName } from '@/ui/
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { loadForecastInput } from './MonthInsights';
-import { usePreferences } from '../preferences';
+import { useFinancialMonthStartDay } from '../preferences';
 
 async function loadHealth(
   repositories: Repositories,
@@ -62,7 +62,7 @@ export function FinancialHealthCard({
   const { colors } = useTheme();
   const { formatPercent } = useLocaleFormat();
   const [showCalculation, setShowCalculation] = useState(false);
-  const startDay = usePreferences().preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   const query = useDataQuery(
     useCallback(
       (repositories: Repositories) => loadHealth(repositories, today, currency, startDay),

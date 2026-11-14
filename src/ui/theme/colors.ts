@@ -144,3 +144,17 @@ export const colorsByScheme: Record<ColorScheme, ThemeColors> = {
   light: lightColors,
   dark: darkColors,
 };
+
+/**
+ * Matrícula (ADR-078): cores fixas, iguais em claro e escuro, porque uma matrícula real é sempre
+ * branca com a faixa azul da UE. Texto e código do país verificados em WCAG AA; as estrelas são
+ * decorativas.
+ */
+export const PLATE_COLORS = {
+  background: '#FFFFFF',
+  text: '#111418',
+  border: '#1F2933',
+  euBlue: '#003399',
+  euYellow: '#FFCC00',
+  bandText: '#FFFFFF',
+} as const;

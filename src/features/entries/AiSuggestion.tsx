@@ -17,6 +17,8 @@ type Props = {
   today: string;
   categories: readonly Category[];
   onApply: (suggestion: EntrySuggestion) => void;
+  /** Tipo fixo (despesa de uma viatura): uma sugestão de outro tipo não é oferecida. */
+  onlyType?: EntrySuggestion['type'];
 };
 
 type Status = 'idle' | 'loading' | 'applied' | 'notConfigured' | 'notUnderstood' | 'failed';
@@ -34,7 +36,7 @@ export function aiEntryEnabled(): boolean {
   return process.env.EXPO_PUBLIC_AI_ENTRY_ENABLED === 'true';
 }
 
-export function AiSuggestion({ today, categories, onApply }: Props) {
+export function AiSuggestion({ today, categories, onApply, onlyType }: Props) {
   const { t } = useTranslation();
   const { state, client } = useAuth();
   const [text, setText] = useState('');
@@ -55,12 +57,20 @@ export function AiSuggestion({ today, categories, onApply }: Props) {
           context: {
             today,
             categories: categories
-              .filter((category) => category.type === 'expense' || category.type === 'income')
+              .filter(
+                (category) =>
+                  (onlyType ? category.type === onlyType : category.type === 'expense') ||
+                  (!onlyType && category.type === 'income'),
+              )
               .map((category) => ({ name: category.name, type: category.type })),
           },
         },
       },
     );
+    if (!error && data?.suggestion && onlyType && data.suggestion.type !== onlyType) {
+      setStatus('notUnderstood');
+      return;
+    }
     if (error || !data?.suggestion) {
       const code = (error as { context?: { status?: number } } | null)?.context?.status;
       setStatus(code === 503 ? 'notConfigured' : code === 422 ? 'notUnderstood' : 'failed');

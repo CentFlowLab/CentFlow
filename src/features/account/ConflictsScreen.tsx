@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { calendarDateToLocalDate, isValidCalendarDate } from '@/core/finance';
+import { calendarDateToLocalDate, isValidCalendarDate, parseStartDaySetting } from '@/core/finance';
 import {
   REJECTION_CODES,
   type ConflictResolution,
@@ -35,6 +35,28 @@ function useDescribe() {
     if (version.deleted_at !== null) return { title: t('conflicts.deleted') };
     if (conflict.entity === 'accounts' || conflict.entity === 'categories') {
       return { title: String(version.name ?? '') };
+    }
+    if (conflict.entity === 'user_settings') {
+      const day = parseStartDaySetting(typeof version.value === 'string' ? version.value : null);
+      return {
+        title: t('settings.financialMonth.startsOn'),
+        detail:
+          day === 1
+            ? t('settings.financialMonth.civil')
+            : t('settings.financialMonth.day', { day }),
+      };
+    }
+    if (conflict.entity === 'vehicle_external_costs') {
+      const amount =
+        typeof version.amount === 'number' && typeof version.currency === 'string'
+          ? formatMoney({ amountMinor: version.amount, currency: version.currency })
+          : null;
+      return {
+        title: String(version.description || t('conflicts.entities.vehicle_external_costs')),
+        detail: [amount, typeof version.date === 'string' ? version.date : null]
+          .filter(Boolean)
+          .join(' · '),
+      };
     }
     if (conflict.entity === 'goals') {
       const amount =

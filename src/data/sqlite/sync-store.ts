@@ -18,6 +18,8 @@ export const SYNC_ENTITIES: readonly SyncEntity[] = [
   'vehicles',
   'documents',
   'entries',
+  'user_settings',
+  'vehicle_external_costs',
 ];
 
 export type OutboxOperation = {
@@ -163,6 +165,7 @@ export const SYNC_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'notes',
     'kind_label',
     'icon',
+    'costs_paid_by',
     'created_at',
     'updated_at',
     'deleted_at',
@@ -201,6 +204,7 @@ export const SYNC_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'installment_amount',
     'due_day',
     'ends_on',
+    'integration',
     'created_at',
     'updated_at',
     'deleted_at',
@@ -224,6 +228,24 @@ export const SYNC_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'principal_amount',
     'interest_amount',
     'fees_amount',
+    'needs_review',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+  ],
+  user_settings: ['id', 'key', 'value', 'created_at', 'updated_at', 'deleted_at'],
+  vehicle_external_costs: [
+    'id',
+    'vehicle_id',
+    'date',
+    'amount',
+    'currency',
+    'cost_type',
+    'quantity_milli',
+    'odometer_km',
+    'description',
+    'payer',
+    'notes',
     'created_at',
     'updated_at',
     'deleted_at',
@@ -234,7 +256,7 @@ export const SYNC_COLUMNS: Record<SyncEntity, readonly string[]> = {
  * Colunas obrigatórias acrescentadas depois: um servidor sem a migração correspondente não as
  * envia e o `null` partiria a receção. Ver o plano de publicação (docs/release-plan-0.1.9.md).
  */
-const COLUMN_DEFAULTS: Readonly<Record<string, SyncValue>> = { essential: 0 };
+const COLUMN_DEFAULTS: Readonly<Record<string, SyncValue>> = { essential: 0, needs_review: 0 };
 
 const TIMESTAMPS = new Set(['created_at', 'updated_at', 'deleted_at', 'archived_at']);
 
@@ -248,7 +270,9 @@ function normalizeTimestamp(value: SyncValue): SyncValue {
 export function normalizeServerRow(row: ServerRow): ServerRow {
   const normalized: Record<string, SyncValue> = {};
   for (const [key, value] of Object.entries(row)) {
-    normalized[key] = TIMESTAMPS.has(key) ? normalizeTimestamp(value) : value;
+    // O Postgres devolve booleanos (`needs_review`); localmente são 0/1.
+    const plain = typeof value === 'boolean' ? (value ? 1 : 0) : value;
+    normalized[key] = TIMESTAMPS.has(key) ? normalizeTimestamp(plain) : plain;
   }
   return normalized as ServerRow;
 }

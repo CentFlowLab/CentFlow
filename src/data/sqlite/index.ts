@@ -8,7 +8,9 @@ import { createChangeHub, type ChangeHub, type SqliteRepositoryContext } from '.
 import { createSqliteEntryRepository } from './entry-repository';
 import { createSqliteSavingsGoalRepository } from './goal-repository';
 import { createSqliteSubscriptionRepository } from './subscription-repository';
+import { createSqliteSettingsRepository } from './settings-repository';
 import { createSqliteWealthRepository } from './wealth-repository';
+import { createSqliteVehicleExternalCostRepository } from './vehicle-external-cost-repository';
 import { createSqliteVehicleRepository } from './vehicle-repository';
 import { createSqliteDocumentRepository } from './document-repository';
 import { createSqliteAttachmentUploadRepository } from './attachment-upload-repository';
@@ -40,11 +42,13 @@ export function createSqliteRepositories(
     goals: createSqliteSavingsGoalRepository(context),
     wealth: createSqliteWealthRepository(context),
     vehicles: createSqliteVehicleRepository(context),
+    vehicleExternalCosts: createSqliteVehicleExternalCostRepository(context),
     documents: createSqliteDocumentRepository(context),
     attachmentUploads: createSqliteAttachmentUploadRepository(context),
     categories: createSqliteCategoryRepository(context),
     entries: createSqliteEntryRepository(context),
     backup: createSqliteBackupRepository(context),
+    settings: createSqliteSettingsRepository(context),
     subscribe: changes.subscribe,
   };
 }

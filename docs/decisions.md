@@ -1211,3 +1211,159 @@ Aplicado a: orçamentos mensais (janela, período anterior e barra de mês), In�
 ("25 out – 24 nov") quando o início não é 1. Ficam iguais: orçamentos semanais e anuais,
 trimestre e ano dos Relatórios, "Este ano" e o intervalo personalizado (que passa só a começar no
 período atual). Sem alterações ao SQL, aos repositórios, à sincronização nem aos dados.
+
+## ADR-078 — Matrícula com aspeto real
+
+**Estado:** aceite (2026-11-14).
+
+Na lista de Viaturas e no cabeçalho da ficha, a matrícula passa a ser desenhada como uma placa
+europeia (`LicensePlate` em `src/ui/components`): fundo branco, borda fina escura, cantos de 4 px e
+uma faixa azul à esquerda com um anel de 12 pontos amarelos (SVG, 9 px) e, quando o formato é
+português, o "P" por baixo. Mesma altura do chip anterior (23 px: caption 16 + 2 × 2 + 2 × 1,5);
+a largura cresce só a faixa (11 px). Texto em Inter semibold, algarismos tabulares e
+`letterSpacing` 0,6, numa linha, sem encolher (`flexShrink: 0`).
+
+- **Só apresentação:** o valor guardado não muda; mostra-se em maiúsculas, como antes.
+- **Cores fixas** (`PLATE_COLORS` em `colors.ts`): uma matrícula real é branca em claro e em
+  escuro. Texto/fundo e "P"/azul passam WCAG AA (`theme-test`); as estrelas são decorativas.
+- **País sem o guardar:** `plateCountry` (em `features/vehicles/presentation.ts`) reconhece os
+  quatro formatos portugueses (LL-DD-LL, DD-LL-DD, DD-DD-LL, LL-DD-DD), ignorando espaços, hífenes e
+  maiúsculas. Tudo o resto fica só com as estrelas. A camada `ui` recebe o texto e o país e não
+  sabe o que é uma viatura.
+- **Acessibilidade:** a placa é um único elemento com o rótulo "Matrícula {{plate}}"; os
+  elementos internos ficam escondidos dos leitores de ecrã.
+- **Para depois:** um campo de país na viatura (para mostrar "D", "E"…) exigiria migração; não
+  se faz agora.
+
+## ADR-079 — Integrações e definições da conta pela fila de sincronização
+
+**Estado:** aceite (2026-11-14). Migração local v17 e `supabase/migrations/20261123000100_consolidation.sql`
+(partilhadas com ADR-081 e ADR-082), por aplicar.
+
+**Trading 212.** Na 0.1.22 o item de património da conta guardava-se por aparelho (`appStorage`) e
+`syncT212Wealth` juntava itens de investimento com o mesmo nome e moeda, apagando os restantes — o
+que podia apagar um investimento introduzido à mão. Passa a existir `wealth_items.integration`
+(`'trading212'` ou `null`), sincronizado: a integração só atualiza o item que lhe pertence e nunca
+apaga nem altera itens da pessoa. Sem item seu: se não houver investimentos nessa moeda, cria um
+(já marcado); se houver, pede à pessoa (`needsChoice`). Com dois itens marcados (dois aparelhos sem
+rede), não escolhe (`ambiguous`): a pessoa escolhe um e o outro fica como investimento seu. Sem
+índice único no servidor, de propósito: uma recusa partiria a fila de um dos aparelhos. A escolha
+antiga por aparelho converte-se uma vez; "não contar" continua a ser deste aparelho (não muda dados).
+Moedas diferentes nunca se convertem: o item fica como está.
+
+**Mês financeiro.** O início do mês (ADR-077) deixa de ser preferência do aparelho e passa a ser uma
+definição da conta numa tabela sincronizada `user_settings` (uma linha por chave, com o mesmo id em
+todos os aparelhos). Usa a fila normal: funciona offline, o servidor decide versões, e duas escolhas
+diferentes feitas sem rede ficam em conflito no ecrã de conflitos (nunca uma substitui a outra em
+silêncio); a mesma escolha nos dois não gera conflito. A escolha antiga do aparelho passa para a
+conta uma vez, só se a conta ainda não tiver nenhuma. Todas as áreas (Início, Orçamentos,
+Relatórios, Movimentos, previsão, saúde) leem `useFinancialMonthStartDay()`.
+
+**Compatibilidade.** As apps 0.1.22 têm `CHECK (entity IN (…))` na `sync_inbox` e falhariam ao
+receber uma entidade nova. Por isso as entidades novas só saem por `sync_pull_v3`; a `sync_pull_v2`
+não muda. Colunas novas só se gravam no servidor quando vêm no pedido (`v_data ? …`): uma edição de
+uma app antiga mantém-nas. Ao migrar para a v17, o cursor de leitura volta a 0 para o aparelho
+receber as entidades novas que a v2 nunca lhe mostrou.
+
+**Open Banking.** A função só envia ao banco um `Psu-Ip-Address` com forma de IP e um
+`Psu-User-Agent` sem caracteres de controlo.
+
+## ADR-080 — Teclado nos formulários
+
+**Estado:** aceite (2026-11-14).
+
+Com o teclado aberto (iPhone e Android), o rodapé do `FormScreen` (Guardar…) esconde-se — fica
+montado com `display: none`, para não perder estado — e volta igual ao fechar o teclado. No iPhone,
+uma barra nativa (`InputAccessoryView`) colada ao teclado, com fundo sólido e separador, traz à
+direita "Concluído" (fecha o teclado) e, se o formulário a indicar (`keyboardAction`), a ação
+principal; esta fecha primeiro o teclado e só depois corre, para um erro de validação aparecer no
+rodapé, visível. Os campos recebem a barra do formulário por contexto (`FormKeyboardContext`); um
+`inputAccessoryViewID` explícito tem prioridade.
+
+- **A bolha "Done" em inglês** vinha do React Native: sem `inputAccessoryViewID`, os teclados
+  numéricos com `returnKeyType` "done" recebem uma barra do sistema
+  (`RCTTextInputComponentView.mm`, `setDefaultInputAccessoryView`), com o texto do iOS — e a app não
+  declara localizações iOS. Com o id da barra do formulário, a do sistema não é criada.
+- **Fim do `KeyboardAvoidingView` e da medição da folha (`sheetTop`)**: o deslocamento passa a ser do
+  sistema — `automaticallyAdjustKeyboardInsets` no iPhone (calcula a sobreposição real do teclado,
+  com a barra, dentro da folha) e `adjustResize` no Android. `keyboardDismissMode="interactive"` no
+  iPhone.
+- **Calendário**: abrir o painel da data fecha o teclado e rola o formulário até ao painel; focar
+  outro campo do formulário fecha-o (nunca fica aberto escondido atrás de outro teclado); os campos
+  dia/mês/ano do próprio painel não o fecham e, ao focá-los, o formulário rola até ao painel.
+  Escolher um dia continua a fechar o painel.
+- **Ação principal na barra**: movimento (Guardar; não "Guardar e adicionar outro"), objetivo, conta,
+  categoria, orçamento, documento, subscrição, viatura, património e pagamento de dívida.
+- **Rejeitado**: o rodapé por cima do teclado (pouco espaço com teclado numérico e calendário).
+- **Web e Android**: na web nada muda (o teclado do browser não muda o layout); no Android o rodapé
+  esconde-se com o teclado e o campo focado fica visível pelo `adjustResize`.
+- **Pendente** (build novo): declarar as localizações iOS (pt-PT, en, es) no `app.json`, para os
+  textos do sistema seguirem o idioma.
+
+## ADR-081 — Despesa fixa a partir da viatura e custos pagos por terceiros
+
+**Estado:** aceite (2026-11-14). Migração local v17 e `20261123000100_consolidation.sql` (com
+ADR-079 e ADR-082), por aplicar.
+
+**Despesa fixa.** "Registar despesa" na ficha da viatura abre "Nova despesa da viatura": tipo fixo
+em despesa (sem seletor), viatura já escolhida; a sugestão por texto só aceita despesas e os atalhos
+frequentes só mostram despesas. Se a viatura já não existir, abre o formulário normal. Editar
+movimentos existentes não muda; os reembolsos continuam pelo Novo movimento normal.
+
+**Custos pagos por terceiros.** Uma tabela própria, `vehicle_external_costs` (data, valor, moeda,
+tipo de custo sem compra, litros ou kWh, km, descrição, pagador, notas), e não movimentos:
+
+- um movimento exige conta (`accountId` obrigatório) e entraria em saldos, despesas, orçamentos,
+  relatórios e património; marcar movimentos "de terceiros" obrigaria a excluí-los em cada soma,
+  com risco de dupla contagem;
+- assim, um custo de terceiros **nunca** é um movimento e um movimento nunca é também um custo
+  externo. Os custos externos só entram nas estatísticas e no histórico da viatura, com "Pago por
+  …" e a divisão "Pago por ti / Pago por terceiros"; não entram em saldos, `aggregate`,
+  `aggregateByDate`, Início, orçamentos, previsão, saúde, relatórios, património, objetivos nem
+  exportações pessoais (testado: os números ficam iguais com e sem eles);
+- moedas não se somam: a ficha conta só os da moeda da viatura, como os movimentos.
+
+**Opção por viatura** (`vehicles.costs_paid_by`): "Quem paga as despesas — Eu / Empresa ou
+terceiros" com o nome do pagador. Com terceiros, o botão principal da ficha passa a "Registar custo
+pago por {{payer}}" e "Registar despesa" fica ao lado; sem terceiros, o contrário.
+
+**Apagar a viatura** mantém os movimentos (sem ligação, como antes) e os custos externos (com o
+`vehicle_id` da viatura apagada, ligação lógica sem chave estrangeira no servidor para a limpeza de
+apagados nunca bloquear); o diálogo diz quantos ficam.
+
+**Sincronização e compatibilidade**: entidade nova pela fila normal, só em `sync_pull_v3` (as apps
+0.1.22 não a recebem); `costs_paid_by` só se grava quando vem no pedido. RLS como nas outras
+tabelas.
+
+## ADR-082 — Movimentos importados por classificar
+
+**Estado:** aceite (2026-11-14). Migração local v17 e `20261123000100_consolidation.sql` (com
+ADR-079 e ADR-081), por aplicar.
+
+A importação do banco (Open Banking) e dos extratos deixava cada linha na sugestão do histórico
+ou, sem ela, na **primeira categoria do tipo** — classificações erradas sem aviso. Passa a existir
+`entries.needs_review` (omissão: falso; à mão: sempre falso):
+
+- **Porquê uma marca e não categoria nula:** despesas e receitas têm categoria obrigatória (CHECK no
+  SQLite e no servidor) e os totais dependem dela; com "Outras despesas"/"Outras receitas" como
+  recurso, nada desaparece dos saldos nem dos totais — só pede revisão.
+- **Modo da importação** (Preferências › Registo de movimentos, local): "Marcar para rever"
+  (omissão) — categoria de recurso e por classificar, a sugestão **não** é aplicada; "Aplicar
+  sugestões" — a sugestão clara do histórico, já revista; sem sugestão, como no outro modo. No
+  extrato, a categoria de recurso escolhida é usada, mas fica por classificar.
+- **Rever:** nos Movimentos, filtro e contador "Por classificar (n)", etiqueta na linha, "Aplicar:
+  {{categoria}}" (sugestão calculada na hora, nunca guardada) e "Marcar como revisto"; "Marcar
+  todos como revistos" com confirmação; no formulário, o aviso "Importado — por classificar".
+  Gravar o movimento no formulário também o marca como revisto.
+- **Possível transferência** (função pura `findTransferCandidates`): despesa e receita por
+  classificar em contas próprias diferentes, mesma moeda, valor e **mesmo dia**, sem empréstimo nem
+  viatura. Só converte por ação da pessoa, numa transação (`convertToTransfer`): a despesa passa a
+  transferência e a receita é apagada — fica uma linha, e as importações seguintes reconhecem-na nas
+  duas contas (sem dupla contagem, testado). Só o mesmo dia porque a deduplicação da importação
+  compara a data: com datas diferentes a linha do banco voltaria a entrar. "Não é transferência"
+  esconde a sugestão neste aparelho. Na mesma conta, só a nota "anulam-se".
+- **Nada retroativo:** os movimentos já importados ficam como estão (`needs_review` falso). Não há
+  botão para marcar os importados dos últimos 30 dias: a base de dados não guarda a origem de cada
+  movimento, por isso não há forma segura de os identificar.
+- **Compatibilidade:** coluna nova com `default false`; uma edição de uma app 0.1.22 (sem a chave)
+  mantém o valor no servidor; as apps antigas ignoram a coluna ao receber.

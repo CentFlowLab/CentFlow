@@ -38,8 +38,9 @@ export function NewEntryScreen() {
       async (repositories: Repositories) => ({
         entry: duplicateOf ? await repositories.entries.get(duplicateOf) : null,
         subscription: subscriptionId ? await repositories.subscriptions.get(subscriptionId) : null,
+        vehicle: vehicleId ? await repositories.vehicles.get(vehicleId) : null,
       }),
-      [duplicateOf, subscriptionId],
+      [duplicateOf, subscriptionId, vehicleId],
     ),
   );
 
@@ -74,7 +75,9 @@ export function NewEntryScreen() {
     );
   }
 
-  const { entry: original, subscription } = source.data;
+  const { entry: original, subscription, vehicle } = source.data;
+  // A partir de uma viatura (que ainda existe): despesa fixa, sem seletor de tipo (ADR-081).
+  const fromVehicle = vehicle && !original && !subscription ? vehicle : null;
   const prefill: EntryPrefill | undefined = original
     ? {
         type: original.type,
@@ -104,9 +107,11 @@ export function NewEntryScreen() {
     <EntryForm
       lookups={lookups.data}
       today={today}
-      initialVehicleId={vehicleId}
+      initialVehicleId={vehicle ? vehicleId : undefined}
       prefill={prefill}
       subscription={subscription ?? undefined}
+      lockedType={fromVehicle ? 'expense' : undefined}
+      title={fromVehicle ? t('entryForm.vehicleExpenseTitle') : undefined}
     />
   );
 }

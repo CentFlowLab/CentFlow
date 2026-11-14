@@ -1218,7 +1218,11 @@ describe('vehicle costs', () => {
       notes: null,
       vehicleId: car.id,
     });
-    expect(await repos.vehicles.countLinks(car.id)).toEqual({ entries: 1, documents: 1 });
+    expect(await repos.vehicles.countLinks(car.id)).toEqual({
+      entries: 1,
+      documents: 1,
+      externalCosts: 0,
+    });
 
     await repos.vehicles.delete(car.id);
     expect(await repos.vehicles.get(car.id)).toBeNull();

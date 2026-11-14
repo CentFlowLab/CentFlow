@@ -11,7 +11,7 @@ import { spacing } from '@/ui/theme';
 
 import { BudgetMeter, budgetTone } from './BudgetMeter';
 import { budgetCurrencies, loadBudgetScreen, type PresentedBudget } from './load';
-import { usePreferences } from '../preferences';
+import { useFinancialMonthStartDay, usePreferences } from '../preferences';
 
 type Props = { reference: CalendarDate };
 
@@ -19,12 +19,12 @@ type Props = { reference: CalendarDate };
 export function BudgetSummary({ reference }: Props) {
   const { t } = useTranslation();
   const { preferences } = usePreferences();
+  const startDay = useFinancialMonthStartDay();
   const { formatMoney, formatPercent } = useLocaleFormat();
   const query = useDataQuery(
     useCallback(
-      (repositories: Repositories) =>
-        loadBudgetScreen(repositories, reference, preferences.financialMonthStartDay),
-      [reference, preferences.financialMonthStartDay],
+      (repositories: Repositories) => loadBudgetScreen(repositories, reference, startDay),
+      [reference, startDay],
     ),
   );
   const data = query.data;

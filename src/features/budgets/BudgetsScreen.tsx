@@ -40,7 +40,7 @@ import {
   type PresentedBudget,
 } from './load';
 import { MonthSwitcher } from '../finance/MonthSwitcher';
-import { usePreferences } from '../preferences';
+import { useFinancialMonthStartDay, usePreferences } from '../preferences';
 
 function openBudget(id: string, reference: string) {
   router.push({ pathname: '/budget/[id]', params: { id, on: reference } } as Href);
@@ -54,7 +54,7 @@ export function BudgetsScreen() {
   const breakpoint = useBreakpoint();
   const { formatDate, formatMoney, formatPercent } = useLocaleFormat();
   const today = useToday();
-  const startDay = preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   // O mês é o período financeiro (ADR-077); dia 1 = mês civil, como sempre.
   const currentMonth = financialMonthOf(today, startDay);
   const [month, setMonth] = useState<MonthKey>(currentMonth);
@@ -201,7 +201,7 @@ function CurrencySection({
   primary: string;
 }) {
   const { t } = useTranslation();
-  const startDay = usePreferences().preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   const {
     colors: { heroTrack, heroNegative, heroPositive },
   } = useTheme();

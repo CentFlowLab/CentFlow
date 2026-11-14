@@ -153,6 +153,11 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
       title={t('wealth.payment.title')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{
+        label: t('wealth.payment.save'),
+        onPress: () => void save(),
+        loading: saving,
+      }}
       footer={
         <View style={styles.footer}>
           {failed ? (

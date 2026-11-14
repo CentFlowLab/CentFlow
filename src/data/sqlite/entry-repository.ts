@@ -38,6 +38,7 @@ type EntryRow = {
   principal_amount: number | null;
   interest_amount: number | null;
   fees_amount: number | null;
+  needs_review: number;
   created_at: string;
   updated_at: string;
 };
@@ -45,7 +46,7 @@ type EntryRow = {
 const COLUMNS = `e.id, e.type, e.amount, e.description, e.category_id, e.account_id,
   e.destination_account_id, e.date, e.notes, e.vehicle_id, e.vehicle_cost_type, e.quantity_milli,
   e.odometer_km, e.loan_id, e.loan_role, e.principal_amount, e.interest_amount, e.fees_amount,
-  e.created_at, e.updated_at`;
+  e.needs_review, e.created_at, e.updated_at`;
 
 const MAX_PAGE_SIZE = 500;
 
@@ -69,6 +70,7 @@ function toEntry(row: EntryRow): Entry {
     principalAmount: row.principal_amount,
     interestAmount: row.interest_amount,
     feesAmount: row.fees_amount,
+    needsReview: row.needs_review === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -101,6 +103,9 @@ function buildWhere(filter: EntryFilter): { sql: string; params: SqlValue[] } {
   if (filter.vehicleId) {
     clauses.push('e.vehicle_id = ?');
     params.push(filter.vehicleId);
+  }
+  if (filter.needsReview) {
+    clauses.push('e.needs_review = 1');
   }
   if (filter.withoutVehicle) {
     clauses.push("e.vehicle_id IS NULL AND e.type <> 'transfer'");
@@ -249,6 +254,7 @@ export async function insertEntry(
     principalAmount: input.principalAmount ?? null,
     interestAmount: input.interestAmount ?? null,
     feesAmount: input.feesAmount ?? null,
+    needsReview: input.needsReview === true,
     id: context.newId(),
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -256,9 +262,9 @@ export async function insertEntry(
   await tx.run(
     `INSERT INTO entries (id, type, amount, description, search_text, category_id, account_id,
        destination_account_id, date, notes, vehicle_id, vehicle_cost_type, quantity_milli,
-       odometer_km, loan_id, loan_role, principal_amount, interest_amount, fees_amount, created_at,
-       updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       odometer_km, loan_id, loan_role, principal_amount, interest_amount, fees_amount, needs_review,
+       created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id,
       entry.type,
@@ -279,6 +285,7 @@ export async function insertEntry(
       entry.principalAmount,
       entry.interestAmount,
       entry.feesAmount,
+      entry.needsReview ? 1 : 0,
       timestamp,
       timestamp,
     ],
@@ -375,7 +382,8 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
             `UPDATE entries SET type = ?, amount = ?, description = ?, search_text = ?, category_id = ?,
                account_id = ?, destination_account_id = ?, date = ?, notes = ?, vehicle_id = ?,
                vehicle_cost_type = ?, quantity_milli = ?, odometer_km = ?, loan_id = ?, loan_role = ?,
-               principal_amount = ?, interest_amount = ?, fees_amount = ?, updated_at = ?
+               principal_amount = ?, interest_amount = ?, fees_amount = ?, needs_review = ?,
+               updated_at = ?
              WHERE id = ?`,
             [
               input.type,
@@ -396,6 +404,8 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
               input.principalAmount ?? null,
               input.interestAmount ?? null,
               input.feesAmount ?? null,
+              // Gravar no formulário é rever: só fica por classificar se o pedido o disser.
+              input.needsReview === true ? 1 : 0,
               timestamp,
               id,
             ],
@@ -418,6 +428,7 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
             principalAmount: input.principalAmount ?? null,
             interestAmount: input.interestAmount ?? null,
             feesAmount: input.feesAmount ?? null,
+            needsReview: input.needsReview === true,
             updatedAt: timestamp,
           };
         }),
@@ -471,6 +482,115 @@ export function createSqliteEntryRepository(context: SqliteRepositoryContext): E
         [vehicleId],
       );
       return rows.map((row) => ({ ...toEntry(row), currency: row.currency }));
+    },
+
+    async countNeedsReview() {
+      const row = await db.first<{ total: number }>(
+        'SELECT COUNT(*) AS total FROM entries WHERE needs_review = 1 AND deleted_at IS NULL',
+      );
+      return row?.total ?? 0;
+    },
+
+    markReviewed(ids) {
+      return write(context, ['entries'], () =>
+        db.transaction(async (tx) => {
+          const timestamp = context.now();
+          for (const id of ids) {
+            await tx.run(
+              `UPDATE entries SET needs_review = 0, updated_at = ?
+                WHERE id = ? AND needs_review = 1 AND deleted_at IS NULL`,
+              [timestamp, id],
+            );
+          }
+        }),
+      );
+    },
+
+    classify(id, categoryId) {
+      return write(context, ['entries'], () =>
+        db.transaction(async (tx) => {
+          const row = await findActive(tx, id);
+          if (!row) throw new NotFoundError('entry', id);
+          const category = await tx.first<{ type: string }>(
+            'SELECT type FROM categories WHERE id = ? AND deleted_at IS NULL',
+            [categoryId],
+          );
+          if (!category) throw new ValidationError({ categoryId: 'categoryNotFound' });
+          if (row.type === 'transfer' || category.type !== row.type) {
+            throw new ValidationError({ categoryId: 'categoryTypeMismatch' });
+          }
+          const timestamp = context.now();
+          await tx.run(
+            'UPDATE entries SET category_id = ?, needs_review = 0, updated_at = ? WHERE id = ?',
+            [categoryId, timestamp, id],
+          );
+          return toEntry({
+            ...row,
+            category_id: categoryId,
+            needs_review: 0,
+            updated_at: timestamp,
+          });
+        }),
+      );
+    },
+
+    convertToTransfer(expenseId, incomeId) {
+      return write(context, ['entries'], () =>
+        db.transaction(async (tx) => {
+          const expense = await findActive(tx, expenseId);
+          const income = await findActive(tx, incomeId);
+          if (!expense) throw new NotFoundError('entry', expenseId);
+          if (!income) throw new NotFoundError('entry', incomeId);
+          const accounts = await tx.all<{
+            id: string;
+            currency: string;
+            archived_at: string | null;
+          }>(
+            'SELECT id, currency, archived_at FROM accounts WHERE id IN (?, ?) AND deleted_at IS NULL',
+            [expense.account_id, income.account_id],
+          );
+          const from = accounts.find((account) => account.id === expense.account_id);
+          const to = accounts.find((account) => account.id === income.account_id);
+          const valid =
+            expense.type === 'expense' &&
+            income.type === 'income' &&
+            expense.needs_review === 1 &&
+            income.needs_review === 1 &&
+            expense.loan_id === null &&
+            income.loan_id === null &&
+            expense.vehicle_id === null &&
+            income.vehicle_id === null &&
+            expense.amount === income.amount &&
+            expense.date === income.date &&
+            from !== undefined &&
+            to !== undefined &&
+            from.id !== to.id &&
+            from.currency === to.currency &&
+            from.archived_at === null &&
+            to.archived_at === null;
+          if (!valid) throw new ValidationError({ type: 'invalid' });
+          const timestamp = context.now();
+          // Uma só linha fica: a saída passa a transferência para a conta da entrada.
+          await tx.run(
+            `UPDATE entries SET type = 'transfer', category_id = NULL, destination_account_id = ?,
+               needs_review = 0, updated_at = ? WHERE id = ?`,
+            [income.account_id, timestamp, expenseId],
+          );
+          await tx.run('UPDATE entries SET deleted_at = ?, updated_at = ? WHERE id = ?', [
+            timestamp,
+            timestamp,
+            incomeId,
+          ]);
+          return toEntry({
+            ...expense,
+            type: 'transfer',
+            category_id: null,
+            destination_account_id: income.account_id,
+            needs_review: 0,
+            updated_at: timestamp,
+          });
+        }),
+      );
     },
 
     async delete(id) {

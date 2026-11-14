@@ -130,6 +130,12 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
       title={t(editing ? 'goals.form.editTitle' : 'goals.form.createTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{
+        label: t('goals.form.save'),
+        onPress: () => void save(),
+        loading: saving,
+        disabled: saving,
+      }}
       footer={
         <Button
           label={t('goals.form.save')}

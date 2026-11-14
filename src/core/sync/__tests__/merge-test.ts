@@ -18,6 +18,7 @@ const entry: SyncRecord = {
   principal_amount: null,
   interest_amount: null,
   fees_amount: null,
+  needs_review: 0,
   deleted_at: null,
 };
 

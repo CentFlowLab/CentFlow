@@ -92,6 +92,8 @@ describe('database initialization', () => {
       'sync_inbox',
       'sync_outbox',
       'sync_state',
+      'user_settings',
+      'vehicle_external_costs',
       'vehicles',
       'wealth_items',
     ]);
@@ -610,5 +612,68 @@ describe('serialized access and transactions', () => {
     const db = await openTestDatabase();
     await db.close();
     await expect(db.first('SELECT 1')).rejects.toBeInstanceOf(DatabaseError);
+  });
+});
+
+describe('schema v17 (consolidation, ADR-079/081/082)', () => {
+  it('keeps v16 data unchanged, adds the new columns empty and rewinds the pull cursor', async () => {
+    const db = createSqlDatabase(createNodeSqliteDriver());
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await migrate(
+      db,
+      MIGRATIONS.filter((migration) => migration.version <= 16),
+    );
+    await db.run(
+      `INSERT INTO accounts (id, name, type, currency, initial_balance, created_at, updated_at)
+       VALUES ('a1', 'Banco', 'bank', 'EUR', 1000, ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO categories (id, name, type, icon, color, created_at, updated_at)
+       VALUES ('c1', 'Casa', 'expense', 'home-outline', 'blue', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO entries (id, type, amount, description, search_text, category_id, account_id,
+         date, created_at, updated_at)
+       VALUES ('e1', 'expense', 4732, 'Mercado', 'mercado', 'c1', 'a1', '2026-11-13', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO wealth_items (id, name, type, amount, currency, valued_on, created_at, updated_at)
+       VALUES ('w1', 'Trading 212', 'investment', 100000, 'EUR', '2026-11-13', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(
+      `INSERT INTO vehicles (id, name, kind, created_at, updated_at)
+       VALUES ('v1', 'Carrinha', 'van', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run('UPDATE sync_state SET pull_cursor = 42 WHERE id = 1');
+    const before = await db.all('SELECT * FROM entries ORDER BY id');
+
+    await migrate(db, MIGRATIONS);
+
+    const after = await db.all<Record<string, unknown>>('SELECT * FROM entries ORDER BY id');
+    expect(after.map(({ needs_review, ...rest }) => rest)).toEqual(before);
+    expect(after.map((row) => row.needs_review)).toEqual([0]);
+    expect(await db.first('SELECT integration FROM wealth_items')).toEqual({ integration: null });
+    expect(await db.first('SELECT costs_paid_by FROM vehicles')).toEqual({ costs_paid_by: null });
+    expect(await db.first('SELECT pull_cursor FROM sync_state')).toEqual({ pull_cursor: 0 });
+
+    // A fila aceita as entidades novas e os triggers continuam a registar alterações.
+    await db.run('UPDATE sync_state SET tracking = 1 WHERE id = 1');
+    await db.run(
+      `INSERT INTO vehicle_external_costs (id, vehicle_id, date, amount, currency, cost_type,
+         created_at, updated_at) VALUES ('x1', 'v1', '2026-11-13', 6000, 'EUR', 'fuel', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.run(`UPDATE entries SET needs_review = 1 WHERE id = 'e1'`);
+    const ops = await db.all<{ entity: string; data: string }>(
+      'SELECT entity, data FROM sync_outbox ORDER BY seq',
+    );
+    expect(ops.map((op) => op.entity)).toEqual(['vehicle_external_costs', 'entries']);
+    expect(JSON.parse(ops[1]!.data)).toMatchObject({ needs_review: 1 });
+    await db.close();
   });
 });

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { layout, radius, spacing, typography, useTheme } from '../theme';
+import { useFormKeyboard } from './formKeyboard';
 import { Text } from './Text';
 
 type Props = Omit<TextInputProps, 'style'> & {
@@ -47,6 +48,7 @@ export function TextField({
   ...rest
 }: Props) {
   const { colors } = useTheme();
+  const keyboard = useFormKeyboard();
   const [focused, setFocused] = useState(false);
   const inputId = useId();
   const hasError = Boolean(errorText);
@@ -62,6 +64,7 @@ export function TextField({
       selectionColor={colors.primary}
       onFocus={(event) => {
         setFocused(true);
+        keyboard?.onFieldFocus();
         onFocus?.(event);
       }}
       onBlur={(event) => {
@@ -84,6 +87,9 @@ export function TextField({
         inputStyle,
       ])}
       {...rest}
+      // iPhone, dentro de um formulário: a barra do formulário (Concluído + ação) substitui a
+      // barra "Done" do sistema; um id explícito do chamador tem prioridade (ADR-080).
+      inputAccessoryViewID={rest.inputAccessoryViewID ?? keyboard?.accessoryId ?? undefined}
     />
   );
 

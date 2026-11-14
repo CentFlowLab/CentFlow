@@ -10,7 +10,9 @@ import { spacing } from '@/ui/theme';
 
 import { useAuth } from '../account/AuthProvider';
 import { t212Enabled } from './Trading212Screen';
-import { linkedItemId, loadT212, type T212State } from './trading212-sync';
+import { useRepositories } from '@/data';
+
+import { loadT212, readT212Link, type T212Link, type T212State } from './trading212-sync';
 
 /**
  * Investimentos ligados (Trading 212) no Dashboard: valor da conta, ganho/perda por realizar e a
@@ -20,16 +22,17 @@ export function InvestmentsCard() {
   const { t } = useTranslation();
   const { formatMoney, formatPercent } = useLocaleFormat();
   const { client, state: auth } = useAuth();
-  const [state, setState] = useState<(T212State & { linked: string | null }) | null>(null);
+  const repositories = useRepositories();
+  const [state, setState] = useState<(T212State & { linked: T212Link['status'] }) | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!t212Enabled() || !client || auth.status !== 'signedIn') return;
     let alive = true;
     const read = async () => {
-      const [next, linked] = await Promise.all([loadT212(client), linkedItemId()]);
+      const [next, link] = await Promise.all([loadT212(client), readT212Link(repositories)]);
       if (!alive) return;
-      setState({ ...next, linked });
+      setState({ ...next, linked: link.status });
       setNow(Date.now());
     };
     void read().catch(() => undefined);
@@ -39,7 +42,7 @@ export function InvestmentsCard() {
       alive = false;
       clearInterval(timer);
     };
-  }, [client, auth.status]);
+  }, [client, auth.status, repositories]);
 
   if (!state?.integration || !state.snapshot) return null;
   const { snapshot, integration } = state;
@@ -81,11 +84,15 @@ export function InvestmentsCard() {
         <Text variant="caption" tone="tertiary">
           {minutes === 0 ? t('t212.updatedNow') : t('t212.updated', { count: minutes })}
         </Text>
-        {!state.linked ? (
+        {state.linked === 'unlinked' ? (
           <Text variant="footnote" tone="warning">
             {t('dashboard.investments.chooseItem')}
           </Text>
-        ) : state.linked === 'none' ? (
+        ) : state.linked === 'ambiguous' ? (
+          <Text variant="footnote" tone="warning">
+            {t('dashboard.investments.ambiguous')}
+          </Text>
+        ) : state.linked === 'notCounted' ? (
           <Text variant="caption" tone="tertiary">
             {t('dashboard.investments.notCounted')}
           </Text>

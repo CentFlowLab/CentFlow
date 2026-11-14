@@ -1,6 +1,11 @@
 import { createMemoryStore, type KeyValueStore } from '@/lib/storage/key-value-store';
 
-import { createPreferencesRepository, DEFAULT_PREFERENCES, parsePreferences } from '../preferences';
+import {
+  createPreferencesRepository,
+  DEFAULT_PREFERENCES,
+  legacyFinancialMonthStartDay,
+  parsePreferences,
+} from '../preferences';
 
 describe('parsePreferences', () => {
   it('returns defaults for missing or corrupt data', () => {
@@ -44,7 +49,6 @@ describe('Phase 1 and 2 preferences', () => {
       formatRegion: 'auto',
       discreetAmounts: false,
       defaultAccountId: 'last',
-      financialMonthStartDay: 1,
     });
     // JSON antigo, sem os campos novos.
     expect(parsePreferences(JSON.stringify({ theme: 'dark', language: 'pt-PT' }))).toMatchObject({
@@ -52,7 +56,6 @@ describe('Phase 1 and 2 preferences', () => {
       formatRegion: 'auto',
       discreetAmounts: false,
       defaultAccountId: 'last',
-      financialMonthStartDay: 1,
     });
   });
 
@@ -75,18 +78,18 @@ describe('Phase 1 and 2 preferences', () => {
     });
   });
 
-  it('accepts only whole days from 1 to 31 for the financial month', () => {
-    for (const bad of [0, 32, 2.5, '25', null]) {
+  it('reads the start day kept on this device by 0.1.22 only to move it to the account', () => {
+    for (const bad of [0, 1, 32, 2.5, '25', null]) {
       expect(
-        parsePreferences(JSON.stringify({ financialMonthStartDay: bad })).financialMonthStartDay,
-      ).toBe(1);
+        legacyFinancialMonthStartDay(JSON.stringify({ financialMonthStartDay: bad })),
+      ).toBeNull();
     }
-    expect(
-      parsePreferences(JSON.stringify({ financialMonthStartDay: 31 })).financialMonthStartDay,
-    ).toBe(31);
-    expect(
-      parsePreferences(JSON.stringify({ financialMonthStartDay: 25 })).financialMonthStartDay,
-    ).toBe(25);
+    expect(legacyFinancialMonthStartDay(JSON.stringify({ financialMonthStartDay: 25 }))).toBe(25);
+    expect(legacyFinancialMonthStartDay('not json')).toBeNull();
+    // Deixou de ser uma preferência local (ADR-079).
+    expect(parsePreferences(JSON.stringify({ financialMonthStartDay: 25 }))).not.toHaveProperty(
+      'financialMonthStartDay',
+    );
   });
 });
 
@@ -103,7 +106,6 @@ describe('preferences repository', () => {
       formatRegion: 'en-US' as const,
       discreetAmounts: true,
       defaultAccountId: 'acc-1',
-      financialMonthStartDay: 25,
     };
     await repository.save(saved);
     await expect(repository.load()).resolves.toEqual(saved);

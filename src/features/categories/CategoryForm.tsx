@@ -125,6 +125,7 @@ export function CategoryForm({ category, others, initialType = 'expense' }: Prop
       title={t(isEditing ? 'categoryForm.editTitle' : 'categoryForm.newTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{ label: t('common.save'), onPress: save, loading: busy }}
       footer={
         <>
           {formError ? (

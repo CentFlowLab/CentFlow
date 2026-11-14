@@ -54,7 +54,7 @@ export function createSupabaseTransport(client: SupabaseClient): SyncTransport {
       return result.results;
     },
     pull: (since, limit) =>
-      call<PullPage>(client.rpc('sync_pull_v2', { p_since: since, p_limit: limit })),
+      call<PullPage>(client.rpc('sync_pull_v3', { p_since: since, p_limit: limit })),
     async fetchRows(entity: SyncEntity, ids) {
       const rows = await call<Record<string, unknown>[]>(
         client

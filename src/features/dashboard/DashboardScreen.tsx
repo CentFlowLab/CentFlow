@@ -50,7 +50,7 @@ import { InvestmentsCard } from '../investments/InvestmentsCard';
 import { MonthInsights } from './MonthInsights';
 import { UpcomingObligations } from './UpcomingObligations';
 import { MonthSwitcher } from '../finance/MonthSwitcher';
-import { usePreferences } from '../preferences';
+import { useFinancialMonthStartDay, usePreferences } from '../preferences';
 
 const TREND_MONTHS = 6;
 const LATEST_COUNT = 5;
@@ -83,7 +83,7 @@ export function DashboardScreen() {
   const breakpoint = useBreakpoint();
   const { formatDate, formatMoney, formatMonthYear, formatPercent, locale } = useLocaleFormat();
   const today = useToday();
-  const startDay = preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   const currentMonth = financialMonthOf(today, startDay);
   const [month, setMonth] = useState<MonthKey>(currentMonth);
   const lookups = useFinanceLookups();

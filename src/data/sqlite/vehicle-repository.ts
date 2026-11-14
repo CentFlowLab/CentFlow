@@ -31,6 +31,7 @@ type VehicleRow = {
   notes: string | null;
   kind_label: string | null;
   icon: string | null;
+  costs_paid_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -56,6 +57,7 @@ const FIELDS = [
   'notes',
   'kind_label',
   'icon',
+  'costs_paid_by',
 ] as const;
 
 const COLUMNS = `id, ${FIELDS.join(', ')}, created_at, updated_at`;
@@ -82,6 +84,7 @@ function toVehicle(row: VehicleRow): Vehicle {
     notes: row.notes,
     kindLabel: row.kind_label,
     icon: row.icon,
+    costsPaidBy: row.costs_paid_by ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -121,6 +124,7 @@ function prepare(raw: VehicleInput, existing?: StoredVehicle): StoredVehicle {
     notes: blankToNull(keep('notes')),
     kindLabel: blankToNull(keep('kindLabel')),
     icon: blankToNull(keep('icon')),
+    costsPaidBy: blankToNull(keep('costsPaidBy')),
   };
   const errors = validateVehicleInput(input);
   if (hasErrors(errors)) throw new ValidationError(errors);
@@ -147,6 +151,7 @@ const values = (input: StoredVehicle) => [
   input.notes,
   input.kindLabel,
   input.icon,
+  input.costsPaidBy,
 ];
 
 export function createSqliteVehicleRepository(context: SqliteRepositoryContext): VehicleRepository {
@@ -216,7 +221,15 @@ export function createSqliteVehicleRepository(context: SqliteRepositoryContext):
           [id],
         ),
       ];
-      return { entries: entries?.total ?? 0, documents: documents?.total ?? 0 };
+      const external = await db.first<{ total: number }>(
+        'SELECT COUNT(*) AS total FROM vehicle_external_costs WHERE vehicle_id = ? AND deleted_at IS NULL',
+        [id],
+      );
+      return {
+        entries: entries?.total ?? 0,
+        documents: documents?.total ?? 0,
+        externalCosts: external?.total ?? 0,
+      };
     },
 
     delete(id) {

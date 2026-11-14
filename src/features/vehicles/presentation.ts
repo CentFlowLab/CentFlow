@@ -28,6 +28,18 @@ export function vehicleKindLabel(t: TFunction, vehicle: Pick<Vehicle, 'kind' | '
   return vehicle.kindLabel ?? t(`vehicles.kinds.${vehicle.kind}`);
 }
 
+/**
+ * País da matrícula, só para a apresentação (ADR-078): reconhece os quatro formatos portugueses
+ * (LL-DD-LL, DD-LL-DD, DD-DD-LL, LL-DD-DD), sem distinguir maiúsculas e ignorando espaços e
+ * hífenes. Não reformata nem guarda nada.
+ */
+export function plateCountry(plate: string): 'PT' | null {
+  const compact = plate.replace(/[\s-]/g, '').toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(compact)) return null;
+  const shape = compact.replace(/[A-Z]/g, 'L').replace(/[0-9]/g, 'D');
+  return ['LLDDLL', 'DDLLDD', 'DDDDLL', 'LLDDDD'].includes(shape) ? 'PT' : null;
+}
+
 export function vehicleIcon(vehicle: Pick<Vehicle, 'kind' | 'icon'>): IconName {
   return (vehicle.icon as IconName | null) ?? KIND_ICONS[vehicle.kind];
 }

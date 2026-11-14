@@ -42,7 +42,8 @@ import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
 import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
-import { useHaptics, usePreferences } from '../preferences';
+import { useFinancialMonthStartDay, useHaptics } from '../preferences';
+import { ReviewActions, ReviewPanel, useReviewHistory } from './ReviewPanel';
 
 function dateHeading(
   date: CalendarDate,
@@ -154,7 +155,7 @@ function useUndoableDelete() {
 export function EntriesScreen() {
   const { t } = useTranslation();
   const haptic = useHaptics();
-  const startDay = usePreferences().preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   const { colors } = useTheme();
   const breakpoint = useBreakpoint();
   const { formatDate } = useLocaleFormat();
@@ -169,6 +170,8 @@ export function EntriesScreen() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [sort, setSort] = useState<EntrySort>('dateDesc');
   const [showFilters, setShowFilters] = useState(false);
+  // Importados por classificar (ADR-082).
+  const [toReview, setToReview] = useState(false);
   const [limit, setLimit] = useState(PAGE_SIZE);
   const debouncedSearch = useDebounced(search, SEARCH_DEBOUNCE_MS);
 
@@ -178,16 +181,25 @@ export function EntriesScreen() {
       type: type === 'all' ? undefined : type,
       accountId: accountId ?? undefined,
       categoryId: categoryId ?? undefined,
+      needsReview: toReview || undefined,
       ...presetRange(period, today, startDay),
       sort,
       limit,
     }),
-    [debouncedSearch, type, accountId, categoryId, period, today, startDay, sort, limit],
+    [debouncedSearch, type, accountId, categoryId, toReview, period, today, startDay, sort, limit],
   );
 
   const page = useDataQuery(
     useCallback((repositories: Repositories) => repositories.entries.list(filter), [filter]),
   );
+
+  const countToReview = useCallback(
+    (repositories: Repositories) => repositories.entries.countNeedsReview(),
+    [],
+  );
+  const reviewQuery = useDataQuery(countToReview);
+  const reviewCount = reviewQuery.data ?? 0;
+  const history = useReviewHistory();
 
   const resetPaging = () => setLimit(PAGE_SIZE);
   const activeFilterCount =
@@ -195,7 +207,8 @@ export function EntriesScreen() {
     (period !== 'all' ? 1 : 0) +
     (accountId ? 1 : 0) +
     (categoryId ? 1 : 0) +
-    (sort !== 'dateDesc' ? 1 : 0);
+    (sort !== 'dateDesc' ? 1 : 0) +
+    (toReview ? 1 : 0);
   const hasFilters = Boolean(debouncedSearch) || activeFilterCount > 0;
 
   const clearFilters = () => {
@@ -205,6 +218,7 @@ export function EntriesScreen() {
     setAccountId(null);
     setCategoryId(null);
     setSort('dateDesc');
+    setToReview(false);
     resetPaging();
   };
 
@@ -260,6 +274,18 @@ export function EntriesScreen() {
               onPress={() => setShowFilters((value) => !value)}
               accessibilityState={{ expanded: showFilters }}
             />
+            {reviewCount > 0 || toReview ? (
+              <Button
+                label={t('entries.review.filterCount', { count: reviewCount })}
+                variant={toReview ? 'primary' : 'secondary'}
+                icon="help-circle-outline"
+                accessibilityState={{ selected: toReview }}
+                onPress={() => {
+                  setToReview((value) => !value);
+                  resetPaging();
+                }}
+              />
+            ) : null}
             <Button
               label={t('entries.import')}
               variant="ghost"
@@ -404,6 +430,7 @@ export function EntriesScreen() {
             <Text variant="footnote" tone="secondary" accessibilityLiveRegion="polite">
               {t('entries.resultCount', { count: total })}
             </Text>
+            {toReview ? <ReviewPanel entries={items} lookups={lookups.data} /> : null}
             {groupByDay(items).map((group) => (
               <View key={group.date} style={styles.dayGroup}>
                 <Text
@@ -438,11 +465,15 @@ export function EntriesScreen() {
                         <EntryListItem
                           entry={entry}
                           lookups={lookups.data!}
+                          detail={entry.needsReview ? t('entries.review.tag') : undefined}
                           onPress={() =>
                             router.push({ pathname: '/entry/[id]', params: { id: entry.id } })
                           }
                         />
                       </SwipeableRow>
+                      {entry.needsReview ? (
+                        <ReviewActions entry={entry} lookups={lookups.data!} history={history} />
+                      ) : null}
                     </Fragment>
                   ))}
                 </Card>

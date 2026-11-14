@@ -1,5 +1,5 @@
 import { CATEGORY_COLOR_KEYS, categorySwatch } from '../theme/category-palette';
-import { darkColors, lightColors, type ThemeColors } from '../theme/colors';
+import { darkColors, lightColors, PLATE_COLORS, type ThemeColors } from '../theme/colors';
 import { resolveColorScheme } from '../theme/ThemeProvider';
 import { getBreakpoint } from '../layout/useBreakpoint';
 
@@ -65,6 +65,13 @@ describe.each([
       expect(contrast(swatch.foreground, colors.surface)).toBeGreaterThanOrEqual(3);
     },
   );
+});
+
+describe('PLATE_COLORS', () => {
+  it('plate text and the country code meet WCAG AA', () => {
+    expect(contrast(PLATE_COLORS.text, PLATE_COLORS.background)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(PLATE_COLORS.bandText, PLATE_COLORS.euBlue)).toBeGreaterThanOrEqual(4.5);
+  });
 });
 
 describe('resolveColorScheme', () => {

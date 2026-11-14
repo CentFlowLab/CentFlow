@@ -1,12 +1,53 @@
 import { daysUntil, deadlineStatus, type DeadlineStatus } from './deadlines';
 import { addMonths, monthOf, type CalendarDate, type MonthKey } from './dates';
-import { VEHICLE_LIMITS, type Entry, type Vehicle, type VehicleCostType } from './types';
+import {
+  VEHICLE_LIMITS,
+  type Entry,
+  type Vehicle,
+  type VehicleCostType,
+  type VehicleExternalCost,
+} from './types';
 
 /** Movimento ligado a um veículo, com o que os cálculos precisam (ADR-054). */
 export type VehicleEntry = Pick<
   Entry,
   'id' | 'type' | 'amount' | 'date' | 'vehicleCostType' | 'quantityMilli' | 'odometerKm'
 >;
+
+/**
+ * Custos pagos por terceiros vistos como despesas da viatura, para as mesmas estatísticas
+ * (ADR-081). Só servem a ficha da viatura: nunca se juntam aos movimentos das contas.
+ */
+export function externalCostEntries(costs: readonly VehicleExternalCost[]): VehicleEntry[] {
+  return costs.map((cost) => ({
+    id: cost.id,
+    type: 'expense',
+    amount: cost.amount,
+    date: cost.date,
+    vehicleCostType: cost.costType,
+    quantityMilli: cost.quantityMilli,
+    odometerKm: cost.odometerKm,
+  }));
+}
+
+/**
+ * Divisão do custo da viatura: o que a pessoa pagou (movimentos, com reembolsos a abater) e o que
+ * terceiros pagaram. Sem a compra. Sem custos externos, `others` é 0 e `own` é o custo de sempre.
+ */
+export function vehicleCostShares(
+  own: readonly VehicleEntry[],
+  others: readonly VehicleEntry[],
+): { own: number; others: number } {
+  const sum = (entries: readonly VehicleEntry[]) =>
+    entries.reduce(
+      (total, entry) =>
+        entry.vehicleCostType === 'purchase' || entry.type === 'transfer'
+          ? total
+          : total + signed(entry),
+      0,
+    );
+  return { own: sum(own), others: sum(others) };
+}
 
 /** Revisão por quilómetros: "em breve" a partir de 1000 km. */
 export const SERVICE_SOON_KM = 1000;

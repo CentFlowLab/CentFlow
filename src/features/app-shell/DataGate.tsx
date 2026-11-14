@@ -35,6 +35,7 @@ import {
   readIsolationEnv,
   reloadForIsolation,
 } from './web-isolation';
+import { LegacyStartDayMigration } from '../preferences';
 
 type Opened = { space: LocalSpace; store: LocalStore };
 
@@ -213,6 +214,7 @@ export function DataGate({
           {children}
           <AutoBackup />
           <T212Sync />
+          <LegacyStartDayMigration />
           <BankSync />
         </RepositoriesProvider>
       </ActiveSpaceContext.Provider>

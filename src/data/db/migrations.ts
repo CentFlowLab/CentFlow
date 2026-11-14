@@ -176,6 +176,11 @@ export const MIGRATIONS: readonly Migration[] = [
     description: 'manual order of categories',
     sql: migrationV16(),
   },
+  {
+    version: 17,
+    description: 'integrations, synced settings, vehicle external costs and entries to review',
+    sql: migrationV17(),
+  },
 ];
 
 /**
@@ -1869,6 +1874,298 @@ function migrationV16(): string {
         'deleted_at',
       ],
     })}
+  `;
+}
+
+/**
+ * v17 — consolidação pós-0.1.22 (ADR-079, ADR-081, ADR-082), numa só reconstrução da fila:
+ * - `wealth_items.integration`: o item que uma integração (Trading 212) atualiza, sincronizado;
+ * - `user_settings`: definições da conta sincronizadas (início do mês financeiro);
+ * - `vehicles.costs_paid_by` e `vehicle_external_costs`: custos da viatura pagos por terceiros,
+ *   fora das contas pessoais;
+ * - `entries.needs_review`: movimentos importados por classificar.
+ * As entidades novas obrigam a reconstruir a fila (lista de entidades no CHECK) e, com ela,
+ * todos os triggers. O cursor volta a 0: a app passa a ler também as entidades novas.
+ * Gerada a partir de constantes locais a esta função: nunca alterar depois de publicada.
+ */
+function migrationV17(): string {
+  const entities = `('accounts', 'categories', 'budgets', 'subscriptions', 'goals', 'goal_contributions', 'wealth_items', 'vehicles', 'documents', 'entries', 'user_settings', 'vehicle_external_costs')`;
+  const date = (column: string) =>
+    `CHECK (${column} GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]')`;
+  const triggers = {
+    accounts: [
+      'name',
+      'type',
+      'currency',
+      'initial_balance',
+      'archived_at',
+      'credit_limit',
+      'institution',
+      'statement_day',
+      'due_day',
+      'payment_account_id',
+      'color',
+      'created_at',
+      'deleted_at',
+    ],
+    categories: [
+      'name',
+      'type',
+      'icon',
+      'color',
+      'system_key',
+      'essential',
+      'sort_order',
+      'created_at',
+      'deleted_at',
+    ],
+    budgets: [
+      'category_id',
+      'amount',
+      'currency',
+      'period',
+      'starts_on',
+      'created_at',
+      'deleted_at',
+    ],
+    subscriptions: [
+      'name',
+      'amount',
+      'currency',
+      'period',
+      'status',
+      'starts_on',
+      'next_on',
+      'category_id',
+      'previous_amount',
+      'amount_changed_on',
+      'created_at',
+      'deleted_at',
+    ],
+    goals: [
+      'name',
+      'target_amount',
+      'currency',
+      'target_on',
+      'icon',
+      'color',
+      'description',
+      'account_id',
+      'created_at',
+      'deleted_at',
+    ],
+    goal_contributions: ['goal_id', 'amount', 'date', 'entry_id', 'created_at', 'deleted_at'],
+    wealth_items: [
+      'name',
+      'type',
+      'amount',
+      'currency',
+      'valued_on',
+      'value_history',
+      'closed_on',
+      'loan_kind',
+      'institution',
+      'principal_amount',
+      'started_on',
+      'opening_debt',
+      'opening_on',
+      'interest_rate_bp',
+      'installment_amount',
+      'due_day',
+      'ends_on',
+      'integration',
+      'created_at',
+      'deleted_at',
+    ],
+    vehicles: [
+      'name',
+      'kind',
+      'plate',
+      'odometer_km',
+      'inspection_due',
+      'insurance_due',
+      'make',
+      'model',
+      'year',
+      'fuel_type',
+      'acquired_on',
+      'purchase_amount',
+      'currency',
+      'road_tax_due',
+      'service_due_on',
+      'service_due_km',
+      'notes',
+      'kind_label',
+      'icon',
+      'costs_paid_by',
+      'created_at',
+      'deleted_at',
+    ],
+    documents: [
+      'title',
+      'category',
+      'expires_on',
+      'notes',
+      'vehicle_id',
+      'attachments',
+      'acquired_on',
+      'amount',
+      'currency',
+      'created_at',
+      'deleted_at',
+    ],
+    entries: [
+      'type',
+      'amount',
+      'description',
+      'notes',
+      'category_id',
+      'account_id',
+      'destination_account_id',
+      'date',
+      'vehicle_id',
+      'vehicle_cost_type',
+      'quantity_milli',
+      'odometer_km',
+      'loan_id',
+      'loan_role',
+      'principal_amount',
+      'interest_amount',
+      'fees_amount',
+      'needs_review',
+      'created_at',
+      'deleted_at',
+    ],
+    user_settings: ['key', 'value', 'created_at', 'deleted_at'],
+    vehicle_external_costs: [
+      'vehicle_id',
+      'date',
+      'amount',
+      'currency',
+      'cost_type',
+      'quantity_milli',
+      'odometer_km',
+      'description',
+      'payer',
+      'notes',
+      'created_at',
+      'deleted_at',
+    ],
+  } as const;
+  const dropTriggers = Object.keys(triggers)
+    .map(
+      (table) => `
+    DROP TRIGGER IF EXISTS sync_${table}_insert;
+    DROP TRIGGER IF EXISTS sync_${table}_update;`,
+    )
+    .join('');
+  return `
+    ALTER TABLE wealth_items ADD COLUMN integration TEXT CHECK (integration IS NULL OR
+      integration IN ('trading212'));
+    ALTER TABLE vehicles ADD COLUMN costs_paid_by TEXT CHECK (costs_paid_by IS NULL OR
+      length(trim(costs_paid_by)) BETWEEN 1 AND 80);
+    ALTER TABLE entries ADD COLUMN needs_review INTEGER NOT NULL DEFAULT 0
+      CHECK (needs_review IN (0, 1));
+    CREATE INDEX entries_needs_review_idx ON entries (date)
+      WHERE needs_review = 1 AND deleted_at IS NULL;
+
+    CREATE TABLE user_settings (
+      id TEXT PRIMARY KEY NOT NULL,
+      key TEXT NOT NULL CHECK (key IN ('financial_month_start_day')),
+      value TEXT NOT NULL CHECK (length(value) BETWEEN 1 AND 200),
+      version INTEGER NOT NULL DEFAULT 0,
+      server_seq INTEGER,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      synced_at TEXT
+    );
+    CREATE UNIQUE INDEX user_settings_key_idx ON user_settings (key) WHERE deleted_at IS NULL;
+
+    CREATE TABLE vehicle_external_costs (
+      id TEXT PRIMARY KEY NOT NULL,
+      vehicle_id TEXT NOT NULL,
+      date TEXT NOT NULL ${date('date')},
+      amount INTEGER NOT NULL CHECK (typeof(amount) = 'integer' AND amount > 0),
+      currency TEXT NOT NULL CHECK (length(currency) = 3),
+      cost_type TEXT NOT NULL CHECK (cost_type IN ('fuel', 'insurance', 'road_tax', 'inspection',
+        'tyres', 'maintenance', 'repair', 'parking_tolls', 'other')),
+      quantity_milli INTEGER CHECK (quantity_milli IS NULL OR (typeof(quantity_milli) = 'integer'
+        AND quantity_milli BETWEEN 1 AND 1000000 AND cost_type = 'fuel')),
+      odometer_km INTEGER CHECK (odometer_km IS NULL OR (typeof(odometer_km) = 'integer'
+        AND odometer_km BETWEEN 0 AND 10000000)),
+      description TEXT NOT NULL DEFAULT '' CHECK (length(description) <= 120),
+      payer TEXT CHECK (payer IS NULL OR length(trim(payer)) BETWEEN 1 AND 80),
+      notes TEXT CHECK (notes IS NULL OR length(notes) <= 500),
+      version INTEGER NOT NULL DEFAULT 0,
+      server_seq INTEGER,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      synced_at TEXT
+    );
+    CREATE INDEX vehicle_external_costs_vehicle_idx ON vehicle_external_costs (vehicle_id, date)
+      WHERE deleted_at IS NULL;
+
+    ${dropTriggers}
+
+    CREATE TABLE sync_outbox_v17 (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      op_id TEXT NOT NULL UNIQUE,
+      tx_id TEXT,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      record_id TEXT NOT NULL,
+      base_version INTEGER NOT NULL CHECK (base_version >= 0),
+      base TEXT,
+      data TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      created_at TEXT NOT NULL
+    );
+    INSERT INTO sync_outbox_v17
+      (seq, op_id, tx_id, entity, record_id, base_version, base, data, attempts, last_error, created_at)
+      SELECT seq, op_id, tx_id, entity, record_id, base_version, base, data, attempts, last_error, created_at
+        FROM sync_outbox;
+    DROP TABLE sync_outbox;
+    ALTER TABLE sync_outbox_v17 RENAME TO sync_outbox;
+    CREATE INDEX idx_sync_outbox_record ON sync_outbox (entity, record_id, seq);
+
+    CREATE TABLE sync_inbox_v17 (
+      server_seq INTEGER PRIMARY KEY,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      data TEXT NOT NULL
+    );
+    INSERT INTO sync_inbox_v17 (server_seq, entity, data)
+      SELECT server_seq, entity, data FROM sync_inbox;
+    DROP TABLE sync_inbox;
+    ALTER TABLE sync_inbox_v17 RENAME TO sync_inbox;
+
+    CREATE TABLE sync_conflicts_v17 (
+      id TEXT PRIMARY KEY NOT NULL,
+      entity TEXT NOT NULL CHECK (entity IN ${entities}),
+      record_id TEXT NOT NULL,
+      reason TEXT NOT NULL CHECK (reason IN ('version', 'missing', 'rejected')),
+      detail TEXT,
+      base_data TEXT,
+      local_data TEXT,
+      server_data TEXT,
+      created_at TEXT NOT NULL,
+      resolved_at TEXT,
+      resolution TEXT CHECK (resolution IS NULL OR resolution IN ('keepLocal', 'keepServer'))
+    );
+    INSERT INTO sync_conflicts_v17
+      (id, entity, record_id, reason, detail, base_data, local_data, server_data, created_at,
+       resolved_at, resolution)
+      SELECT id, entity, record_id, reason, detail, base_data, local_data, server_data, created_at,
+             resolved_at, resolution
+        FROM sync_conflicts;
+    DROP TABLE sync_conflicts;
+    ALTER TABLE sync_conflicts_v17 RENAME TO sync_conflicts;
+    CREATE INDEX idx_sync_conflicts_open ON sync_conflicts (created_at) WHERE resolved_at IS NULL;
+
+    ${syncTriggers(triggers)}
+
+    UPDATE sync_state SET pull_cursor = 0 WHERE id = 1;
   `;
 }
 

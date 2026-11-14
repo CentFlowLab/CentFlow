@@ -130,6 +130,12 @@ export function SubscriptionForm({ subscription, onClose, onSaved }: Props) {
       title={t(editing ? 'subscriptions.form.editTitle' : 'subscriptions.form.createTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{
+        label: t('subscriptions.form.save'),
+        onPress: () => void save(),
+        loading: saving,
+        disabled: saving,
+      }}
       footer={
         <Button
           label={t('subscriptions.form.save')}

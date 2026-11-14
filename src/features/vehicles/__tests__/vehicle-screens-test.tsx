@@ -4,6 +4,7 @@ import { RepositoriesProvider, type Repositories } from '@/data';
 import { openTestRepositories } from '@/test-utils/node-sqlite-driver';
 import { renderWithProviders } from '@/test-utils/render';
 
+import { NewEntryScreen } from '../../entries/EntryFormScreens';
 import { VehicleDetailScreen } from '../VehicleDetailScreen';
 import { VehicleForm } from '../VehicleForm';
 import { VehiclesScreen } from '../VehiclesScreen';
@@ -212,6 +213,28 @@ describe('Vehicle sheet', () => {
   });
 });
 
+describe('License plate (ADR-078)', () => {
+  it('shows the plate as a real plate in the list and on the sheet, and nothing without one', async () => {
+    const { car } = await seed();
+    await repos.vehicles.create({
+      name: 'Bicicleta',
+      kind: 'bicycle',
+      plate: null,
+      odometerKm: null,
+      inspectionDue: null,
+      insuranceDue: null,
+      currency: 'EUR',
+    });
+    await render(<VehiclesScreen />);
+    expect(await screen.findByLabelText('Matrícula 12-AB-34')).toBeOnTheScreen();
+    expect(screen.getAllByLabelText(/^Matrícula /)).toHaveLength(1);
+    expect(screen.getByText('P', { includeHiddenElements: true })).toBeOnTheScreen();
+    mockParams = { id: car.id };
+    await render(<VehicleDetailScreen />);
+    expect(await screen.findByLabelText('Matrícula 12-AB-34')).toBeOnTheScreen();
+  });
+});
+
 describe('Vehicles overview', () => {
   it('counts vehicles, adds this year per currency and lists the next obligations', async () => {
     await seed();
@@ -239,5 +262,57 @@ describe('Vehicles overview', () => {
     expect(entries.filter((entry) => entry.amount === 24000)).toHaveLength(1);
     expect(entries.every((entry) => entry.vehicleId === null)).toBe(true);
     expect(car.id).toBeTruthy();
+  });
+});
+
+describe('Expense from a vehicle (ADR-081)', () => {
+  it('opens a fixed expense without the type selector, with the vehicle chosen', async () => {
+    const { car } = await seed();
+    mockParams = { vehicleId: car.id };
+    await render(<NewEntryScreen />);
+    expect(await screen.findByText('Nova despesa da viatura')).toBeOnTheScreen();
+    expect(screen.queryByRole('radio', { name: 'Rendimento' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Transferência' })).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Clio · 12-AB-34' })).toBeChecked();
+  });
+
+  it('opens the normal form when the vehicle no longer exists', async () => {
+    const { car } = await seed();
+    await repos.vehicles.delete(car.id);
+    mockParams = { vehicleId: car.id };
+    await render(<NewEntryScreen />);
+    expect(await screen.findByRole('radio', { name: 'Rendimento' })).toBeOnTheScreen();
+  });
+
+  it('keeps the normal form, with the type selector, without a vehicle', async () => {
+    await seed();
+    mockParams = {};
+    await render(<NewEntryScreen />);
+    expect(await screen.findByRole('radio', { name: 'Rendimento' })).toBeOnTheScreen();
+  });
+
+  it('shows the cost paid by others on the sheet, apart from the transactions', async () => {
+    const { car } = await seed();
+    await repos.vehicleExternalCosts.create({
+      vehicleId: car.id,
+      date: '2026-11-10',
+      amount: 6000,
+      currency: 'EUR',
+      costType: 'fuel',
+      quantityMilli: 40000,
+      odometerKm: null,
+      description: 'Gasóleo',
+      payer: 'Nyah Lounge LDA',
+      notes: null,
+    });
+    mockParams = { id: car.id };
+    await render(<VehicleDetailScreen />);
+    expect(await screen.findByText('Pagos por terceiros')).toBeOnTheScreen();
+    expect(screen.getByText(/^Pago por Nyah Lounge LDA · /)).toBeOnTheScreen();
+    // Este ano: 600 € dos movimentos + 60 € pagos pela empresa.
+    expect(screen.getAllByText(/660,00\s?€/).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(/Pago por ti: 600,00\s?€ · Pago por terceiros: 60,00\s?€/),
+    ).toBeOnTheScreen();
   });
 });

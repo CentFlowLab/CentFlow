@@ -205,6 +205,7 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
       title={t(isEditing ? 'accountForm.editTitle' : 'accountForm.newTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{ label: t('common.save'), onPress: save, loading: busy }}
       footer={
         <>
           {formError ? (

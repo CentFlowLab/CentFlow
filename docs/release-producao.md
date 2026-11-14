@@ -364,3 +364,21 @@ início do mês financeiro (ADR-077); campo de data e seletor de mês e ano úni
 inferior em ilha flutuante (ADR-075); vibração com `expo-haptics` (ADR-073). Sem migrações. Função
 `open-banking` com os cabeçalhos PSU e o estado "limitado" no staging; na produção, publicar com
 `npx supabase functions deploy open-banking --remote=slfgslfzolfvqavuccom --no-verify-jwt`.
+
+## Por publicar (preparado a 2026-11-14) — consolidação pós-0.1.22
+
+Alterações só no repositório local (ADR-078 a ADR-082). **Ordem obrigatória**, porque a app nova lê
+`sync_pull_v3`, que só existe depois da migração:
+
+1. Staging: `npx supabase db push --remote=qlimqcgrgaqzwjmafora` (aplica `20261123000100`).
+2. Staging: publicar a função com a validação PSU:
+   `npx supabase functions deploy open-banking --remote=qlimqcgrgaqzwjmafora --no-verify-jwt`.
+3. Testar no staging com dois aparelhos da app nova e um com a 0.1.22: mês financeiro 25 num
+   aparelho → o outro recebe; Trading 212 sem itens duplicados; a 0.1.22 continua a sincronizar.
+4. Produção (só com autorização expressa para cada passo): o mesmo `db push` e `functions deploy`
+   com `--remote=slfgslfzolfvqavuccom`.
+5. Só depois: versão nova da app (web, APK, IPA).
+
+Reversão: a migração só acrescenta colunas, duas tabelas e funções; a `sync_pull_v2` não muda, por
+isso as apps 0.1.22 não são afetadas. A app nova sem a migração falha a sincronização (função
+`sync_pull_v3` inexistente) mas continua a funcionar offline.

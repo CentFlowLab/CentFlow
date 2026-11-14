@@ -9,7 +9,7 @@ import {
   type Account,
   type Category,
   type EntryInput,
-  suggestionFor,
+  importedCategory,
 } from '@/core/finance';
 import {
   findLikelyDuplicates,
@@ -39,6 +39,7 @@ import { closeModal } from '../finance/navigation';
 import { existingMovements } from './existing-movements';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { pickStatementFile } from './pick-statement-file';
+import { usePreferences } from '../preferences';
 
 const OTHER_EXPENSE_ID = DEFAULT_CATEGORIES.find((category) => category.key === 'otherExpense')?.id;
 const OTHER_INCOME_ID = DEFAULT_CATEGORIES.find((category) => category.key === 'otherIncome')?.id;
@@ -58,6 +59,7 @@ export function ImportStatementScreen() {
   const repositories = useRepositories();
   const { formatDate } = useLocaleFormat();
   const lookups = useFinanceLookups();
+  const { preferences } = usePreferences();
   // Histórico de descrições: cada linha usa a categoria habitual dessa descrição, se for clara.
   const history = useDataQuery(
     useCallback(
@@ -138,18 +140,28 @@ export function ImportStatementScreen() {
   const confirm = async () => {
     if (!preview) return;
     const selected = preview.rows.filter((row) => included.has(row.line));
-    const inputs: EntryInput[] = selected.map((row) => ({
-      type: row.type,
-      amount: row.amount,
-      description: row.description,
-      categoryId:
-        suggestionFor(history.data ?? [], row.description, row.type)?.categoryId ??
-        (row.type === 'expense' ? expenseCategory : incomeCategory),
-      accountId: account.id,
-      destinationAccountId: null,
-      date: row.date,
-      notes: null,
-    }));
+    // ADR-082: por classificar, salvo sugestão aplicada no modo "Aplicar sugestões". A categoria
+    // de recurso escolhida aqui é usada, mas o movimento continua por classificar.
+    const inputs: EntryInput[] = selected.map((row) => {
+      const { categoryId, needsReview } = importedCategory(
+        row,
+        history.data ?? [],
+        categories,
+        preferences.importMode,
+        row.type === 'expense' ? expenseCategory : incomeCategory,
+      );
+      return {
+        type: row.type,
+        amount: row.amount,
+        description: row.description,
+        categoryId,
+        accountId: account.id,
+        destinationAccountId: null,
+        date: row.date,
+        notes: null,
+        needsReview,
+      };
+    });
     setBusy(true);
     setError(null);
     try {

@@ -8,6 +8,7 @@ export class NotFoundError extends Error {
       | 'goal'
       | 'contribution'
       | 'wealth_item'
+      | 'vehicle_external_cost'
       | 'vehicle'
       | 'document'
       | 'subscription',

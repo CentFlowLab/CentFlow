@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 
 import { addDays, calendarDateToLocalDate, type CalendarDate } from '@/core/finance';
 import { useLocaleFormat } from '@/i18n';
@@ -11,9 +11,12 @@ import {
   ChipGroup,
   DateFields,
   FadeIn,
+  FormKeyboardContext,
   Icon,
   Text,
+  useFormKeyboard,
   type MonthYearPickerLabels,
+  type ViewHandle,
 } from '@/ui/components';
 import { layout, radius, spacing, useTheme } from '@/ui/theme';
 
@@ -65,6 +68,22 @@ function useSinglePanel(): [boolean, (open: boolean | ((current: boolean) => boo
   return [open, setOpen];
 }
 
+/**
+ * Painel aberto: o teclado fecha e o painel fica à vista; focar outro campo do formulário fecha-o,
+ * para o calendário nunca ficar aberto escondido atrás do teclado desse campo (ADR-080).
+ */
+function usePanelKeyboard(open: boolean, setOpen: (open: boolean) => void) {
+  const keyboard = useFormKeyboard();
+  const panel = useRef<ViewHandle>(null);
+  useEffect(() => {
+    if (!open) return;
+    Keyboard.dismiss();
+    keyboard?.scrollIntoView(panel);
+    return keyboard?.addFocusListener(() => setOpen(false));
+  }, [open, keyboard, setOpen]);
+  return panel;
+}
+
 /** Data escrita, calendário e as ações do painel (remover, quando opcional, e concluir). */
 function DatePanel({
   label,
@@ -73,6 +92,7 @@ function DatePanel({
   optional,
   onChange,
   onClose,
+  panelRef,
 }: {
   label: string;
   value: CalendarDate | null;
@@ -80,31 +100,41 @@ function DatePanel({
   optional: boolean;
   onChange: (value: CalendarDate | null) => void;
   onClose: () => void;
+  panelRef: RefObject<ViewHandle | null>;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { locale } = useLocaleFormat();
   const labels = useCalendarLabels();
+  const outer = useFormKeyboard();
+  // Os campos do próprio painel não o fecham: ao focá-los, o formulário rola até ao painel
+  // (dia, mês, ano e o início do calendário ficam acima do teclado) (ADR-080).
+  const inner = useMemo(
+    () => (outer ? { ...outer, onFieldFocus: () => outer.scrollIntoView(panelRef) } : null),
+    [outer, panelRef],
+  );
   return (
     <FadeIn style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <Text variant="footnote" tone="secondary">
         {t('optionalDate.typeOrPick')}
       </Text>
-      <DateFields
-        label={label}
-        hideLabel
-        value={value}
-        onChange={(date) => onChange(date)}
-        labels={{
-          day: t('calendar.day'),
-          month: t('calendar.month'),
-          year: t('calendar.year'),
-          dayPlaceholder: t('calendar.dayPlaceholder'),
-          monthPlaceholder: t('calendar.monthPlaceholder'),
-          yearPlaceholder: t('calendar.yearPlaceholder'),
-          invalid: t('calendar.invalid'),
-        }}
-      />
+      <FormKeyboardContext.Provider value={inner}>
+        <DateFields
+          label={label}
+          hideLabel
+          value={value}
+          onChange={(date) => onChange(date)}
+          labels={{
+            day: t('calendar.day'),
+            month: t('calendar.month'),
+            year: t('calendar.year'),
+            dayPlaceholder: t('calendar.dayPlaceholder'),
+            monthPlaceholder: t('calendar.monthPlaceholder'),
+            yearPlaceholder: t('calendar.yearPlaceholder'),
+            invalid: t('calendar.invalid'),
+          }}
+        />
+      </FormKeyboardContext.Provider>
       <CalendarPicker
         value={value ?? today}
         today={today}
@@ -152,6 +182,7 @@ export function DateField(props: DateFieldProps) {
   const { formatDate } = useLocaleFormat();
   const [open, setOpen] = useSinglePanel();
   const [hovered, setHovered] = useState(false);
+  const panel = usePanelKeyboard(open, setOpen);
   const shown = value
     ? formatDate(calendarDateToLocalDate(value), 'medium')
     : t('optionalDate.empty');
@@ -187,14 +218,17 @@ export function DateField(props: DateFieldProps) {
         <Icon name={open ? 'chevron-up' : 'chevron-down'} size={18} color="textTertiary" />
       </Pressable>
       {open ? (
-        <DatePanel
-          label={label}
-          value={value}
-          today={today}
-          optional={optional}
-          onChange={change}
-          onClose={() => setOpen(false)}
-        />
+        <View ref={panel} collapsable={false}>
+          <DatePanel
+            label={label}
+            value={value}
+            today={today}
+            optional={optional}
+            onChange={change}
+            onClose={() => setOpen(false)}
+            panelRef={panel}
+          />
+        </View>
       ) : null}
       {errorText ? (
         <Text variant="footnote" tone="negative">
@@ -229,6 +263,7 @@ export function DateChips({
   const { t } = useTranslation();
   const { formatDate } = useLocaleFormat();
   const [open, setOpen] = useSinglePanel();
+  const panel = usePanelKeyboard(open, setOpen);
   const yesterday = addDays(today, -1);
   const custom = value !== today && value !== yesterday;
   return (
@@ -260,16 +295,19 @@ export function DateChips({
         />
       </ChipGroup>
       {open ? (
-        <DatePanel
-          label={label}
-          value={value}
-          today={today}
-          optional={false}
-          onChange={(next) => {
-            if (next) onChange(next);
-          }}
-          onClose={() => setOpen(false)}
-        />
+        <View ref={panel} collapsable={false}>
+          <DatePanel
+            label={label}
+            value={value}
+            today={today}
+            optional={false}
+            onChange={(next) => {
+              if (next) onChange(next);
+            }}
+            onClose={() => setOpen(false)}
+            panelRef={panel}
+          />
+        </View>
       ) : null}
     </View>
   );

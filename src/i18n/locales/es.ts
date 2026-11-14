@@ -22,6 +22,7 @@ const es: Translation = {
     yes: 'Sí',
     no: 'No',
     ok: 'Aceptar',
+    keyboardDone: 'Listo',
   },
   nav: {
     mainNavigation: 'Navegación principal',
@@ -52,6 +53,7 @@ const es: Translation = {
       unrealized: 'No realizado: {{amount}} · {{percent}}',
       chooseItem: 'Elige cómo cuenta en el patrimonio (ya tienes inversiones registradas).',
       notCounted: 'No cuenta en el patrimonio (tu elección).',
+      ambiguous: 'Hay más de un elemento contando Trading 212. Elige uno; ninguno se borra.',
     },
     cardDebtHint: 'No incluido: {{amount}} adeudado en tarjetas de crédito',
     transfersExcluded: 'Las transferencias entre tus cuentas no cuentan como ingreso ni gasto.',
@@ -197,7 +199,7 @@ const es: Translation = {
   banking: {
     title: 'Bancos',
     intro:
-      'Conecta tus cuentas para ver el saldo y recibir los movimientos automáticamente. La conexión es solo de lectura: no permite pagos ni transferencias. Autorizas en tu banco y la autorización dura hasta 90 días.',
+      'Conecta tus cuentas para ver el saldo y traer los movimientos del banco a la app. La conexión es solo de lectura: no permite pagos ni transferencias. Autorizas en tu banco y la autorización dura hasta 90 días.',
     provider:
       'La conexión la presta Enable Banking, proveedor de servicios de información sobre cuentas (PSD2) supervisado en la UE. Miven nunca ve tus credenciales del banco.',
     connect: 'Conectar un banco',
@@ -307,6 +309,8 @@ const es: Translation = {
       'El valor total de la cuenta entra en el patrimonio mediante un único elemento de inversión, actualizado en cada lectura. Comprar y vender en Trading 212 no son gastos ni ingresos.',
     netWorthItem: 'Contar como',
     notCounted: 'No contar',
+    ambiguous:
+      'Dos dispositivos vincularon elementos distintos. Elige el que cuenta; el otro queda como inversión tuya, sin borrar nada.',
     createItem: 'Crear elemento',
     disconnect: 'Desconectar cuenta',
     disconnectTitle: '¿Desconectar Trading 212?',
@@ -345,6 +349,12 @@ const es: Translation = {
     audit: 'Registro de consultas',
   },
   settings: {
+    importMode: {
+      title: 'Movimientos importados',
+      review: 'Marcar para revisar',
+      suggest: 'Aplicar sugerencias',
+      hint: 'Con "Marcar para revisar", los movimientos del banco y de los extractos entran en "Otros gastos" u "Otros ingresos" y quedan por clasificar. Con "Aplicar sugerencias", usan la categoría habitual de esa descripción, cuando es clara.',
+    },
     t212Hint: 'Cartera y posiciones, solo lectura',
     banksHint: 'Cuentas bancarias, solo lectura',
     formats: 'Números, monedas y fechas',
@@ -430,7 +440,7 @@ const es: Translation = {
       noteShort:
         'Para los días 29–31, en los meses más cortos el periodo empieza el último día del mes.',
       noteLocal:
-        'Este ajuste queda en este dispositivo; en otro puede ser diferente. Solo cambia cómo se agrupa — ningún valor guardado cambia.',
+        'Es un ajuste de tu cuenta: vale en todos tus dispositivos. Solo cambia cómo se agrupa — ningún valor guardado cambia.',
     },
     nav: {
       label: 'Secciones de los ajustes',
@@ -581,6 +591,29 @@ const es: Translation = {
     transfer: 'Transferencia',
   },
   entries: {
+    review: {
+      filter: 'Por clasificar',
+      filterCount: 'Por clasificar ({{count}})',
+      tag: 'Por clasificar',
+      apply: 'Aplicar: {{category}}',
+      markReviewed: 'Marcar como revisado',
+      markAll: 'Marcar todos como revisados',
+      markAllTitle: '¿Marcar todos como revisados?',
+      markAllMessage_one:
+        '1 movimiento deja de estar por clasificar. Categoría, importe y fecha no cambian.',
+      markAllMessage_other:
+        '{{count}} movimientos dejan de estar por clasificar. Categorías, importes y fechas no cambian.',
+      transferTitle: 'Posible transferencia',
+      transferBody: '{{from}} → {{to}} · {{amount}} · {{date}}',
+      convert: 'Convertir en transferencia',
+      convertTitle: '¿Convertir en transferencia?',
+      convertMessage:
+        'La salida de {{from}} pasa a ser una transferencia a {{to}} y la entrada en {{to}} se borra. Los saldos no cambian.',
+      notTransfer: 'No es transferencia',
+      cancelling: 'Estos dos movimientos se anulan: {{account}}, {{amount}}, {{date}}.',
+      banner: 'Importado — por clasificar',
+      bannerHint: 'Confirma la categoría y guarda, o márcalo como revisado.',
+    },
     edit: 'Editar',
     delete: 'Eliminar',
     deleted: 'Movimiento eliminado',
@@ -653,6 +686,7 @@ const es: Translation = {
     noAccounts: 'Crea primero una cuenta para recibir los movimientos.',
   },
   entryForm: {
+    vehicleExpenseTitle: 'Nuevo gasto del vehículo',
     frequent: 'Frecuentes',
     suggestedFromHistory: 'Categoría sugerida por tus movimientos anteriores.',
     duplicate: 'Duplicar movimiento',
@@ -1264,6 +1298,7 @@ const es: Translation = {
     },
   },
   vehicles: {
+    plateA11y: 'Matrícula {{plate}}',
     chargeSummary: '{{kwh}} kWh en {{count}} recargas',
     avgPriceKwh: 'Precio medio: {{price}}/kWh',
     consumptionLitres: 'Consumo: {{value}} l/100 km',
@@ -1644,6 +1679,47 @@ const es: Translation = {
     inDays_one: 'Mañana · {{date}}',
     inDays_other: 'Dentro de {{count}} días · {{date}}',
     overdue: 'Atrasado · {{date}}',
+  },
+  vehicleCosts: {
+    count_one: '1 coste',
+    count_other: '{{count}} costes',
+    addExternalShort: 'Pagado por terceros',
+    payerGroup: 'Quién paga los gastos',
+    payerSelf: 'Yo',
+    payerOther: 'Empresa o terceros',
+    payerName: 'Nombre del pagador',
+    payerHint:
+      'Los costes pagados por terceros cuentan en el coste del vehículo, pero no en tus cuentas, presupuestos ni informes.',
+    addOwn: 'Registrar gasto',
+    addExternal: 'Registrar coste pagado por {{payer}}',
+    addExternalGeneric: 'Registrar coste pagado por terceros',
+    paidBy: 'Pagado por {{payer}}',
+    paidByOthers: 'Pagado por terceros',
+    historyTitle: 'Pagados por terceros',
+    sharesOwn: 'Pagado por ti',
+    sharesOthers: 'Pagado por terceros',
+    deleteKeeps_one: 'Se guarda 1 coste pagado por terceros (no sale de ninguna cuenta).',
+    deleteKeeps_other:
+      'Se guardan {{count}} costes pagados por terceros (no salen de ninguna cuenta).',
+    form: {
+      newTitle: 'Coste pagado por terceros',
+      editTitle: 'Editar coste pagado por terceros',
+      hint: 'No sale de ninguna de tus cuentas: solo cuenta en el coste y el historial del vehículo.',
+      amount: 'Importe',
+      currency: 'Moneda',
+      date: 'Fecha',
+      costType: 'Tipo de coste',
+      quantity: 'Litros (opcional)',
+      quantityKwh: 'kWh (opcional)',
+      odometer: 'Kilómetros (opcional)',
+      description: 'Descripción (opcional)',
+      payer: 'Pagado por',
+      notes: 'Notas (opcional)',
+      save: 'Guardar coste',
+      delete: 'Borrar coste',
+      deleteTitle: '¿Borrar este coste?',
+      deleteMessage: 'Sale del coste y del historial del vehículo. Tus cuentas no cambian.',
+    },
   },
   vehicleForm: {
     kindLabel: 'Tipo',
@@ -2086,6 +2162,8 @@ const es: Translation = {
       vehicles: 'Vehículo',
       documents: 'Documento',
       entries: 'Movimiento',
+      user_settings: 'Ajuste',
+      vehicle_external_costs: 'Coste pagado por terceros',
     },
     reasons: {
       version: 'Modificado en otro dispositivo',

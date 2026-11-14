@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -9,16 +9,20 @@ import {
   daysUntil,
   deadlineStatus,
   entriesInPeriod,
+  externalCostEntries,
   monthKeyToLocalDate,
   SERVICE_SOON_KM,
   VEHICLE_COST_TYPES,
   VEHICLE_PERIODS,
   vehicleMonthlyCosts,
+  vehicleCostShares,
   vehicleStats,
   vehicleYearCost,
   type CalendarDate,
   type Vehicle,
   type VehicleCostType,
+  type VehicleEntry,
+  type VehicleExternalCost,
   type VehiclePeriod,
 } from '@/core/finance';
 import { DEFAULT_CURRENCY } from '@/core/money';
@@ -40,6 +44,7 @@ import {
   SegmentedControl,
   Text,
   type BadgeTone,
+  LicensePlate,
 } from '@/ui/components';
 import { useBreakpoint } from '@/ui/layout/useBreakpoint';
 import { radius, spacing, useTheme } from '@/ui/theme';
@@ -49,17 +54,19 @@ import { EntryListItem } from '../finance/EntryListItem';
 import { closeModal } from '../finance/navigation';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
-import { energyUnit, vehicleIcon, vehicleKindLabel } from './presentation';
+import { energyUnit, plateCountry, vehicleIcon, vehicleKindLabel } from './presentation';
 
 async function loadVehicle(repositories: Repositories, id: string) {
-  const [vehicle, entries, documents] = [
+  const [vehicle, entries, documents, externalCosts] = [
     await repositories.vehicles.get(id),
     await repositories.entries.listForVehicle(id),
     await repositories.documents.list(),
+    await repositories.vehicleExternalCosts.listForVehicle(id),
   ];
   return {
     vehicle,
     entries,
+    externalCosts,
     documents: documents.filter((document) => document.vehicleId === id),
   };
 }
@@ -85,7 +92,7 @@ export function VehicleDetailScreen() {
       </FormScreen>
     );
   }
-  const { vehicle, entries, documents } = query.data;
+  const { vehicle, entries, documents, externalCosts } = query.data;
   if (!vehicle) {
     return (
       <FormScreen title={t('vehicles.detailTitle')} closeLabel={t('common.close')} onClose={close}>
@@ -97,6 +104,7 @@ export function VehicleDetailScreen() {
     <VehicleSheet
       vehicle={vehicle}
       entries={entries}
+      externalCosts={externalCosts}
       documents={documents}
       lookups={lookups.data}
       onClose={close}
@@ -114,12 +122,14 @@ type ObligationKind = (typeof OBLIGATIONS)[number];
 function VehicleSheet({
   vehicle,
   entries,
+  externalCosts,
   documents,
   lookups,
   onClose,
 }: {
   vehicle: Vehicle;
   entries: Loaded['entries'];
+  externalCosts: VehicleExternalCost[];
   documents: Loaded['documents'];
   lookups: Lookups;
   onClose: () => void;
@@ -133,9 +143,17 @@ function VehicleSheet({
   // Totais só numa moeda: a do veículo, ou a do primeiro movimento. Outras moedas não se somam.
   const currency = vehicle.currency ?? entries[0]?.currency ?? DEFAULT_CURRENCY;
   const inCurrency = entries.filter((entry) => entry.currency === currency);
-  const overall = vehicleStats(vehicle, inCurrency, today);
-  const inPeriod = vehicleStats(vehicle, entriesInPeriod(inCurrency, period, today), today);
-  const odometer = currentOdometer(vehicle, entries);
+  // Custos pagos por terceiros (ADR-081): contam no custo da viatura, na mesma moeda; nunca nas
+  // contas. As estatísticas juntam os dois; a divisão mostra quem pagou.
+  const external = externalCostEntries(externalCosts.filter((cost) => cost.currency === currency));
+  const all = [...inCurrency, ...external];
+  const overall = vehicleStats(vehicle, all, today);
+  const inPeriod = vehicleStats(vehicle, entriesInPeriod(all, period, today), today);
+  const shares = vehicleCostShares(
+    entriesInPeriod(inCurrency, period, today),
+    entriesInPeriod(external, period, today),
+  );
+  const odometer = currentOdometer(vehicle, [...entries, ...external]);
   const unit = energyUnit(vehicle);
   const costTypeLabel = (type: VehicleCostType) =>
     type === 'fuel' && unit === 'kwh'
@@ -152,7 +170,10 @@ function VehicleSheet({
       spentInPeriod={inPeriod.spent}
       overall={overall}
       currency={currency}
-      otherCurrency={inCurrency.length !== entries.length}
+      otherCurrency={
+        inCurrency.length !== entries.length || external.length !== externalCosts.length
+      }
+      shares={externalCosts.length > 0 ? shares : null}
     />
   );
   const breakdown = (
@@ -165,10 +186,26 @@ function VehicleSheet({
   );
   const obligations = <Obligations vehicle={vehicle} today={today} odometer={odometer} />;
   const indicators = (
-    <Indicators vehicle={vehicle} entries={inCurrency} currency={currency} today={today} />
+    <Indicators vehicle={vehicle} entries={all} currency={currency} today={today} />
   );
   const documentList = documents.length > 0 ? <Documents documents={documents} /> : null;
-  const history = <History entries={entries} lookups={lookups} costTypeLabel={costTypeLabel} />;
+  const history = (
+    <>
+      <History entries={entries} lookups={lookups} costTypeLabel={costTypeLabel} />
+      {externalCosts.length > 0 ? (
+        <ExternalHistory costs={externalCosts} costTypeLabel={costTypeLabel} />
+      ) : null}
+    </>
+  );
+  const ownLabel = t('vehicleCosts.addOwn');
+  const externalLabel = vehicle.costsPaidBy
+    ? t('vehicleCosts.addExternal', { payer: vehicle.costsPaidBy })
+    : t('vehicleCosts.addExternalGeneric');
+  const addOwn = () =>
+    router.push({ pathname: '/new-transaction', params: { vehicleId: vehicle.id } });
+  const addExternal = () => router.push(`/vehicles/external/new?vehicleId=${vehicle.id}` as Href);
+  // A ação principal é a omissão da viatura; a outra fica ao lado (ADR-081).
+  const paidByOthers = vehicle.costsPaidBy !== null;
 
   return (
     <FormScreen
@@ -188,29 +225,59 @@ function VehicleSheet({
         />
       }
       footer={
-        <View style={wide ? styles.actionsWide : styles.actions}>
-          <View style={wide ? undefined : styles.flex}>
+        wide ? (
+          <View style={styles.actionsWide}>
             <Button
               label={t('vehicles.link')}
               variant="secondary"
               icon="link-outline"
-              fullWidth={!wide}
               onPress={() =>
                 router.push({ pathname: '/vehicles/link/[id]', params: { id: vehicle.id } })
               }
             />
-          </View>
-          <View style={wide ? undefined : styles.flex}>
             <Button
-              label={t('vehicles.addExpense')}
+              label={paidByOthers ? ownLabel : externalLabel}
+              variant="secondary"
+              onPress={paidByOthers ? addOwn : addExternal}
+            />
+            <Button
+              label={paidByOthers ? externalLabel : ownLabel}
               icon="add"
-              fullWidth={!wide}
-              onPress={() =>
-                router.push({ pathname: '/new-transaction', params: { vehicleId: vehicle.id } })
-              }
+              onPress={paidByOthers ? addExternal : addOwn}
             />
           </View>
-        </View>
+        ) : (
+          // Telemóvel: a ação principal a toda a largura; as outras duas numa linha por baixo.
+          <View style={styles.actionsStack}>
+            <Button
+              label={paidByOthers ? externalLabel : ownLabel}
+              icon="add"
+              fullWidth
+              onPress={paidByOthers ? addExternal : addOwn}
+            />
+            <View style={styles.actions}>
+              <View style={styles.flex}>
+                <Button
+                  label={t('vehicles.link')}
+                  variant="secondary"
+                  icon="link-outline"
+                  fullWidth
+                  onPress={() =>
+                    router.push({ pathname: '/vehicles/link/[id]', params: { id: vehicle.id } })
+                  }
+                />
+              </View>
+              <View style={styles.flex}>
+                <Button
+                  label={paidByOthers ? ownLabel : t('vehicleCosts.addExternalShort')}
+                  variant="secondary"
+                  fullWidth
+                  onPress={paidByOthers ? addOwn : addExternal}
+                />
+              </View>
+            </View>
+          </View>
+        )
       }>
       {header}
       {wide ? (
@@ -270,7 +337,13 @@ function VehicleHeader({
           </Text>
         ) : null}
         <View style={styles.badges}>
-          {vehicle.plate ? <Plate value={vehicle.plate} /> : null}
+          {vehicle.plate ? (
+            <LicensePlate
+              value={vehicle.plate}
+              country={plateCountry(vehicle.plate)}
+              accessibilityLabel={t('vehicles.plateA11y', { plate: vehicle.plate })}
+            />
+          ) : null}
           {facts.map((fact) => (
             <Badge key={fact} label={fact} />
           ))}
@@ -279,18 +352,6 @@ function VehicleHeader({
           ) : null}
         </View>
       </View>
-    </View>
-  );
-}
-
-/** Matrícula com o aspeto de uma placa (contorno), legível em claro e escuro. */
-function Plate({ value }: { value: string }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.plate, { borderColor: colors.borderStrong }]}>
-      <Text variant="caption" tabular>
-        {value.toLocaleUpperCase()}
-      </Text>
     </View>
   );
 }
@@ -324,6 +385,7 @@ function SpendingCard({
   overall,
   currency,
   otherCurrency,
+  shares,
 }: {
   period: VehiclePeriod;
   onPeriod: (period: VehiclePeriod) => void;
@@ -331,6 +393,8 @@ function SpendingCard({
   overall: ReturnType<typeof vehicleStats>;
   currency: string;
   otherCurrency: boolean;
+  /** Divisão do período entre o que a pessoa pagou e o que terceiros pagaram (só se houver). */
+  shares: { own: number; others: number } | null;
 }) {
   const { t } = useTranslation();
   const { formatMoney, formatUnitPrice } = useLocaleFormat();
@@ -353,6 +417,13 @@ function SpendingCard({
             {t('vehicles.spentInPeriod')}
           </Text>
           <Amount value={money(spentInPeriod)} variant="amountHero" />
+          {shares ? (
+            <Text variant="footnote" tone="secondary" tabular>
+              {`${t('vehicleCosts.sharesOwn')}: ${formatMoney(money(shares.own))} · ${t(
+                'vehicleCosts.sharesOthers',
+              )}: ${formatMoney(money(shares.others))}`}
+            </Text>
+          ) : null}
         </View>
         <Divider />
         <View style={styles.figures}>
@@ -562,7 +633,8 @@ function Indicators({
   today,
 }: {
   vehicle: Vehicle;
-  entries: Loaded['entries'];
+  /** Movimentos e custos pagos por terceiros, na moeda da viatura (ADR-081). */
+  entries: readonly VehicleEntry[];
   currency: string;
   today: CalendarDate;
 }) {
@@ -711,6 +783,57 @@ function Documents({ documents }: { documents: Loaded['documents'] }) {
 }
 
 /** Os mesmos movimentos da área de Movimentos, filtráveis pelo tipo de custo. */
+/** Custos pagos por terceiros: à parte dos movimentos, com quem pagou e editáveis (ADR-081). */
+function ExternalHistory({
+  costs,
+  costTypeLabel,
+}: {
+  costs: VehicleExternalCost[];
+  costTypeLabel: (type: VehicleCostType) => string;
+}) {
+  const { t } = useTranslation();
+  const { formatMoney, formatDate } = useLocaleFormat();
+  return (
+    <View style={styles.section}>
+      <SectionTitle
+        action={
+          <Text variant="footnote" tone="tertiary">
+            {t('vehicleCosts.count', { count: costs.length })}
+          </Text>
+        }>
+        {t('vehicleCosts.historyTitle')}
+      </SectionTitle>
+      <Card padding="xs">
+        {costs.map((cost, index) => {
+          const payer = cost.payer
+            ? t('vehicleCosts.paidBy', { payer: cost.payer })
+            : t('vehicleCosts.paidByOthers');
+          const amount = formatMoney({ amountMinor: cost.amount, currency: cost.currency });
+          const date = formatDate(calendarDateToLocalDate(cost.date), 'medium');
+          return (
+            <View key={cost.id}>
+              {index > 0 ? <Divider inset={spacing.lg} /> : null}
+              <ListItem
+                icon="business-outline"
+                iconColor="textSecondary"
+                iconBackground="surfaceMuted"
+                title={cost.description || costTypeLabel(cost.costType)}
+                subtitle={`${payer} · ${costTypeLabel(cost.costType)} · ${date}`}
+                trailing={
+                  <Text variant="bodyStrong" tabular>
+                    {amount}
+                  </Text>
+                }
+                onPress={() => router.push(`/vehicles/external/${cost.id}` as Href)}
+              />
+            </View>
+          );
+        })}
+      </Card>
+    </View>
+  );
+}
+
 function History({
   entries,
   lookups,
@@ -800,6 +923,7 @@ function History({
 
 const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: spacing.sm },
+  actionsStack: { gap: spacing.sm },
   actionsWide: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
@@ -812,12 +936,6 @@ const styles = StyleSheet.create({
   },
   headerText: { flex: 1, minWidth: 0, gap: spacing.sm },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, alignItems: 'center' },
-  plate: {
-    borderWidth: 1.5,
-    borderRadius: radius.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-  },
   columns: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
   main: { flex: 3, minWidth: 0, gap: spacing.xl },
   side: { flex: 2, minWidth: 0, gap: spacing.xl },

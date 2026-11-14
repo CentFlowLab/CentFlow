@@ -20,7 +20,9 @@ export type SyncEntity =
   | 'wealth_items'
   | 'vehicles'
   | 'documents'
-  | 'entries';
+  | 'entries'
+  | 'user_settings'
+  | 'vehicle_external_costs';
 
 export type SyncValue = string | number | null;
 export type SyncRecord = Readonly<Record<string, SyncValue>>;
@@ -95,6 +97,7 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'installment_amount',
     'due_day',
     'ends_on',
+    'integration',
     'deleted_at',
   ],
   vehicles: [
@@ -117,6 +120,7 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'notes',
     'kind_label',
     'icon',
+    'costs_paid_by',
     'deleted_at',
   ],
   documents: [
@@ -149,6 +153,21 @@ export const SYNC_FIELDS: Readonly<Record<SyncEntity, readonly string[]>> = {
     'principal_amount',
     'interest_amount',
     'fees_amount',
+    'needs_review',
+    'deleted_at',
+  ],
+  user_settings: ['key', 'value', 'deleted_at'],
+  vehicle_external_costs: [
+    'vehicle_id',
+    'date',
+    'amount',
+    'currency',
+    'cost_type',
+    'quantity_milli',
+    'odometer_km',
+    'description',
+    'payer',
+    'notes',
     'deleted_at',
   ],
 };
@@ -184,6 +203,10 @@ const COUPLED: Readonly<Record<SyncEntity, readonly (readonly string[])[]>> = {
     // A ligação ao empréstimo é um todo (ADR-057).
     ['loan_id', 'loan_role'],
   ],
+  // Chave e valor de uma definição são um todo (ADR-079).
+  user_settings: [['key', 'value']],
+  // Como num abastecimento ligado a um movimento: valor, moeda, tipo, quantidade e km juntos.
+  vehicle_external_costs: [['amount', 'currency', 'cost_type', 'quantity_milli', 'odometer_km']],
 };
 
 /**

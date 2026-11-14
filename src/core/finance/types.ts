@@ -97,6 +97,11 @@ export type Entry = SyncMetadata & {
   principalAmount: number | null;
   interestAmount: number | null;
   feesAmount: number | null;
+  /**
+   * Importado e ainda por classificar (ADR-082): conta nos totais como sempre (na categoria de
+   * recurso); só pede revisão. Movimentos registados à mão nunca estão por classificar.
+   */
+  needsReview: boolean;
 };
 
 export const LOAN_ROLES = ['payment', 'disbursement'] as const;
@@ -161,6 +166,7 @@ export type EntryInput = Pick<
       | 'principalAmount'
       | 'interestAmount'
       | 'feesAmount'
+      | 'needsReview'
     >
   >;
 export type BudgetInput = Pick<
@@ -266,7 +272,16 @@ export type WealthItem = SyncMetadata & {
   installmentAmount: number | null;
   dueDay: number | null;
   endsOn: CalendarDate | null;
+  /**
+   * Integração dona do item (ADR-079): só ela o atualiza. `null` = item da pessoa, que nenhuma
+   * integração altera nem apaga.
+   */
+  integration: WealthIntegration | null;
 };
+
+/** Integrações que podem manter um item do património (ADR-079). */
+export const WEALTH_INTEGRATIONS = ['trading212'] as const;
+export type WealthIntegration = (typeof WEALTH_INTEGRATIONS)[number];
 
 export const LOAN_FIELDS = [
   'loanKind',
@@ -294,6 +309,8 @@ export type WealthItemInput = Pick<
      * do histórico. Sem valor: mantém o histórico como está.
      */
     origin?: WealthValuation;
+    /** Só ao criar: a integração dona do item (ADR-079). Editar nunca a muda. */
+    integration?: WealthIntegration | null;
   };
 
 /** Pagamento de uma dívida: cria a despesa na conta e baixa o valor em dívida (ADR-052). */
@@ -351,7 +368,40 @@ export type Vehicle = SyncMetadata & {
   kindLabel: string | null;
   /** Ícone escolhido (catálogo de ícones); sem ele, o do tipo base. */
   icon: string | null;
+  /**
+   * Quem paga as despesas (ADR-081): `null` = a própria pessoa (omissão); um nome = empresa ou
+   * terceiro, pagador proposto nos custos pagos por terceiros.
+   */
+  costsPaidBy: string | null;
 };
+
+/** Tipos de custo pagos por terceiros: os da viatura, sem a compra. */
+export type VehicleExternalCostType = Exclude<VehicleCostType, 'purchase'>;
+export const VEHICLE_EXTERNAL_COST_TYPES = VEHICLE_COST_TYPES.filter(
+  (type): type is VehicleExternalCostType => type !== 'purchase',
+);
+
+/**
+ * Custo da viatura pago por terceiros (ADR-081): não é um movimento, não tem conta e nunca entra em
+ * saldos, despesas, orçamentos, relatórios nem património; conta só no custo e no histórico da
+ * viatura. Elétricos: `quantityMilli` em kWh × 1000.
+ */
+export type VehicleExternalCost = SyncMetadata & {
+  id: Id;
+  vehicleId: Id;
+  date: CalendarDate;
+  /** Unidades mínimas, sempre positivo. */
+  amount: number;
+  currency: CurrencyCode;
+  costType: VehicleExternalCostType;
+  quantityMilli: number | null;
+  odometerKm: number | null;
+  description: string;
+  payer: string | null;
+  notes: string | null;
+};
+
+export type VehicleExternalCostInput = Omit<VehicleExternalCost, 'id' | 'createdAt' | 'updatedAt'>;
 
 export type VehicleInput = Pick<
   Vehicle,
@@ -373,6 +423,7 @@ export type VehicleInput = Pick<
       | 'notes'
       | 'kindLabel'
       | 'icon'
+      | 'costsPaidBy'
     >
   >;
 

@@ -22,9 +22,9 @@ import { spacing, useTheme } from '@/ui/theme';
 import { useAuth } from '../account/AuthProvider';
 import { closeModal } from '../finance/navigation';
 import {
-  linkedItemId,
   loadT212,
-  setLinkedItem,
+  chooseT212Item,
+  readT212Link,
   syncT212Wealth,
   type T212State,
 } from './trading212-sync';
@@ -53,6 +53,7 @@ export function Trading212Screen() {
   const [environment, setEnvironment] = useState<'live' | 'demo'>('live');
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [link, setLink] = useState<string | null>(null);
+  const [ambiguous, setAmbiguous] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const investments = useDataQuery(
     useCallback(
@@ -71,7 +72,11 @@ export function Trading212Screen() {
   const syncWealth = useCallback(
     async (snapshot: T212Snapshot | null) => {
       await syncT212Wealth(repositories, snapshot, today, t('t212.title'));
-      setLink(await linkedItemId());
+      const next = await readT212Link(repositories);
+      setAmbiguous(next.status === 'ambiguous');
+      setLink(
+        next.status === 'linked' ? next.item.id : next.status === 'notCounted' ? 'none' : null,
+      );
     },
     [repositories, today, t],
   );
@@ -135,7 +140,8 @@ export function Trading212Screen() {
     if (!client) return;
     setBusy(true);
     await client.functions.invoke('t212', { method: 'POST', body: { action: 'disconnect' } });
-    await setLinkedItem(null);
+    // O item fica como investimento da pessoa, com o último valor; deixa de ser atualizado.
+    await chooseT212Item(repositories, null);
     setBusy(false);
     await refresh(false);
   };
@@ -148,10 +154,11 @@ export function Trading212Screen() {
         amount: state.snapshot.total,
         currency: state.snapshot.currency,
         valuedOn: today,
+        integration: 'trading212',
       });
       value = created.id;
     }
-    await setLinkedItem(value);
+    await chooseT212Item(repositories, value);
     setLink(value);
     await syncWealth(state?.snapshot ?? null).catch(() => undefined);
   };
@@ -332,6 +339,11 @@ export function Trading212Screen() {
                 <Text variant="footnote" tone="tertiary">
                   {t('t212.netWorthHint')}
                 </Text>
+                {ambiguous ? (
+                  <Text variant="footnote" tone="warning">
+                    {t('t212.ambiguous')}
+                  </Text>
+                ) : null}
                 <ChipGroup label={t('t212.netWorthItem')}>
                   <Chip
                     label={t('t212.notCounted')}

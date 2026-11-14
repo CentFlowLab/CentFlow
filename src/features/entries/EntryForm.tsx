@@ -31,6 +31,7 @@ import { useLocaleFormat } from '@/i18n';
 import {
   Badge,
   Button,
+  Card,
   Chip,
   ChipGroup,
   Dialog,
@@ -62,6 +63,13 @@ type Props = {
   prefill?: EntryPrefill;
   /** Pagamento de uma subscrição: depois de gravar, a próxima cobrança avança um período. */
   subscription?: Subscription;
+  /**
+   * Tipo fixo, sem seletor (despesa a partir de uma viatura): nem a sugestão por texto nem os
+   * atalhos frequentes o mudam. Só num movimento novo.
+   */
+  lockedType?: 'expense';
+  /** Título do formulário em vez do habitual. */
+  title?: string;
 };
 
 export type EntryPrefill = {
@@ -111,6 +119,8 @@ export function EntryForm({
   initialVehicleId,
   prefill,
   subscription,
+  lockedType,
+  title,
 }: Props) {
   const { t } = useTranslation();
   const { locale, formatUnitPrice } = useLocaleFormat();
@@ -138,7 +148,8 @@ export function EntryForm({
       last: lastAccountId,
     });
 
-  const [type, setType] = useState<EntryType>(entry?.type ?? prefill?.type ?? 'expense');
+  const locked = entry ? undefined : lockedType;
+  const [type, setType] = useState<EntryType>(locked ?? entry?.type ?? prefill?.type ?? 'expense');
   const [amountText, setAmountText] = useState(() => {
     if (!entry) {
       if (prefill?.amount == null) return '';
@@ -223,6 +234,7 @@ export function EntryForm({
   const transferUnavailable = type === 'transfer' && !isEditing && destinationChoices.length === 0;
 
   const changeType = (next: EntryType) => {
+    if (locked && next !== locked) return;
     setType(next);
     setErrors({});
     if (next === 'transfer') setCategoryId(null);
@@ -401,13 +413,21 @@ export function EntryForm({
     });
   })();
 
-  const frequent = history.data ? frequentEntries(history.data, 6) : [];
+  const frequent = (history.data ? frequentEntries(history.data, 6) : []).filter(
+    (suggestion) => !locked || suggestion.type === locked,
+  );
 
   return (
     <FormScreen
-      title={t(isEditing ? 'entryForm.editTitle' : 'entryForm.newTitle')}
+      title={title ?? t(isEditing ? 'entryForm.editTitle' : 'entryForm.newTitle')}
       closeLabel={t('common.close')}
       onClose={() => closeModal('/transactions')}
+      keyboardAction={{
+        label: t('entryForm.save'),
+        onPress: () => void save(false),
+        loading: saving,
+        disabled: transferUnavailable,
+      }}
       footer={
         <>
           {formError ? (
@@ -449,10 +469,32 @@ export function EntryForm({
           </View>
         </>
       }>
+      {entry?.needsReview ? (
+        // Importado e por classificar (ADR-082): gravar também o marca como revisto.
+        <Card padding="md">
+          <View style={styles.reviewBanner}>
+            <Text variant="bodyStrong">{t('entries.review.banner')}</Text>
+            <Text variant="footnote" tone="secondary">
+              {t('entries.review.bannerHint')}
+            </Text>
+            <Button
+              label={t('entries.review.markReviewed')}
+              size="sm"
+              variant="secondary"
+              onPress={() =>
+                void repositories.entries
+                  .markReviewed([entry.id])
+                  .then(() => closeModal('/transactions'))
+              }
+            />
+          </View>
+        </Card>
+      ) : null}
       {isEditing ? null : (
         <AiSuggestion
           today={today}
           categories={lookups.categoryList}
+          onlyType={locked}
           onApply={(suggestion) => {
             changeType(suggestion.type);
             setDate(suggestion.date);
@@ -495,12 +537,14 @@ export function EntryForm({
           ))}
         </ChipGroup>
       ) : null}
-      <SegmentedControl
-        accessibilityLabel={t('entryForm.type')}
-        value={type}
-        onChange={changeType}
-        options={ENTRY_TYPES.map((value) => ({ value, label: t(`entryTypes.${value}`) }))}
-      />
+      {locked ? null : (
+        <SegmentedControl
+          accessibilityLabel={t('entryForm.type')}
+          value={type}
+          onChange={changeType}
+          options={ENTRY_TYPES.map((value) => ({ value, label: t(`entryTypes.${value}`) }))}
+        />
+      )}
 
       <TextField
         ref={amountRef}
@@ -791,6 +835,7 @@ export function EntryForm({
 }
 
 const styles = StyleSheet.create({
+  reviewBanner: { gap: spacing.xs, alignItems: 'flex-start' },
   amountInput: {
     fontSize: 40,
     lineHeight: 48,

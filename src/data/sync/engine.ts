@@ -347,6 +347,8 @@ export function createSyncEngine({
         'vehicles',
         'documents',
         'entries',
+        'user_settings',
+        'vehicle_external_costs',
       ] as const
     ).every((entity) => {
       // Um servidor sem a migration desta entidade (ex.: `wealth_items`) não a conta: ignora-se até a migration existir.

@@ -17,6 +17,8 @@ import {
   type WealthPaymentInput,
   WEALTH_TYPES,
   type VehicleInput,
+  type VehicleExternalCostInput,
+  VEHICLE_EXTERNAL_COST_TYPES,
   type DocumentInput,
   VEHICLE_COST_TYPES,
   LOAN_KINDS,
@@ -568,6 +570,52 @@ export function validateVehicleInput(input: VehicleInput): ValidationErrors<Vehi
   if (input.icon != null && (input.icon.length === 0 || input.icon.length > 40)) {
     errors.icon = 'invalid';
   }
+  if (input.costsPaidBy != null) {
+    const payer = input.costsPaidBy.trim();
+    if (payer.length === 0) errors.costsPaidBy = 'required';
+    else if (payer.length > 80) errors.costsPaidBy = 'tooLong';
+  }
+  return errors;
+}
+
+export type VehicleExternalCostField = keyof VehicleExternalCostInput;
+
+/**
+ * Custo pago por terceiros (ADR-081): os mesmos limites dos movimentos da viatura, sem compra,
+ * com moeda própria; quantidade (litros ou kWh × 1000) só em combustível/carregamento.
+ */
+export function validateVehicleExternalCost(
+  input: VehicleExternalCostInput,
+): ValidationErrors<VehicleExternalCostField> {
+  const errors: ValidationErrors<VehicleExternalCostField> = {};
+  if (!input.vehicleId) errors.vehicleId = 'required';
+  if (!isValidCalendarDate(input.date)) errors.date = 'invalidDate';
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) errors.amount = 'amountNotPositive';
+  else if (input.amount > MAX_AMOUNT_MINOR) errors.amount = 'amountTooLarge';
+  if (!isCurrencyCode(input.currency)) errors.currency = 'invalid';
+  if (!(VEHICLE_EXTERNAL_COST_TYPES as readonly string[]).includes(input.costType)) {
+    errors.costType = 'invalid';
+  }
+  if (
+    input.quantityMilli !== null &&
+    (input.costType !== 'fuel' ||
+      !isIntegerIn(input.quantityMilli, 1, VEHICLE_LIMITS.maxQuantityMilli))
+  ) {
+    errors.quantityMilli = 'invalid';
+  }
+  if (
+    input.odometerKm !== null &&
+    !isIntegerIn(input.odometerKm, 0, VEHICLE_LIMITS.maxOdometerKm)
+  ) {
+    errors.odometerKm = 'invalid';
+  }
+  if (input.description.length > 120) errors.description = 'tooLong';
+  if (input.payer !== null) {
+    const payer = input.payer.trim();
+    if (payer.length === 0) errors.payer = 'required';
+    else if (payer.length > 80) errors.payer = 'tooLong';
+  }
+  if (input.notes !== null && input.notes.length > 500) errors.notes = 'tooLong';
   return errors;
 }
 

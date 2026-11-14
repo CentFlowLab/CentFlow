@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { router } from 'expo-router';
+import { DeviceEventEmitter, Keyboard } from 'react-native';
 
 jest.setTimeout(60_000);
 
@@ -46,5 +47,33 @@ describe('goals UX', () => {
     await fireEvent(node!, 'accessibilityAction', { nativeEvent: { actionName: remove.name } });
     await fireEvent.press(await screen.findByRole('button', { name: 'Eliminar objetivo' }));
     expect(await screen.findByText('Ainda não há objetivos')).toBeOnTheScreen();
+  });
+
+  it('saves from the keyboard bar exactly like the footer and shows errors with the keyboard closed', async () => {
+    const dismiss = jest.spyOn(Keyboard, 'dismiss');
+    await renderRouter('./src/app', { initialUrl: '/goals' });
+    await act(() => router.navigate('/goal/new'));
+    await fireEvent.changeText(await screen.findByLabelText('Nome'), 'Viagem');
+    const showKeyboard = () =>
+      act(async () => {
+        DeviceEventEmitter.emit('keyboardWillShow', { endCoordinates: { height: 300 } });
+      });
+
+    // Sem alvo: a barra fecha o teclado e o erro aparece com o rodapé de volta.
+    await showKeyboard();
+    const bar = () => screen.getAllByRole('button', { name: 'Guardar objetivo' });
+    expect(bar()).toHaveLength(1);
+    await fireEvent.press(bar()[0]!);
+    expect(dismiss).toHaveBeenCalled();
+    await act(async () => {
+      DeviceEventEmitter.emit('keyboardWillHide', {});
+    });
+    expect(await screen.findAllByText(/alvo|valor/i)).not.toHaveLength(0);
+
+    await fireEvent.changeText(screen.getByLabelText('Alvo'), '800');
+    await showKeyboard();
+    await fireEvent.press(bar()[0]!);
+    expect(await screen.findByRole('button', { name: /^Viagem/ })).toBeOnTheScreen();
+    dismiss.mockRestore();
   });
 });

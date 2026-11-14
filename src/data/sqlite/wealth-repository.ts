@@ -42,13 +42,14 @@ type WealthRow = {
   installment_amount: number | null;
   due_day: number | null;
   ends_on: string | null;
+  integration: WealthItem['integration'];
   created_at: string;
   updated_at: string;
 };
 
 const COLUMNS = `id, name, type, amount, currency, valued_on, value_history, closed_on, loan_kind,
   institution, principal_amount, started_on, opening_debt, opening_on, interest_rate_bp,
-  installment_amount, due_day, ends_on, created_at, updated_at`;
+  installment_amount, due_day, ends_on, integration, created_at, updated_at`;
 
 /** Colunas dos campos do empréstimo, pela ordem de `LOAN_FIELDS`. */
 const LOAN_COLUMNS = [
@@ -84,6 +85,7 @@ function toItem(row: WealthRow): WealthItem {
     installmentAmount: row.installment_amount,
     dueDay: row.due_day,
     endsOn: row.ends_on,
+    integration: row.integration ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -202,8 +204,8 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
           const valueHistory = withOrigin([], input.origin);
           await tx.run(
             `INSERT INTO wealth_items (id, name, type, amount, currency, valued_on, value_history,
-               ${LOAN_COLUMNS.join(', ')}, created_at, updated_at)
-             VALUES (${Array.from({ length: 7 + LOAN_COLUMNS.length + 2 }, () => '?').join(', ')})`,
+               ${LOAN_COLUMNS.join(', ')}, integration, created_at, updated_at)
+             VALUES (${Array.from({ length: 7 + LOAN_COLUMNS.length + 3 }, () => '?').join(', ')})`,
             [
               id,
               input.name,
@@ -213,6 +215,7 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
               input.valuedOn,
               serializeHistory(valueHistory),
               ...loanValues(input),
+              raw.integration ?? null,
               timestamp,
               timestamp,
             ],
@@ -222,6 +225,7 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
             ...stored(input),
             valueHistory,
             closedOn: null,
+            integration: raw.integration ?? null,
             createdAt: timestamp,
             updatedAt: timestamp,
           };
@@ -265,6 +269,22 @@ export function createSqliteWealthRepository(context: SqliteRepositoryContext): 
 
     reopen(id) {
       return setClosed(id, null);
+    },
+
+    setIntegration(id, integration) {
+      return write(context, ['wealth_items'], () =>
+        db.transaction(async (tx) => {
+          const before = toItem(await findOpen(tx, id));
+          if (before.integration === integration) return before;
+          const timestamp = context.now();
+          await tx.run('UPDATE wealth_items SET integration = ?, updated_at = ? WHERE id = ?', [
+            integration,
+            timestamp,
+            id,
+          ]);
+          return { ...before, integration, updatedAt: timestamp };
+        }),
+      );
     },
 
     delete(id) {

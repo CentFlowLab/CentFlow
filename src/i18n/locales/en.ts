@@ -22,6 +22,7 @@ const en: Translation = {
     yes: 'Yes',
     no: 'No',
     ok: 'OK',
+    keyboardDone: 'Done',
   },
   nav: {
     mainNavigation: 'Main navigation',
@@ -52,6 +53,7 @@ const en: Translation = {
       unrealized: 'Unrealised: {{amount}} · {{percent}}',
       chooseItem: 'Choose how it counts in net worth (you already have investments recorded).',
       notCounted: 'Not counted in net worth (your choice).',
+      ambiguous: 'More than one item is counting Trading 212. Choose one; none is deleted.',
     },
     cardDebtHint: 'Not included: {{amount}} owed on credit cards',
     transfersExcluded: 'Transfers between your accounts do not count as income or expenses.',
@@ -196,7 +198,7 @@ const en: Translation = {
   banking: {
     title: 'Banks',
     intro:
-      'Connect your accounts to see the balance and receive transactions automatically. The connection is read-only: it cannot make payments or transfers. You authorise it in your bank and it lasts up to 90 days.',
+      'Connect your accounts to see the balance and bring your bank transactions into the app. The connection is read-only: it cannot make payments or transfers. You authorise it in your bank and it lasts up to 90 days.',
     provider:
       'The connection is provided by Enable Banking, an account information service provider (PSD2) supervised in the EU. Miven never sees your bank credentials.',
     connect: 'Connect a bank',
@@ -306,6 +308,8 @@ const en: Translation = {
       'The total account value counts in net worth through a single investment item, updated on every read. Buying and selling in Trading 212 are not expenses or income.',
     netWorthItem: 'Count as',
     notCounted: 'Do not count',
+    ambiguous:
+      'Two devices linked different items. Choose the one that counts; the other stays as your own investment, nothing deleted.',
     createItem: 'Create item',
     disconnect: 'Disconnect account',
     disconnectTitle: 'Disconnect Trading 212?',
@@ -344,6 +348,12 @@ const en: Translation = {
     audit: 'Query log',
   },
   settings: {
+    importMode: {
+      title: 'Imported transactions',
+      review: 'Mark to review',
+      suggest: 'Apply suggestions',
+      hint: 'With "Mark to review", bank and statement transactions go to "Other expenses" or "Other income" and stay to review. With "Apply suggestions", they use the usual category for that description, when it is clear.',
+    },
     t212Hint: 'Portfolio and positions, read-only',
     banksHint: 'Bank accounts, read-only',
     formats: 'Numbers, currencies and dates',
@@ -428,7 +438,7 @@ const en: Translation = {
       noteShort:
         'For days 29–31, in shorter months the period starts on the last day of the month.',
       noteLocal:
-        'This setting stays on this device; another device may differ. It only changes how things are grouped — no saved value changes.',
+        'It is an account setting: it applies on all your devices. It only changes how things are grouped — no saved value changes.',
     },
     nav: {
       label: 'Settings sections',
@@ -576,6 +586,29 @@ const en: Translation = {
     transfer: 'Transfer',
   },
   entries: {
+    review: {
+      filter: 'To review',
+      filterCount: 'To review ({{count}})',
+      tag: 'To review',
+      apply: 'Apply: {{category}}',
+      markReviewed: 'Mark as reviewed',
+      markAll: 'Mark all as reviewed',
+      markAllTitle: 'Mark all as reviewed?',
+      markAllMessage_one:
+        '1 transaction is no longer to review. Category, amount and date do not change.',
+      markAllMessage_other:
+        '{{count}} transactions are no longer to review. Categories, amounts and dates do not change.',
+      transferTitle: 'Possible transfer',
+      transferBody: '{{from}} → {{to}} · {{amount}} · {{date}}',
+      convert: 'Convert to transfer',
+      convertTitle: 'Convert to transfer?',
+      convertMessage:
+        'The outflow from {{from}} becomes a transfer to {{to}} and the inflow in {{to}} is deleted. Balances do not change.',
+      notTransfer: 'Not a transfer',
+      cancelling: 'These two transactions cancel out: {{account}}, {{amount}}, {{date}}.',
+      banner: 'Imported — to review',
+      bannerHint: 'Check the category and save, or mark it as reviewed.',
+    },
     edit: 'Edit',
     delete: 'Delete',
     deleted: 'Transaction deleted',
@@ -648,6 +681,7 @@ const en: Translation = {
     noAccounts: 'Create an account first to receive the movements.',
   },
   entryForm: {
+    vehicleExpenseTitle: 'New vehicle expense',
     frequent: 'Frequent',
     suggestedFromHistory: 'Category suggested from your previous entries.',
     duplicate: 'Duplicate entry',
@@ -1258,6 +1292,7 @@ const en: Translation = {
     },
   },
   vehicles: {
+    plateA11y: 'License plate {{plate}}',
     chargeSummary: '{{kwh}} kWh in {{count}} charges',
     avgPriceKwh: 'Average price: {{price}}/kWh',
     consumptionLitres: 'Consumption: {{value}} l/100 km',
@@ -1634,6 +1669,46 @@ const en: Translation = {
     inDays_one: 'Tomorrow · {{date}}',
     inDays_other: 'In {{count}} days · {{date}}',
     overdue: 'Overdue · {{date}}',
+  },
+  vehicleCosts: {
+    count_one: '1 cost',
+    count_other: '{{count}} costs',
+    addExternalShort: 'Paid by others',
+    payerGroup: 'Who pays the expenses',
+    payerSelf: 'Me',
+    payerOther: 'Company or others',
+    payerName: 'Payer name',
+    payerHint:
+      "Costs paid by others count in the vehicle's cost, but not in your accounts, budgets or reports.",
+    addOwn: 'Record expense',
+    addExternal: 'Record cost paid by {{payer}}',
+    addExternalGeneric: 'Record cost paid by others',
+    paidBy: 'Paid by {{payer}}',
+    paidByOthers: 'Paid by others',
+    historyTitle: 'Paid by others',
+    sharesOwn: 'Paid by you',
+    sharesOthers: 'Paid by others',
+    deleteKeeps_one: '1 cost paid by others is kept (it does not leave any account).',
+    deleteKeeps_other: '{{count}} costs paid by others are kept (they do not leave any account).',
+    form: {
+      newTitle: 'Cost paid by others',
+      editTitle: 'Edit cost paid by others',
+      hint: "It does not leave any of your accounts: it only counts in the vehicle's cost and history.",
+      amount: 'Amount',
+      currency: 'Currency',
+      date: 'Date',
+      costType: 'Cost type',
+      quantity: 'Litres (optional)',
+      quantityKwh: 'kWh (optional)',
+      odometer: 'Kilometres (optional)',
+      description: 'Description (optional)',
+      payer: 'Paid by',
+      notes: 'Notes (optional)',
+      save: 'Save cost',
+      delete: 'Delete cost',
+      deleteTitle: 'Delete this cost?',
+      deleteMessage: "It leaves the vehicle's cost and history. Your accounts do not change.",
+    },
   },
   vehicleForm: {
     kindLabel: 'Type',
@@ -2068,6 +2143,8 @@ const en: Translation = {
       vehicles: 'Vehicle',
       documents: 'Document',
       entries: 'Transaction',
+      user_settings: 'Setting',
+      vehicle_external_costs: 'Cost paid by others',
     },
     reasons: {
       version: 'Changed on another device',

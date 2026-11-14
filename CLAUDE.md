@@ -18,10 +18,10 @@ App publicada: **0.1.22** (2026-11-14; preferências e mês financeiro, ADR-073 
 (Enable Banking, `docs/open-banking.md`), onboarding por conta, gestão da conta, registo rápido,
 cópias de segurança, definições, ambientes (`docs/ambientes.md`), app Windows (`desktop/`,
 `docs/windows.md`), Trading 212 e administração. Migrações do servidor até `20261122000100` (tipo da conta do
-banco) nos dois ambientes; open banking (`20261121000100`) na produção desde 2026-11-13. Função
-`open-banking` nos dois ambientes; `t212` só no staging. Segredos `ENABLE_BANKING_*` (aplicação
-Production da Enable Banking, modo restrito) no staging; na produção a definir pelo responsável;
-`INTEGRATIONS_KEY` só no staging. Supabase CLI 3: usar `--remote=<ref>` (ignora `--project-ref`). Estado verificado e pendentes em
+banco) nos dois ambientes; open banking (`20261121000100`) na produção desde 2026-11-13. Funções
+`open-banking` e `t212` nos dois ambientes; segredos `ENABLE_BANKING_*` (aplicação Production da
+Enable Banking, modo restrito) e `INTEGRATIONS_KEY` nos dois (verificado a 2026-11-14, só nomes).
+Migração `20261123000100` (consolidação, ADR-079/081/082) e v17 local **por aplicar**. Supabase CLI 3: usar `--remote=<ref>` (ignora `--project-ref`). Estado verificado e pendentes em
 [docs/audit-2026-11.md](docs/audit-2026-11.md) (secção "Estado atual"); testes em aparelhos reais
 ainda por fazer.
 Funções `delete-account` e

@@ -71,11 +71,65 @@ describe('bank transactions import (ADR-069)', () => {
         ['2026-11-13', 'income', 150000, 'Revolut'],
       ]),
     );
-    // A descrição já usada no Supermercado fica nessa categoria.
-    expect(
-      items.filter((item) => item.description === 'Pingo Doce').map((item) => item.categoryId),
-    ).toEqual([groceries.id, groceries.id]);
+    // ADR-082: por omissão, os importados ficam por classificar (o registado à mão não).
+    expect(items.filter((item) => item.needsReview)).toHaveLength(2);
+    expect(items.filter((item) => !item.needsReview)).toHaveLength(1);
     expect(await importCursor('bank-1', storage)).toBe('2026-11-13');
+    await db.close();
+  });
+
+  it('applies a clear suggestion only in the "apply suggestions" mode', async () => {
+    const { db, repos } = await openTestRepositories();
+    const account = await repos.accounts.create({
+      name: 'Moey',
+      type: 'bank',
+      currency: 'EUR',
+      initialBalance: 0,
+    });
+    const other = await repos.categories.create({
+      name: 'Outras despesas',
+      type: 'expense',
+      icon: 'ellipsis-horizontal',
+      color: 'gray',
+    });
+    const groceries = await repos.categories.create({
+      name: 'Supermercado',
+      type: 'expense',
+      icon: 'cart',
+      color: 'green',
+    });
+    for (const date of ['2026-10-01', '2026-10-08']) {
+      await repos.entries.create({
+        type: 'expense',
+        amount: 2000,
+        description: 'Pingo Doce',
+        categoryId: groceries.id,
+        accountId: account.id,
+        destinationAccountId: null,
+        date,
+        notes: null,
+      });
+    }
+    const options = (bankAccountId: string, date: string) => ({
+      bankAccountId,
+      appAccountId: account.id,
+      importFrom: '2026-11-01',
+      transactions: [tx(date, 999, 'expense')],
+      fallbackDescription: 'Moey',
+    });
+    const review = createMemoryStore();
+    await importBankTransactions(repos, options('b1', '2026-11-02'), review);
+    const suggest = createMemoryStore({
+      'preferences.v1': JSON.stringify({ importMode: 'suggest' }),
+    });
+    await importBankTransactions(repos, options('b2', '2026-11-03'), suggest);
+    const { items } = await repos.entries.list({ from: '2026-11-01' });
+    const byDate = new Map(items.map((item) => [item.date, item]));
+    expect(byDate.get('2026-11-02')).toMatchObject({ categoryId: other.id, needsReview: true });
+    expect(byDate.get('2026-11-03')).toMatchObject({
+      categoryId: groceries.id,
+      needsReview: false,
+    });
     await db.close();
   });
 

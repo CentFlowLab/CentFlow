@@ -134,12 +134,14 @@ describe('Preferences', () => {
   });
 
   it('changes the start of the financial month and shows the current period', async () => {
-    const { repository } = await renderPreferences();
+    await renderPreferences();
     await fireEvent.press(await screen.findByRole('button', { name: /^Começa no dia/ }));
     await fireEvent.press(screen.getByText('Dia 25'));
+    // Definição da conta, sincronizada (ADR-079), não uma preferência deste aparelho.
     await waitFor(async () => {
-      await expect(repository.load()).resolves.toMatchObject({ financialMonthStartDay: 25 });
+      await expect(repos.settings.get('financial_month_start_day')).resolves.toBe('25');
     });
+    expect(await screen.findByText(/^Período atual: 25\//)).toBeOnTheScreen();
   });
 });
 

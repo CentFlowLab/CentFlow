@@ -41,7 +41,7 @@ import { radius, spacing, useTheme } from '@/ui/theme';
 import { useToday } from '../finance/useToday';
 import { loadReport } from './load';
 import { DateField } from '../finance/DateField';
-import { usePreferences } from '../preferences';
+import { useFinancialMonthStartDay, usePreferences } from '../preferences';
 
 const PRESETS: readonly ReportPreset[] = ['month', 'quarter', 'year', 'custom'];
 
@@ -96,7 +96,7 @@ export function ReportsScreen() {
   const { colors } = useTheme();
   const { formatDate, formatMoney, formatPercent, locale } = useLocaleFormat();
   const today = useToday();
-  const startDay = preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   // O intervalo personalizado começa no período financeiro atual (ADR-077).
   const currentMonth = financialMonthRange(financialMonthOf(today, startDay), startDay);
   const [preset, setPreset] = useState<ReportPreset>('month');

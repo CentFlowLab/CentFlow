@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
-  usePreferences,
   type LanguagePreference,
   type ThemePreference,
+  useFinancialMonthStartDay,
+  usePreferences,
+  useSetFinancialMonthStartDay,
 } from '@/features/preferences';
 import {
   calendarDateToLocalDate,
@@ -84,9 +86,13 @@ export function PreferencesPage() {
 
       <SettingsGroup title={t('settings.blocks.entries')} note={t('settings.defaultAccount.hint')}>
         <DefaultAccountRow />
+        <ImportModeRow />
         {quickEntryAvailable() ? <QuickEntryRow /> : null}
         {hapticsAvailable ? <HapticsRow /> : null}
       </SettingsGroup>
+      <Text variant="footnote" tone="tertiary" style={styles.groupNote}>
+        {t('settings.importMode.hint')}
+      </Text>
     </>
   );
 }
@@ -330,11 +336,12 @@ function RegionGroup() {
 
 function FinancialMonthGroup() {
   const { t } = useTranslation();
-  const { preferences, updatePreferences } = usePreferences();
   const { formatDate } = useLocaleFormat();
   const today = useToday();
   const [open, setOpen] = useState(false);
-  const startDay = preferences.financialMonthStartDay;
+  // Definição da conta, sincronizada entre aparelhos (ADR-079).
+  const startDay = useFinancialMonthStartDay();
+  const setStartDay = useSetFinancialMonthStartDay();
   const dayLabel = (day: number) =>
     day === 1 ? t('settings.financialMonth.civil') : t('settings.financialMonth.day', { day });
   const range = financialMonthRange(financialMonthOf(today, startDay), startDay);
@@ -367,7 +374,7 @@ function FinancialMonthGroup() {
         title={t('settings.financialMonth.startsOn')}
         choices={choices}
         value={String(startDay)}
-        onChange={(value) => updatePreferences({ financialMonthStartDay: Number(value) })}
+        onChange={(value) => void setStartDay(Number(value)).catch(() => undefined)}
         onDismiss={() => setOpen(false)}
       />
     </SettingsGroup>
@@ -428,6 +435,28 @@ function DefaultAccountRow() {
         onDismiss={() => setOpen(false)}
       />
     </>
+  );
+}
+
+/** Movimentos importados (ADR-082): por classificar (omissão) ou com a sugestão do histórico. */
+function ImportModeRow() {
+  const { t } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
+  return (
+    <View style={styles.controlRow}>
+      <ListItem {...NEUTRAL_ICON} icon="download-outline" title={t('settings.importMode.title')} />
+      <View style={styles.control}>
+        <SegmentedControl
+          accessibilityLabel={t('settings.importMode.title')}
+          value={preferences.importMode}
+          onChange={(importMode) => updatePreferences({ importMode })}
+          options={[
+            { value: 'review', label: t('settings.importMode.review') },
+            { value: 'suggest', label: t('settings.importMode.suggest') },
+          ]}
+        />
+      </View>
+    </View>
   );
 }
 

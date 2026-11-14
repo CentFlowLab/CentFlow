@@ -1,11 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { WealthItem } from '@/core/finance';
 import type { T212Snapshot } from '@/core/investments/trading212';
 import type { Repositories } from '@/data';
 import { appStorage } from '@/lib/storage/key-value-store';
 
-/** Item do património onde conta o valor da conta (id), `none` (não contar) ou ausente. */
+/**
+ * Associação antiga (até à 0.1.22), guardada só neste aparelho: id do item ou `none`. Só se lê
+ * para converter a escolha feita na associação sincronizada (ADR-079) e depois apaga-se.
+ */
 export const T212_LINK_KEY = 't212.wealthItemId';
+/** "Não contar no património": escolha deste aparelho (não muda dados). */
+const T212_NOT_COUNTED_KEY = 't212.notCounted';
 
 export type T212Integration = {
   status: 'connected' | 'error';
@@ -41,67 +47,122 @@ export async function refreshT212(client: SupabaseClient): Promise<boolean> {
   return !error;
 }
 
-export async function linkedItemId(): Promise<string | null> {
-  return appStorage.getItem(T212_LINK_KEY).catch(() => null);
+/**
+ * Estado da associação ao património (ADR-079), lido dos dados sincronizados:
+ * - `linked`: um só item ativo pertence à Trading 212;
+ * - `ambiguous`: mais do que um (dois aparelhos escolheram sem rede); nada se atualiza até a
+ *   pessoa escolher, e nada se apaga;
+ * - `notCounted`: a pessoa escolheu não contar neste aparelho;
+ * - `unlinked`: nenhum item pertence à integração.
+ */
+export type T212Link =
+  | { status: 'linked'; item: WealthItem }
+  | { status: 'ambiguous'; items: WealthItem[] }
+  | { status: 'notCounted' }
+  | { status: 'unlinked' };
+
+function ownedItems(items: readonly WealthItem[]): WealthItem[] {
+  return items.filter((item) => item.integration === 'trading212' && !item.closedOn);
 }
 
-export async function setLinkedItem(value: string | null): Promise<void> {
-  if (value === null) await appStorage.removeItem(T212_LINK_KEY).catch(() => undefined);
-  else await appStorage.setItem(T212_LINK_KEY, value).catch(() => undefined);
+async function notCountedHere(): Promise<boolean> {
+  return (await appStorage.getItem(T212_NOT_COUNTED_KEY).catch(() => null)) === '1';
 }
 
 /**
- * O valor da conta entra no património por um único item de investimento (nunca dois).
- * Sem escolha feita: se não houver nenhum investimento nessa moeda, cria "Trading 212" e liga-o;
- * se já houver, não adivinha (podia contar duas vezes) e devolve `needsChoice`.
- *
- * A ligação fica em cada aparelho: dois aparelhos podiam criar cada um o seu item antes de
- * sincronizar. Itens de investimento com o nome da Trading 212 contam como o mesmo: fica o mais
- * antigo (o mesmo em todos os aparelhos, para não se apagarem uns aos outros) e os restantes saem.
+ * Converte a associação antiga (só deste aparelho) na associação sincronizada, uma vez: só se o
+ * item ainda existir, estiver ativo e nenhum outro já pertencer à integração. Nunca apaga nada.
+ */
+async function migrateLegacyLink(repositories: Repositories): Promise<void> {
+  const legacy = await appStorage.getItem(T212_LINK_KEY).catch(() => null);
+  if (legacy === null) return;
+  if (legacy === 'none') {
+    await appStorage.setItem(T212_NOT_COUNTED_KEY, '1').catch(() => undefined);
+  } else {
+    const items = await repositories.wealth.list();
+    const item = items.find((candidate) => candidate.id === legacy);
+    if (
+      item &&
+      !item.closedOn &&
+      item.type === 'investment' &&
+      item.integration === null &&
+      ownedItems(items).length === 0
+    ) {
+      await repositories.wealth.setIntegration(item.id, 'trading212');
+    }
+  }
+  await appStorage.removeItem(T212_LINK_KEY).catch(() => undefined);
+}
+
+export async function readT212Link(repositories: Repositories): Promise<T212Link> {
+  await migrateLegacyLink(repositories);
+  if (await notCountedHere()) return { status: 'notCounted' };
+  const owned = ownedItems(await repositories.wealth.list());
+  if (owned.length === 1) return { status: 'linked', item: owned[0]! };
+  if (owned.length > 1) return { status: 'ambiguous', items: owned };
+  return { status: 'unlinked' };
+}
+
+/**
+ * Escolha explícita da pessoa: um item (passa a ser o único da integração; os outros deixam de
+ * lhe pertencer, sem perderem nada), `none` (não contar neste aparelho) ou `null` (desligar).
+ */
+export async function chooseT212Item(
+  repositories: Repositories,
+  choice: string | 'none' | null,
+): Promise<void> {
+  await migrateLegacyLink(repositories);
+  if (choice === 'none') {
+    await appStorage.setItem(T212_NOT_COUNTED_KEY, '1').catch(() => undefined);
+    return;
+  }
+  await appStorage.removeItem(T212_NOT_COUNTED_KEY).catch(() => undefined);
+  const owned = ownedItems(await repositories.wealth.list());
+  for (const item of owned) {
+    if (item.id !== choice) await repositories.wealth.setIntegration(item.id, null);
+  }
+  if (choice !== null) {
+    const item = await repositories.wealth.get(choice);
+    if (item && !item.closedOn && item.integration !== 'trading212') {
+      await repositories.wealth.setIntegration(item.id, 'trading212');
+    }
+  }
+}
+
+/**
+ * O valor da conta entra no património por um único item que pertence à integração (ADR-079).
+ * Nunca apaga nem altera itens da pessoa: sem item da integração e sem investimentos nessa moeda,
+ * cria um; havendo investimentos, não adivinha (`needsChoice`); com dois itens da integração
+ * (dois aparelhos), não escolhe (`ambiguous`).
  */
 export async function syncT212Wealth(
   repositories: Repositories,
   snapshot: T212Snapshot | null,
   today: string,
   name: string,
-): Promise<'synced' | 'notCounted' | 'needsChoice' | 'skipped'> {
+): Promise<'synced' | 'notCounted' | 'needsChoice' | 'ambiguous' | 'skipped'> {
   if (!snapshot) return 'skipped';
-  let linked = await linkedItemId();
-  if (linked === 'none') return 'notCounted';
-  const open = (await repositories.wealth.list()).filter(
-    (item) => item.type === 'investment' && !item.closedOn && item.currency === snapshot.currency,
-  );
-  const named = open
-    .filter((item) => item.name === name)
-    .sort((a, b) =>
-      a.createdAt === b.createdAt ? (a.id < b.id ? -1 : 1) : a.createdAt < b.createdAt ? -1 : 1,
+  const link = await readT212Link(repositories);
+  if (link.status === 'notCounted') return 'notCounted';
+  if (link.status === 'ambiguous') return 'ambiguous';
+  if (link.status === 'unlinked') {
+    const investments = (await repositories.wealth.list()).filter(
+      (item) => item.type === 'investment' && !item.closedOn && item.currency === snapshot.currency,
     );
-  const survivor = named[0];
-  if (survivor && (linked === null || named.some((item) => item.id === linked))) {
-    for (const duplicate of named.slice(1)) await repositories.wealth.delete(duplicate.id);
-    if (linked !== survivor.id) {
-      linked = survivor.id;
-      await setLinkedItem(linked);
-    }
-  }
-  if (linked) {
-    const item = await repositories.wealth.get(linked);
-    if (!item || item.closedOn) linked = null;
-  }
-  if (!linked) {
-    if (open.length > 0) return 'needsChoice';
-    const created = await repositories.wealth.create({
+    if (investments.length > 0) return 'needsChoice';
+    await repositories.wealth.create({
       name,
       type: 'investment',
       amount: snapshot.total,
       currency: snapshot.currency,
       valuedOn: today,
+      integration: 'trading212',
     });
-    await setLinkedItem(created.id);
     return 'synced';
   }
-  const item = await repositories.wealth.get(linked);
-  if (!item || item.currency !== snapshot.currency) return 'skipped';
+  const item = link.item;
+  // Outra moeda: não se converte nem se mistura; fica como está até a pessoa decidir.
+  if (item.currency !== snapshot.currency) return 'skipped';
   if (item.amount !== snapshot.total || item.valuedOn !== today) {
     await repositories.wealth.update(item.id, {
       name: item.name,

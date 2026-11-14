@@ -183,6 +183,8 @@ describe('schema', () => {
         'profiles',
         'subscriptions',
         'sync_metadata',
+        'user_settings',
+        'vehicle_external_costs',
         'vehicles',
         'wealth_items',
       ].map((relname) => ({
@@ -211,6 +213,7 @@ describe('schema', () => {
       { table_name: 'goal_contributions', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'goals', column_name: 'target_amount', data_type: 'bigint' },
       { table_name: 'subscriptions', column_name: 'amount', data_type: 'bigint' },
+      { table_name: 'vehicle_external_costs', column_name: 'amount', data_type: 'bigint' },
       { table_name: 'wealth_items', column_name: 'amount', data_type: 'bigint' },
     ]);
   });
@@ -734,6 +737,8 @@ describe('purge of deleted rows', () => {
           wealth_items: 0,
           vehicles: 0,
           documents: 0,
+          user_settings: 0,
+          vehicle_external_costs: 0,
           categories: 0,
           accounts: 0,
         },
@@ -754,6 +759,8 @@ describe('purge of deleted rows', () => {
           wealth_items: 0,
           vehicles: 0,
           documents: 0,
+          user_settings: 0,
+          vehicle_external_costs: 0,
           categories: 0,
           accounts: 0,
         },

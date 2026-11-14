@@ -185,6 +185,12 @@ export function WealthForm({ item }: Props) {
       title={t(editing ? 'wealth.form.editTitle' : 'wealth.form.createTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{
+        label: t('wealth.form.save'),
+        onPress: () => void save(),
+        loading: saving,
+        disabled: saving,
+      }}
       footer={
         <View style={styles.footer}>
           <Button

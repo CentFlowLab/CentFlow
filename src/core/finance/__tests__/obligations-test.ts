@@ -16,6 +16,7 @@ const vehicleDetails = {
   notes: null,
   kindLabel: null,
   icon: null,
+  costsPaidBy: null,
 };
 
 function input(overrides: Partial<ObligationsInput> = {}): ObligationsInput {

@@ -1,6 +1,10 @@
 import type { BackupFile, RestorePlan } from '@/core/backup';
 import type {
   Account,
+  VehicleExternalCost,
+  VehicleExternalCostInput,
+  AccountSetting,
+  WealthIntegration,
   AccountFlows,
   AccountInput,
   CalendarDate,
@@ -99,6 +103,8 @@ export type EntryFilter = {
   vehicleId?: Id;
   /** Só despesas e rendimentos sem veículo (para associar movimentos existentes). */
   withoutVehicle?: boolean;
+  /** Só os importados por classificar (ADR-082). */
+  needsReview?: boolean;
   from?: CalendarDate;
   to?: CalendarDate;
   sort?: EntrySort;
@@ -137,6 +143,18 @@ export interface EntryRepository {
   createMany(inputs: readonly EntryInput[]): Promise<Entry[]>;
   /** Sem campos de veículo no `input`, mantém a ligação ao veículo que existia. */
   update(id: Id, input: EntryInput): Promise<Entry>;
+  /** Quantos movimentos estão por classificar (ADR-082). */
+  countNeedsReview(): Promise<number>;
+  /** Marca como revistos (não muda categoria, valor nem data). */
+  markReviewed(ids: readonly Id[]): Promise<void>;
+  /** Aplica uma categoria do mesmo tipo e marca como revisto. */
+  classify(id: Id, categoryId: Id): Promise<Entry>;
+  /**
+   * Converte uma despesa e uma receita por classificar (contas próprias diferentes, mesma moeda,
+   * valor e dia) numa transferência, numa só transação: a despesa passa a transferência e a receita
+   * é apagada. Nunca automático; recusa se alguma condição falhar.
+   */
+  convertToTransfer(expenseId: Id, incomeId: Id): Promise<Entry>;
   delete(id: Id): Promise<void>;
   /**
    * Liga movimentos existentes a um veículo, numa só transação, sem mudar valor, categoria, conta
@@ -252,6 +270,18 @@ export interface WealthRepository {
    * receber despesas; no património fica pago nesse dia (não conta duas vezes).
    */
   moveCardToAccounts(id: Id, today: CalendarDate): Promise<Account>;
+  /**
+   * Associa (ou desassocia, com `null`) o item a uma integração (ADR-079). Não muda o valor nem
+   * mais nada; a integração só atualiza itens que lhe pertencem.
+   */
+  setIntegration(id: Id, integration: WealthIntegration | null): Promise<WealthItem>;
+}
+
+/** Definições da conta sincronizadas entre aparelhos (ADR-079). */
+export interface SettingsRepository {
+  get(key: AccountSetting): Promise<string | null>;
+  /** Grava (ou repõe) o valor; igual ao guardado não gera nada para enviar. */
+  set(key: AccountSetting, value: string): Promise<void>;
 }
 
 export interface VehicleRepository {
@@ -260,12 +290,24 @@ export interface VehicleRepository {
   create(input: VehicleInput): Promise<Vehicle>;
   /** Campos novos ausentes no `input` mantêm o valor guardado. */
   update(id: Id, input: VehicleInput): Promise<Vehicle>;
-  /** Movimentos e documentos ligados (para a confirmação antes de eliminar). */
-  countLinks(id: Id): Promise<{ entries: number; documents: number }>;
+  /** Movimentos, documentos e custos pagos por terceiros (para a confirmação antes de eliminar). */
+  countLinks(id: Id): Promise<{ entries: number; documents: number; externalCosts: number }>;
   /**
    * Elimina o veículo e desliga os movimentos e documentos, numa só transação, sem alterar valores,
    * categorias, contas nem datas (ADR-054).
    */
+  delete(id: Id): Promise<void>;
+}
+
+/**
+ * Custos da viatura pagos por terceiros (ADR-081): uma tabela própria, nunca junta aos movimentos.
+ * Apagar a viatura não os apaga.
+ */
+export interface VehicleExternalCostRepository {
+  listForVehicle(vehicleId: Id): Promise<VehicleExternalCost[]>;
+  get(id: Id): Promise<VehicleExternalCost | null>;
+  create(input: VehicleExternalCostInput): Promise<VehicleExternalCost>;
+  update(id: Id, input: VehicleExternalCostInput): Promise<VehicleExternalCost>;
   delete(id: Id): Promise<void>;
 }
 
@@ -316,7 +358,9 @@ export type DataEntity =
   | 'subscriptions'
   | 'wealth_items'
   | 'vehicles'
-  | 'documents';
+  | 'documents'
+  | 'user_settings'
+  | 'vehicle_external_costs';
 
 export interface Repositories {
   accounts: AccountRepository;
@@ -324,6 +368,8 @@ export interface Repositories {
   entries: EntryRepository;
   budgets: BudgetRepository;
   subscriptions: SubscriptionRepository;
+  settings: SettingsRepository;
+  vehicleExternalCosts: VehicleExternalCostRepository;
   backup: BackupRepository;
   goals: SavingsGoalRepository;
   wealth: WealthRepository;

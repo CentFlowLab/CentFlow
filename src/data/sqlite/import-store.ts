@@ -115,7 +115,13 @@ const COPY_COLUMNS: Record<SyncEntity, readonly string[]> = {
     'created_at',
     'updated_at',
   ],
+  // Não existem no uso sem conta (dispositivos antigos): nada a copiar.
+  user_settings: [],
+  vehicle_external_costs: [],
 };
+
+/** Entidades que existem no uso sem conta e se importam (as restantes ficam de fora). */
+const IMPORTED = SYNC_ENTITIES.filter((entity) => COPY_COLUMNS[entity].length > 0);
 
 /** Conteúdo copiado, sem `updated_at` (muda só por se tocar no registo). */
 export function contentFingerprint(entity: SyncEntity, row: Record<string, SqlValue>): string {
@@ -209,8 +215,10 @@ export async function copyRecords(
     vehicles: [],
     documents: [],
     entries: [],
+    user_settings: [],
+    vehicle_external_costs: [],
   };
-  for (const entity of SYNC_ENTITIES) {
+  for (const entity of IMPORTED) {
     rows[entity] = await source.all<Record<string, SqlValue>>(
       `SELECT ${COPY_COLUMNS[entity].join(', ')} FROM ${entity} WHERE deleted_at IS NULL
         ORDER BY created_at, rowid`,
@@ -218,7 +226,7 @@ export async function copyRecords(
   }
   return target.transaction(async (tx) => {
     const copied: ImportRecord[] = [];
-    for (const entity of SYNC_ENTITIES) {
+    for (const entity of IMPORTED) {
       const columns = COPY_COLUMNS[entity];
       for (const row of rows[entity]) {
         if (
@@ -313,7 +321,7 @@ export async function absorbSourceChanges(
   const known = new Map(next.map((record) => [recordKey(record), record]));
 
   await target.transaction(async (tx) => {
-    for (const entity of SYNC_ENTITIES) {
+    for (const entity of IMPORTED) {
       const rows = await source.all<Record<string, SqlValue>>(
         `SELECT ${COPY_COLUMNS[entity].join(', ')} FROM ${entity} WHERE deleted_at IS NULL`,
       );
@@ -375,7 +383,7 @@ export async function clearImportedFromSource(
 ): Promise<{ pending: number }> {
   let pending = 0;
   await source.transaction(async (tx) => {
-    for (const entity of [...SYNC_ENTITIES].reverse()) {
+    for (const entity of [...IMPORTED].reverse()) {
       const guard =
         entity === 'accounts'
           ? `AND NOT EXISTS (SELECT 1 FROM entries e
@@ -411,7 +419,7 @@ export async function clearImportedFromSource(
 export async function revertCopy(target: SqlDatabase, records: ImportRecord[]): Promise<void> {
   await target.transaction(async (tx) => {
     const now = new Date().toISOString();
-    for (const entity of [...SYNC_ENTITIES].reverse()) {
+    for (const entity of [...IMPORTED].reverse()) {
       for (const { id } of byEntity(records, entity)) {
         const row = await tx.first<{ version: number }>(
           `SELECT version FROM ${entity} WHERE id = ?`,

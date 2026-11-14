@@ -93,6 +93,15 @@ type ApiResult = { ok: true; body: unknown } | { ok: false; error: BankErrorCode
  */
 type Caller = { token: string; psu: Record<string, string> };
 
+const IPV4 = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+const IPV6 = /^[0-9a-fA-F:]{2,39}$/;
+
+/** IPv4 ou IPv6 (forma simples: só dígitos hexadecimais e dois pontos, com pelo menos dois). */
+export function isIpAddress(value: string): boolean {
+  if (IPV4.test(value)) return true;
+  return IPV6.test(value) && (value.match(/:/g) ?? []).length >= 2;
+}
+
 async function api(
   caller: Caller,
   method: 'GET' | 'POST' | 'DELETE',
@@ -157,8 +166,13 @@ Deno.serve(async (req) => {
   });
   const app: Caller = { token: await appToken(appId, key), psu: {} };
   // A app só pede leituras com a pessoa a usá-la (ao abrir, a cada 15 min ou em "Atualizar").
-  const psuIp = (req.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() ?? '';
-  const psuAgent = (req.headers.get('user-agent') ?? '').slice(0, 300);
+  // Só valores com a forma certa seguem para o banco: um IP (v4 ou v6) e um user agent sem
+  // caracteres de controlo. O primeiro valor do x-forwarded-for é o do cliente.
+  const forwarded = (req.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() ?? '';
+  const psuIp = isIpAddress(forwarded) ? forwarded : '';
+  const psuAgent = (req.headers.get('user-agent') ?? '')
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .slice(0, 300);
   app.psu = {
     ...(psuIp ? { 'Psu-Ip-Address': psuIp } : {}),
     ...(psuAgent ? { 'Psu-User-Agent': psuAgent } : {}),

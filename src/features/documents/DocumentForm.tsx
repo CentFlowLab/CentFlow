@@ -136,6 +136,12 @@ export function DocumentForm({ record }: { record?: DocumentRecord }) {
       title={t(editing ? 'documents.form.editTitle' : 'documents.form.createTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{
+        label: t('documents.form.save'),
+        onPress: () => void save(),
+        loading: saving,
+        disabled: saving,
+      }}
       footer={
         <View style={styles.footer}>
           <Button

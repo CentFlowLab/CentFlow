@@ -28,8 +28,8 @@ export type Preferences = Readonly<{
   discreetAmounts: boolean;
   /** Conta proposta num movimento novo ('last' = a última usada). */
   defaultAccountId: 'last' | string;
-  /** Dia (1–31) em que começa o mês financeiro (ADR-077); 1 = mês civil. */
-  financialMonthStartDay: number;
+  /** Movimentos importados: marcar para rever (omissão) ou aplicar sugestões (ADR-082). */
+  importMode: 'review' | 'suggest';
 }>;
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -42,7 +42,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   formatRegion: 'auto',
   discreetAmounts: false,
   defaultAccountId: 'last',
-  financialMonthStartDay: 1,
+  importMode: 'review',
 };
 
 function currencyPreference(value: unknown): 'auto' | CurrencyCode {
@@ -83,13 +83,7 @@ export function parsePreferences(raw: string | null): Preferences {
         typeof record.defaultAccountId === 'string' && record.defaultAccountId.trim() !== ''
           ? record.defaultAccountId
           : 'last',
-      financialMonthStartDay:
-        typeof record.financialMonthStartDay === 'number' &&
-        Number.isInteger(record.financialMonthStartDay) &&
-        record.financialMonthStartDay >= 1 &&
-        record.financialMonthStartDay <= 31
-          ? record.financialMonthStartDay
-          : 1,
+      importMode: record.importMode === 'suggest' ? 'suggest' : 'review',
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -110,6 +104,24 @@ export function createPreferencesRepository(store: KeyValueStore) {
     },
   };
 }
+
+/**
+ * Início do mês financeiro guardado neste aparelho pela 0.1.22 (antes de ser da conta, ADR-079).
+ * Só se lê para o passar uma vez para a definição sincronizada; `null` se não houver.
+ */
+export function legacyFinancialMonthStartDay(raw: string | null): number | null {
+  if (!raw) return null;
+  try {
+    const value = (JSON.parse(raw) as Record<string, unknown> | null)?.financialMonthStartDay;
+    return typeof value === 'number' && Number.isInteger(value) && value >= 2 && value <= 31
+      ? value
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export const PREFERENCES_STORAGE_KEY = STORAGE_KEY;
 
 export type PreferencesRepository = ReturnType<typeof createPreferencesRepository>;
 

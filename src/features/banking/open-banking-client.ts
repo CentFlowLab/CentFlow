@@ -6,12 +6,13 @@ import {
   type BankErrorCode,
   type BankTransaction,
 } from '@/core/banking/open-banking';
-import { addDays, suggestionFor, type CalendarDate, type EntryInput } from '@/core/finance';
+import { addDays, importedCategory, type CalendarDate, type EntryInput } from '@/core/finance';
 import { findLikelyDuplicates, type StatementRow } from '@/core/import';
 import type { Repositories } from '@/data';
 import { appStorage, type KeyValueStore } from '@/lib/storage/key-value-store';
 
 import { existingMovements } from '../entries/existing-movements';
+import { parsePreferences, PREFERENCES_STORAGE_KEY } from '../preferences/preferences';
 
 /** Open banking na app (ADR-069). As chamadas ao banco passam todas pela Edge Function. */
 const FUNCTION = 'open-banking';
@@ -198,12 +199,14 @@ export async function importBankTransactions(
       repositories.categories.list(),
       repositories.entries.history({ since: '1900-01-01', limit: 5000 }),
     ]);
-    const firstOf = (type: 'expense' | 'income') =>
-      categories.find((category) => category.type === type)?.id ?? null;
+    // Por omissão entram "por classificar" em "Outras …" (ADR-082); com "Aplicar sugestões", a
+    // sugestão clara do histórico. Nunca a primeira categoria da lista às cegas.
+    const mode = parsePreferences(
+      await storage.getItem(PREFERENCES_STORAGE_KEY).catch(() => null),
+    ).importMode;
     const inputs: EntryInput[] = [];
     for (const row of fresh) {
-      const categoryId =
-        suggestionFor(history, row.description, row.type)?.categoryId ?? firstOf(row.type);
+      const { categoryId, needsReview } = importedCategory(row, history, categories, mode);
       // Sem nenhuma categoria desse tipo, o movimento não é válido: fica de fora.
       if (!categoryId) continue;
       inputs.push({
@@ -215,6 +218,7 @@ export async function importBankTransactions(
         destinationAccountId: null,
         date: row.date,
         notes: null,
+        needsReview,
       });
     }
     if (inputs.length > 0) await repositories.entries.createMany(inputs);

@@ -22,7 +22,7 @@ import { Card, Divider, Icon, Section, Text, type IconName } from '@/ui/componen
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { useFinanceLookups } from '../finance/useFinanceLookups';
-import { usePreferences } from '../preferences';
+import { useFinancialMonthStartDay } from '../preferences';
 
 /** Contas de uso diário: o dinheiro que se pode gastar este mês (poupanças e investimentos ficam de fora). */
 const SPENDABLE: ReadonlySet<AccountType> = new Set(['bank', 'cash', 'card']);
@@ -124,7 +124,7 @@ export function MonthInsights({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { formatMoney, formatPercent } = useLocaleFormat();
-  const startDay = usePreferences().preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   const lookups = useFinanceLookups();
   const query = useDataQuery(
     useCallback(

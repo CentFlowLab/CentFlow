@@ -140,6 +140,12 @@ export function BudgetForm({ budget, onClose, onSaved }: Props) {
       title={t(editing ? 'budgets.form.editTitle' : 'budgets.form.createTitle')}
       closeLabel={t('common.close')}
       onClose={close}
+      keyboardAction={{
+        label: t('budgets.form.save'),
+        onPress: () => void save(),
+        loading: saving,
+        disabled: choices.length === 0 || saving,
+      }}
       footer={
         data ? (
           <Button

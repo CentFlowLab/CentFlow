@@ -34,7 +34,7 @@ import { useToday } from '../finance/useToday';
 import { BudgetForm } from './BudgetForm';
 import { BudgetMeter, budgetTone } from './BudgetMeter';
 import { loadBudgetDetail, type PresentedBudget } from './load';
-import { usePreferences } from '../preferences';
+import { useFinancialMonthStartDay } from '../preferences';
 
 export function NewBudgetScreen() {
   return <BudgetForm />;
@@ -44,7 +44,7 @@ export function BudgetDetailScreen({ id, reference }: { id: string; reference?: 
   const { t } = useTranslation();
   const today = useToday();
   const on = reference && isValidCalendarDate(reference) ? reference : today;
-  const startDay = usePreferences().preferences.financialMonthStartDay;
+  const startDay = useFinancialMonthStartDay();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
