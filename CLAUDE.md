@@ -13,15 +13,15 @@ ADR-059, todas na produção desde
 2026-11-11; ver
 [docs/release-producao.md](docs/release-producao.md)). Os anexos ficam no balde privado `documents`
 do Storage; a função `delete-account` apaga-os antes de eliminar o utilizador.
-App publicada: **0.1.22** (2026-11-14; preferências e mês financeiro, ADR-073 a 077; Definições e Viaturas reformuladas, ADR-071 e 072; Android corrigido, ADR-070; migração local v16). Inclui, desde a 0.1.17 (plano em
+App publicada: **0.1.23** (2026-11-14; matrícula, teclado, custos de terceiros, importados por classificar e auditoria, ADR-078 a 082; migração local v17; antes, na 0.1.22, preferências e mês financeiro, ADR-073 a 077; Definições e Viaturas reformuladas, ADR-071 e 072; Android corrigido, ADR-070; migração local v16). Inclui, desde a 0.1.17 (plano em
 [docs/plano-evolucao-2026-11.md](docs/plano-evolucao-2026-11.md), ADR-061 a 069): open banking
 (Enable Banking, `docs/open-banking.md`), onboarding por conta, gestão da conta, registo rápido,
 cópias de segurança, definições, ambientes (`docs/ambientes.md`), app Windows (`desktop/`,
-`docs/windows.md`), Trading 212 e administração. Migrações do servidor até `20261122000100` (tipo da conta do
+`docs/windows.md`), Trading 212 e administração. Migrações do servidor até `20261123000100` (consolidação; antes, tipo da conta do
 banco) nos dois ambientes; open banking (`20261121000100`) na produção desde 2026-11-13. Funções
 `open-banking` e `t212` nos dois ambientes; segredos `ENABLE_BANKING_*` (aplicação Production da
 Enable Banking, modo restrito) e `INTEGRATIONS_KEY` nos dois (verificado a 2026-11-14, só nomes).
-Migração `20261123000100` (consolidação, ADR-079/081/082) e v17 local **por aplicar**. Supabase CLI 3: usar `--remote=<ref>` (ignora `--project-ref`). Estado verificado e pendentes em
+Migração `20261123000100` (consolidação, ADR-079/081/082, `sync_pull_v3`) aplicada no staging e na produção a 2026-11-14, com a função `open-banking` publicada nos dois. Supabase CLI 3: usar `--remote=<ref>` (ignora `--project-ref`). Estado verificado e pendentes em
 [docs/audit-2026-11.md](docs/audit-2026-11.md) (secção "Estado atual"); testes em aparelhos reais
 ainda por fazer.
 Funções `delete-account` e

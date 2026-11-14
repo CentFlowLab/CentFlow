@@ -1,6 +1,6 @@
 {
   "name": "miven",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "main": "expo-router/entry",
   "private": true,
   "license": "UNLICENSED",

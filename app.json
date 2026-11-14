@@ -2,7 +2,7 @@
   "expo": {
     "name": "Miven",
     "slug": "centflow",
-    "version": "0.1.22",
+    "version": "0.1.23",
     "scheme": "miven",
     "orientation": "default",
     "icon": "./assets/icon.png",

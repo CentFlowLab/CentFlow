@@ -365,7 +365,14 @@ inferior em ilha flutuante (ADR-075); vibração com `expo-haptics` (ADR-073). S
 `open-banking` com os cabeçalhos PSU e o estado "limitado" no staging; na produção, publicar com
 `npx supabase functions deploy open-banking --remote=slfgslfzolfvqavuccom --no-verify-jwt`.
 
-## Por publicar (preparado a 2026-11-14) — consolidação pós-0.1.22
+## 2026-11-14 — versão 0.1.23
+
+Publicada pela ordem abaixo: `20261123000100` e `open-banking` (`--no-verify-jwt`, como antes)
+primeiro no staging e depois na produção; verificado que `sync_pull_v3` existe nos dois (resposta
+de permissão igual à `sync_pull_v2` sem sessão). O ensaio com dois aparelhos (passo 3) ficou por
+fazer. Depois: push (site e app web), APK e IPA da 0.1.23.
+
+### Ordem usada (consolidação pós-0.1.22)
 
 Alterações só no repositório local (ADR-078 a ADR-082). **Ordem obrigatória**, porque a app nova lê
 `sync_pull_v3`, que só existe depois da migração:
