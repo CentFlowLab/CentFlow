@@ -8,9 +8,35 @@
       name="description"
       content="Que dados o Miven trata, para quê, onde ficam e como exerces os teus direitos." />
     <link rel="canonical" href="https://miven.pt/privacidade/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_PT" />
+    <meta property="og:site_name" content="Miven" />
+    <meta property="og:url" content="https://miven.pt/privacidade/" />
+    <meta property="og:title" content="Política de privacidade — Miven" />
+    <meta
+      property="og:description"
+      content="Que dados o Miven trata, para quê, onde ficam e como exerces os teus direitos." />
+    <meta property="og:image" content="https://miven.pt/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Miven, gestão financeira pessoal" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Política de privacidade — Miven" />
+    <meta
+      name="twitter:description"
+      content="Que dados o Miven trata, para quê, onde ficam e como exerces os teus direitos." />
+    <meta name="twitter:image" content="https://miven.pt/assets/og.png" />
+    <meta name="twitter:image:alt" content="Miven, gestão financeira pessoal" />
     <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/assets/logo.png" />
+    <link
+      rel="preload"
+      href="/assets/fonts/inter-latin-600.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin />
     <link rel="stylesheet" href="/assets/home.css" />
     <script>
       document.documentElement.classList.add('js');
@@ -21,7 +47,15 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Miven, página inicial">
-          <img src="/assets/logo.png" width="28" height="28" alt="" />
+          <picture>
+            <source type="image/webp" srcset="/assets/logo-56.webp 2x, /assets/logo-84.webp 3x" />
+            <img
+              src="/assets/logo-56.png"
+              srcset="/assets/logo-56.png 2x, /assets/logo-84.png 3x"
+              width="28"
+              height="28"
+              alt="" />
+          </picture>
           <span>Miven</span>
         </a>
         <nav id="site-nav" class="site-nav" aria-label="Principal">
@@ -50,7 +84,7 @@
 
     <main id="conteudo" class="legal">
       <article class="wrap legal-body">
-        <p class="pillar-tag">Versão de 13 de novembro de 2026</p>
+        <p class="pillar-tag">Versão de 14 de novembro de 2026</p>
         <h1>Política de privacidade</h1>
         <p class="legal-lead">
           O Miven guarda informação sobre o teu dinheiro. Por isso explicamos, sem rodeios, que
@@ -59,9 +93,10 @@
 
         <h2>Quem é responsável</h2>
         <p>
-          O Miven é um projeto independente, desenvolvido em Portugal por uma pessoa singular, que é
-          a responsável pelo tratamento dos dados. Para qualquer questão sobre privacidade, escreve
-          para <a href="mailto:mivenapp@gmail.com">mivenapp@gmail.com</a>.
+          <!-- TODO(dono): substituir {{RESPONSAVEL}} pelo nome do responsável antes de publicar. -->
+          O Miven é um projeto independente, desenvolvido em Portugal por {{RESPONSAVEL}}, pessoa
+          singular, que é a responsável pelo tratamento dos dados. Para qualquer questão sobre
+          privacidade, escreve para <a href="mailto:mivenapp@gmail.com">mivenapp@gmail.com</a>.
         </p>
 
         <h2>Que dados tratamos</h2>
@@ -98,16 +133,17 @@
             apagadas.
           </li>
           <li>
-            <strong>Contas bancárias que ligares (open banking):</strong> quando disponível na app,
-            e só se ligares um banco. A autorização é dada por ti no próprio banco, através da
-            Enable Banking; não pedimos nem vemos as credenciais do banco. Com essa autorização, só
-            de leitura e válida até 90 dias (ou menos, se o banco não permitir tanto), lemos o nome
-            das contas, os quatro últimos caracteres do IBAN, os saldos e os movimentos
-            contabilizados (data, valor, descrição e nome da contraparte). No servidor guardamos o
-            estado da ligação, o banco, o nome das contas, os quatro últimos caracteres do IBAN, o
-            último saldo, a conta do Miven onde os movimentos entram e os identificadores técnicos
-            da ligação na Enable Banking. Os movimentos não ficam guardados no servidor por esta
-            via: seguem para a tua app, que os regista como os restantes movimentos (e estes
+            <strong>Contas bancárias que ligares (open banking):</strong> uma funcionalidade da app,
+            opcional e só de leitura, que não está disponível para todas as instituições; tratamos
+            estes dados só se ligares um banco. A autorização é dada por ti no próprio banco,
+            através da Enable Banking; não pedimos nem vemos as credenciais do banco. Com essa
+            autorização, só de leitura e válida até 90 dias (ou menos, se o banco não permitir
+            tanto), lemos o nome das contas, os quatro últimos caracteres do IBAN, os saldos e os
+            movimentos contabilizados (data, valor, descrição e nome da contraparte). No servidor
+            guardamos o estado da ligação, o banco, o nome das contas, os quatro últimos caracteres
+            do IBAN, o último saldo, a conta do Miven onde os movimentos entram e os identificadores
+            técnicos da ligação na Enable Banking. Os movimentos não ficam guardados no servidor por
+            esta via: seguem para a tua app, que os regista como os restantes movimentos (e estes
             sincronizam como qualquer outro). Quando a app lê o banco contigo a usá-la, enviamos à
             Enable Banking, e esta ao banco, o endereço IP e a identificação do browser ou da app
             desse pedido, como a PSD2 prevê para indicar que estás presente; não os guardamos. Não
@@ -211,6 +247,13 @@
           Dados (<a href="https://www.cnpd.pt">cnpd.pt</a>).
         </p>
 
+        <h2>Cookies</h2>
+        <p>
+          O site miven.pt não usa cookies nem ferramentas de estatística ou publicidade. Só a página
+          de erro guarda, durante a sessão do browser, o endereço a abrir na app web. A app web
+          guarda no browser a tua sessão e os teus dados, para funcionar.
+        </p>
+
         <h2>Segurança</h2>
         <p>
           As ligações são cifradas (HTTPS). No servidor, cada registo fica ligado à tua conta e só é
@@ -230,7 +273,15 @@
     <footer class="site-footer">
       <div class="wrap footer-inner">
         <a class="brand" href="/">
-          <img src="/assets/logo.png" width="24" height="24" alt="" />
+          <picture>
+            <source type="image/webp" srcset="/assets/logo-56.webp 2x, /assets/logo-84.webp 3x" />
+            <img
+              src="/assets/logo-56.png"
+              srcset="/assets/logo-56.png 2x, /assets/logo-84.png 3x"
+              width="24"
+              height="24"
+              alt="" />
+          </picture>
           <span>Miven</span>
         </a>
         <nav aria-label="Rodapé" class="footer-nav">

@@ -60,7 +60,7 @@ Google no iPhone. No SideStore não se aplica; antes de submeter à App Store, l
    o teste fechado.
 6. **Ficha da loja**: descrição só com o que existe (ver texto abaixo); ícone 512×512
    (`assets/images/icon.png` redimensionado); gráfico de destaque 1024×500; pelo menos 2 capturas
-   de telemóvel com proporção até 2:1 (as do site, `site/assets/screens/`, têm 390×844 e são
+   de telemóvel com proporção até 2:1 (as do site, `site/assets/screens/`, têm 780×1688 (390×844 a 2×) e são
    demasiado altas: tirar novas a 1080×1920 ou cortar a 2:1).
 7. **Conteúdo da app**:
    - Política de privacidade: `https://miven.pt/privacidade/`.

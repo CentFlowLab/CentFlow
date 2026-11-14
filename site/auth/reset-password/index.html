@@ -6,11 +6,28 @@
     <meta name="robots" content="noindex" />
     <title>Miven</title>
     <link rel="icon" href="/favicon.png" />
-    <link rel="stylesheet" href="/assets/site.css" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101b2d" media="(prefers-color-scheme: dark)" />
+    <link rel="stylesheet" href="/assets/home.css" />
   </head>
-  <body data-page="reset">
-    <main>
-      <div class="brand"><img src="/assets/logo.png" alt="" />Miven</div>
+  <body class="home status-page" data-page="reset">
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="Miven, página inicial">
+          <picture>
+            <source type="image/webp" srcset="/assets/logo-56.webp 2x, /assets/logo-84.webp 3x" />
+            <img
+              src="/assets/logo-56.png"
+              srcset="/assets/logo-56.png 2x, /assets/logo-84.png 3x"
+              width="28"
+              height="28"
+              alt="" />
+          </picture>
+          <span>Miven</span>
+        </a>
+      </div>
+    </header>
+    <main class="status-main">
       <section class="card" aria-live="polite">
         <div id="icon" class="icon" aria-hidden="true"></div>
         <h1 id="title"></h1>
@@ -18,7 +35,7 @@
         <a id="open" class="button" href="miven://"></a>
         <p id="hint" class="hint"></p>
       </section>
-      <footer>miven.pt</footer>
+      <footer class="status-footer">miven.pt</footer>
     </main>
     <noscript>Ativa o JavaScript para continuar.</noscript>
     <script src="/assets/auth.js"></script>
