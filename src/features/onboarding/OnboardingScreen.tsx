@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DEFAULT_CURRENCY, parseAmountInput } from '@/core/money';
+import { parseAmountInput } from '@/core/money';
 import { useRepositories } from '@/data';
 import { BrandMark, Button, Icon, Text, TextField, type IconName } from '@/ui/components';
 import { radius, spacing, useTheme } from '@/ui/theme';
@@ -16,6 +16,7 @@ import {
   markOnboardingSeen,
   skipOnboardingForSession,
 } from './onboarding-state';
+import { newAccountCurrencyFor, usePreferences } from '../preferences';
 
 type Step = 'welcome' | 'account' | 'ready';
 const STEPS: readonly Step[] = ['welcome', 'account', 'ready'];
@@ -29,6 +30,7 @@ const MAX_WIDTH = 480;
  */
 export function OnboardingScreen() {
   const { t } = useTranslation();
+  const currency = newAccountCurrencyFor(usePreferences().preferences);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const repositories = useRepositories();
@@ -61,7 +63,7 @@ export function OnboardingScreen() {
       return;
     }
     const parsed = balance.trim()
-      ? parseAmountInput(balance, DEFAULT_CURRENCY, { allowNegative: true })
+      ? parseAmountInput(balance, currency, { allowNegative: true })
       : ({ ok: true, amountMinor: 0 } as const);
     if (!parsed.ok) {
       setError('amount');
@@ -73,7 +75,7 @@ export function OnboardingScreen() {
       await repositories.accounts.create({
         name: trimmed,
         type: 'bank',
-        currency: DEFAULT_CURRENCY,
+        currency,
         initialBalance: parsed.amountMinor,
       });
       // Concluído: grava no perfil da conta (ou fica pendente sem rede e é enviado depois).

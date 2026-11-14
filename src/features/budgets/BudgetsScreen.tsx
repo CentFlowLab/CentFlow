@@ -4,15 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import {
-  addMonths,
   budgetFigures,
   calendarDateToLocalDate,
-  monthKeyToLocalDate,
-  monthOf,
-  monthRange,
+  financialMonthOf,
+  financialMonthRange,
+  type MonthKey,
+  referenceForMonth,
   spendBySlice,
   weekSlices,
-  type MonthKey,
 } from '@/core/finance';
 import { useDataQuery, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
@@ -40,10 +39,8 @@ import {
   type BudgetScreenData,
   type PresentedBudget,
 } from './load';
-
-function capitalize(value: string): string {
-  return value.charAt(0).toLocaleUpperCase() + value.slice(1);
-}
+import { MonthSwitcher } from '../finance/MonthSwitcher';
+import { usePreferences } from '../preferences';
 
 function openBudget(id: string, reference: string) {
   router.push({ pathname: '/budget/[id]', params: { id, on: reference } } as Href);
@@ -51,18 +48,21 @@ function openBudget(id: string, reference: string) {
 
 export function BudgetsScreen() {
   const { t } = useTranslation();
+  const { preferences } = usePreferences();
   const { colors } = useTheme();
   const { snapshot } = useSync();
   const breakpoint = useBreakpoint();
-  const { formatDate, formatMoney, formatMonthYear, formatPercent } = useLocaleFormat();
+  const { formatDate, formatMoney, formatPercent } = useLocaleFormat();
   const today = useToday();
-  const currentMonth = monthOf(today);
+  const startDay = preferences.financialMonthStartDay;
+  // O mês é o período financeiro (ADR-077); dia 1 = mês civil, como sempre.
+  const currentMonth = financialMonthOf(today, startDay);
   const [month, setMonth] = useState<MonthKey>(currentMonth);
-  const reference = month === currentMonth ? today : monthRange(month).end;
+  const reference = referenceForMonth(month, today, startDay);
   const query = useDataQuery(
     useCallback(
-      (repositories: Repositories) => loadBudgetScreen(repositories, reference),
-      [reference],
+      (repositories: Repositories) => loadBudgetScreen(repositories, reference, startDay),
+      [reference, startDay],
     ),
   );
 
@@ -105,22 +105,12 @@ export function BudgetsScreen() {
 
   return (
     <Screen {...header}>
-      <View
-        style={[styles.monthBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <IconButton
-          icon="chevron-back"
-          accessibilityLabel={t('dashboard.previousMonth')}
-          onPress={() => setMonth((value) => addMonths(value, -1))}
-        />
-        <Text variant="title3" align="center" style={styles.flex} accessibilityLiveRegion="polite">
-          {capitalize(formatMonthYear(monthKeyToLocalDate(month)))}
-        </Text>
-        <IconButton
-          icon="chevron-forward"
-          accessibilityLabel={t('dashboard.nextMonth')}
-          onPress={() => setMonth((value) => addMonths(value, 1))}
-        />
-      </View>
+      <MonthSwitcher
+        month={month}
+        currentMonth={currentMonth}
+        startDay={startDay}
+        onChange={setMonth}
+      />
       {snapshot ? (
         <Text
           variant="caption"
@@ -168,6 +158,7 @@ export function BudgetsScreen() {
           {budgetCurrencies(
             data.presented.map((item) => item.budget),
             data.accounts.map((account) => account.currency),
+            preferences.primaryCurrency,
           ).map((currency) => (
             <CurrencySection
               key={currency}
@@ -210,6 +201,7 @@ function CurrencySection({
   primary: string;
 }) {
   const { t } = useTranslation();
+  const startDay = usePreferences().preferences.financialMonthStartDay;
   const {
     colors: { heroTrack, heroNegative, heroPositive },
   } = useTheme();
@@ -219,7 +211,7 @@ function CurrencySection({
   const limit = active.reduce((sum, item) => sum + item.budget.amount, 0);
   const spent = active.reduce((sum, item) => sum + item.figures.spent, 0);
   const totals = active.length > 0 ? budgetFigures(spent, limit) : null;
-  const range = monthRange(month);
+  const range = financialMonthRange(month, startDay);
   const slices = weekSlices(range.start, range.end);
   const series = spendBySlice(
     data.lines,
@@ -416,13 +408,6 @@ const styles = StyleSheet.create({
   },
   center: {
     alignItems: 'center',
-  },
-  monthBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.xs,
   },
   heroTrack: {
     height: 6,

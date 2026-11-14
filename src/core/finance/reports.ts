@@ -12,6 +12,7 @@ import { addDays, addMonths, monthOf, monthRange, type CalendarDate } from './da
 import { remainingAmountMinor } from './goals';
 import { summarize, type PeriodSummary } from './summary';
 import type { BudgetPeriod, Id } from './types';
+import { financialMonthOf, financialMonthRange } from './financial-month';
 
 export type ReportPreset = 'month' | 'quarter' | 'year' | 'custom';
 
@@ -102,14 +103,17 @@ export function reportRanges(
   preset: ReportPreset,
   today: CalendarDate,
   custom?: InclusiveRange,
+  startDay = 1,
 ): { current: InclusiveRange; previous: InclusiveRange } | null {
   if (preset === 'custom') {
     if (!custom || custom.from > custom.to) return null;
     return { current: custom, previous: previousSameLength(custom) };
   }
   if (preset === 'month') {
-    const current = monthRange(monthOf(today));
-    const previous = monthRange(addMonths(monthOf(today), -1));
+    // O período financeiro atual e o anterior (ADR-077); trimestre e ano continuam civis.
+    const key = financialMonthOf(today, startDay);
+    const current = financialMonthRange(key, startDay);
+    const previous = financialMonthRange(addMonths(key, -1), startDay);
     return {
       current: { from: current.start, to: current.end },
       previous: { from: previous.start, to: previous.end },

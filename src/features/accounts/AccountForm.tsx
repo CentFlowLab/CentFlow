@@ -42,6 +42,7 @@ import { closeModal } from '../finance/navigation';
 import { ACCOUNT_TYPE_ICONS, validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
 import { CardSummary } from './CardSummary';
+import { newAccountCurrencyFor, usePreferences } from '../preferences';
 
 type FieldErrors = Partial<Record<AccountField, string>>;
 
@@ -61,7 +62,9 @@ export function AccountForm({ account }: { account?: AccountWithBalance }) {
 
   const [name, setName] = useState(account?.name ?? '');
   const [type, setType] = useState<AccountType>(account?.type ?? 'bank');
-  const [currency, setCurrency] = useState(account?.currency ?? DEFAULT_CURRENCY);
+  const { preferences } = usePreferences();
+  // Conta nova: a moeda das preferências. Uma conta existente mantém a sua (e o bloqueio).
+  const [currency, setCurrency] = useState(account?.currency ?? newAccountCurrencyFor(preferences));
   const [initialBalanceText, setInitialBalanceText] = useState(() =>
     account
       ? amountToInputString(account.initialBalance, account.currency, decimalSeparatorFor(locale))

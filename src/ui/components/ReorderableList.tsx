@@ -1,9 +1,23 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
-import { Animated, PanResponder, StyleSheet, View, type PanResponderInstance } from 'react-native';
+import {
+  Animated,
+  PanResponder,
+  Platform,
+  StyleSheet,
+  View,
+  type PanResponderGestureState,
+  type PanResponderInstance,
+} from 'react-native';
 
+import { useScreenScroll, type ScreenScroll } from '../layout/screenScroll';
 import { layout, useTheme } from '../theme';
 import { Icon } from './Icon';
-import { reorderTarget } from './reorder';
+import { autoScrollStep, reorderTarget } from './reorder';
+
+/** Toque longo para começar a arrastar a partir da linha (a pega começa logo). */
+const LONG_PRESS_MS = 250;
+/** Movimento tolerado antes de o toque longo ativar; acima disto é scroll, não arrasto. */
+const LONG_PRESS_SLOP = 8;
 
 type Props<T> = {
   data: readonly T[];
@@ -11,30 +25,147 @@ type Props<T> = {
   renderItem: (item: T, index: number) => ReactNode;
   /** Chamado ao largar numa posição diferente. */
   onReorder: (from: number, to: number) => void;
-  /** Rótulo da pega de arrastar (leitores de ecrã), ex.: "Arrastar Casa". */
+  /** Rótulo da linha para leitores de ecrã, ex.: "Arrastar Casa". */
   handleLabel: (item: T) => string;
+  /** Rótulos das ações Subir/Descer para leitores de ecrã. */
+  moveLabels?: (item: T) => { up: string; down: string };
   separator?: ReactNode;
+  /** Arrasto ativado (toque longo ou pega). */
+  onDragStart?: (index: number) => void;
+  /** O destino mudou durante o arrasto. */
+  onTargetChange?: (from: number, to: number) => void;
+  /** Fim do arrasto (largar), com o destino. */
+  onDragEnd?: (from: number, to: number) => void;
 };
 
-/** Valores mutáveis do gesto, guardados num fecho (não em refs nem em estado do React). */
-function createGestureState<T>(data: readonly T[], onReorder: (from: number, to: number) => void) {
-  let latest = { data, onReorder };
-  return {
-    heights: [] as number[],
-    responders: new Map<string, PanResponderInstance>(),
-    drag: new Animated.Value(0),
-    update(nextData: readonly T[], nextOnReorder: (from: number, to: number) => void) {
-      latest = { data: nextData, onReorder: nextOnReorder };
-    },
-    current: () => latest,
+type Dragging = { from: number; to: number; heights: number[] };
+
+type Callbacks = {
+  data: readonly unknown[];
+  onReorder: (from: number, to: number) => void;
+  onDragStart?: (index: number) => void;
+  onTargetChange?: (from: number, to: number) => void;
+  onDragEnd?: (from: number, to: number) => void;
+  scroll: ScreenScroll;
+  setDragging: (update: (current: Dragging | null) => Dragging | null) => void;
+};
+
+/**
+ * Valores mutáveis do gesto, guardados num fecho (não em refs nem em estado do React): os
+ * callbacks do PanResponder são criados uma vez por linha e leem sempre os valores atuais.
+ */
+function createGestureState(initial: Callbacks) {
+  let latest = initial;
+  let active: { from: number; startOffset: number; dy: number; pointerY: number } | null = null;
+  let frame: ReturnType<typeof requestAnimationFrame> | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastTarget = -1;
+  const heights: number[] = [];
+  const drag = new Animated.Value(0);
+
+  /** Deslocação real da linha: o dedo mais o que a página andou desde o início. */
+  const effectiveDy = () =>
+    active ? active.dy + (latest.scroll.getScrollOffset() - active.startOffset) : 0;
+
+  const updateTarget = () => {
+    if (!active) return;
+    const dy = effectiveDy();
+    drag.setValue(dy);
+    const to = reorderTarget(heights, active.from, dy);
+    if (to !== lastTarget) {
+      lastTarget = to;
+      latest.onTargetChange?.(active.from, to);
+    }
+    latest.setDragging((current) => (current && current.to !== to ? { ...current, to } : current));
   };
+
+  const stopFrame = () => {
+    if (frame !== null) cancelAnimationFrame(frame);
+    frame = null;
+  };
+
+  /** Scroll automático enquanto o dedo/rato está perto do topo ou do fundo. */
+  const tick = () => {
+    frame = null;
+    if (!active) return;
+    const viewport = latest.scroll.getViewport();
+    const step = viewport ? autoScrollStep(active.pointerY, viewport.top, viewport.height) : 0;
+    if (step === 0) return;
+    latest.scroll.scrollBy(step);
+    updateTarget();
+    frame = requestAnimationFrame(tick);
+  };
+
+  const clearTimer = () => {
+    if (timer !== null) clearTimeout(timer);
+    timer = null;
+  };
+
+  const state = {
+    heights,
+    drag,
+    responders: new Map<string, { row: PanResponderInstance; handle: PanResponderInstance }>(),
+    update(next: Callbacks) {
+      latest = next;
+    },
+    isActive: () => active !== null,
+    /** Os dados atuais (a ordem muda depois de cada arrasto). */
+    data: () => latest.data,
+    activate(from: number, pointerY: number) {
+      clearTimer();
+      if (from < 0) return;
+      active = { from, startOffset: latest.scroll.getScrollOffset(), dy: 0, pointerY };
+      lastTarget = from;
+      drag.setValue(0);
+      latest.scroll.setScrollLocked(true);
+      latest.setDragging(() => ({ from, to: from, heights: [...heights] }));
+      latest.onDragStart?.(from);
+    },
+    move(gesture: PanResponderGestureState) {
+      if (!active) return;
+      active.dy = gesture.dy;
+      active.pointerY = gesture.moveY;
+      updateTarget();
+      if (frame === null) frame = requestAnimationFrame(tick);
+    },
+    release() {
+      clearTimer();
+      stopFrame();
+      const finished = active;
+      const to = finished ? reorderTarget(heights, finished.from, effectiveDy()) : -1;
+      state.reset();
+      if (finished) {
+        latest.onDragEnd?.(finished.from, to);
+        if (to !== finished.from) latest.onReorder(finished.from, to);
+      }
+    },
+    /** Termina sem gravar (cancelado, ecrã fechado): o scroll volta sempre. */
+    reset() {
+      clearTimer();
+      stopFrame();
+      const wasActive = active !== null;
+      active = null;
+      drag.setValue(0);
+      if (wasActive) {
+        latest.scroll.setScrollLocked(false);
+        latest.setDragging(() => null);
+      }
+    },
+    startTimer(fire: () => void) {
+      clearTimer();
+      timer = setTimeout(fire, LONG_PRESS_MS);
+    },
+    cancelTimer: clearTimer,
+  };
+  return state;
 }
 
 /**
- * Lista ordenável por arrastar e largar: a pega à esquerda de cada linha arrasta-a com o dedo
- * (iPhone, Android) ou com o rato (web, Windows). Só `PanResponder` e `Animated`, sem módulos
- * nativos. A pega não deixa o scroll roubar o gesto, e o resto da linha continua a fazer scroll.
- * Para teclado e leitores de ecrã, o ecrã deve oferecer também ações Subir/Descer.
+ * Lista ordenável por arrastar e largar (ADR-059). Toque longo em qualquer ponto da linha, ou a
+ * pega à esquerda (imediato, também com o rato), e arrasta-se. Antes de o toque longo ativar, um
+ * gesto vertical continua a fazer scroll à página; durante o arrasto a página fica parada e só se
+ * desloca sozinha perto das margens. Só `PanResponder` e `Animated`, sem módulos nativos.
+ * Leitores de ecrã: a linha é ajustável (subir/descer) e tem as ações com nome.
  */
 export function ReorderableList<T>({
   data,
@@ -42,55 +173,87 @@ export function ReorderableList<T>({
   renderItem,
   onReorder,
   handleLabel,
+  moveLabels,
   separator,
+  onDragStart,
+  onTargetChange,
+  onDragEnd,
 }: Props<T>) {
   const { colors } = useTheme();
-  // Estado do gesto fora do React (como no SwipeableRow): os callbacks do PanResponder são
-  // criados uma vez por linha e leem sempre os valores atuais.
-  const [gesture] = useState(() => createGestureState(data, onReorder));
-  useEffect(() => gesture.update(data, onReorder));
-  const [dragging, setDragging] = useState<{
-    from: number;
-    to: number;
-    heights: number[];
-  } | null>(null);
+  const scroll = useScreenScroll();
+  const [dragging, setDragging] = useState<Dragging | null>(null);
+  const [gesture] = useState(() =>
+    createGestureState({
+      data,
+      onReorder,
+      onDragStart,
+      onTargetChange,
+      onDragEnd,
+      scroll,
+      setDragging,
+    }),
+  );
+  useEffect(
+    () =>
+      gesture.update({
+        data,
+        onReorder,
+        onDragStart,
+        onTargetChange,
+        onDragEnd,
+        scroll,
+        setDragging,
+      }),
+    [gesture, data, onReorder, onDragStart, onTargetChange, onDragEnd, scroll],
+  );
+  // Sair do modo de ordenar a meio de um arrasto não deixa o scroll bloqueado.
+  useEffect(() => () => gesture.reset(), [gesture]);
   const { drag } = gesture;
 
-  const responderFor = (key: string) => {
-    let responder = gesture.responders.get(key);
-    if (responder) return responder;
-    const indexOf = () => gesture.current().data.findIndex((item) => keyOf(item) === key);
-    responder = PanResponder.create({
+  const respondersFor = (key: string) => {
+    const existing = gesture.responders.get(key);
+    if (existing) return existing;
+    const currentIndex = () =>
+      (gesture.data() as readonly T[]).findIndex((item) => keyOf(item) === key);
+
+    // Linha: toque longo. Até ativar, o scroll pode ficar com o gesto.
+    const row = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      // Enquanto se arrasta, o scroll da página não pode ficar com o gesto.
-      onPanResponderTerminationRequest: () => false,
-      onShouldBlockNativeResponder: () => true,
-      onPanResponderGrant: () => {
-        const from = indexOf();
-        drag.setValue(0);
-        setDragging({ from, to: from, heights: [...gesture.heights] });
+      onMoveShouldSetPanResponder: () => gesture.isActive(),
+      onPanResponderTerminationRequest: () => !gesture.isActive(),
+      onShouldBlockNativeResponder: () => false,
+      onPanResponderGrant: (event) => {
+        const pointerY = event.nativeEvent.pageY;
+        gesture.startTimer(() => gesture.activate(currentIndex(), pointerY));
       },
       onPanResponderMove: (_, move) => {
-        drag.setValue(move.dy);
-        const from = indexOf();
-        const to = reorderTarget(gesture.heights, from, move.dy);
-        setDragging((current) => (current && current.to !== to ? { ...current, to } : current));
+        if (gesture.isActive()) {
+          gesture.move(move);
+          return;
+        }
+        if (Math.abs(move.dx) > LONG_PRESS_SLOP || Math.abs(move.dy) > LONG_PRESS_SLOP) {
+          gesture.cancelTimer();
+        }
       },
-      onPanResponderRelease: (_, move) => {
-        const from = indexOf();
-        const to = reorderTarget(gesture.heights, from, move.dy);
-        drag.setValue(0);
-        setDragging(null);
-        if (to !== from) gesture.current().onReorder(from, to);
-      },
-      onPanResponderTerminate: () => {
-        drag.setValue(0);
-        setDragging(null);
-      },
+      onPanResponderRelease: () => gesture.release(),
+      onPanResponderTerminate: () => gesture.reset(),
     });
-    gesture.responders.set(key, responder);
-    return responder;
+
+    // Pega: arrasta logo (dedo ou rato), sem deixar o scroll ficar com o gesto.
+    const handle = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderGrant: (event) => gesture.activate(currentIndex(), event.nativeEvent.pageY),
+      onPanResponderMove: (_, move) => gesture.move(move),
+      onPanResponderRelease: () => gesture.release(),
+      onPanResponderTerminate: () => gesture.reset(),
+    });
+
+    const responders = { row, handle };
+    gesture.responders.set(key, responders);
+    return responders;
   };
 
   const shift = (index: number) => {
@@ -106,15 +269,39 @@ export function ReorderableList<T>({
       {data.map((item, index) => {
         const key = keyOf(item);
         const active = dragging?.from === index;
+        const responders = respondersFor(key);
+        const labels = moveLabels?.(item);
+        const actions = [
+          ...(index < data.length - 1 ? [{ name: 'increment' }] : []),
+          ...(index > 0 ? [{ name: 'decrement' }] : []),
+          ...(labels && index > 0 ? [{ name: 'moveUp', label: labels.up }] : []),
+          ...(labels && index < data.length - 1 ? [{ name: 'moveDown', label: labels.down }] : []),
+        ];
         return (
           <Fragment key={key}>
             {index > 0 && separator && !dragging ? separator : null}
             <Animated.View
+              {...responders.row.panHandlers}
+              accessible
+              accessibilityRole="adjustable"
+              accessibilityLabel={handleLabel(item)}
+              accessibilityActions={actions}
+              onAccessibilityAction={(event) => {
+                const name = event.nativeEvent.actionName;
+                const to =
+                  name === 'increment' || name === 'moveDown'
+                    ? index + 1
+                    : name === 'decrement' || name === 'moveUp'
+                      ? index - 1
+                      : index;
+                if (to !== index && to >= 0 && to < data.length) onReorder(index, to);
+              }}
               onLayout={(event) => {
                 gesture.heights[index] = event.nativeEvent.layout.height;
               }}
               style={[
                 styles.row,
+                Platform.OS === 'web' ? (styles.rowWeb as never) : null,
                 active
                   ? {
                       transform: [{ translateY: drag }],
@@ -125,17 +312,10 @@ export function ReorderableList<T>({
                   : { transform: [{ translateY: shift(index) }] },
               ]}>
               <View
-                {...responderFor(key).panHandlers}
-                accessible
-                accessibilityRole="adjustable"
-                accessibilityLabel={handleLabel(item)}
-                // Leitores de ecrã: deslizar para cima/baixo na pega sobe/desce a linha.
-                accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-                onAccessibilityAction={(event) => {
-                  const to = event.nativeEvent.actionName === 'increment' ? index + 1 : index - 1;
-                  if (to >= 0 && to < data.length) onReorder(index, to);
-                }}
-                style={styles.handle}>
+                {...responders.handle.panHandlers}
+                accessible={false}
+                importantForAccessibility="no"
+                style={[styles.handle, { cursor: active ? 'grabbing' : 'grab' } as never]}>
                 <Icon
                   name="reorder-three-outline"
                   size={22}
@@ -153,15 +333,16 @@ export function ReorderableList<T>({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
+  // Web: antes de ativar, o browser continua a fazer scroll vertical; sem seleção de texto.
+  rowWeb: { touchAction: 'pan-y', userSelect: 'none' } as never,
   handle: {
     width: layout.minTouchTarget,
     minHeight: layout.minTouchTarget,
     alignItems: 'center',
     justifyContent: 'center',
-    // Web: o browser não deve fazer scroll nem selecionar texto ao arrastar pela pega.
+    // Web: na pega, o browser não faz scroll nem seleciona texto.
     touchAction: 'none',
     userSelect: 'none',
-    cursor: 'grab',
   } as never,
   content: { flex: 1, minWidth: 0 },
 });

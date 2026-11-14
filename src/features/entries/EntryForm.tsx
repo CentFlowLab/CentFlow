@@ -5,7 +5,6 @@ import { StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
   addDays,
-  calendarDateToLocalDate,
   followingCharge,
   frequentEntries,
   hasErrors,
@@ -32,7 +31,6 @@ import { useLocaleFormat } from '@/i18n';
 import {
   Badge,
   Button,
-  CalendarPicker,
   Chip,
   ChipGroup,
   Dialog,
@@ -50,6 +48,8 @@ import { CategoryPicker } from '../finance/CategoryPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import type { FinanceLookups } from '../finance/useFinanceLookups';
+import { DateChips } from '../finance/DateField';
+import { useHaptics, usePreferences } from '../preferences';
 
 type Props = {
   lookups: FinanceLookups;
@@ -87,6 +87,23 @@ function rememberAccount(id: string): void {
   lastAccountId = id;
 }
 
+/**
+ * Conta proposta num movimento novo: a do pré-preenchimento, a conta por omissão das
+ * Preferências (só se existir e estiver ativa), a última usada, ou a primeira.
+ */
+export function initialAccountFor(
+  accounts: readonly { id: string; archivedAt: string | null }[],
+  choice: { prefill?: string | null; preferred: string; last: string | null },
+): string {
+  return (
+    accounts.find((account) => account.id === choice.prefill)?.id ??
+    accounts.find((account) => account.id === choice.preferred && !account.archivedAt)?.id ??
+    accounts.find((account) => account.id === choice.last)?.id ??
+    accounts[0]?.id ??
+    ''
+  );
+}
+
 export function EntryForm({
   lookups,
   today,
@@ -96,7 +113,7 @@ export function EntryForm({
   subscription,
 }: Props) {
   const { t } = useTranslation();
-  const { locale, formatDate, formatUnitPrice } = useLocaleFormat();
+  const { locale, formatUnitPrice } = useLocaleFormat();
   const repositories = useRepositories();
   const amountRef = useRef<TextInputInstance>(null);
   const isEditing = entry !== undefined;
@@ -112,12 +129,14 @@ export function EntryForm({
     [lookups.accountList, entry],
   );
 
+  const { preferences } = usePreferences();
   const initialAccountId =
     entry?.accountId ??
-    selectableAccounts.find((account) => account.id === prefill?.accountId)?.id ??
-    selectableAccounts.find((account) => account.id === lastAccountId)?.id ??
-    selectableAccounts[0]?.id ??
-    '';
+    initialAccountFor(selectableAccounts, {
+      prefill: prefill?.accountId,
+      preferred: preferences.defaultAccountId,
+      last: lastAccountId,
+    });
 
   const [type, setType] = useState<EntryType>(entry?.type ?? prefill?.type ?? 'expense');
   const [amountText, setAmountText] = useState(() => {
@@ -155,7 +174,6 @@ export function EntryForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // Veículo (ADR-054): a mesma despesa passa também a contar na ficha do veículo.
@@ -300,12 +318,16 @@ export function EntryForm({
     return { input: hasErrors(fieldErrors) ? null : input, fieldErrors };
   };
 
+  const haptic = useHaptics();
   const save = async (addAnother: boolean, allowDuplicate = false) => {
     setFormError(null);
     setSavedMessage(null);
     const { input, fieldErrors } = buildInput();
     setErrors(fieldErrors);
-    if (!input) return;
+    if (!input) {
+      haptic.warning();
+      return;
+    }
 
     setSaving(true);
     try {
@@ -317,6 +339,7 @@ export function EntryForm({
       if (entry) await repositories.entries.update(entry.id, input);
       else await repositories.entries.create(input);
       rememberAccount(input.accountId);
+      haptic.success();
       if (subscription && !entry) {
         // Pagamento confirmado: a próxima cobrança passa para o período seguinte.
         await repositories.subscriptions
@@ -341,8 +364,10 @@ export function EntryForm({
           mapped[field as EntryField] = validationMessage(t, code);
         }
         setErrors(mapped);
+        haptic.warning();
       } else {
         setFormError(t('errors.saveFailed'));
+        haptic.error();
       }
     } finally {
       setSaving(false);
@@ -376,8 +401,6 @@ export function EntryForm({
     });
   })();
 
-  const yesterday = addDays(today, -1);
-  const isCustomDate = date !== today && date !== yesterday;
   const frequent = history.data ? frequentEntries(history.data, 6) : [];
 
   return (
@@ -671,24 +694,13 @@ export function EntryForm({
         </View>
       ) : null}
 
-      <ChipGroup label={t('entryForm.date')} errorText={errors.date}>
-        <Chip label={t('common.today')} selected={date === today} onPress={() => setDate(today)} />
-        <Chip
-          label={t('common.yesterday')}
-          selected={date === yesterday}
-          onPress={() => setDate(yesterday)}
-        />
-        <Chip
-          label={
-            isCustomDate
-              ? formatDate(calendarDateToLocalDate(date), 'medium')
-              : t('entryForm.pickDate')
-          }
-          icon="calendar-outline"
-          selected={isCustomDate}
-          onPress={() => setCalendarOpen(true)}
-        />
-      </ChipGroup>
+      <DateChips
+        label={t('entryForm.date')}
+        value={date}
+        today={today}
+        onChange={setDate}
+        errorText={errors.date}
+      />
 
       {showDetails ? (
         <View style={styles.details}>
@@ -755,29 +767,6 @@ export function EntryForm({
           },
         ]}
       />
-
-      <Dialog
-        visible={calendarOpen}
-        title={t('entryForm.pickDate')}
-        onDismiss={() => setCalendarOpen(false)}
-        actions={[
-          { label: t('common.close'), variant: 'secondary', onPress: () => setCalendarOpen(false) },
-        ]}>
-        <CalendarPicker
-          value={date}
-          today={today}
-          locale={locale}
-          labels={{
-            previousMonth: t('calendar.previousMonth'),
-            nextMonth: t('calendar.nextMonth'),
-          }}
-          onChange={(value) => {
-            setDate(value);
-            setCalendarOpen(false);
-          }}
-        />
-      </Dialog>
-
       <Dialog
         visible={confirmDelete}
         title={t('entryForm.deleteTitle')}

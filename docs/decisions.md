@@ -863,6 +863,10 @@ percorrer dezenas de botões para escolher uma.
   abre uma lista com pesquisa (sem acentos), pela ordem escolhida.
 - Migração local v16; servidor `20261117000100_category_order.sql` (aplicada a 2026-11-12), com guarda
   para apps antigas.
+- Atualização (2026-11-13): arrasta-se com toque longo em qualquer ponto da linha ou de imediato
+  pela pega (também com o rato); sem setas visíveis; leitores de ecrã sobem e descem na própria
+  linha (ajustável e ações com nome); durante o arrasto a página não faz scroll, salvo perto das
+  margens (`ScreenScrollContext`, `autoScrollStep`).
 
 ## ADR-060 — Base de dados web com sql.js, sem isolamento cross-origin
 
@@ -1070,6 +1074,7 @@ começa com o saldo do banco e recebe movimentos a partir do dia seguinte. Leitu
 com a app aberta, no máximo uma a cada 15 minutos por ligação; consentimento de 90 dias.
 Sem dependências novas. Robinhood não tem PSD2 nem API oficial: fica como património manual.
 Ativação e passos de produção em `docs/open-banking.md`.
+Atualização (2026-11-13): associar uma conta do banco a uma conta da app que já existia acerta osaldo da app pelo do banco (só o saldo inicial muda); num cartão, um saldo positivo do banco édívida. As leituras levam o IP e o browser de quem usa a app (`Psu-Ip-Address`, `Psu-User-Agent`)para não contarem no limite de leituras sem a pessoa; um limite atingido mantém a ligação ativa.
 
 ## ADR-070 — APK Android sem R8
 
@@ -1115,3 +1120,94 @@ motorização, aquisição, documentos e prazos, notas), com duas colunas a part
 data; ao tocar abre a data escrita e o calendário (com salto de ano), um de cada vez, e fecha ao
 escolher o dia. Sem campos novos na base de dados: cilindrada, potência e dados próprios de
 elétricos não existem no modelo e não foram inventados.
+
+## ADR-073 — Vibração subtil com expo-haptics
+
+**Estado:** aceite (2026-11-13). Dependência nova autorizada pelo responsável: `expo-haptics`
+(~58.0.8, módulo Expo, sem configuração nativa extra).
+
+Pequenas vibrações em momentos fechados: arrasto ativado nas categorias (média) e cada mudança de
+destino (seleção), movimento guardado (sucesso), gravar bloqueado por campos (aviso) ou falha a
+gravar (erro), apagar um movimento por deslize (média) e anular (leve), o botão "+" da barra
+(leve) e mudar de mês na barra de mês (seleção). Nada na navegação, no scroll, na escrita nem em
+botões genéricos. Serviço único em `src/lib/haptics.ts` (nativo) e `haptics.web.ts` (no-op na web
+e no Windows); os componentes de `src/ui` não vibram, os ecrãs chamam `useHaptics()` pelos
+callbacks. Preferência "Vibração" (Definições › Preferências, só iPhone e Android), ligada por
+omissão e também em instalações antigas. Alternativa considerada: `Vibration` do React Native
+(sem padrões subtis no iPhone).
+
+## ADR-074 — Datas e mês: um só campo, um só calendário e o seletor de mês e ano
+
+**Estado:** aceite (2026-11-13).
+
+Todas as datas usam o mesmo campo (`src/features/finance/DateField.tsx`): fechado, mostra a data;
+ao tocar abre por baixo a data escrita (dia, mês, ano) e o calendário, um painel de cada vez, que
+fecha ao escolher o dia. Os registos do dia a dia (movimentos, pagamentos) mantêm os atalhos Hoje
+e Ontem, e "Escolher data" abre o mesmo painel. Tocar no mês do calendário abre o seletor de mês e
+ano (`MonthYearPicker`: folha em baixo no telemóvel, diálogo em tablet e desktop, Escape fecha na
+web), o mesmo das barras de mês de Início e Orçamentos (`MonthSwitcher`), onde as setas
+continuam iguais. Substituiu calendários sempre abertos (orçamentos, subscrições, património,
+objetivos), diálogos (movimentos, pagamentos, data de origem) e datas só escritas (relatórios).
+A data de nascimento no registo continua só escrita. Sem alterações a dados nem consultas.
+
+## ADR-075 — Barra inferior do telemóvel em ilha flutuante
+
+**Estado:** aceite (2026-11-13).
+
+No telemóvel (largura < 768), a barra inferior passa a ser uma cápsula flutuante a 16px das
+margens, com fundo translúcido (`tabBarGlass`), borda, sombra e, na web, desfoque. O separador
+ativo tem uma pílula verde suave; o "+" é um círculo de 44px dentro da ilha. Com a barra em
+posição absoluta, as cenas das tabs ocupam a altura toda e o conteúdo passa por trás; o espaço no
+fim de cada `Screen` e do `Snackbar` vem de `useFloatingTabBarInset()` (zero fora dos separadores
+e em tablet/desktop). No Android, a ilha esconde-se com o teclado aberto. Tablet e desktop mantêm
+a barra lateral. Sem `expo-blur` (no nativo o fundo é só semi-opaco).
+
+## ADR-076 — Moeda principal, formato regional, modo discreto e conta por omissão
+
+**Estado:** aceite (2026-11-13).
+
+Quatro preferências novas em Definições › Preferências, guardadas só neste aparelho (como as
+outras, sem sincronização) e só de apresentação: nenhuma altera valores guardados.
+
+- **Moeda principal** (`primaryCurrency`, `'auto'` ou código ISO): a moeda que Início,
+  Orçamentos e Relatórios mostram primeiro. Se nenhuma conta ativa a usa, vale a automática (a
+  moeda com mais contas), com aviso na página. Nunca se converte nem soma moedas (ADR-016): as
+  outras continuam em secções próprias. Decidida em `resolvePrimaryCurrency` (core).
+- **Moeda das contas novas** (`newAccountCurrency`): a proposta ao criar uma conta (formulário e
+  onboarding). Automática = a do formato regional.
+- **Formato regional** (`formatRegion`, `'auto'` ou uma de 12 etiquetas BCP 47): números, datas e
+  moeda independentes do idioma. Automático = o comportamento anterior (idioma + região do
+  aparelho). Aplicado em `useLocaleFormat` via `FormatSettingsProvider`.
+- **Modo discreto** (`discreetAmounts`): os valores monetários aparecem como "•••• €" (sem o sinal
+  nem os algarismos; percentagens e datas ficam). O leitor de ecrã diz "Valor oculto". Botão de
+  olho no cartão principal do Início para ligar e desligar depressa. Mascarado no texto já
+  formatado (`maskMoneyText`), porque o Hermes do iPhone não tem `formatToParts`.
+- **Conta por omissão** (`defaultAccountId`, `'last'` ou id): a conta proposta num movimento
+  novo; se estiver arquivada ou já não existir, volta à última usada (`initialAccountFor`).
+
+Ordem da página: Aparência · Idioma · Moeda · Região e formatos · Início do mês · Privacidade ·
+Registo de movimentos. Não incluído: primeiro dia da semana, bloqueio biométrico, sincronizar
+preferências, notificações e idiomas novos.
+
+## ADR-077 — Início do mês financeiro
+
+**Estado:** aceite (2026-11-13).
+
+Preferência `financialMonthStartDay` (1–31, por omissão 1) para quem recebe o salário noutro dia:
+o "mês" passa a ir desse dia ao dia anterior no mês seguinte. Regras em
+`src/core/finance/financial-month.ts`:
+
+- **Nome do período:** o do mês com mais dias dentro dele. Início 1–15 → o mês em que começa
+  (5 nov–4 dez = novembro); 16–31 → o mês em que termina (25 out–24 nov = novembro).
+- **Meses curtos:** o dia de início fica limitado ao último dia do mês (31 → 28 fev). Os períodos
+  são contíguos: cada dia pertence a um só período (testado para todos os dias 1–31 em três anos).
+- **Início 1 = mês civil**, com resultados idênticos aos de antes (testado em orçamentos,
+  previsão, relatórios e filtros). Com início 1 os ecrãs continuam a usar o agregado mensal do
+  SQL; com outro dia, agrupam em core os totais por dia (`bucketDailyTotals`).
+
+Aplicado a: orçamentos mensais (janela, período anterior e barra de mês), Início (mês, tendência e
+últimos movimentos), previsão do mês, saúde financeira, preset "Mês" dos Relatórios e presets
+"Este mês", "Mês passado" e "Últimos 3 meses" dos Movimentos. A barra de mês mostra o intervalo
+("25 out – 24 nov") quando o início não é 1. Ficam iguais: orçamentos semanais e anuais,
+trimestre e ano dos Relatórios, "Este ano" e o intervalo personalizado (que passa só a começar no
+período atual). Sem alterações ao SQL, aos repositórios, à sincronização nem aos dados.

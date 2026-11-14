@@ -58,4 +58,49 @@ describe('Trading 212 in net worth', () => {
     expect((await repos.wealth.list())[0]?.amount).toBe(100000);
     await db.close();
   });
+
+  it('merges the copies two devices created and keeps the oldest on every device', async () => {
+    const { db, repos } = await openTestRepositories();
+    const first = await repos.wealth.create({
+      name: 'Trading 212',
+      type: 'investment',
+      amount: 189428,
+      currency: 'EUR',
+      valuedOn: '2026-11-13',
+    });
+    const second = await repos.wealth.create({
+      name: 'Trading 212',
+      type: 'investment',
+      amount: 189419,
+      currency: 'EUR',
+      valuedOn: '2026-11-13',
+    });
+    // Este aparelho tinha ligado a cópia mais recente.
+    await setLinkedItem(second.id);
+    expect(await syncT212Wealth(repos, snapshot(190000), '2026-11-13', 'Trading 212')).toBe(
+      'synced',
+    );
+    const items = await repos.wealth.list();
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ id: first.id, amount: 190000 });
+    expect(await linkedItemId()).toBe(first.id);
+    await db.close();
+  });
+
+  it('adopts an existing Trading 212 item on a new device instead of asking', async () => {
+    const { db, repos } = await openTestRepositories();
+    const existing = await repos.wealth.create({
+      name: 'Trading 212',
+      type: 'investment',
+      amount: 189428,
+      currency: 'EUR',
+      valuedOn: '2026-11-13',
+    });
+    expect(await syncT212Wealth(repos, snapshot(190000), '2026-11-14', 'Trading 212')).toBe(
+      'synced',
+    );
+    expect(await repos.wealth.list()).toHaveLength(1);
+    expect(await linkedItemId()).toBe(existing.id);
+    await db.close();
+  });
 });

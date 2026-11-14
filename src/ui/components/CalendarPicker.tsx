@@ -11,8 +11,10 @@ import {
   type MonthKey,
 } from '@/core/finance';
 
-import { radius, spacing, useTheme } from '../theme';
+import { layout, radius, spacing, useTheme } from '../theme';
+import { Icon } from './Icon';
 import { IconButton } from './IconButton';
+import { MonthYearPicker, type MonthYearPickerLabels } from './MonthYearPicker';
 import { Text } from './Text';
 
 type Props = {
@@ -20,8 +22,15 @@ type Props = {
   onChange: (value: CalendarDate) => void;
   locale: string;
   today: CalendarDate;
-  /** Com `previousYear`/`nextYear`, mostra também o salto de um ano (datas distantes). */
-  labels: { previousMonth: string; nextMonth: string; previousYear?: string; nextYear?: string };
+  /**
+   * Com `monthPicker`, tocar no mês abre a escolha de mês e ano (o mesmo seletor das barras de
+   * mês): datas distantes ficam a poucos toques.
+   */
+  labels: {
+    previousMonth: string;
+    nextMonth: string;
+    monthPicker?: MonthYearPickerLabels & { open: string };
+  };
 };
 
 function firstDayOfWeek(locale: string): number {
@@ -67,39 +76,41 @@ export function CalendarPicker({ value, onChange, locale, today, labels }: Props
   const title = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(
     monthKeyToLocalDate(visibleMonth),
   );
+  const shownTitle = title.charAt(0).toLocaleUpperCase(locale) + title.slice(1);
+  const [picking, setPicking] = useState(false);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {labels.previousYear ? (
-          <IconButton
-            icon="play-back-outline"
-            size={16}
-            accessibilityLabel={labels.previousYear}
-            onPress={() => setVisibleMonth((month) => addMonths(month, -12))}
-          />
-        ) : null}
         <IconButton
           icon="chevron-back"
           accessibilityLabel={labels.previousMonth}
           onPress={() => setVisibleMonth((month) => addMonths(month, -1))}
         />
-        <Text variant="bodyStrong" accessibilityLiveRegion="polite" style={styles.title}>
-          {title.charAt(0).toLocaleUpperCase(locale) + title.slice(1)}
-        </Text>
+        {labels.monthPicker ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={labels.monthPicker.open.replace('{{month}}', shownTitle)}
+            onPress={() => setPicking(true)}
+            style={({ pressed }) => [
+              styles.titleButton,
+              pressed && { backgroundColor: colors.surfaceMuted },
+            ]}>
+            <Text variant="bodyStrong" accessibilityLiveRegion="polite">
+              {shownTitle}
+            </Text>
+            <Icon name="chevron-down" size={16} color="textSecondary" />
+          </Pressable>
+        ) : (
+          <Text variant="bodyStrong" accessibilityLiveRegion="polite" style={styles.title}>
+            {shownTitle}
+          </Text>
+        )}
         <IconButton
           icon="chevron-forward"
           accessibilityLabel={labels.nextMonth}
           onPress={() => setVisibleMonth((month) => addMonths(month, 1))}
         />
-        {labels.nextYear ? (
-          <IconButton
-            icon="play-forward-outline"
-            size={16}
-            accessibilityLabel={labels.nextYear}
-            onPress={() => setVisibleMonth((month) => addMonths(month, 12))}
-          />
-        ) : null}
       </View>
       <View style={styles.row}>
         {weekdayNames.map((name, index) => (
@@ -144,6 +155,17 @@ export function CalendarPicker({ value, onChange, locale, today, labels }: Props
           })}
         </View>
       ))}
+      {labels.monthPicker ? (
+        <MonthYearPicker
+          visible={picking}
+          value={visibleMonth}
+          currentMonth={monthOf(today)}
+          locale={locale}
+          labels={labels.monthPicker}
+          onChange={setVisibleMonth}
+          onDismiss={() => setPicking(false)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -160,6 +182,15 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     textAlign: 'center',
+  },
+  titleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    minHeight: layout.minTouchTarget,
+    borderRadius: radius.md,
   },
   row: {
     flexDirection: 'row',

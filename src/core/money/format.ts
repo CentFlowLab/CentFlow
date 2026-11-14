@@ -64,3 +64,20 @@ export function formatUnitPrice(minorPerUnit: number, currency: string, locale: 
     maximumFractionDigits: digits,
   }).format(toMajorUnits(minorPerUnit, currency));
 }
+
+/** Marca dos valores escondidos no modo discreto. */
+export const HIDDEN_AMOUNT = '••••';
+
+/**
+ * Modo discreto (ADR-076): troca os algarismos, separadores e sinal de um valor já formatado por
+ * "••••", mantendo o símbolo ou o código da moeda no seu lugar ("1234,56 €" → "•••• €",
+ * "-$1,234.56" → "$••••", "JPY 1,500" → "JPY ••••"). Sem `formatToParts` (o Hermes do iPhone não o
+ * tem). Só apresentação: nunca usar em campos de introdução, exportações ou cópias.
+ */
+export function maskMoneyText(formatted: string): string {
+  const withoutSign = formatted.replace(/[−\-+]/g, '');
+  return withoutSign
+    .replace(/\d(?:[\d\s.,'’  ]*\d)?/, HIDDEN_AMOUNT)
+    .replace(/\s+$/, '')
+    .replace(/^\s+/, '');
+}

@@ -247,7 +247,7 @@ const ptPT = {
     associate: {
       title: 'Associar conta',
       intro:
-        'Escolhe a conta da app onde entram os movimentos desta conta do banco. Só entram movimentos a partir de agora; os que já registaste à mão não se repetem.',
+        'Escolhe a conta da app onde entram os movimentos desta conta do banco. Só entram movimentos a partir de agora; os que já registaste à mão não se repetem. Uma conta da app que já existia fica com o saldo do banco.',
       create: 'Criar conta nova',
       createHint: 'Começa com o saldo atual do banco',
       existing: 'Contas da app em {{currency}}',
@@ -350,6 +350,12 @@ const ptPT = {
     formatsHint: 'Seguem a região do aparelho: {{example}}',
     backup: 'Cópias de segurança',
     backupHint: 'Exportar, restaurar e cópias automáticas',
+    haptics: {
+      title: 'Vibração',
+      description: 'Pequenas vibrações ao confirmar ações e ao reordenar.',
+      on: 'Ligada',
+      off: 'Desligada',
+    },
     analytics: {
       title: 'Estatísticas de utilização',
       off: 'Não partilhar',
@@ -384,6 +390,46 @@ const ptPT = {
     support: 'Ajuda',
     contact: 'Contacto',
     version: 'Versão',
+    currencyPrefs: {
+      primary: 'Moeda principal',
+      primaryHint: 'Mostrada e somada primeiro. As outras moedas ficam à parte, sem conversão.',
+      newAccount: 'Moeda das contas novas',
+      auto: 'Automática',
+      autoWith: 'Automática ({{currency}})',
+      noAccounts: 'Ainda não tens contas em {{currency}}; os totais usam {{fallback}}.',
+      pickTitle: 'Escolher moeda',
+      search: 'Procurar moeda',
+      other: 'Outra moeda (código ISO)',
+      otherLabel: 'Código ISO de 3 letras',
+      otherInvalid: 'Usa um código de 3 letras, por exemplo EUR.',
+      use: 'Usar',
+    },
+    region: {
+      title: 'Formato regional',
+      auto: 'Automático',
+      note: 'Só muda a apresentação de números, moedas e datas. O idioma da interface não muda.',
+    },
+    discreet: {
+      title: 'Modo discreto',
+      description:
+        'Esconde os valores no ecrã. Ao editar, os formulários mostram sempre os valores reais.',
+      on: 'Ligado',
+      off: 'Desligado',
+    },
+    defaultAccount: {
+      title: 'Conta por omissão',
+      last: 'Última usada',
+      hint: 'A conta proposta num movimento novo.',
+    },
+    financialMonth: {
+      startsOn: 'Começa no dia',
+      day: 'Dia {{day}}',
+      civil: 'Dia 1 (mês civil)',
+      current: 'Período atual: {{range}}',
+      noteShort: 'Para dias 29–31, nos meses mais curtos o período começa no último dia do mês.',
+      noteLocal:
+        'Esta definição fica neste aparelho; noutro aparelho pode ser diferente. Só muda a forma de agrupar — nenhum valor guardado é alterado.',
+    },
     nav: {
       label: 'Secções das definições',
       back: 'Voltar às definições',
@@ -416,6 +462,9 @@ const ptPT = {
       },
     },
     blocks: {
+      currency: 'Moeda',
+      entries: 'Registo de movimentos',
+      financialMonth: 'Mês financeiro',
       profile: 'Perfil',
       security: 'Palavra-passe e acesso',
       session: 'Sessão',
@@ -424,6 +473,7 @@ const ptPT = {
       theme: 'Aparência',
       language: 'Idioma',
       region: 'Região e formatos',
+      feedback: 'Resposta tátil',
       shortcuts: 'Atalhos',
       privacy: 'Privacidade',
       sync: 'Sincronização',
@@ -738,7 +788,7 @@ const ptPT = {
     order: 'Ordenar',
     orderDone: 'Concluído',
     orderHint:
-      'Arrasta pela pega (≡) ou usa as setas. A ordem aparece em todo o lado onde escolhes uma categoria.',
+      'Mantém o dedo numa categoria e arrasta-a, ou arrasta pela pega (≡). A ordem aparece em todo o lado onde escolhes uma categoria.',
     orderByName: 'Por nome',
     moveUp: 'Subir {{name}}',
     moveDown: 'Descer {{name}}',
@@ -1420,6 +1470,16 @@ const ptPT = {
       acquiredOn: 'Data de compra',
       amount: 'Valor de compra (opcional)',
     },
+  },
+  privacy: {
+    hiddenValue: 'Valor oculto',
+    showValues: 'Mostrar valores',
+    hideValues: 'Ocultar valores',
+  },
+  monthPicker: {
+    title: 'Escolher mês',
+    open: '{{month}}, escolher mês',
+    currentMonth: 'Mês atual',
   },
   optionalDate: {
     set: 'Definir data',

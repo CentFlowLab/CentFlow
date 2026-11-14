@@ -21,6 +21,7 @@ import {
 } from '@/ui/components';
 import { useBreakpoint } from '@/ui/layout/useBreakpoint';
 import { spacing, useTheme } from '@/ui/theme';
+import { useHaptics } from '../preferences';
 
 const DIVIDER_INSET = spacing.lg + 36 + spacing.md;
 
@@ -28,6 +29,7 @@ const loadCategories = (repositories: Repositories) => repositories.categories.l
 
 export function CategoriesScreen() {
   const { t } = useTranslation();
+  const haptic = useHaptics();
   const { colors } = useTheme();
   const breakpoint = useBreakpoint();
   const repositories = useRepositories();
@@ -50,13 +52,6 @@ export function CategoriesScreen() {
       order: { ...(current && current.base === categories ? current.order : {}), [type]: ids },
     }));
     void repositories.categories.reorder(type, ids).catch(() => setFailed(true));
-  };
-  const move = (type: CategoryType, ids: string[], index: number, delta: -1 | 1) => {
-    const next = [...ids];
-    const [moved] = next.splice(index, 1);
-    if (moved === undefined) return;
-    next.splice(index + delta, 0, moved);
-    save(type, next);
   };
 
   const add = () => router.push('/category/new');
@@ -147,32 +142,16 @@ export function CategoriesScreen() {
                     separator={<Divider inset={DIVIDER_INSET} />}
                     handleLabel={(category) => t('categories.drag', { name: category.name })}
                     onReorder={(from, to) => save(type, moveItem(ids, from, to))}
-                    renderItem={(category, index) => (
+                    onDragStart={() => haptic.impactMedium()}
+                    onTargetChange={() => haptic.selection()}
+                    moveLabels={(category) => ({
+                      up: t('categories.moveUp', { name: category.name }),
+                      down: t('categories.moveDown', { name: category.name }),
+                    })}
+                    renderItem={(category) => (
                       <ListItem
                         leading={<CategoryIcon icon={category.icon} color={category.color} />}
                         title={category.name}
-                        trailing={
-                          <View style={styles.arrows}>
-                            <IconButton
-                              icon="chevron-up"
-                              accessibilityLabel={t('categories.moveUp', {
-                                name: category.name,
-                              })}
-                              disabled={index === 0}
-                              color={index === 0 ? 'textTertiary' : 'text'}
-                              onPress={() => move(type, ids, index, -1)}
-                            />
-                            <IconButton
-                              icon="chevron-down"
-                              accessibilityLabel={t('categories.moveDown', {
-                                name: category.name,
-                              })}
-                              disabled={index === items.length - 1}
-                              color={index === items.length - 1 ? 'textTertiary' : 'text'}
-                              onPress={() => move(type, ids, index, 1)}
-                            />
-                          </View>
-                        }
                       />
                     )}
                   />

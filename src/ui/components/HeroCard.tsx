@@ -14,14 +14,12 @@ export function HeroCard({ style, children, ...rest }: Props) {
     <View
       style={[styles.card, linearGradient(145, colors.heroStart, colors.heroEnd), style]}
       {...rest}>
-      <View
-        pointerEvents="none"
-        style={[styles.orbLarge, { backgroundColor: colors.heroSurface }]}
-      />
-      <View
-        pointerEvents="none"
-        style={[styles.orbSmall, { backgroundColor: colors.heroSurface }]}
-      />
+      {/* Os círculos ficam numa camada recortada própria: na web, um botão focado dentro do
+          cartão não o faz deslizar para mostrar o que sai dos limites. */}
+      <View pointerEvents="none" style={styles.decor}>
+        <View style={[styles.orbLarge, { backgroundColor: colors.heroSurface }]} />
+        <View style={[styles.orbSmall, { backgroundColor: colors.heroSurface }]} />
+      </View>
       {children}
     </View>
   );
@@ -33,6 +31,14 @@ const styles = StyleSheet.create({
     padding: spacing['2xl'],
     overflow: 'hidden',
     gap: spacing.md,
+  },
+  decor: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    overflow: 'hidden',
   },
   orbLarge: {
     position: 'absolute',

@@ -54,6 +54,10 @@ export async function setLinkedItem(value: string | null): Promise<void> {
  * O valor da conta entra no património por um único item de investimento (nunca dois).
  * Sem escolha feita: se não houver nenhum investimento nessa moeda, cria "Trading 212" e liga-o;
  * se já houver, não adivinha (podia contar duas vezes) e devolve `needsChoice`.
+ *
+ * A ligação fica em cada aparelho: dois aparelhos podiam criar cada um o seu item antes de
+ * sincronizar. Itens de investimento com o nome da Trading 212 contam como o mesmo: fica o mais
+ * antigo (o mesmo em todos os aparelhos, para não se apagarem uns aos outros) e os restantes saem.
  */
 export async function syncT212Wealth(
   repositories: Repositories,
@@ -64,15 +68,28 @@ export async function syncT212Wealth(
   if (!snapshot) return 'skipped';
   let linked = await linkedItemId();
   if (linked === 'none') return 'notCounted';
+  const open = (await repositories.wealth.list()).filter(
+    (item) => item.type === 'investment' && !item.closedOn && item.currency === snapshot.currency,
+  );
+  const named = open
+    .filter((item) => item.name === name)
+    .sort((a, b) =>
+      a.createdAt === b.createdAt ? (a.id < b.id ? -1 : 1) : a.createdAt < b.createdAt ? -1 : 1,
+    );
+  const survivor = named[0];
+  if (survivor && (linked === null || named.some((item) => item.id === linked))) {
+    for (const duplicate of named.slice(1)) await repositories.wealth.delete(duplicate.id);
+    if (linked !== survivor.id) {
+      linked = survivor.id;
+      await setLinkedItem(linked);
+    }
+  }
   if (linked) {
     const item = await repositories.wealth.get(linked);
     if (!item || item.closedOn) linked = null;
   }
   if (!linked) {
-    const candidates = (await repositories.wealth.list()).filter(
-      (item) => item.type === 'investment' && !item.closedOn && item.currency === snapshot.currency,
-    );
-    if (candidates.length > 0) return 'needsChoice';
+    if (open.length > 0) return 'needsChoice';
     const created = await repositories.wealth.create({
       name,
       type: 'investment',

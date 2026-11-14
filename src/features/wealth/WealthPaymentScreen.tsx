@@ -4,8 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import {
-  addDays,
-  calendarDateToLocalDate,
   ValidationError,
   type ValidationErrors,
   type WealthItem,
@@ -14,17 +12,7 @@ import {
 import { parseAmountInput } from '@/core/money';
 import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import {
-  Button,
-  CalendarPicker,
-  Chip,
-  ChipGroup,
-  Dialog,
-  EmptyState,
-  FormScreen,
-  Text,
-  TextField,
-} from '@/ui/components';
+import { Button, Chip, ChipGroup, EmptyState, FormScreen, Text, TextField } from '@/ui/components';
 import { spacing } from '@/ui/theme';
 
 import { CategoryPicker } from '../finance/CategoryPicker';
@@ -32,6 +20,7 @@ import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useFinanceLookups, type FinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
+import { DateChips } from '../finance/DateField';
 
 /** Registar o pagamento de uma dívida: `/wealth/payment/[id]` (ADR-052). */
 export function WealthPaymentScreen() {
@@ -67,7 +56,7 @@ export function WealthPaymentScreen() {
 
 function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLookups }) {
   const { t } = useTranslation();
-  const { formatDate, formatMoney, locale } = useLocaleFormat();
+  const { formatMoney } = useLocaleFormat();
   const repositories = useRepositories();
   const today = useToday();
   const accounts = lookups.accountList.filter(
@@ -84,7 +73,6 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [date, setDate] = useState(today < item.valuedOn ? item.valuedOn : today);
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors<WealthPaymentField | 'categoryId'>>({});
   const [amountError, setAmountError] = useState<string>();
   const [saving, setSaving] = useState(false);
@@ -103,8 +91,6 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
     return total.amountMinor - principal.amountMinor - known[0]! - known[1]!;
   })();
 
-  const yesterday = addDays(today, -1);
-  const isCustomDate = date !== today && date !== yesterday;
   const close = () => closeModal('/wealth');
 
   if (accounts.length === 0) {
@@ -270,45 +256,13 @@ function PaymentForm({ item, lookups }: { item: WealthItem; lookups: FinanceLook
           setErrors((current) => ({ ...current, categoryId: undefined }));
         }}
       />
-      <ChipGroup label={t('wealth.payment.date')} errorText={validationMessage(t, errors.date)}>
-        <Chip label={t('common.today')} selected={date === today} onPress={() => setDate(today)} />
-        <Chip
-          label={t('common.yesterday')}
-          selected={date === yesterday}
-          onPress={() => setDate(yesterday)}
-        />
-        <Chip
-          label={
-            isCustomDate
-              ? formatDate(calendarDateToLocalDate(date), 'medium')
-              : t('entryForm.pickDate')
-          }
-          icon="calendar-outline"
-          selected={isCustomDate}
-          onPress={() => setCalendarOpen(true)}
-        />
-      </ChipGroup>
-      <Dialog
-        visible={calendarOpen}
-        title={t('entryForm.pickDate')}
-        onDismiss={() => setCalendarOpen(false)}
-        actions={[
-          { label: t('common.close'), variant: 'secondary', onPress: () => setCalendarOpen(false) },
-        ]}>
-        <CalendarPicker
-          value={date}
-          today={today}
-          locale={locale}
-          labels={{
-            previousMonth: t('calendar.previousMonth'),
-            nextMonth: t('calendar.nextMonth'),
-          }}
-          onChange={(value) => {
-            setDate(value);
-            setCalendarOpen(false);
-          }}
-        />
-      </Dialog>
+      <DateChips
+        label={t('wealth.payment.date')}
+        value={date}
+        today={today}
+        onChange={setDate}
+        errorText={validationMessage(t, errors.date)}
+      />
     </FormScreen>
   );
 }

@@ -1,7 +1,9 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
+import { RepositoriesProvider, type Repositories } from '@/data';
 import { i18n } from '@/i18n';
+import { openTestRepositories } from '@/test-utils/node-sqlite-driver';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { SettingsScreen } from '../SettingsScreen';
@@ -86,8 +88,22 @@ describe('Settings navigation', () => {
 });
 
 describe('Preferences', () => {
+  // A página lê as contas (moeda principal, conta por omissão): está sempre dentro dos dados.
+  let db: Awaited<ReturnType<typeof openTestRepositories>>['db'];
+  let repos: Repositories;
+  beforeEach(async () => {
+    ({ db, repos } = await openTestRepositories());
+  });
+  afterEach(() => db.close());
+  const renderPreferences = () =>
+    renderWithProviders(
+      <RepositoriesProvider repositories={repos}>
+        <SettingsScreen section="preferences" />
+      </RepositoriesProvider>,
+    );
+
   it('persists the selected theme and marks it', async () => {
-    const { repository } = await renderWithProviders(<SettingsScreen section="preferences" />);
+    const { repository } = await renderPreferences();
     expect(await screen.findByRole('radio', { name: 'Claro' })).toBeChecked();
     await fireEvent.press(screen.getByRole('radio', { name: 'Escuro' }));
     await waitFor(async () => {
@@ -97,7 +113,7 @@ describe('Preferences', () => {
   });
 
   it('switches the interface language immediately and keeps it', async () => {
-    const { repository } = await renderWithProviders(<SettingsScreen section="preferences" />);
+    const { repository } = await renderPreferences();
     await fireEvent.press(await screen.findByRole('radio', { name: 'English' }));
     expect(await screen.findByRole('header', { name: 'Preferences' })).toBeOnTheScreen();
     await expect(repository.load()).resolves.toMatchObject({ language: 'en' });
@@ -105,16 +121,25 @@ describe('Preferences', () => {
   });
 
   it('shows the number and date formats of the region', async () => {
-    await renderWithProviders(<SettingsScreen section="preferences" />);
+    await renderPreferences();
     expect(await screen.findByText('Números e moedas')).toBeOnTheScreen();
     expect(screen.getByText(/1234,56\s?€/)).toBeOnTheScreen();
   });
 
   it('opens the quick entry steps in place on iPhone', async () => {
-    await renderWithProviders(<SettingsScreen section="preferences" />);
+    await renderPreferences();
     // Os testes correm como iOS.
     await fireEvent.press(await screen.findByRole('button', { name: /^Registo rápido/ }));
     expect(screen.getByText(/Abre a app Atalhos e toca em \+/)).toBeOnTheScreen();
+  });
+
+  it('changes the start of the financial month and shows the current period', async () => {
+    const { repository } = await renderPreferences();
+    await fireEvent.press(await screen.findByRole('button', { name: /^Começa no dia/ }));
+    await fireEvent.press(screen.getByText('Dia 25'));
+    await waitFor(async () => {
+      await expect(repository.load()).resolves.toMatchObject({ financialMonthStartDay: 25 });
+    });
   });
 });
 

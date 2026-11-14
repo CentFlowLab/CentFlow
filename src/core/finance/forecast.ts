@@ -1,5 +1,11 @@
 import type { CurrencyCode } from '../money';
 import { addDays, addMonths, monthOf, monthRange, type CalendarDate, type MonthKey } from './dates';
+import {
+  dayOfFinancialMonth,
+  daysInFinancialMonth,
+  financialMonthOf,
+  financialMonthRange,
+} from './financial-month';
 import { daysUntil } from './deadlines';
 import { annualAmountMinor } from './subscriptions';
 import type { Id, Subscription, SubscriptionPeriod } from './types';
@@ -97,6 +103,8 @@ export type ForecastInput = {
   /** Meses completos anteriores (do mais antigo ao mais recente), nesta moeda. */
   history: readonly MonthHistory[];
   subscriptions: readonly Subscription[];
+  /** Início do mês financeiro (ADR-077); sem ele (ou 1), o mês civil. */
+  startDay?: number;
 };
 
 export type ForecastBasis = 'history' | 'monthPace' | 'none';
@@ -136,11 +144,13 @@ function usableHistory(history: readonly MonthHistory[]): MonthHistory[] {
 
 export function buildMonthForecast(input: ForecastInput): MonthForecast {
   const { today, currency } = input;
-  const month = monthOf(today);
-  const total = daysInMonth(month);
-  const day = dayOfMonth(today);
+  // Período financeiro atual (dia 1 = mês civil, como sempre).
+  const startDay = input.startDay ?? 1;
+  const month = financialMonthOf(today, startDay);
+  const total = daysInFinancialMonth(month, startDay);
+  const day = dayOfFinancialMonth(today, startDay);
   const daysLeft = total - day + 1;
-  const end = monthRange(month).end;
+  const end = financialMonthRange(month, startDay).end;
 
   const upcomingCharges = input.subscriptions
     .filter((item) => item.currency === currency)
@@ -273,7 +283,7 @@ const MIN_DAY_FOR_PACE_INSIGHTS = 5;
 /** Até `limit` observações, das mais importantes para as menos. */
 export function spendingInsights(
   input: Pick<ForecastInput, 'today' | 'monthToDate' | 'history'> &
-    Partial<Pick<ForecastInput, 'subscriptions' | 'currency'>>,
+    Partial<Pick<ForecastInput, 'subscriptions' | 'currency' | 'startDay'>>,
   forecast: Pick<MonthForecast, 'endBalance'>,
   limit = 3,
 ): SpendingInsight[] {
@@ -288,10 +298,11 @@ export function spendingInsights(
   }
 
   const usable = usableHistory(input.history);
-  const month = monthOf(input.today);
-  const day = dayOfMonth(input.today);
+  const startDay = input.startDay ?? 1;
+  const month = financialMonthOf(input.today, startDay);
+  const day = dayOfFinancialMonth(input.today, startDay);
   if (usable.length >= MIN_HISTORY_MONTHS && day >= MIN_DAY_FOR_PACE_INSIGHTS) {
-    const share = day / daysInMonth(month);
+    const share = day / daysInFinancialMonth(month, startDay);
     const usualFor = (amounts: number[]) =>
       Math.round(amounts.reduce((sum, value) => sum + value, 0) / usable.length);
 

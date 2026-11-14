@@ -83,3 +83,15 @@ export function monthsEndingAt(lastMonth: MonthKey, count: number): MonthKey[] {
 export function monthKeyToLocalDate(month: MonthKey): Date {
   return calendarDateToLocalDate(`${month}-01`);
 }
+
+/** Mês a partir do ano e do número do mês (1–12): (2025, 6) → "2025-06". */
+export function monthKeyFrom(year: number, month: number): MonthKey {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
+}
+
+/** Limita um mês ao intervalo suportado (MIN_YEAR-01 a MAX_YEAR-12). */
+export function clampMonthKey(month: MonthKey): MonthKey {
+  const min = monthKeyFrom(MIN_YEAR, 1);
+  const max = monthKeyFrom(MAX_YEAR, 12);
+  return month < min ? min : month > max ? max : month;
+}

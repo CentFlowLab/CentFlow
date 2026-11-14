@@ -211,6 +211,11 @@ function BanksPanel({ state }: { state: BankConnection[] | null | 'failed' }) {
                           : t('banking.neverSynced'),
                       ].join(' · ')}
                     </Text>
+                    {connection.last_error === 'rateLimited' ? (
+                      <Text variant="footnote" tone="warning">
+                        {t('banking.errors.rateLimited')}
+                      </Text>
+                    ) : null}
                   </View>
                   <Badge
                     tone={BANK_TONE[connection.status]}

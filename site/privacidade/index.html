@@ -108,9 +108,11 @@
             último saldo, a conta do Miven onde os movimentos entram e os identificadores técnicos
             da ligação na Enable Banking. Os movimentos não ficam guardados no servidor por esta
             via: seguem para a tua app, que os regista como os restantes movimentos (e estes
-            sincronizam como qualquer outro). Não fazemos pagamentos nem transferências. Ao
-            desligar, pedimos a revogação da autorização e apagamos estes dados do servidor; os
-            movimentos já registados na app ficam.
+            sincronizam como qualquer outro). Quando a app lê o banco contigo a usá-la, enviamos à
+            Enable Banking, e esta ao banco, o endereço IP e a identificação do browser ou da app
+            desse pedido, como a PSD2 prevê para indicar que estás presente; não os guardamos. Não
+            fazemos pagamentos nem transferências. Ao desligar, pedimos a revogação da autorização e
+            apagamos estes dados do servidor; os movimentos já registados na app ficam.
           </li>
           <li>
             <strong>Estatísticas de utilização:</strong> só se aceitares. São anónimas e não criam

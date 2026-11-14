@@ -34,7 +34,8 @@ export const layout = {
   contentMaxWidth: 1120,
   sidebarWidth: 248,
   railWidth: 76,
-  bottomBarHeight: 60,
+  /** Barra inferior flutuante do telemóvel ("ilha"). */
+  floatingTabBarHeight: 64,
   minTouchTarget: 44,
 } as const;
 

@@ -235,6 +235,14 @@ export function bankAccountKind(raw: unknown): BankAccountKind | null {
   return null;
 }
 
+/**
+ * Saldo do banco como saldo da conta da app. Numa conta de cartão de crédito da app, um valor
+ * positivo do banco é o que está em dívida (há bancos que não indicam o sinal): fica negativo.
+ */
+export function bankBalanceForAppAccount(bankBalance: number, appAccountType: string): number {
+  return appAccountType === 'card' && bankBalance > 0 ? -bankBalance : bankBalance;
+}
+
 /** Últimos 4 caracteres do IBAN, para a pessoa reconhecer a conta (nunca o IBAN completo). */
 export function ibanLast4(value: unknown): string | null {
   const clean = text(value).replace(/\s/g, '').toUpperCase();

@@ -270,6 +270,43 @@ describe('banks screen (ADR-069)', () => {
     await waitFor(() => expect(screen.queryByText('Saldo na app')).toBeNull());
   });
 
+  it('aligns an existing account to the bank balance when linking it', async () => {
+    const app = await repos.accounts.create({
+      name: 'Santander',
+      type: 'bank',
+      currency: 'EUR',
+      initialBalance: 60000,
+    });
+    mockParams = { id: 'a1' };
+    mockTables = linkTables([{ ...bankRow('a1', null), balance: 0 }]);
+    await render(<BankAccountLinkScreen />);
+    await fireEvent.press(await screen.findByRole('radio', { name: /^Santander/ }));
+    await waitFor(async () =>
+      expect((await repos.accounts.listWithBalances()).find((a) => a.id === app.id)?.balance).toBe(
+        0,
+      ),
+    );
+    expect(mockClient.rpc).toHaveBeenCalledWith('bank_account_link', expect.anything());
+  });
+
+  it('takes a positive bank balance as debt when the app account is a card', async () => {
+    const card = await repos.accounts.create({
+      name: 'Unicre',
+      type: 'card',
+      currency: 'EUR',
+      initialBalance: -389657,
+    });
+    mockParams = { id: 'a1' };
+    mockTables = linkTables([{ ...bankRow('a1', null), balance: 387046 }]);
+    await render(<BankAccountLinkScreen />);
+    await fireEvent.press(await screen.findByRole('radio', { name: /^Unicre/ }));
+    await waitFor(async () =>
+      expect((await repos.accounts.listWithBalances()).find((a) => a.id === card.id)?.balance).toBe(
+        -387046,
+      ),
+    );
+  });
+
   it('explains a cancelled authorisation without calling the server', async () => {
     mockParams = { error: 'access_denied', state: 'x' };
     await render(<BankCallbackScreen />);

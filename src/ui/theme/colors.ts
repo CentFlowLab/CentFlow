@@ -30,6 +30,8 @@ export type ThemeColors = {
 
   overlay: string;
   shadow: string;
+  /** Fundo translúcido da barra inferior flutuante (o conteúdo passa por trás). */
+  tabBarGlass: string;
 
   /** Cartão de saldo: gradiente escuro de marca, igual nos dois temas. */
   heroStart: string;
@@ -86,6 +88,7 @@ export const lightColors: ThemeColors = {
 
   overlay: 'rgba(16, 27, 45, 0.4)',
   shadow: 'rgba(16, 27, 45, 0.06)',
+  tabBarGlass: 'rgba(255, 255, 255, 0.9)',
 
   heroStart: '#0F2A3D',
   heroEnd: '#0A5C47',
@@ -125,6 +128,7 @@ export const darkColors: ThemeColors = {
 
   overlay: 'rgba(0, 0, 0, 0.6)',
   shadow: 'rgba(0, 0, 0, 0.4)',
+  tabBarGlass: 'rgba(30, 41, 59, 0.9)',
 
   heroStart: '#15304A',
   heroEnd: '#0A5C47',

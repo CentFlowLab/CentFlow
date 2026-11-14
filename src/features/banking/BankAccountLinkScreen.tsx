@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import type { BankAccountKind } from '@/core/banking/open-banking';
+import { bankBalanceForAppAccount, type BankAccountKind } from '@/core/banking/open-banking';
 import { addDays, type AccountType } from '@/core/finance';
 import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
@@ -14,7 +14,12 @@ import { useAuth } from '../account/AuthProvider';
 import { useSync } from '../account/SyncProvider';
 import { closeModal } from '../finance/navigation';
 import { useToday } from '../finance/useToday';
-import { linkBankAccount, loadBankConnections, type BankAccountRow } from './open-banking-client';
+import {
+  alignAccountBalance,
+  linkBankAccount,
+  loadBankConnections,
+  type BankAccountRow,
+} from './open-banking-client';
 
 /**
  * Para que conta da app vão os movimentos de uma conta do banco. Uma conta nova começa com o
@@ -70,30 +75,13 @@ export function BankAccountLinkScreen() {
   );
   const bankBalance = account?.row.balance ?? null;
 
-  /**
-   * Põe o saldo da app igual ao do banco mudando o saldo inicial da conta (os movimentos ficam
-   * como estão). Serve quando a conta já tinha movimentos apagados ou o banco mostra a dívida de
-   * um cartão como valor positivo.
-   */
+  /** Põe o saldo da conta da app associada igual a `target` (só o saldo inicial muda). */
   const adjustTo = async (target: number) => {
     if (!linkedApp) return;
     setBusy(true);
     setFailed(false);
     try {
-      const current = await repositories.accounts.get(linkedApp.id);
-      if (!current) throw new Error('missing');
-      await repositories.accounts.update(current.id, {
-        name: current.name,
-        type: current.type,
-        currency: current.currency,
-        initialBalance: current.initialBalance + (target - linkedApp.balance),
-        creditLimit: current.creditLimit,
-        institution: current.institution,
-        statementDay: current.statementDay,
-        dueDay: current.dueDay,
-        paymentAccountId: current.paymentAccountId,
-        color: current.color,
-      });
+      if (!(await alignAccountBalance(repositories, linkedApp.id, target))) setFailed(true);
     } catch {
       setFailed(true);
     } finally {
@@ -116,6 +104,18 @@ export function BankAccountLinkScreen() {
       await syncNow();
       ok = await linkBankAccount(client, account.row.id, appAccountId, importFrom);
     }
+    // Conta que já existia: o saldo passa a ser o do banco (movimentos apagados ou um saldo inicial
+    // antigo deixavam a conta da app diferente do banco). A conta nova já nasce com ele.
+    if (ok && appAccountId && appAccountId !== createdId && account.row.balance !== null) {
+      const target = (appAccounts.data ?? []).find((item) => item.id === appAccountId);
+      if (target && target.currency === account.row.currency) {
+        await alignAccountBalance(
+          repositories,
+          appAccountId,
+          bankBalanceForAppAccount(account.row.balance, target.type),
+        ).catch(() => false);
+      }
+    }
     setBusy(false);
     if (ok) close();
     else setFailed(true);
@@ -133,7 +133,10 @@ export function BankAccountLinkScreen() {
           name: ((newName ?? '').trim() || suggestedName).slice(0, 60),
           type: appTypeFor(account.row.kind),
           currency: account.row.currency,
-          initialBalance: account.row.balance ?? 0,
+          initialBalance: bankBalanceForAppAccount(
+            account.row.balance ?? 0,
+            appTypeFor(account.row.kind),
+          ),
           institution: account.bank.slice(0, 60),
         });
         accountId = created.id;

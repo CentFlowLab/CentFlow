@@ -18,6 +18,7 @@ export { FormScreen } from './FormScreen';
 export { Icon, type IconName } from './Icon';
 export { IconButton } from './IconButton';
 export { ListItem } from './ListItem';
+export { MonthYearPicker, type MonthYearPickerLabels } from './MonthYearPicker';
 export { ProgressBar } from './ProgressBar';
 export { Screen } from './Screen';
 export { Section } from './Section';

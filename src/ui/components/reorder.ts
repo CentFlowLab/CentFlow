@@ -35,3 +35,29 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
   next.splice(to, 0, moved);
   return next;
 }
+
+/**
+ * Scroll automático ao arrastar perto das margens da área visível: px a deslocar por frame
+ * (negativo para cima, positivo para baixo, 0 longe das margens), maior quanto mais perto da
+ * margem e nunca acima de `maxStep`.
+ */
+export function autoScrollStep(
+  pointerY: number,
+  viewportTop: number,
+  viewportHeight: number,
+  edge = 64,
+  maxStep = 14,
+): number {
+  if (viewportHeight <= 0) return 0;
+  const fromTop = pointerY - viewportTop;
+  const fromBottom = viewportTop + viewportHeight - pointerY;
+  if (fromTop < edge) {
+    const strength = Math.min(1, (edge - Math.max(fromTop, 0)) / edge);
+    return -Math.round(maxStep * strength);
+  }
+  if (fromBottom < edge) {
+    const strength = Math.min(1, (edge - Math.max(fromBottom, 0)) / edge);
+    return Math.round(maxStep * strength);
+  }
+  return 0;
+}

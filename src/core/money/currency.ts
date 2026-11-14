@@ -30,3 +30,25 @@ export function currencyExponent(currency: CurrencyCode): number {
   exponentCache.set(currency, exponent);
   return exponent;
 }
+
+/** Moedas mais comuns, pela ordem em que aparecem nos seletores (qualquer código ISO é aceite). */
+export const COMMON_CURRENCIES = [
+  'EUR',
+  'USD',
+  'GBP',
+  'CHF',
+  'BRL',
+  'AOA',
+  'MZN',
+  'CVE',
+  'CAD',
+  'AUD',
+  'JPY',
+  'PLN',
+  'SEK',
+  'NOK',
+  'DKK',
+  'CZK',
+  'HUF',
+  'RON',
+] as const;

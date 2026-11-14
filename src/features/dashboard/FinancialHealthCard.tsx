@@ -15,9 +15,15 @@ import { Button, Card, Divider, Icon, Section, Text, type IconName } from '@/ui/
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { loadForecastInput } from './MonthInsights';
+import { usePreferences } from '../preferences';
 
-async function loadHealth(repositories: Repositories, today: CalendarDate, currency: CurrencyCode) {
-  const forecast = await loadForecastInput(repositories, today, currency);
+async function loadHealth(
+  repositories: Repositories,
+  today: CalendarDate,
+  currency: CurrencyCode,
+  startDay: number,
+) {
+  const forecast = await loadForecastInput(repositories, today, currency, startDay);
   const accounts = await repositories.accounts.listWithBalances();
   const categories = await repositories.categories.list('expense');
   return buildFinancialHealth({
@@ -56,10 +62,11 @@ export function FinancialHealthCard({
   const { colors } = useTheme();
   const { formatPercent } = useLocaleFormat();
   const [showCalculation, setShowCalculation] = useState(false);
+  const startDay = usePreferences().preferences.financialMonthStartDay;
   const query = useDataQuery(
     useCallback(
-      (repositories: Repositories) => loadHealth(repositories, today, currency),
-      [today, currency],
+      (repositories: Repositories) => loadHealth(repositories, today, currency, startDay),
+      [today, currency, startDay],
     ),
   );
   if (!query.data) return null;

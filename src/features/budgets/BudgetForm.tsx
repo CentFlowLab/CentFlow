@@ -4,8 +4,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import {
   BUDGET_PERIODS,
-  calendarDateToLocalDate,
-  pickPrimaryCurrency,
+  resolvePrimaryCurrency,
   validateBudgetInput,
   ValidationError,
   hasErrors,
@@ -24,7 +23,6 @@ import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
   Button,
-  CalendarPicker,
   Chip,
   ChipGroup,
   FormScreen,
@@ -38,6 +36,8 @@ import { CategoryPicker } from '../finance/CategoryPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
+import { DateField } from '../finance/DateField';
+import { usePreferences } from '../preferences';
 
 type FieldErrors = ValidationErrors<keyof BudgetInput>;
 
@@ -58,8 +58,9 @@ type Props = {
 
 export function BudgetForm({ budget, onClose, onSaved }: Props) {
   const { t } = useTranslation();
+  const { preferences } = usePreferences();
   const repositories = useRepositories();
-  const { formatDate, locale } = useLocaleFormat();
+  const { locale } = useLocaleFormat();
   const today = useToday();
   const query = useDataQuery(
     useCallback((repositories: Repositories) => loadForm(repositories), []),
@@ -84,7 +85,10 @@ export function BudgetForm({ budget, onClose, onSaved }: Props) {
   const resolvedCurrency =
     currency ||
     (data
-      ? pickPrimaryCurrency(currencies.length > 0 ? currencies : [DEFAULT_CURRENCY])
+      ? resolvePrimaryCurrency(
+          preferences.primaryCurrency,
+          currencies.length > 0 ? currencies : [DEFAULT_CURRENCY],
+        )
       : DEFAULT_CURRENCY);
 
   const taken = new Set(
@@ -217,22 +221,12 @@ export function BudgetForm({ budget, onClose, onSaved }: Props) {
             />
           </View>
 
-          <View style={styles.field}>
-            <Text variant="footnote" tone="secondary">
-              {t('budgets.form.startsOn')}
-            </Text>
-            <Text variant="label">{formatDate(calendarDateToLocalDate(startsOn), 'medium')}</Text>
-            <CalendarPicker
-              value={startsOn}
-              today={today}
-              locale={locale}
-              labels={{
-                previousMonth: t('calendar.previousMonth'),
-                nextMonth: t('calendar.nextMonth'),
-              }}
-              onChange={setStartsOn}
-            />
-          </View>
+          <DateField
+            label={t('budgets.form.startsOn')}
+            value={startsOn}
+            today={today}
+            onChange={setStartsOn}
+          />
 
           <Text variant="caption" tone="tertiary">
             {t('budgets.countsExpenses')}

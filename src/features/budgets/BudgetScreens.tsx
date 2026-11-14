@@ -34,6 +34,7 @@ import { useToday } from '../finance/useToday';
 import { BudgetForm } from './BudgetForm';
 import { BudgetMeter, budgetTone } from './BudgetMeter';
 import { loadBudgetDetail, type PresentedBudget } from './load';
+import { usePreferences } from '../preferences';
 
 export function NewBudgetScreen() {
   return <BudgetForm />;
@@ -43,12 +44,16 @@ export function BudgetDetailScreen({ id, reference }: { id: string; reference?: 
   const { t } = useTranslation();
   const today = useToday();
   const on = reference && isValidCalendarDate(reference) ? reference : today;
+  const startDay = usePreferences().preferences.financialMonthStartDay;
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const repositories = useRepositories();
   const query = useDataQuery(
-    useCallback((repos: Repositories) => loadBudgetDetail(repos, id, on), [id, on]),
+    useCallback(
+      (repos: Repositories) => loadBudgetDetail(repos, id, on, startDay),
+      [id, on, startDay],
+    ),
   );
   const item = query.data?.item ?? null;
 

@@ -7,21 +7,26 @@ import {
   monthOf,
   monthsEndingAt,
   netWorthHistory,
-  pickPrimaryCurrency,
+  resolvePrimaryCurrency,
   type CalendarDate,
 } from '@/core/finance';
 import { useDataQuery, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import { BarChart, Card, Section, Text } from '@/ui/components';
 import { spacing, useTheme } from '@/ui/theme';
+import { usePreferences } from '../preferences';
 
 /** Meses mostrados na evolução. */
 const MONTHS = 12;
 
-async function loadHistory(repositories: Repositories, today: CalendarDate) {
+async function loadHistory(
+  repositories: Repositories,
+  today: CalendarDate,
+  primaryPreference: 'auto' | string,
+) {
   const { accounts, flows } = await repositories.accounts.balanceHistory();
   const wealth = await repositories.wealth.list();
-  const currency = pickPrimaryCurrency([
+  const currency = resolvePrimaryCurrency(primaryPreference, [
     ...accounts.map((account) => account.currency),
     ...wealth.map((item) => item.currency),
   ]);
@@ -38,10 +43,14 @@ async function loadHistory(repositories: Repositories, today: CalendarDate) {
  */
 export function NetWorthHistoryCard({ today }: { today: CalendarDate }) {
   const { t } = useTranslation();
+  const { primaryCurrency } = usePreferences().preferences;
   const { colors } = useTheme();
   const { formatMoney, locale, formatMonthYear } = useLocaleFormat();
   const query = useDataQuery(
-    useCallback((repositories: Repositories) => loadHistory(repositories, today), [today]),
+    useCallback(
+      (repositories: Repositories) => loadHistory(repositories, today, primaryCurrency),
+      [today, primaryCurrency],
+    ),
   );
   if (!query.data) return null;
   const { currency, points } = query.data;

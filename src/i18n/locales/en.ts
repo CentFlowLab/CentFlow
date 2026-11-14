@@ -247,7 +247,7 @@ const en: Translation = {
     associate: {
       title: 'Link account',
       intro:
-        'Choose the app account that receives this bank account’s transactions. Only transactions from now on come in; the ones you recorded by hand are not repeated.',
+        'Choose the app account that receives this bank account’s transactions. Only transactions from now on come in; the ones you recorded by hand are not repeated. An app account that already existed takes the bank’s balance.',
       create: 'Create a new account',
       createHint: 'Starts with the bank’s current balance',
       existing: 'App accounts in {{currency}}',
@@ -350,6 +350,12 @@ const en: Translation = {
     formatsHint: 'They follow the device region: {{example}}',
     backup: 'Backups',
     backupHint: 'Export, restore and automatic copies',
+    haptics: {
+      title: 'Vibration',
+      description: 'Short vibrations when confirming actions and reordering.',
+      on: 'On',
+      off: 'Off',
+    },
     analytics: {
       title: 'Usage statistics',
       off: "Don't share",
@@ -384,6 +390,46 @@ const en: Translation = {
     support: 'Help',
     contact: 'Contact',
     version: 'Version',
+    currencyPrefs: {
+      primary: 'Main currency',
+      primaryHint: 'Shown and totalled first. Other currencies stay separate, never converted.',
+      newAccount: 'Currency for new accounts',
+      auto: 'Automatic',
+      autoWith: 'Automatic ({{currency}})',
+      noAccounts: 'You have no accounts in {{currency}} yet; totals use {{fallback}}.',
+      pickTitle: 'Choose currency',
+      search: 'Search currency',
+      other: 'Other currency (ISO code)',
+      otherLabel: '3-letter ISO code',
+      otherInvalid: 'Use a 3-letter code, for example EUR.',
+      use: 'Use',
+    },
+    region: {
+      title: 'Regional format',
+      auto: 'Automatic',
+      note: 'Only changes how numbers, currencies and dates look. The app language stays the same.',
+    },
+    discreet: {
+      title: 'Discreet mode',
+      description: 'Hides amounts on screen. When editing, forms always show the real amounts.',
+      on: 'On',
+      off: 'Off',
+    },
+    defaultAccount: {
+      title: 'Default account',
+      last: 'Last used',
+      hint: 'The account suggested for a new transaction.',
+    },
+    financialMonth: {
+      startsOn: 'Starts on day',
+      day: 'Day {{day}}',
+      civil: 'Day 1 (calendar month)',
+      current: 'Current period: {{range}}',
+      noteShort:
+        'For days 29–31, in shorter months the period starts on the last day of the month.',
+      noteLocal:
+        'This setting stays on this device; another device may differ. It only changes how things are grouped — no saved value changes.',
+    },
     nav: {
       label: 'Settings sections',
       back: 'Back to settings',
@@ -415,6 +461,9 @@ const en: Translation = {
       },
     },
     blocks: {
+      currency: 'Currency',
+      entries: 'Recording transactions',
+      financialMonth: 'Financial month',
       profile: 'Profile',
       security: 'Password and access',
       session: 'Session',
@@ -423,6 +472,7 @@ const en: Translation = {
       theme: 'Appearance',
       language: 'Language',
       region: 'Region and formats',
+      feedback: 'Haptic feedback',
       shortcuts: 'Shortcuts',
       privacy: 'Privacy',
       sync: 'Sync',
@@ -737,7 +787,7 @@ const en: Translation = {
     order: 'Reorder',
     orderDone: 'Done',
     orderHint:
-      'Drag by the handle (≡) or use the arrows. This order is used wherever you pick a category.',
+      'Hold a category and drag it, or drag it by the handle (≡). This order is used wherever you pick a category.',
     orderByName: 'By name',
     moveUp: 'Move {{name}} up',
     moveDown: 'Move {{name}} down',
@@ -1421,6 +1471,16 @@ const en: Translation = {
       acquiredOn: 'Purchase date',
       amount: 'Purchase price (optional)',
     },
+  },
+  privacy: {
+    hiddenValue: 'Hidden value',
+    showValues: 'Show amounts',
+    hideValues: 'Hide amounts',
+  },
+  monthPicker: {
+    title: 'Choose month',
+    open: '{{month}}, choose month',
+    currentMonth: 'Current month',
   },
   optionalDate: {
     set: 'Set date',

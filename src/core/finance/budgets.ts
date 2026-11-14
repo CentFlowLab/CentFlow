@@ -8,6 +8,7 @@ import {
   type MonthKey,
 } from './dates';
 import type { BudgetPeriod, EntryType, Id } from './types';
+import { financialMonthOf, financialMonthRange } from './financial-month';
 
 /** A partir daqui o limite pede atenção, está perto, ou foi ultrapassado. */
 export const BUDGET_THRESHOLDS = { watch: 0.75, near: 0.9, over: 1 } as const;
@@ -100,8 +101,10 @@ export function shiftReference(
   return clampDay(addMonths(monthOf(reference), delta), Number(reference.slice(8)));
 }
 
-function unclipped(period: BudgetPeriod, reference: CalendarDate): BudgetWindow {
-  if (period === 'monthly') return monthRange(monthOf(reference));
+function unclipped(period: BudgetPeriod, reference: CalendarDate, startDay = 1): BudgetWindow {
+  // Mensal: o período financeiro que contém a referência (ADR-077); dia 1 = mês civil.
+  if (period === 'monthly')
+    return financialMonthRange(financialMonthOf(reference, startDay), startDay);
   if (period === 'yearly') {
     const year = reference.slice(0, 4);
     return { start: `${year}-01-01`, end: `${year}-12-31` };
@@ -118,16 +121,21 @@ export function budgetWindow(
   period: BudgetPeriod,
   reference: CalendarDate,
   startsOn: CalendarDate,
+  startDay = 1,
 ): BudgetWindow | null {
-  const range = unclipped(period, reference);
+  const range = unclipped(period, reference, startDay);
   if (startsOn > range.end) return null;
   return { start: startsOn > range.start ? startsOn : range.start, end: range.end };
 }
 
 /** Dia usado para ler orçamentos de um mês: hoje, ou o último dia se o mês já passou ou ainda não chegou. */
-export function referenceForMonth(month: MonthKey, today: CalendarDate): CalendarDate {
-  if (monthOf(today) === month) return today;
-  return monthRange(month).end;
+export function referenceForMonth(
+  month: MonthKey,
+  today: CalendarDate,
+  startDay = 1,
+): CalendarDate {
+  if (financialMonthOf(today, startDay) === month) return today;
+  return financialMonthRange(month, startDay).end;
 }
 
 export function spentAmount(
@@ -149,19 +157,22 @@ export function assessBudget(
   budget: BudgetScope,
   lines: readonly BudgetCandidate[],
   reference: CalendarDate,
+  startDay = 1,
 ): {
   window: BudgetWindow | null;
   figures: BudgetFigures;
   /** Só quando o período anterior teve despesa. Sem dados, não há comparação. */
   previous: BudgetFigures | null;
 } {
-  const window = budgetWindow(budget.period, reference, budget.startsOn);
+  const window = budgetWindow(budget.period, reference, budget.startsOn, startDay);
   const figures = budgetFigures(window ? spentAmount(lines, budget, window) : 0, budget.amount);
-  const previousWindow = budgetWindow(
-    budget.period,
-    shiftReference(budget.period, reference, -1),
-    budget.startsOn,
-  );
+  // Mensal: o período anterior é o da chave anterior (com início a 31, recuar 30 dias desde
+  // 30 mar caía em 28 fev, ainda dentro do mesmo período). Semanal e anual: como sempre.
+  const previousReference =
+    budget.period === 'monthly'
+      ? financialMonthRange(addMonths(financialMonthOf(reference, startDay), -1), startDay).end
+      : shiftReference(budget.period, reference, -1);
+  const previousWindow = budgetWindow(budget.period, previousReference, budget.startsOn, startDay);
   if (!previousWindow) return { window, figures, previous: null };
   const previousSpent = spentAmount(lines, budget, previousWindow);
   if (previousSpent <= 0) return { window, figures, previous: null };

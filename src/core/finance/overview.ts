@@ -23,6 +23,22 @@ export type MonthlyAggregate = {
  * Moeda principal para os totais: a mais usada nas contas (desempate pela ordem das contas).
  * Sem contas, usa a moeda predefinida.
  */
+/**
+ * Moeda principal a mostrar e somar primeiro (ADR-076). Escolhida pela pessoa ('auto' = a mais
+ * usada, como sempre). Uma moeda escolhida sem contas não substitui as que existem: os totais
+ * seguem a automática. Nunca converte: as outras moedas continuam à parte (ADR-016).
+ */
+export function resolvePrimaryCurrency(
+  preference: 'auto' | CurrencyCode,
+  codesInUse: readonly CurrencyCode[],
+  fallback: CurrencyCode = DEFAULT_CURRENCY,
+): CurrencyCode {
+  if (preference !== 'auto' && (codesInUse.length === 0 || codesInUse.includes(preference))) {
+    return preference;
+  }
+  return pickPrimaryCurrency(codesInUse, fallback);
+}
+
 export function pickPrimaryCurrency(
   accountCurrencies: readonly CurrencyCode[],
   fallback: CurrencyCode = DEFAULT_CURRENCY,

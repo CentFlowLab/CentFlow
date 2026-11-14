@@ -11,27 +11,102 @@ describe('parsePreferences', () => {
 
   it('keeps valid fields and resets invalid ones', () => {
     expect(parsePreferences(JSON.stringify({ theme: 'dark', language: 'xx' }))).toEqual({
+      ...DEFAULT_PREFERENCES,
       theme: 'dark',
       language: 'system',
-      analytics: false,
     });
     expect(parsePreferences(JSON.stringify({ theme: 'neon', language: 'es' }))).toEqual({
+      ...DEFAULT_PREFERENCES,
       theme: 'system',
       language: 'es',
-      analytics: false,
     });
+  });
+});
+
+describe('haptics preference', () => {
+  it('is on by default and for older saved preferences without the field', () => {
+    expect(DEFAULT_PREFERENCES.haptics).toBe(true);
+    expect(parsePreferences(JSON.stringify({ theme: 'dark', language: 'pt-PT' })).haptics).toBe(
+      true,
+    );
+  });
+
+  it('stays off once turned off', () => {
+    expect(parsePreferences(JSON.stringify({ haptics: false })).haptics).toBe(false);
+  });
+});
+
+describe('Phase 1 and 2 preferences', () => {
+  it('defaults to automatic currency and region, values shown, last account and day 1', () => {
+    expect(DEFAULT_PREFERENCES).toMatchObject({
+      primaryCurrency: 'auto',
+      newAccountCurrency: 'auto',
+      formatRegion: 'auto',
+      discreetAmounts: false,
+      defaultAccountId: 'last',
+      financialMonthStartDay: 1,
+    });
+    // JSON antigo, sem os campos novos.
+    expect(parsePreferences(JSON.stringify({ theme: 'dark', language: 'pt-PT' }))).toMatchObject({
+      primaryCurrency: 'auto',
+      formatRegion: 'auto',
+      discreetAmounts: false,
+      defaultAccountId: 'last',
+      financialMonthStartDay: 1,
+    });
+  });
+
+  it('sends invalid values back to the default', () => {
+    const parsed = parsePreferences(
+      JSON.stringify({
+        primaryCurrency: 'EU',
+        newAccountCurrency: 42,
+        formatRegion: 'xx-YY',
+        discreetAmounts: 'yes',
+        defaultAccountId: '  ',
+      }),
+    );
+    expect(parsed).toMatchObject({
+      primaryCurrency: 'auto',
+      newAccountCurrency: 'auto',
+      formatRegion: 'auto',
+      discreetAmounts: false,
+      defaultAccountId: 'last',
+    });
+  });
+
+  it('accepts only whole days from 1 to 31 for the financial month', () => {
+    for (const bad of [0, 32, 2.5, '25', null]) {
+      expect(
+        parsePreferences(JSON.stringify({ financialMonthStartDay: bad })).financialMonthStartDay,
+      ).toBe(1);
+    }
+    expect(
+      parsePreferences(JSON.stringify({ financialMonthStartDay: 31 })).financialMonthStartDay,
+    ).toBe(31);
+    expect(
+      parsePreferences(JSON.stringify({ financialMonthStartDay: 25 })).financialMonthStartDay,
+    ).toBe(25);
   });
 });
 
 describe('preferences repository', () => {
   it('round-trips saved preferences', async () => {
     const repository = createPreferencesRepository(createMemoryStore());
-    await repository.save({ theme: 'light', language: 'en', analytics: true });
-    await expect(repository.load()).resolves.toEqual({
-      theme: 'light',
-      language: 'en',
+    const saved = {
+      ...DEFAULT_PREFERENCES,
+      theme: 'light' as const,
+      language: 'en' as const,
       analytics: true,
-    });
+      haptics: false,
+      primaryCurrency: 'USD',
+      formatRegion: 'en-US' as const,
+      discreetAmounts: true,
+      defaultAccountId: 'acc-1',
+      financialMonthStartDay: 25,
+    };
+    await repository.save(saved);
+    await expect(repository.load()).resolves.toEqual(saved);
   });
 
   it('keeps usage statistics off unless explicitly turned on', async () => {

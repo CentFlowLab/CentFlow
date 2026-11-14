@@ -30,3 +30,4 @@ void i18n.use(initReactI18next).init({
 export { i18n };
 export * from './languages';
 export { useLocaleFormat } from './useLocaleFormat';
+export { FormatSettingsProvider, useFormatSettings, type FormatSettings } from './formatSettings';

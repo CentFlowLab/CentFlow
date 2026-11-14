@@ -2,6 +2,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
+// Vibração: espiões no lugar do serviço (no-op), para ver quando cada momento vibra.
+jest.mock('@/lib/haptics', () => ({
+  hapticsAvailable: true,
+  haptics: {
+    selection: jest.fn(),
+    impactLight: jest.fn(),
+    impactMedium: jest.fn(),
+    success: jest.fn(),
+    warning: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+// eslint-disable-next-line import/first
+import { haptics } from '@/lib/haptics';
+
+beforeEach(() => jest.clearAllMocks());
+
 // Fluxos completos com SQLite real: no runner macOS do CI o primeiro passa os 5 s por omissão.
 jest.setTimeout(30_000);
 
@@ -98,6 +115,8 @@ describe('local finance flow (real SQLite)', () => {
     await renderRouter('./src/app', { initialUrl: '/account/new' });
     await createAccount('Carteira', '100');
     await addEntry({ amount: '10', category: 'Restaurantes', description: 'Almoço' });
+    // Movimento guardado: uma vibração de sucesso.
+    expect(haptics.success).toHaveBeenCalledTimes(1);
     await act(() => router.navigate('/transactions'));
 
     // O gesto de deslizar expõe a mesma ação aos leitores de ecrã.
@@ -113,9 +132,13 @@ describe('local finance flow (real SQLite)', () => {
     await swipe();
     expect(await screen.findByText('Movimento eliminado')).toBeOnTheScreen();
     expect(screen.queryByText('Almoço')).toBeNull();
+    expect(haptics.impactMedium).toHaveBeenCalledTimes(1);
 
+    // O "+" de abrir o registo também vibra (leve): conta-se só o que o "Anular" acrescenta.
+    const lightBefore = jest.mocked(haptics.impactLight).mock.calls.length;
     await fireEvent.press(screen.getByRole('button', { name: 'Anular' }));
     expect(await screen.findByText('Almoço')).toBeOnTheScreen();
+    expect(haptics.impactLight).toHaveBeenCalledTimes(lightBefore + 1);
 
     jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
     try {
@@ -152,6 +175,9 @@ describe('local finance flow (real SQLite)', () => {
     expect(await screen.findByText('O valor tem de ser maior que zero.')).toBeOnTheScreen();
     expect(screen.getByText('Escolhe uma categoria.')).toBeOnTheScreen();
     expect(screen).toHavePathname('/new-transaction');
+    // Gravar bloqueado por campos inválidos: aviso, nunca sucesso.
+    expect(haptics.warning).toHaveBeenCalledTimes(1);
+    expect(haptics.success).not.toHaveBeenCalled();
   });
 
   it('transfers between accounts without changing the total', async () => {

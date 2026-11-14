@@ -248,7 +248,7 @@ const es: Translation = {
     associate: {
       title: 'Asociar cuenta',
       intro:
-        'Elige la cuenta de la app donde entran los movimientos de esta cuenta del banco. Solo entran movimientos a partir de ahora; los que registraste a mano no se repiten.',
+        'Elige la cuenta de la app donde entran los movimientos de esta cuenta del banco. Solo entran movimientos a partir de ahora; los que registraste a mano no se repiten. Una cuenta de la app que ya existía pasa a tener el saldo del banco.',
       create: 'Crear una cuenta nueva',
       createHint: 'Empieza con el saldo actual del banco',
       existing: 'Cuentas de la app en {{currency}}',
@@ -351,6 +351,12 @@ const es: Translation = {
     formatsHint: 'Siguen la región del dispositivo: {{example}}',
     backup: 'Copias de seguridad',
     backupHint: 'Exportar, restaurar y copias automáticas',
+    haptics: {
+      title: 'Vibración',
+      description: 'Pequeñas vibraciones al confirmar acciones y al reordenar.',
+      on: 'Activada',
+      off: 'Desactivada',
+    },
     analytics: {
       title: 'Estadísticas de uso',
       off: 'No compartir',
@@ -385,6 +391,47 @@ const es: Translation = {
     support: 'Ayuda',
     contact: 'Contacto',
     version: 'Versión',
+    currencyPrefs: {
+      primary: 'Moneda principal',
+      primaryHint: 'Se muestra y se suma primero. Las demás monedas quedan aparte, sin conversión.',
+      newAccount: 'Moneda de las cuentas nuevas',
+      auto: 'Automática',
+      autoWith: 'Automática ({{currency}})',
+      noAccounts: 'Aún no tienes cuentas en {{currency}}; los totales usan {{fallback}}.',
+      pickTitle: 'Elegir moneda',
+      search: 'Buscar moneda',
+      other: 'Otra moneda (código ISO)',
+      otherLabel: 'Código ISO de 3 letras',
+      otherInvalid: 'Usa un código de 3 letras, por ejemplo EUR.',
+      use: 'Usar',
+    },
+    region: {
+      title: 'Formato regional',
+      auto: 'Automático',
+      note: 'Solo cambia cómo se ven números, monedas y fechas. El idioma de la app no cambia.',
+    },
+    discreet: {
+      title: 'Modo discreto',
+      description:
+        'Oculta los importes en pantalla. Al editar, los formularios muestran siempre los importes reales.',
+      on: 'Activado',
+      off: 'Desactivado',
+    },
+    defaultAccount: {
+      title: 'Cuenta predeterminada',
+      last: 'Última usada',
+      hint: 'La cuenta propuesta en un movimiento nuevo.',
+    },
+    financialMonth: {
+      startsOn: 'Empieza el día',
+      day: 'Día {{day}}',
+      civil: 'Día 1 (mes natural)',
+      current: 'Periodo actual: {{range}}',
+      noteShort:
+        'Para los días 29–31, en los meses más cortos el periodo empieza el último día del mes.',
+      noteLocal:
+        'Este ajuste queda en este dispositivo; en otro puede ser diferente. Solo cambia cómo se agrupa — ningún valor guardado cambia.',
+    },
     nav: {
       label: 'Secciones de los ajustes',
       back: 'Volver a los ajustes',
@@ -417,6 +464,9 @@ const es: Translation = {
       },
     },
     blocks: {
+      currency: 'Moneda',
+      entries: 'Registro de movimientos',
+      financialMonth: 'Mes financiero',
       profile: 'Perfil',
       security: 'Contraseña y acceso',
       session: 'Sesión',
@@ -425,6 +475,7 @@ const es: Translation = {
       theme: 'Apariencia',
       language: 'Idioma',
       region: 'Región y formatos',
+      feedback: 'Respuesta táctil',
       shortcuts: 'Atajos',
       privacy: 'Privacidad',
       sync: 'Sincronización',
@@ -742,7 +793,7 @@ const es: Translation = {
     order: 'Ordenar',
     orderDone: 'Listo',
     orderHint:
-      'Arrastra por el asa (≡) o usa las flechas. Este orden se usa en todos los sitios donde eliges una categoría.',
+      'Mantén el dedo en una categoría y arrástrala, o arrástrala por el asa (≡). Este orden se usa en todos los sitios donde eliges una categoría.',
     orderByName: 'Por nombre',
     moveUp: 'Subir {{name}}',
     moveDown: 'Bajar {{name}}',
@@ -1428,6 +1479,16 @@ const es: Translation = {
       acquiredOn: 'Fecha de compra',
       amount: 'Precio de compra (opcional)',
     },
+  },
+  privacy: {
+    hiddenValue: 'Valor oculto',
+    showValues: 'Mostrar importes',
+    hideValues: 'Ocultar importes',
+  },
+  monthPicker: {
+    title: 'Elegir mes',
+    open: '{{month}}, elegir mes',
+    currentMonth: 'Mes actual',
   },
   optionalDate: {
     set: 'Definir fecha',

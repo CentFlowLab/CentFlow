@@ -1,6 +1,8 @@
 import {
   addDays,
   addMonths,
+  clampMonthKey,
+  monthKeyFrom,
   isValidCalendarDate,
   isValidMonthKey,
   monthOf,
@@ -82,5 +84,23 @@ describe('months', () => {
 
   it('lists consecutive months ending at a month', () => {
     expect(monthsEndingAt('2026-02', 4)).toEqual(['2025-11', '2025-12', '2026-01', '2026-02']);
+  });
+});
+
+describe('month picker helpers', () => {
+  it('builds a month key with padding', () => {
+    expect(monthKeyFrom(2025, 6)).toBe('2025-06');
+    expect(monthKeyFrom(2026, 12)).toBe('2026-12');
+  });
+
+  it('keeps months inside the supported years', () => {
+    expect(clampMonthKey('1899-12')).toBe('1900-01');
+    expect(clampMonthKey('2101-01')).toBe('2100-12');
+    expect(clampMonthKey('2026-11')).toBe('2026-11');
+  });
+
+  it('crosses the year with the month arrows', () => {
+    expect(addMonths('2026-01', -1)).toBe('2025-12');
+    expect(addMonths('2025-12', 1)).toBe('2026-01');
   });
 });

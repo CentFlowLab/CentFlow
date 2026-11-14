@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
-  calendarDateToLocalDate,
   hasErrors,
   isLiabilityType,
   LOAN_KINDS,
@@ -28,7 +27,6 @@ import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
   Button,
-  CalendarPicker,
   Card,
   Chip,
   ChipGroup,
@@ -43,6 +41,7 @@ import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
 import { LoanSummary } from './LoanSummary';
+import { DateField } from '../finance/DateField';
 
 type FieldErrors = ValidationErrors<keyof WealthItemInput>;
 
@@ -57,7 +56,7 @@ export function WealthForm({ item }: Props) {
   const { t } = useTranslation();
   const valueRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
-  const { formatDate, locale } = useLocaleFormat();
+  const { locale } = useLocaleFormat();
   const today = useToday();
   const query = useDataQuery(useCallback((repos: Repositories) => loadCurrencies(repos), []));
   const editing = item !== undefined;
@@ -83,7 +82,6 @@ export function WealthForm({ item }: Props) {
   );
   const [originDate, setOriginDate] = useState<string | null>(firstPoint?.valuedOn ?? null);
   const [originError, setOriginError] = useState<string>();
-  const [pickingOriginDate, setPickingOriginDate] = useState(false);
   // Empréstimo (ADR-057).
   const [loanKind, setLoanKind] = useState<LoanKind | null>(item?.loanKind ?? null);
   const [institution, setInstitution] = useState(item?.institution ?? '');
@@ -279,27 +277,13 @@ export function WealthForm({ item }: Props) {
               ))}
             </ChipGroup>
           ) : null}
-          <View style={styles.field}>
-            <Text variant="footnote" tone="secondary">
-              {t('wealth.form.valuedOn')}
-            </Text>
-            <Text variant="label">{formatDate(calendarDateToLocalDate(valuedOn), 'medium')}</Text>
-            <CalendarPicker
-              value={valuedOn}
-              today={today}
-              locale={locale}
-              labels={{
-                previousMonth: t('calendar.previousMonth'),
-                nextMonth: t('calendar.nextMonth'),
-              }}
-              onChange={setValuedOn}
-            />
-            {errors.valuedOn ? (
-              <Text variant="footnote" tone="negative">
-                {validationMessage(t, errors.valuedOn)}
-              </Text>
-            ) : null}
-          </View>
+          <DateField
+            label={t('wealth.form.valuedOn')}
+            value={valuedOn}
+            today={today}
+            onChange={setValuedOn}
+            errorText={errors.valuedOn ? validationMessage(t, errors.valuedOn) : undefined}
+          />
           {tracksOrigin ? (
             <View style={styles.field}>
               <TextField
@@ -315,18 +299,13 @@ export function WealthForm({ item }: Props) {
                 helperText={t('wealth.form.originHelper')}
                 errorText={originError ?? validationMessage(t, errors.origin)}
               />
-              <ChipGroup label={t('wealth.form.originDate')}>
-                <Chip
-                  label={
-                    originDate
-                      ? formatDate(calendarDateToLocalDate(originDate), 'medium')
-                      : t('wealth.form.pickOriginDate')
-                  }
-                  icon="calendar-outline"
-                  selected={originDate !== null}
-                  onPress={() => setPickingOriginDate(true)}
-                />
-              </ChipGroup>
+              <DateField
+                label={t('wealth.form.originDate')}
+                value={originDate}
+                today={today}
+                optional
+                onChange={setOriginDate}
+              />
             </View>
           ) : null}
           {tracksOrigin ? (
@@ -392,31 +371,6 @@ export function WealthForm({ item }: Props) {
           </Text>
         </View>
       )}
-      <Dialog
-        visible={pickingOriginDate}
-        title={t('wealth.form.pickOriginDate')}
-        onDismiss={() => setPickingOriginDate(false)}
-        actions={[
-          {
-            label: t('common.close'),
-            variant: 'secondary',
-            onPress: () => setPickingOriginDate(false),
-          },
-        ]}>
-        <CalendarPicker
-          value={originDate ?? valuedOn}
-          today={today}
-          locale={locale}
-          labels={{
-            previousMonth: t('calendar.previousMonth'),
-            nextMonth: t('calendar.nextMonth'),
-          }}
-          onChange={(value) => {
-            setOriginDate(value);
-            setPickingOriginDate(false);
-          }}
-        />
-      </Dialog>
       <Dialog
         visible={confirmingMove}
         title={t('wealth.cardMoveTitle')}

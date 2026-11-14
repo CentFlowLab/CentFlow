@@ -1,4 +1,4 @@
-import { moveItem, reorderTarget } from '../components/reorder';
+import { autoScrollStep, moveItem, reorderTarget } from '../components/reorder';
 
 describe('reorderTarget', () => {
   const heights = [50, 50, 50, 50];
@@ -29,5 +29,28 @@ describe('moveItem', () => {
     expect(moveItem(items, 0, 2)).toEqual(['b', 'c', 'a', 'd']);
     expect(moveItem(items, 3, 0)).toEqual(['d', 'a', 'b', 'c']);
     expect(items).toEqual(['a', 'b', 'c', 'd']);
+  });
+});
+
+describe('autoScrollStep', () => {
+  it('does nothing away from the edges', () => {
+    expect(autoScrollStep(400, 100, 600)).toBe(0);
+  });
+
+  it('scrolls up near the top and down near the bottom, never above the maximum', () => {
+    expect(autoScrollStep(110, 100, 600)).toBeLessThan(0);
+    expect(autoScrollStep(690, 100, 600)).toBeGreaterThan(0);
+    expect(autoScrollStep(50, 100, 600)).toBe(-14);
+    expect(autoScrollStep(900, 100, 600)).toBe(14);
+    expect(Math.abs(autoScrollStep(101, 100, 600, 64, 10))).toBeLessThanOrEqual(10);
+  });
+});
+
+describe('reorderTarget with the page scrolled during the drag', () => {
+  it('counts the scroll in the distance travelled', () => {
+    const heights = [50, 50, 50, 50];
+    // O dedo só desceu 30 px, mas a página andou 80 px: a linha passou duas posições.
+    expect(reorderTarget(heights, 0, 30)).toBe(0);
+    expect(reorderTarget(heights, 0, 30 + 80)).toBe(2);
   });
 });

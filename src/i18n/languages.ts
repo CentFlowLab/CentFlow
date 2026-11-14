@@ -48,3 +48,25 @@ export function resolveFormatLocale(
   );
   return deviceMatch ?? LANGUAGE_META[language].fallbackFormatLocale;
 }
+
+/** Formatos regionais que a pessoa pode escolher (números, moedas e datas). */
+export const FORMAT_REGIONS = [
+  'pt-PT',
+  'pt-BR',
+  'en-GB',
+  'en-US',
+  'en-IE',
+  'es-ES',
+  'fr-FR',
+  'fr-CH',
+  'de-DE',
+  'de-CH',
+  'it-IT',
+  'nl-NL',
+] as const;
+
+export type FormatRegion = (typeof FORMAT_REGIONS)[number];
+
+export function isFormatRegion(value: unknown): value is FormatRegion {
+  return typeof value === 'string' && (FORMAT_REGIONS as readonly string[]).includes(value);
+}

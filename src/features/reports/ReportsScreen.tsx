@@ -8,9 +8,10 @@ import {
   buildCurrencyReport,
   calendarDateToLocalDate,
   goalStanding,
-  monthOf,
+  financialMonthOf,
+  financialMonthRange,
   monthRange,
-  pickPrimaryCurrency,
+  resolvePrimaryCurrency,
   reportRanges,
   type CalendarDate,
   type InclusiveRange,
@@ -26,7 +27,6 @@ import {
   CategoryIcon,
   Chip,
   ChipGroup,
-  DateFields,
   EmptyState,
   HeroCard,
   Icon,
@@ -40,6 +40,8 @@ import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { useToday } from '../finance/useToday';
 import { loadReport } from './load';
+import { DateField } from '../finance/DateField';
+import { usePreferences } from '../preferences';
 
 const PRESETS: readonly ReportPreset[] = ['month', 'quarter', 'year', 'custom'];
 
@@ -66,7 +68,10 @@ function rangeLabel(
   return from === to ? from : `${from} – ${to}`;
 }
 
-function currenciesOf(data: Awaited<ReturnType<typeof loadReport>>): string[] {
+function currenciesOf(
+  data: Awaited<ReturnType<typeof loadReport>>,
+  primaryPreference: 'auto' | string,
+): string[] {
   const codes = [
     ...data.accounts.map((account) => account.currency),
     ...data.rows.map((row) => row.currency),
@@ -76,7 +81,8 @@ function currenciesOf(data: Awaited<ReturnType<typeof loadReport>>): string[] {
   ];
   const unique = [...new Set(codes)];
   if (unique.length === 0) return [];
-  const primary = pickPrimaryCurrency(
+  const primary = resolvePrimaryCurrency(
+    primaryPreference,
     data.accounts.length > 0 ? data.accounts.map((account) => account.currency) : unique,
   );
   return unique.sort((left, right) =>
@@ -86,35 +92,29 @@ function currenciesOf(data: Awaited<ReturnType<typeof loadReport>>): string[] {
 
 export function ReportsScreen() {
   const { t } = useTranslation();
+  const { preferences } = usePreferences();
   const { colors } = useTheme();
   const { formatDate, formatMoney, formatPercent, locale } = useLocaleFormat();
   const today = useToday();
-  const currentMonth = monthRange(monthOf(today));
+  const startDay = preferences.financialMonthStartDay;
+  // O intervalo personalizado começa no período financeiro atual (ADR-077).
+  const currentMonth = financialMonthRange(financialMonthOf(today, startDay), startDay);
   const [preset, setPreset] = useState<ReportPreset>('month');
   const [customFrom, setCustomFrom] = useState<CalendarDate>(currentMonth.start);
   const [customTo, setCustomTo] = useState<CalendarDate>(currentMonth.end);
   const [currency, setCurrency] = useState<string | null>(null);
-  const ranges = reportRanges(preset, today, { from: customFrom, to: customTo });
+  const ranges = reportRanges(preset, today, { from: customFrom, to: customTo }, startDay);
   const query = useDataQuery(
     useCallback(
       (repositories: Repositories) => {
-        const window = reportRanges(preset, today, { from: customFrom, to: customTo });
+        const window = reportRanges(preset, today, { from: customFrom, to: customTo }, startDay);
         if (!window) return Promise.resolve(null);
         return loadReport(repositories, window.current, window.previous);
       },
-      [preset, today, customFrom, customTo],
+      [preset, today, customFrom, customTo, startDay],
     ),
   );
 
-  const dateLabels = {
-    day: t('reports.day'),
-    month: t('reports.month'),
-    year: t('reports.year'),
-    dayPlaceholder: t('reports.dayPlaceholder'),
-    monthPlaceholder: t('reports.monthPlaceholder'),
-    yearPlaceholder: t('reports.yearPlaceholder'),
-    invalid: t('reports.invalidDate'),
-  };
   const header = { title: t('reports.title'), subtitle: t('reports.subtitle') };
   const controls = (
     <View style={styles.stack}>
@@ -131,19 +131,19 @@ export function ReportsScreen() {
       {preset === 'custom' ? (
         <View style={styles.dateRow}>
           <View style={styles.dateCell}>
-            <DateFields
+            <DateField
               label={t('reports.from')}
               value={customFrom}
+              today={today}
               onChange={setCustomFrom}
-              labels={dateLabels}
             />
           </View>
           <View style={styles.dateCell}>
-            <DateFields
+            <DateField
               label={t('reports.to')}
               value={customTo}
+              today={today}
               onChange={setCustomTo}
-              labels={dateLabels}
             />
           </View>
         </View>
@@ -176,7 +176,7 @@ export function ReportsScreen() {
   }
 
   const data = query.data;
-  const currencies = currenciesOf(data);
+  const currencies = currenciesOf(data, preferences.primaryCurrency);
   if (currencies.length === 0) {
     return (
       <Screen {...header}>

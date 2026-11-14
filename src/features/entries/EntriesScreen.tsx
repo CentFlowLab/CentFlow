@@ -42,6 +42,7 @@ import { NEW_TRANSACTION_HREF } from '../navigation/nav-items';
 import { EntryListItem } from '../finance/EntryListItem';
 import { useFinanceLookups } from '../finance/useFinanceLookups';
 import { useToday } from '../finance/useToday';
+import { useHaptics, usePreferences } from '../preferences';
 
 function dateHeading(
   date: CalendarDate,
@@ -152,6 +153,8 @@ function useUndoableDelete() {
 
 export function EntriesScreen() {
   const { t } = useTranslation();
+  const haptic = useHaptics();
+  const startDay = usePreferences().preferences.financialMonthStartDay;
   const { colors } = useTheme();
   const breakpoint = useBreakpoint();
   const { formatDate } = useLocaleFormat();
@@ -175,11 +178,11 @@ export function EntriesScreen() {
       type: type === 'all' ? undefined : type,
       accountId: accountId ?? undefined,
       categoryId: categoryId ?? undefined,
-      ...presetRange(period, today),
+      ...presetRange(period, today, startDay),
       sort,
       limit,
     }),
-    [debouncedSearch, type, accountId, categoryId, period, today, sort, limit],
+    [debouncedSearch, type, accountId, categoryId, period, today, startDay, sort, limit],
   );
 
   const page = useDataQuery(
@@ -426,7 +429,10 @@ export function EntriesScreen() {
                             label: t('entries.delete'),
                             icon: 'trash-outline',
                             tone: 'negative',
-                            onPress: () => deletion.remove(entry.id),
+                            onPress: () => {
+                              haptic.impactMedium();
+                              deletion.remove(entry.id);
+                            },
                           },
                         ]}>
                         <EntryListItem
@@ -456,7 +462,10 @@ export function EntriesScreen() {
         <Snackbar
           message={t('entries.deleted')}
           actionLabel={t('entries.undo')}
-          onAction={deletion.undo}
+          onAction={() => {
+            haptic.impactLight();
+            deletion.undo();
+          }}
         />
       ) : null}
     </View>

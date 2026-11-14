@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useFloatingTabBarInset } from '../layout/floatingTabBar';
 import { layout, radius, spacing, useTheme } from '../theme';
 import { FadeIn } from './FadeIn';
 import { Text } from './Text';
@@ -13,8 +14,10 @@ type Props = {
 /** Aviso curto no fundo do ecrã com uma ação (ex.: "Movimento eliminado · Anular"). */
 export function Snackbar({ message, actionLabel, onAction }: Props) {
   const { colors } = useTheme();
+  // Acima da barra flutuante do telemóvel (zero noutros casos).
+  const bottom = spacing.lg + useFloatingTabBarInset();
   return (
-    <View style={styles.wrap} pointerEvents="box-none">
+    <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
       <FadeIn>
         <View
           style={[styles.bar, { backgroundColor: colors.text, shadowColor: colors.shadow }]}
@@ -44,7 +47,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.lg,
     right: spacing.lg,
-    bottom: spacing.lg,
     alignItems: 'center',
   },
   bar: {

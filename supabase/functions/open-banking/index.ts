@@ -87,8 +87,14 @@ async function appToken(appId: string, key: CryptoKey): Promise<string> {
 
 type ApiResult = { ok: true; body: unknown } | { ok: false; error: BankErrorCode };
 
+/**
+ * Pessoa presente (PSD2): com o IP e o browser de quem usa a app, o banco trata a leitura como
+ * pedida pela pessoa e não a conta no limite de leituras sem ela (cerca de 4 por dia).
+ */
+type Caller = { token: string; psu: Record<string, string> };
+
 async function api(
-  token: string,
+  caller: Caller,
   method: 'GET' | 'POST' | 'DELETE',
   path: string,
   body?: unknown,
@@ -96,7 +102,11 @@ async function api(
   try {
     const response = await fetch(`${API}${path}`, {
       method,
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${caller.token}`,
+        'Content-Type': 'application/json',
+        ...caller.psu,
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(20_000),
     });
@@ -145,7 +155,14 @@ Deno.serve(async (req) => {
   const admin = createClient(url, secret, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const token = await appToken(appId, key);
+  const app: Caller = { token: await appToken(appId, key), psu: {} };
+  // A app só pede leituras com a pessoa a usá-la (ao abrir, a cada 15 min ou em "Atualizar").
+  const psuIp = (req.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() ?? '';
+  const psuAgent = (req.headers.get('user-agent') ?? '').slice(0, 300);
+  app.psu = {
+    ...(psuIp ? { 'Psu-Ip-Address': psuIp } : {}),
+    ...(psuAgent ? { 'Psu-User-Agent': psuAgent } : {}),
+  };
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const action = body?.action;
 
@@ -153,7 +170,7 @@ Deno.serve(async (req) => {
     const country = String(body?.country ?? '');
     if (!COUNTRY.test(country)) return json({ error: 'invalid' }, 400);
     const result = await api(
-      token,
+      app,
       'GET',
       `/aspsps?country=${country}&psu_type=personal&service=AIS`,
     );
@@ -171,11 +188,7 @@ Deno.serve(async (req) => {
     const name = String(body?.bank ?? '').slice(0, 200);
     const country = String(body?.country ?? '');
     if (!name || !COUNTRY.test(country)) return json({ error: 'invalid' }, 400);
-    const list = await api(
-      token,
-      'GET',
-      `/aspsps?country=${country}&psu_type=personal&service=AIS`,
-    );
+    const list = await api(app, 'GET', `/aspsps?country=${country}&psu_type=personal&service=AIS`);
     if (!list.ok) return json({ error: list.error }, 502);
     const bank = parseAspsps(list.body).find((item) => item.name === name);
     if (!bank) return json({ error: 'invalid' }, 400);
@@ -189,7 +202,7 @@ Deno.serve(async (req) => {
       .from('bank_auth_states')
       .insert({ state, user_id: user.id, aspsp_name: bank.name, aspsp_country: bank.country });
     if (saved.error) return json({ error: 'unavailable' }, 500);
-    const auth = await api(token, 'POST', '/auth', {
+    const auth = await api(app, 'POST', '/auth', {
       access: { valid_until: consentValidUntil(bank.maxConsentSeconds, Date.now()) },
       aspsp: { name: bank.name, country: bank.country },
       state,
@@ -219,7 +232,7 @@ Deno.serve(async (req) => {
     if (!pending || Date.now() - Date.parse(pending.created_at) > BANK_AUTH_STATE_TTL_MS) {
       return json({ error: 'expired' }, 400);
     }
-    const session = await api(token, 'POST', '/sessions', { code });
+    const session = await api(app, 'POST', '/sessions', { code });
     if (!session.ok) {
       console.error(`[open-banking] session_failed: ${session.error}`);
       return json({ error: session.error }, 502);
@@ -260,7 +273,7 @@ Deno.serve(async (req) => {
         (value): value is string => typeof value === 'string' && value.trim().length > 0,
       );
       const kind = bankAccountKind(raw);
-      const balance = await api(token, 'GET', `/accounts/${encodeURIComponent(uid)}/balances`);
+      const balance = await api(app, 'GET', `/accounts/${encodeURIComponent(uid)}/balances`);
       const picked = balance.ok ? pickBalance(balance.body, kind) : null;
       await admin.from('bank_accounts').insert({
         connection_id: connection.id,
@@ -317,7 +330,7 @@ Deno.serve(async (req) => {
     let failure: BankErrorCode | null = null;
     for (const account of accounts ?? []) {
       const path = `/accounts/${encodeURIComponent(account.uid)}`;
-      const balance = await api(token, 'GET', `${path}/balances`);
+      const balance = await api(app, 'GET', `${path}/balances`);
       if (!balance.ok) {
         failure = balance.error;
         break;
@@ -331,7 +344,7 @@ Deno.serve(async (req) => {
         for (let page = 0; page < MAX_PAGES; page += 1) {
           const query = new URLSearchParams({ date_from: from });
           if (continuation) query.set('continuation_key', continuation);
-          const list = await api(token, 'GET', `${path}/transactions?${query}`);
+          const list = await api(app, 'GET', `${path}/transactions?${query}`);
           if (!list.ok) {
             failure = list.error;
             break;
@@ -359,7 +372,13 @@ Deno.serve(async (req) => {
     await admin
       .from('bank_connections')
       .update({
-        status: failure === 'unauthorized' ? 'expired' : failure ? 'error' : 'connected',
+        // Limite de leituras do banco: a ligação continua válida, só se tenta mais tarde.
+        status:
+          failure === 'unauthorized'
+            ? 'expired'
+            : failure && failure !== 'rateLimited'
+              ? 'error'
+              : 'connected',
         last_error: failure,
         last_sync_at: stamp,
         updated_at: stamp,
@@ -375,7 +394,7 @@ Deno.serve(async (req) => {
   if (action === 'disconnect') {
     if (!connection) return json({ ok: true });
     // Fecha o consentimento no banco sempre que possível; apaga sempre do nosso lado.
-    await api(token, 'DELETE', `/sessions/${encodeURIComponent(connection.session_id)}`);
+    await api(app, 'DELETE', `/sessions/${encodeURIComponent(connection.session_id)}`);
     await admin.from('bank_connections').delete().eq('id', connection.id).eq('user_id', user.id);
     return json({ ok: true });
   }

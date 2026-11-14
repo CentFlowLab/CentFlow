@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
-  calendarDateToLocalDate,
   SUBSCRIPTION_PERIODS,
   SUBSCRIPTION_STATUSES,
   validateSubscriptionInput,
@@ -25,7 +24,6 @@ import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
 import {
   Button,
-  CalendarPicker,
   Chip,
   ChipGroup,
   FormScreen,
@@ -39,6 +37,7 @@ import { CategoryPicker } from '../finance/CategoryPicker';
 import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
+import { DateField } from '../finance/DateField';
 
 type FieldErrors = ValidationErrors<keyof SubscriptionInput>;
 
@@ -60,7 +59,7 @@ export function SubscriptionForm({ subscription, onClose, onSaved }: Props) {
   const { t } = useTranslation();
   const amountRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
-  const { formatDate, locale } = useLocaleFormat();
+  const { locale } = useLocaleFormat();
   const today = useToday();
   const query = useDataQuery(useCallback((repos: Repositories) => loadForm(repos), []));
   const editing = subscription !== undefined;
@@ -213,46 +212,22 @@ export function SubscriptionForm({ subscription, onClose, onSaved }: Props) {
               }))}
             />
           </View>
-          <View style={styles.field}>
-            <Text variant="footnote" tone="secondary">
-              {t('subscriptions.form.startsOn')}
-            </Text>
-            <Text variant="label">{formatDate(calendarDateToLocalDate(startsOn), 'medium')}</Text>
-            <CalendarPicker
-              value={startsOn}
-              today={today}
-              locale={locale}
-              labels={{
-                previousMonth: t('calendar.previousMonth'),
-                nextMonth: t('calendar.nextMonth'),
-              }}
-              onChange={(value) => {
-                setStartsOn(value);
-                if (nextOn < value) setNextOn(value);
-              }}
-            />
-          </View>
-          <View style={styles.field}>
-            <Text variant="footnote" tone="secondary">
-              {t('subscriptions.form.nextOn')}
-            </Text>
-            <Text variant="label">{formatDate(calendarDateToLocalDate(nextOn), 'medium')}</Text>
-            <CalendarPicker
-              value={nextOn}
-              today={today}
-              locale={locale}
-              labels={{
-                previousMonth: t('calendar.previousMonth'),
-                nextMonth: t('calendar.nextMonth'),
-              }}
-              onChange={setNextOn}
-            />
-            {errors.nextOn ? (
-              <Text variant="footnote" tone="negative">
-                {validationMessage(t, errors.nextOn)}
-              </Text>
-            ) : null}
-          </View>
+          <DateField
+            label={t('subscriptions.form.startsOn')}
+            value={startsOn}
+            today={today}
+            onChange={(value) => {
+              setStartsOn(value);
+              if (nextOn < value) setNextOn(value);
+            }}
+          />
+          <DateField
+            label={t('subscriptions.form.nextOn')}
+            value={nextOn}
+            today={today}
+            onChange={setNextOn}
+            errorText={errors.nextOn ? validationMessage(t, errors.nextOn) : undefined}
+          />
           <CategoryPicker
             label={t('subscriptions.form.category')}
             categories={query.data.categories}

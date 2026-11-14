@@ -270,3 +270,35 @@ export async function refreshBankConnection(
   }
   return { ok: true, value: { imported } };
 }
+
+/**
+ * Põe o saldo de uma conta da app igual a `target` mudando só o saldo inicial (os movimentos ficam).
+ * Usado ao associar uma conta do banco a uma conta que já existia e em "Saldo na app".
+ * Devolve `false` se a conta não existir.
+ */
+export async function alignAccountBalance(
+  repositories: Repositories,
+  accountId: string,
+  target: number,
+): Promise<boolean> {
+  const [account, withBalance] = await Promise.all([
+    repositories.accounts.get(accountId),
+    repositories.accounts.listWithBalances({ includeArchived: true }),
+  ]);
+  const current = withBalance.find((item) => item.id === accountId);
+  if (!account || !current) return false;
+  if (current.balance === target) return true;
+  await repositories.accounts.update(account.id, {
+    name: account.name,
+    type: account.type,
+    currency: account.currency,
+    initialBalance: account.initialBalance + (target - current.balance),
+    creditLimit: account.creditLimit,
+    institution: account.institution,
+    statementDay: account.statementDay,
+    dueDay: account.dueDay,
+    paymentAccountId: account.paymentAccountId,
+    color: account.color,
+  });
+  return true;
+}

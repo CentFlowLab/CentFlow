@@ -7,6 +7,7 @@ import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/features/account/AuthProvider';
 import {
   createPreferencesRepository,
+  DEFAULT_PREFERENCES,
   PreferencesProvider,
   type Preferences,
 } from '@/features/preferences';
@@ -26,7 +27,12 @@ type Options = {
 export async function renderWithProviders(ui: ReactElement, { preferences }: Options = {}) {
   const store = createMemoryStore();
   const repository = createPreferencesRepository(store);
-  await repository.save({ theme: 'light', language: 'pt-PT', analytics: false, ...preferences });
+  await repository.save({
+    ...DEFAULT_PREFERENCES,
+    theme: 'light',
+    language: 'pt-PT',
+    ...preferences,
+  });
 
   const result = await render(
     <SafeAreaProvider initialMetrics={TEST_METRICS}>

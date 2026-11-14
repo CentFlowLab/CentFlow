@@ -11,17 +11,20 @@ import { spacing } from '@/ui/theme';
 
 import { BudgetMeter, budgetTone } from './BudgetMeter';
 import { budgetCurrencies, loadBudgetScreen, type PresentedBudget } from './load';
+import { usePreferences } from '../preferences';
 
 type Props = { reference: CalendarDate };
 
 /** Resumo real no dashboard. Sem orçamentos, só a ação para os criar. */
 export function BudgetSummary({ reference }: Props) {
   const { t } = useTranslation();
+  const { preferences } = usePreferences();
   const { formatMoney, formatPercent } = useLocaleFormat();
   const query = useDataQuery(
     useCallback(
-      (repositories: Repositories) => loadBudgetScreen(repositories, reference),
-      [reference],
+      (repositories: Repositories) =>
+        loadBudgetScreen(repositories, reference, preferences.financialMonthStartDay),
+      [reference, preferences.financialMonthStartDay],
     ),
   );
   const data = query.data;
@@ -45,6 +48,7 @@ export function BudgetSummary({ reference }: Props) {
   const currencies = budgetCurrencies(
     data.presented.map((item) => item.budget),
     data.accounts.map((account) => account.currency),
+    preferences.primaryCurrency,
   );
   const active = data.presented.filter((item) => item.window);
 

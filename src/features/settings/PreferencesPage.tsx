@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -7,11 +7,30 @@ import {
   type LanguagePreference,
   type ThemePreference,
 } from '@/features/preferences';
-import { LANGUAGE_META, SUPPORTED_LANGUAGES, useLocaleFormat } from '@/i18n';
+import {
+  calendarDateToLocalDate,
+  financialMonthOf,
+  financialMonthRange,
+  resolvePrimaryCurrency,
+  type Account,
+} from '@/core/finance';
+import { formatMoney } from '@/core/money';
+import { useDataQuery, type Repositories } from '@/data';
+import { newAccountCurrencyFor } from '@/features/preferences';
+import {
+  FORMAT_REGIONS,
+  LANGUAGE_META,
+  SUPPORTED_LANGUAGES,
+  useLocaleFormat,
+  type FormatRegion,
+} from '@/i18n';
 import { analyticsAvailable } from '@/lib/analytics';
+import { hapticsAvailable } from '@/lib/haptics';
 import { Divider, Icon, ListItem, SegmentedControl, Text } from '@/ui/components';
 import { colorsByScheme, layout, radius, spacing, useTheme, type ColorScheme } from '@/ui/theme';
 
+import { ChoiceSheet, CurrencyPreferenceRow, type Choice } from '../finance/ChoicePicker';
+import { useToday } from '../finance/useToday';
 import { quickEntryAvailable, QuickEntryRow } from './QuickEntrySection';
 import {
   NEUTRAL_ICON,
@@ -24,11 +43,13 @@ import {
 const THEME_OPTIONS: readonly ThemePreference[] = ['system', 'light', 'dark'];
 const LANGUAGE_OPTIONS: readonly LanguagePreference[] = ['system', ...SUPPORTED_LANGUAGES];
 
-/** Definições › Preferências: aparência, idioma, formatos, atalhos e privacidade. */
+/**
+ * Definições › Preferências (ADR-076, ADR-077): aparência, idioma, moeda, formatos, mês
+ * financeiro, privacidade e registo de movimentos. Tudo neste aparelho e só de apresentação:
+ * nenhuma escolha altera valores guardados.
+ */
 export function PreferencesPage() {
   const { t } = useTranslation();
-  const { formatMoney, formatDate, formatPercent } = useLocaleFormat();
-  const today = new Date();
 
   return (
     <>
@@ -45,39 +66,27 @@ export function PreferencesPage() {
         <LanguageChooser />
       </SettingsGroup>
 
-      {/* Números, moedas e datas seguem a região do aparelho (useLocaleFormat). */}
-      <SettingsGroup title={t('settings.blocks.region')} note={t('settings.formatsNote')}>
-        <ListItem
-          {...NEUTRAL_ICON}
-          icon="cash-outline"
-          title={t('settings.formatsNumbers')}
-          trailing={
-            <RowValue>
-              {`${formatMoney({ amountMinor: 123456, currency: 'EUR' })} · ${formatPercent(0.25)}`}
-            </RowValue>
-          }
-        />
-        <ListItem
-          {...NEUTRAL_ICON}
-          icon="calendar-outline"
-          title={t('settings.formatsDates')}
-          trailing={<RowValue>{formatDate(today, 'medium')}</RowValue>}
-        />
+      <CurrencyGroup />
+
+      <RegionGroup />
+
+      <FinancialMonthGroup />
+
+      <SettingsGroup title={t('settings.blocks.privacy')} note={t('settings.discreet.description')}>
+        <DiscreetRow />
+        {analyticsAvailable() ? <AnalyticsRow /> : null}
       </SettingsGroup>
-
-      {quickEntryAvailable() ? (
-        <SettingsGroup title={t('settings.blocks.shortcuts')}>
-          <QuickEntryRow />
-        </SettingsGroup>
-      ) : null}
-
       {analyticsAvailable() ? (
-        <SettingsGroup
-          title={t('settings.blocks.privacy')}
-          note={t('settings.analytics.description')}>
-          <AnalyticsRow />
-        </SettingsGroup>
+        <Text variant="footnote" tone="tertiary" style={styles.groupNote}>
+          {t('settings.analytics.description')}
+        </Text>
       ) : null}
+
+      <SettingsGroup title={t('settings.blocks.entries')} note={t('settings.defaultAccount.hint')}>
+        <DefaultAccountRow />
+        {quickEntryAvailable() ? <QuickEntryRow /> : null}
+        {hapticsAvailable ? <HapticsRow /> : null}
+      </SettingsGroup>
     </>
   );
 }
@@ -191,6 +200,262 @@ function LanguageChooser() {
   );
 }
 
+/** Moedas usadas nas contas ativas (para a moeda principal automática e o aviso). */
+function useAccountCurrencies(): { currencies: string[]; accounts: Account[] } {
+  const query = useDataQuery(
+    useCallback((repositories: Repositories) => repositories.accounts.list(), []),
+  );
+  const accounts = (query.data ?? []).filter((account) => !account.archivedAt);
+  return { accounts, currencies: accounts.map((account) => account.currency) };
+}
+
+function CurrencyGroup() {
+  const { t } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
+  const { currencies } = useAccountCurrencies();
+  const resolved = resolvePrimaryCurrency(preferences.primaryCurrency, currencies);
+  const automatic = resolvePrimaryCurrency('auto', currencies);
+  const missing =
+    preferences.primaryCurrency !== 'auto' &&
+    currencies.length > 0 &&
+    !currencies.includes(preferences.primaryCurrency);
+  const newAccount = newAccountCurrencyFor(preferences);
+
+  return (
+    <SettingsGroup
+      title={t('settings.blocks.currency')}
+      note={
+        missing
+          ? t('settings.currencyPrefs.noAccounts', {
+              currency: preferences.primaryCurrency,
+              fallback: resolved,
+            })
+          : t('settings.currencyPrefs.primaryHint')
+      }>
+      <CurrencyPreferenceRow
+        icon="cash-outline"
+        title={t('settings.currencyPrefs.primary')}
+        value={preferences.primaryCurrency}
+        autoLabel={t('settings.currencyPrefs.autoWith', { currency: automatic })}
+        onChange={(primaryCurrency) => updatePreferences({ primaryCurrency })}
+        trailingValue={
+          <RowValue>
+            {preferences.primaryCurrency === 'auto'
+              ? t('settings.currencyPrefs.autoWith', { currency: automatic })
+              : preferences.primaryCurrency}
+          </RowValue>
+        }
+      />
+      <CurrencyPreferenceRow
+        icon="wallet-outline"
+        title={t('settings.currencyPrefs.newAccount')}
+        value={preferences.newAccountCurrency}
+        autoLabel={t('settings.currencyPrefs.autoWith', {
+          currency: newAccountCurrencyFor({ ...preferences, newAccountCurrency: 'auto' }),
+        })}
+        onChange={(newAccountCurrency) => updatePreferences({ newAccountCurrency })}
+        trailingValue={
+          <RowValue>
+            {preferences.newAccountCurrency === 'auto'
+              ? t('settings.currencyPrefs.autoWith', { currency: newAccount })
+              : preferences.newAccountCurrency}
+          </RowValue>
+        }
+      />
+    </SettingsGroup>
+  );
+}
+
+/** Nome da região no idioma da interface (quando o motor o sabe), senão a etiqueta. */
+function regionName(tag: string, language: string): string {
+  try {
+    const names = new Intl.DisplayNames([language], { type: 'language' });
+    return names.of(tag) ?? tag;
+  } catch {
+    return tag;
+  }
+}
+
+function RegionGroup() {
+  const { t, i18n } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
+  const { locale, formatDate, formatPercent } = useLocaleFormat();
+  const [open, setOpen] = useState(false);
+  const label = (value: 'auto' | FormatRegion) =>
+    value === 'auto' ? t('settings.region.auto') : regionName(value, i18n.language);
+  const choices: Choice<'auto' | FormatRegion>[] = [
+    { value: 'auto', label: t('settings.region.auto') },
+    ...FORMAT_REGIONS.map((tag) => ({
+      value: tag,
+      label: regionName(tag, i18n.language),
+      hint: tag,
+    })),
+  ];
+  // Pré-visualização com um valor de exemplo: sempre visível, mesmo no modo discreto.
+  const sample = formatMoney({ amountMinor: 123456, currency: 'EUR' }, locale);
+
+  return (
+    <SettingsGroup title={t('settings.blocks.region')} note={t('settings.region.note')}>
+      <ListItem
+        {...NEUTRAL_ICON}
+        icon="globe-outline"
+        title={t('settings.region.title')}
+        trailing={<RowValue>{label(preferences.formatRegion)}</RowValue>}
+        onPress={() => setOpen(true)}
+      />
+      <ListItem
+        {...NEUTRAL_ICON}
+        icon="calculator-outline"
+        title={t('settings.formatsNumbers')}
+        trailing={<RowValue>{`${sample} · ${formatPercent(0.25)}`}</RowValue>}
+      />
+      <ListItem
+        {...NEUTRAL_ICON}
+        icon="calendar-outline"
+        title={t('settings.formatsDates')}
+        trailing={<RowValue>{formatDate(new Date(), 'medium')}</RowValue>}
+      />
+      <ChoiceSheet
+        visible={open}
+        title={t('settings.region.title')}
+        choices={choices}
+        value={preferences.formatRegion}
+        searchLabel={t('categoryPicker.search')}
+        onChange={(formatRegion) => updatePreferences({ formatRegion })}
+        onDismiss={() => setOpen(false)}
+      />
+    </SettingsGroup>
+  );
+}
+
+function FinancialMonthGroup() {
+  const { t } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
+  const { formatDate } = useLocaleFormat();
+  const today = useToday();
+  const [open, setOpen] = useState(false);
+  const startDay = preferences.financialMonthStartDay;
+  const dayLabel = (day: number) =>
+    day === 1 ? t('settings.financialMonth.civil') : t('settings.financialMonth.day', { day });
+  const range = financialMonthRange(financialMonthOf(today, startDay), startDay);
+  const short = (date: string) => formatDate(calendarDateToLocalDate(date), 'medium');
+  const choices: Choice<string>[] = Array.from({ length: 31 }, (_, index) => ({
+    value: String(index + 1),
+    label: dayLabel(index + 1),
+  }));
+
+  return (
+    <SettingsGroup
+      title={t('settings.blocks.financialMonth')}
+      note={`${t('settings.financialMonth.noteShort')} ${t('settings.financialMonth.noteLocal')}`}>
+      <ListItem
+        {...NEUTRAL_ICON}
+        icon="calendar-number-outline"
+        title={t('settings.financialMonth.startsOn')}
+        trailing={<RowValue>{dayLabel(startDay)}</RowValue>}
+        onPress={() => setOpen(true)}
+      />
+      <ListItem
+        {...NEUTRAL_ICON}
+        icon="time-outline"
+        title={t('settings.financialMonth.current', {
+          range: `${short(range.start)} – ${short(range.end)}`,
+        })}
+      />
+      <ChoiceSheet
+        visible={open}
+        title={t('settings.financialMonth.startsOn')}
+        choices={choices}
+        value={String(startDay)}
+        onChange={(value) => updatePreferences({ financialMonthStartDay: Number(value) })}
+        onDismiss={() => setOpen(false)}
+      />
+    </SettingsGroup>
+  );
+}
+
+function DiscreetRow() {
+  const { t } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
+  return (
+    <View style={styles.controlRow}>
+      <ListItem {...NEUTRAL_ICON} icon="eye-off-outline" title={t('settings.discreet.title')} />
+      <View style={styles.control}>
+        <SegmentedControl
+          accessibilityLabel={t('settings.discreet.title')}
+          value={preferences.discreetAmounts ? 'on' : 'off'}
+          onChange={(value) => updatePreferences({ discreetAmounts: value === 'on' })}
+          options={[
+            { value: 'off', label: t('settings.discreet.off') },
+            { value: 'on', label: t('settings.discreet.on') },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
+/** Conta proposta num movimento novo: a última usada ou uma conta ativa. */
+function DefaultAccountRow() {
+  const { t } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
+  const { accounts } = useAccountCurrencies();
+  const [open, setOpen] = useState(false);
+  const chosen = accounts.find((account) => account.id === preferences.defaultAccountId);
+  const choices: Choice<string>[] = [
+    { value: 'last', label: t('settings.defaultAccount.last') },
+    ...accounts.map((account) => ({
+      value: account.id,
+      label: account.name,
+      hint: account.currency,
+    })),
+  ];
+  return (
+    <>
+      <ListItem
+        {...NEUTRAL_ICON}
+        icon="card-outline"
+        title={t('settings.defaultAccount.title')}
+        trailing={<RowValue>{chosen ? chosen.name : t('settings.defaultAccount.last')}</RowValue>}
+        onPress={() => setOpen(true)}
+      />
+      <ChoiceSheet
+        visible={open}
+        title={t('settings.defaultAccount.title')}
+        choices={choices}
+        value={chosen ? chosen.id : 'last'}
+        onChange={(defaultAccountId) => updatePreferences({ defaultAccountId })}
+        onDismiss={() => setOpen(false)}
+      />
+    </>
+  );
+}
+
+function HapticsRow() {
+  const { t } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
+  return (
+    <View style={styles.controlRow}>
+      <ListItem
+        {...NEUTRAL_ICON}
+        icon="phone-portrait-outline"
+        title={t('settings.haptics.title')}
+      />
+      <View style={styles.control}>
+        <SegmentedControl
+          accessibilityLabel={t('settings.haptics.title')}
+          value={preferences.haptics ? 'on' : 'off'}
+          onChange={(value) => updatePreferences({ haptics: value === 'on' })}
+          options={[
+            { value: 'on', label: t('settings.haptics.on') },
+            { value: 'off', label: t('settings.haptics.off') },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
 function AnalyticsRow() {
   const { t } = useTranslation();
   const { preferences, updatePreferences } = usePreferences();
@@ -270,6 +535,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xs,
     minHeight: 24,
+  },
+  groupNote: {
+    marginTop: -spacing.lg,
+    paddingHorizontal: spacing.xs,
   },
   controlRow: {
     paddingBottom: spacing.md,

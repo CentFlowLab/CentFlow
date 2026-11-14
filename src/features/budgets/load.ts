@@ -3,7 +3,7 @@ import {
   assessBudget,
   monthOf,
   monthRange,
-  pickPrimaryCurrency,
+  resolvePrimaryCurrency,
   type Account,
   type Budget,
   type BudgetCandidate,
@@ -36,22 +36,27 @@ export function presentBudgets(
   categories: readonly Category[],
   lines: readonly BudgetCandidate[],
   reference: CalendarDate,
+  startDay = 1,
 ): PresentedBudget[] {
   const byId = new Map(categories.map((category) => [category.id, category]));
   return budgets.map((budget) => ({
     budget,
     category: byId.get(budget.categoryId) ?? null,
-    ...assessBudget(budget, lines, reference),
+    ...assessBudget(budget, lines, reference, startDay),
   }));
 }
 
 export function budgetCurrencies(
   budgets: readonly { currency: string }[],
   accountCurrencies: readonly string[],
+  primaryPreference: 'auto' | string = 'auto',
 ): string[] {
   const used = [...new Set(budgets.map((budget) => budget.currency))];
   if (used.length === 0) return [];
-  const primary = pickPrimaryCurrency(accountCurrencies.length > 0 ? accountCurrencies : used);
+  const primary = resolvePrimaryCurrency(
+    primaryPreference,
+    accountCurrencies.length > 0 ? accountCurrencies : used,
+  );
   return used.sort((left, right) =>
     left === primary ? -1 : right === primary ? 1 : left.localeCompare(right),
   );
@@ -60,9 +65,11 @@ export function budgetCurrencies(
 export async function loadBudgetScreen(
   repositories: Repositories,
   reference: CalendarDate,
+  startDay = 1,
 ): Promise<BudgetScreenData> {
-  const from = monthRange(addMonths(monthOf(reference), -24)).start;
-  const to = monthRange(addMonths(monthOf(reference), 12)).end;
+  // Um mês a mais de cada lado: os períodos financeiros podem começar no mês civil anterior.
+  const from = monthRange(addMonths(monthOf(reference), -25)).start;
+  const to = monthRange(addMonths(monthOf(reference), 13)).end;
   const [budgets, categories, accounts, lines] = await Promise.all([
     repositories.budgets.list(),
     repositories.categories.list('expense'),
@@ -74,7 +81,7 @@ export async function loadBudgetScreen(
     categories,
     accounts,
     lines,
-    presented: presentBudgets(budgets, categories, lines, reference),
+    presented: presentBudgets(budgets, categories, lines, reference, startDay),
   };
 }
 
@@ -82,8 +89,9 @@ export async function loadBudgetDetail(
   repositories: Repositories,
   id: string,
   reference: CalendarDate,
+  startDay = 1,
 ): Promise<BudgetScreenData & { item: PresentedBudget | null; history: Entry[] }> {
-  const screen = await loadBudgetScreen(repositories, reference);
+  const screen = await loadBudgetScreen(repositories, reference, startDay);
   const item = screen.presented.find((entry) => entry.budget.id === id) ?? null;
   if (!item?.window) return { ...screen, item, history: [] };
   const page = await repositories.entries.list({

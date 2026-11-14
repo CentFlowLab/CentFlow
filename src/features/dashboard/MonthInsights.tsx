@@ -5,14 +5,15 @@ import { StyleSheet, View } from 'react-native';
 import {
   addMonths,
   buildMonthForecast,
-  monthOf,
-  monthRange,
   spendingInsights,
   type AccountType,
   type CalendarDate,
   type ForecastInput,
   type MonthHistory,
   type SpendingInsight,
+  bucketDailyTotals,
+  financialMonthOf,
+  financialMonthRange,
 } from '@/core/finance';
 import type { CurrencyCode } from '@/core/money';
 import { useDataQuery, type Repositories } from '@/data';
@@ -21,6 +22,7 @@ import { Card, Divider, Icon, Section, Text, type IconName } from '@/ui/componen
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { useFinanceLookups } from '../finance/useFinanceLookups';
+import { usePreferences } from '../preferences';
 
 /** Contas de uso diário: o dinheiro que se pode gastar este mês (poupanças e investimentos ficam de fora). */
 const SPENDABLE: ReadonlySet<AccountType> = new Set(['bank', 'cash', 'card']);
@@ -56,18 +58,29 @@ export async function loadForecastInput(
   repositories: Repositories,
   today: CalendarDate,
   currency: CurrencyCode,
+  startDay = 1,
 ): Promise<ForecastInput> {
-  const month = monthOf(today);
+  // Período financeiro atual e os 3 anteriores completos (ADR-077); dia 1 = meses civis.
+  const month = financialMonthOf(today, startDay);
   const accounts = await repositories.accounts.listWithBalances();
   const availableBalance = accounts
     .filter((account) => account.currency === currency && SPENDABLE.has(account.type))
-    .reduce((sum, account) => sum + account.balance, 0);
+    // Como o "Disponível" do início: a dívida de um cartão não é dinheiro que se gasta este mês.
+    .reduce(
+      (sum, account) =>
+        sum + (account.type === 'card' ? Math.max(0, account.balance) : account.balance),
+      0,
+    );
 
   const months = [3, 2, 1].map((back) => addMonths(month, -back));
-  const aggregates = await repositories.entries.aggregate({
-    from: monthRange(months[0]!).start,
-    to: monthRange(months[2]!).end,
-  });
+  const range = {
+    from: financialMonthRange(months[0]!, startDay).start,
+    to: financialMonthRange(months[2]!, startDay).end,
+  };
+  const aggregates =
+    startDay === 1
+      ? await repositories.entries.aggregate(range)
+      : bucketDailyTotals(await repositories.entries.aggregateByDate(range), startDay);
   const history = months.map((key) => {
     const totals = emptyTotals();
     for (const row of aggregates) {
@@ -78,13 +91,13 @@ export async function loadForecastInput(
 
   const monthToDate = emptyTotals();
   const days = await repositories.entries.aggregateByDate({
-    from: monthRange(month).start,
+    from: financialMonthRange(month, startDay).start,
     to: today,
   });
   for (const row of days) if (row.currency === currency) addTo(monthToDate, row);
 
   const subscriptions = await repositories.subscriptions.list();
-  return { today, currency, availableBalance, monthToDate, history, subscriptions };
+  return { today, currency, availableBalance, monthToDate, history, subscriptions, startDay };
 }
 
 const INSIGHT_ICONS: Record<
@@ -111,11 +124,12 @@ export function MonthInsights({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { formatMoney, formatPercent } = useLocaleFormat();
+  const startDay = usePreferences().preferences.financialMonthStartDay;
   const lookups = useFinanceLookups();
   const query = useDataQuery(
     useCallback(
-      (repositories: Repositories) => loadForecastInput(repositories, today, currency),
-      [today, currency],
+      (repositories: Repositories) => loadForecastInput(repositories, today, currency, startDay),
+      [today, currency, startDay],
     ),
   );
   if (!query.data) return null;

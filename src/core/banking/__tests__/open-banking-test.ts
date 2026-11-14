@@ -1,5 +1,6 @@
 import {
   bankAccountKind,
+  bankBalanceForAppAccount,
   bankErrorFromStatus,
   canRefreshBank,
   consentValidUntil,
@@ -168,5 +169,14 @@ describe('open banking parsing (ADR-069)', () => {
     expect(canRefreshBank('2026-11-13T11:40:00Z', now)).toBe(true);
     expect(ibanLast4('PT50 0002 0123 1234 5678 9015 4')).toBe('0154');
     expect(ibanLast4('x')).toBeNull();
+  });
+});
+
+describe('bank balance for an app account', () => {
+  it('turns a positive card balance into debt and keeps the rest', () => {
+    expect(bankBalanceForAppAccount(387046, 'card')).toBe(-387046);
+    expect(bankBalanceForAppAccount(-387046, 'card')).toBe(-387046);
+    expect(bankBalanceForAppAccount(744, 'bank')).toBe(744);
+    expect(bankBalanceForAppAccount(-500, 'bank')).toBe(-500);
   });
 });

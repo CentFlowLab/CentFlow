@@ -10,7 +10,13 @@ import {
 } from 'react';
 import { Platform } from 'react-native';
 
-import { getDeviceLanguageTags, i18n, resolveLanguage, type SupportedLanguage } from '@/i18n';
+import {
+  FormatSettingsProvider,
+  getDeviceLanguageTags,
+  i18n,
+  resolveLanguage,
+  type SupportedLanguage,
+} from '@/i18n';
 import { appStorage } from '@/lib/storage/key-value-store';
 
 import {
@@ -80,7 +86,19 @@ export function PreferencesProvider({ children, repository = defaultRepository }
     [preferences, isLoaded, activeLanguage, updatePreferences],
   );
 
-  return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
+  const formatSettings = useMemo(
+    () => ({
+      formatRegion: preferences.formatRegion,
+      discreetAmounts: preferences.discreetAmounts,
+    }),
+    [preferences.formatRegion, preferences.discreetAmounts],
+  );
+
+  return (
+    <PreferencesContext.Provider value={value}>
+      <FormatSettingsProvider value={formatSettings}>{children}</FormatSettingsProvider>
+    </PreferencesContext.Provider>
+  );
 }
 
 export function usePreferences(): PreferencesContextValue {

@@ -7,12 +7,13 @@ import {
   addMonths,
   buildMonthlyOverview,
   monthKeyToLocalDate,
-  monthOf,
-  monthRange,
-  pickPrimaryCurrency,
+  resolvePrimaryCurrency,
   referenceForMonth,
   totalsByCurrency,
   type MonthKey,
+  bucketDailyTotals,
+  financialMonthOf,
+  financialMonthRange,
 } from '@/core/finance';
 import { getDayPart } from '@/core/format';
 import { useDataQuery, type Repositories } from '@/data';
@@ -26,11 +27,11 @@ import {
   EmptyState,
   HeroCard,
   Icon,
-  IconButton,
   Screen,
   Section,
   Text,
   type IconName,
+  IconButton,
 } from '@/ui/components';
 import { useBreakpoint } from '@/ui/layout/useBreakpoint';
 import { categorySwatch, radius, spacing, useTheme } from '@/ui/theme';
@@ -48,6 +49,8 @@ import { NetWorthCard } from './NetWorthCard';
 import { InvestmentsCard } from '../investments/InvestmentsCard';
 import { MonthInsights } from './MonthInsights';
 import { UpcomingObligations } from './UpcomingObligations';
+import { MonthSwitcher } from '../finance/MonthSwitcher';
+import { usePreferences } from '../preferences';
 
 const TREND_MONTHS = 6;
 const LATEST_COUNT = 5;
@@ -57,28 +60,38 @@ function capitalize(value: string): string {
   return value.charAt(0).toLocaleUpperCase() + value.slice(1);
 }
 
-async function loadDashboard(repositories: Repositories, month: MonthKey) {
-  const { start, end } = monthRange(month);
+/**
+ * Período e tendência do Início. Com o mês financeiro (ADR-077) os totais vêm dos totais por dia
+ * agrupados no core; com o dia 1 continua a ser a consulta mensal de sempre (os mesmos números).
+ */
+export async function loadDashboard(repositories: Repositories, month: MonthKey, startDay = 1) {
+  const { start, end } = financialMonthRange(month, startDay);
+  const from = financialMonthRange(addMonths(month, -(TREND_MONTHS - 1)), startDay).start;
   const accounts = await repositories.accounts.listWithBalances();
-  const aggregates = await repositories.entries.aggregate({
-    from: monthRange(addMonths(month, -(TREND_MONTHS - 1))).start,
-    to: end,
-  });
+  const aggregates =
+    startDay === 1
+      ? await repositories.entries.aggregate({ from, to: end })
+      : bucketDailyTotals(await repositories.entries.aggregateByDate({ from, to: end }), startDay);
   const latest = await repositories.entries.list({ from: start, to: end, limit: LATEST_COUNT });
   return { accounts, aggregates, latest };
 }
 
 export function DashboardScreen() {
   const { t } = useTranslation();
+  const { preferences, updatePreferences } = usePreferences();
   const { colors, scheme } = useTheme();
   const breakpoint = useBreakpoint();
   const { formatDate, formatMoney, formatMonthYear, formatPercent, locale } = useLocaleFormat();
   const today = useToday();
-  const currentMonth = monthOf(today);
+  const startDay = preferences.financialMonthStartDay;
+  const currentMonth = financialMonthOf(today, startDay);
   const [month, setMonth] = useState<MonthKey>(currentMonth);
   const lookups = useFinanceLookups();
   const query = useDataQuery(
-    useCallback((repositories: Repositories) => loadDashboard(repositories, month), [month]),
+    useCallback(
+      (repositories: Repositories) => loadDashboard(repositories, month, startDay),
+      [month, startDay],
+    ),
   );
   const now = new Date();
   const noAccounts = query.data?.accounts.length === 0;
@@ -186,7 +199,10 @@ export function DashboardScreen() {
     );
   }
 
-  const currency = pickPrimaryCurrency(accounts.map((account) => account.currency));
+  const currency = resolvePrimaryCurrency(
+    preferences.primaryCurrency,
+    accounts.map((account) => account.currency),
+  );
   // Disponível: o saldo dos cartões de crédito é dívida, não dinheiro (salvo se estiver a favor).
   const totals = totalsByCurrency(
     accounts.map((account) => ({
@@ -204,7 +220,6 @@ export function DashboardScreen() {
   const overview = buildMonthlyOverview(aggregates, { month, currency, trendLength: TREND_MONTHS });
   const { summary } = overview;
   const money = (amountMinor: number) => formatMoney({ amountMinor, currency });
-  const monthLabel = capitalize(formatMonthYear(monthKeyToLocalDate(month)));
   const isWide = breakpoint !== 'compact';
 
   const summaryCards = [
@@ -344,22 +359,12 @@ export function DashboardScreen() {
 
   return (
     <Screen {...header}>
-      <View
-        style={[styles.monthBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <IconButton
-          icon="chevron-back"
-          accessibilityLabel={t('dashboard.previousMonth')}
-          onPress={() => setMonth((value) => addMonths(value, -1))}
-        />
-        <Text variant="title3" align="center" style={styles.flex} accessibilityLiveRegion="polite">
-          {monthLabel}
-        </Text>
-        <IconButton
-          icon="chevron-forward"
-          accessibilityLabel={t('dashboard.nextMonth')}
-          onPress={() => setMonth((value) => addMonths(value, 1))}
-        />
-      </View>
+      <MonthSwitcher
+        month={month}
+        currentMonth={currentMonth}
+        startDay={startDay}
+        onChange={setMonth}
+      />
       {month !== currentMonth ? (
         <View style={styles.center}>
           <Button
@@ -373,9 +378,19 @@ export function DashboardScreen() {
       ) : null}
 
       <HeroCard style={styles.hero}>
-        <Text variant="overline" tone="heroMuted">
-          {t('dashboard.totalBalance')}
-        </Text>
+        <View style={styles.heroHead}>
+          <Text variant="overline" tone="heroMuted" style={styles.heroTitle}>
+            {t('dashboard.totalBalance')}
+          </Text>
+          <IconButton
+            icon={preferences.discreetAmounts ? 'eye-off-outline' : 'eye-outline'}
+            color="heroTextMuted"
+            accessibilityLabel={
+              preferences.discreetAmounts ? t('privacy.showValues') : t('privacy.hideValues')
+            }
+            onPress={() => updatePreferences({ discreetAmounts: !preferences.discreetAmounts })}
+          />
+        </View>
         <Text variant="amountHero" tone="hero" tabular numberOfLines={1} adjustsFontSizeToFit>
           {money(totals.get(currency) ?? 0)}
         </Text>
@@ -491,7 +506,7 @@ export function DashboardScreen() {
         ))}
       </View>
 
-      <BudgetSummary reference={referenceForMonth(month, today)} />
+      <BudgetSummary reference={referenceForMonth(month, today, startDay)} />
 
       {month === currentMonth ? <FinancialHealthCard today={today} currency={currency} /> : null}
 
@@ -558,12 +573,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -spacing.lg,
   },
-  monthBar: {
+  heroHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.xs,
+    justifyContent: 'space-between',
+    marginVertical: -spacing.sm,
+    marginRight: -spacing.sm,
+  },
+  heroTitle: {
+    flex: 1,
   },
   hero: {
     gap: spacing.sm,

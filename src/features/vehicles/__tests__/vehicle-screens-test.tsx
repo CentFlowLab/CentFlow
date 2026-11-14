@@ -99,7 +99,7 @@ describe('Optional date fields (vehicle form)', () => {
 
     await fireEvent.press(insurance);
     expect(screen.getAllByRole('button', { name: 'Mês seguinte' })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Ano seguinte' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: /, escolher mês$/ })).toBeOnTheScreen();
 
     // Abrir outro fecha o primeiro.
     await fireEvent.press(screen.getByRole('button', { name: 'Próxima inspeção: Sem data' }));

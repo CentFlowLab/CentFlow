@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import {
-  calendarDateToLocalDate,
   validateSavingsGoalInput,
   ValidationError,
   hasErrors,
@@ -19,15 +18,7 @@ import {
 } from '@/core/money';
 import { useDataQuery, useRepositories, type Repositories } from '@/data';
 import { useLocaleFormat } from '@/i18n';
-import {
-  Button,
-  CalendarPicker,
-  Chip,
-  ChipGroup,
-  FormScreen,
-  Text,
-  TextField,
-} from '@/ui/components';
+import { Button, Chip, ChipGroup, FormScreen, Text, TextField } from '@/ui/components';
 import { spacing } from '@/ui/theme';
 
 import { IconColorPicker } from '../finance/IconColorPicker';
@@ -35,6 +26,7 @@ import { closeModal } from '../finance/navigation';
 import { validationMessage } from '../finance/presentation';
 import { useToday } from '../finance/useToday';
 import { DEFAULT_GOAL_COLOR, DEFAULT_GOAL_ICON, GoalIcon } from './GoalIcon';
+import { DateField } from '../finance/DateField';
 
 type FieldErrors = ValidationErrors<keyof SavingsGoalInput>;
 
@@ -57,7 +49,7 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
   const { t } = useTranslation();
   const targetRef = useRef<TextInputInstance>(null);
   const repositories = useRepositories();
-  const { formatDate, locale } = useLocaleFormat();
+  const { locale } = useLocaleFormat();
   const today = useToday();
   const query = useDataQuery(useCallback((repos: Repositories) => loadAccounts(repos), []));
   const editing = goal !== undefined;
@@ -198,38 +190,14 @@ export function GoalForm({ goal, onClose, onSaved }: Props) {
               {currencyError}
             </Text>
           ) : null}
-          <View style={styles.field}>
-            <Text variant="footnote" tone="secondary">
-              {t('goals.form.targetOn')}
-            </Text>
-            <Text variant="label">
-              {targetOn
-                ? formatDate(calendarDateToLocalDate(targetOn), 'medium')
-                : t('goals.noDate')}
-            </Text>
-            <Chip
-              label={targetOn ? t('goals.clearDate') : t('goals.setDate')}
-              selected={targetOn !== null}
-              onPress={() => setTargetOn(targetOn ? null : today)}
-            />
-            {targetOn ? (
-              <CalendarPicker
-                value={targetOn}
-                today={today}
-                locale={locale}
-                labels={{
-                  previousMonth: t('calendar.previousMonth'),
-                  nextMonth: t('calendar.nextMonth'),
-                }}
-                onChange={setTargetOn}
-              />
-            ) : null}
-            {errors.targetOn ? (
-              <Text variant="footnote" tone="negative">
-                {validationMessage(t, errors.targetOn)}
-              </Text>
-            ) : null}
-          </View>
+          <DateField
+            label={t('goals.form.targetOn')}
+            value={targetOn}
+            today={today}
+            optional
+            onChange={setTargetOn}
+            errorText={errors.targetOn ? validationMessage(t, errors.targetOn) : undefined}
+          />
           {accountChoices.length > 0 ? (
             <ChipGroup
               label={t('goals.form.account')}
