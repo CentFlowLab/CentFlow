@@ -11,3 +11,7 @@ desktop/web
 desktop/release
 desktop/cert
 desktop/package-lock.json
+
+# Skills de terceiros instaladas tal como vieram (claude-skills-founder, MIT)
+.claude/skills/
+.claude/founder-shared/
