@@ -25,6 +25,11 @@ export const BANK_CONSENT_DAYS = 90;
 export const BANK_AUTH_STATE_TTL_MS = 30 * 60_000;
 /** Intervalo mínimo entre leituras de uma ligação (os bancos limitam a ~4 por dia sem a pessoa). */
 export const BANK_MIN_REFRESH_MS = 15 * 60_000;
+/**
+ * Depois de o banco recusar por limite de leituras: nenhuma leitura automática durante 6 horas.
+ * Cada tentativa gasta leituras e mantinha o banco no limite (só "Atualizar" lê antes disso).
+ */
+export const BANK_RATE_LIMIT_BACKOFF_MS = 6 * 60 * 60_000;
 /** Primeira leitura de movimentos: só a partir do dia em que a conta foi associada. */
 export const BANK_HISTORY_DAYS = 90;
 
@@ -203,10 +208,15 @@ export function bankErrorFromStatus(status: number): BankErrorCode {
   return 'invalid';
 }
 
-export function canRefreshBank(lastSyncAt: string | null, now: number): boolean {
+export function canRefreshBank(
+  lastSyncAt: string | null,
+  now: number,
+  lastError: string | null = null,
+): boolean {
   if (!lastSyncAt) return true;
   const last = Date.parse(lastSyncAt);
-  return !Number.isFinite(last) || now - last >= BANK_MIN_REFRESH_MS;
+  const wait = lastError === 'rateLimited' ? BANK_RATE_LIMIT_BACKOFF_MS : BANK_MIN_REFRESH_MS;
+  return !Number.isFinite(last) || now - last >= wait;
 }
 
 /** O que a conta do banco é, para sugerir o nome e o tipo da conta na app. */

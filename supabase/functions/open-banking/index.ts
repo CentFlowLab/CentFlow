@@ -312,7 +312,7 @@ Deno.serve(async (req) => {
   const { data: connection } = connectionId
     ? await admin
         .from('bank_connections')
-        .select('id, session_id, valid_until, last_sync_at')
+        .select('id, session_id, valid_until, last_sync_at, last_error')
         .eq('id', connectionId)
         .eq('user_id', user.id)
         .maybeSingle()
@@ -328,7 +328,10 @@ Deno.serve(async (req) => {
         .eq('id', connection.id);
       return json({ error: 'expired' }, 409);
     }
-    if (body?.force !== true && !canRefreshBank(connection.last_sync_at, now)) {
+    if (
+      body?.force !== true &&
+      !canRefreshBank(connection.last_sync_at, now, connection.last_error)
+    ) {
       return json({ error: 'tooSoon' }, 429);
     }
     const since = Object.fromEntries(

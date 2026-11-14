@@ -538,7 +538,8 @@ const ptPT = {
         accounts_other: '{{count}} contas',
         permissions:
           'Lê saldos e movimentos contabilizados. Não permite pagamentos nem transferências. Cada autorização dura até 90 dias.',
-        refresh: 'Com a app aberta, os movimentos são lidos ao abrir e a cada 15 minutos.',
+        refresh:
+          'Com a app aberta, os movimentos são lidos ao abrir e a cada 15 minutos. Se o banco limitar as leituras, a app espera 6 horas ("Atualizar" lê na hora).',
         manage: 'Gerir bancos',
         link: 'Ligar um banco',
       },

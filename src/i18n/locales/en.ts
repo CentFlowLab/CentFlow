@@ -536,7 +536,8 @@ const en: Translation = {
         accounts_other: '{{count}} accounts',
         permissions:
           'Reads balances and booked transactions. No payments or transfers. Each authorisation lasts up to 90 days.',
-        refresh: 'With the app open, transactions are read on opening and every 15 minutes.',
+        refresh:
+          'With the app open, transactions are read on opening and every 15 minutes. If the bank limits reads, the app waits 6 hours ("Refresh" reads right away).',
         manage: 'Manage banks',
         link: 'Connect a bank',
       },

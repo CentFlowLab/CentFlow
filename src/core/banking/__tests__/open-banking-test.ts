@@ -167,6 +167,11 @@ describe('open banking parsing (ADR-069)', () => {
     expect(canRefreshBank(null, now)).toBe(true);
     expect(canRefreshBank('2026-11-13T11:50:00Z', now)).toBe(false);
     expect(canRefreshBank('2026-11-13T11:40:00Z', now)).toBe(true);
+    // Depois de um limite de leituras do banco: 6 horas sem leituras automáticas.
+    expect(canRefreshBank('2026-11-13T11:40:00Z', now, 'rateLimited')).toBe(false);
+    expect(canRefreshBank('2026-11-13T06:10:00Z', now, 'rateLimited')).toBe(false);
+    expect(canRefreshBank('2026-11-13T05:55:00Z', now, 'rateLimited')).toBe(true);
+    expect(canRefreshBank('2026-11-13T11:40:00Z', now, 'unavailable')).toBe(true);
     expect(ibanLast4('PT50 0002 0123 1234 5678 9015 4')).toBe('0154');
     expect(ibanLast4('x')).toBeNull();
   });

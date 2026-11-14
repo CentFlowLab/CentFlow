@@ -34,7 +34,7 @@ export function BankSync() {
           if (!alive) return;
           if (connection.status !== 'connected') continue;
           if (!connection.accounts.some((account) => account.app_account_id)) continue;
-          if (!canRefreshBank(connection.last_sync_at, Date.now())) continue;
+          if (!canRefreshBank(connection.last_sync_at, Date.now(), connection.last_error)) continue;
           await refreshBankConnection(
             client,
             repositories,

@@ -541,7 +541,8 @@ const es: Translation = {
         accounts_other: '{{count}} cuentas',
         permissions:
           'Lee saldos y movimientos contabilizados. No permite pagos ni transferencias. Cada autorización dura hasta 90 días.',
-        refresh: 'Con la app abierta, los movimientos se leen al abrirla y cada 15 minutos.',
+        refresh:
+          'Con la app abierta, los movimientos se leen al abrirla y cada 15 minutos. Si el banco limita las lecturas, la app espera 6 horas («Actualizar» lee al momento).',
         manage: 'Gestionar bancos',
         link: 'Conectar un banco',
       },
