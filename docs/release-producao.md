@@ -356,3 +356,11 @@ Definições com navegação interna (ADR-071), Viaturas reformuladas e datas op
 (ADR-072), saldo dos cartões com o sinal certo e "Saldo na app" nas contas do banco associadas.
 Função `open-banking` com o sinal dos saldos no staging; na produção, publicar com
 `npx supabase functions deploy open-banking --remote=slfgslfzolfvqavuccom --no-verify-jwt`.
+
+## 2026-11-14 — versão 0.1.22
+
+Preferências de moeda principal, formato regional, modo discreto e conta por omissão (ADR-076);
+início do mês financeiro (ADR-077); campo de data e seletor de mês e ano únicos (ADR-074); barra
+inferior em ilha flutuante (ADR-075); vibração com `expo-haptics` (ADR-073). Sem migrações. Função
+`open-banking` com os cabeçalhos PSU e o estado "limitado" no staging; na produção, publicar com
+`npx supabase functions deploy open-banking --remote=slfgslfzolfvqavuccom --no-verify-jwt`.
